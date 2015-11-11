@@ -14,14 +14,24 @@ namespace Jungle\Smart\Keyword;
  */
 class Factory {
 
+	/** @var array  */
 	protected $rules = [];
+
+	/** @var callable */
 	protected $function;
 
+	/**
+	 * @param callable $fn
+	 * @param array $rules
+	 */
 	public function __construct(callable $fn,array $rules=[]){
 		$this->setFunction($fn);
 		$this->setRules($rules);
 	}
 
+	/**
+	 * @param callable $fn
+	 */
 	public function setFunction(callable $fn){
 		$this->function = $fn;
 	}
@@ -65,7 +75,7 @@ class Factory {
 	 * @return null
 	 */
 	public function getRule($id){
-		return $this->hasRule($id)?$this->rules[$id]:null;
+		return isset($this->rules[$id])?$this->rules[$id]:null;
 	}
 
 	/**
