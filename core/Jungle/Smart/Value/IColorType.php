@@ -8,13 +8,13 @@
 
 namespace Jungle\Smart\Value {
 
-	use Jungle\Basic\INamedBase;
+	use Jungle\Basic\INamed;
 
 	/**
 	 * Interface IColorType
 	 * @package Jungle\Smart\Value
 	 */
-	interface IColorType extends INamedBase{
+	interface IColorType extends INamed{
 
 		/**
 		 * @param string|array $color

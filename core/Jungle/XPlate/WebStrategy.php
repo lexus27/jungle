@@ -11,9 +11,9 @@ namespace Jungle\XPlate {
 	use Jungle\Basic\Collection\ServiceContainerTrait;
 	use Jungle\XPlate\Interfaces\IWebStrategy;
 	use Jungle\XPlate\Interfaces\IWebSubject;
-	use Jungle\XPlate\Services\AttributeManager;
-	use Jungle\XPlate\Services\StyleManager;
-	use Jungle\XPlate\Services\TagManager;
+	use Jungle\XPlate\Services\AttributePool;
+	use Jungle\XPlate\Services\StylePool;
+	use Jungle\XPlate\Services\TagPool;
 
 	/**
 	 * Class Strategy
@@ -40,7 +40,7 @@ namespace Jungle\XPlate {
 		protected static $default;
 
 		/**
-		 * @param AttributeManager $m
+		 * @param AttributePool $m
 		 * @return $this
 		 */
 		public function setAttributeManager($m){
@@ -49,7 +49,7 @@ namespace Jungle\XPlate {
 		}
 
 		/**
-		 * @return AttributeManager
+		 * @return AttributePool
 		 */
 		public function getAttributeManager(){
 			return $this->getService('attributeManager');
@@ -57,7 +57,7 @@ namespace Jungle\XPlate {
 
 
 		/**
-		 * @param TagManager $m
+		 * @param TagPool $m
 		 * @return $this
 		 */
 		public function setTagManager($m){
@@ -66,7 +66,7 @@ namespace Jungle\XPlate {
 		}
 
 		/**
-		 * @return TagManager
+		 * @return TagPool
 		 */
 		public function getTagManager(){
 			return $this->getService('tagManager');
@@ -74,7 +74,7 @@ namespace Jungle\XPlate {
 
 
 		/**
-		 * @param StyleManager $m
+		 * @param StylePool $m
 		 * @return $this
 		 */
 		public function setStyleManager($m){
@@ -83,7 +83,7 @@ namespace Jungle\XPlate {
 		}
 
 		/**
-		 * @return StyleManager
+		 * @return StylePool
 		 */
 		public function getStyleManager(){
 			return $this->getService('styleManager');
@@ -94,9 +94,9 @@ namespace Jungle\XPlate {
 		 */
 		public function isValid(){
 			return
-				$this->getTagManager() instanceof TagManager &&
-				$this->getStyleManager() instanceof StyleManager &&
-				$this->getAttributeManager() instanceof AttributeManager;
+				$this->getTagManager() instanceof TagPool &&
+				$this->getStyleManager() instanceof StylePool &&
+				$this->getAttributeManager() instanceof AttributePool;
 		}
 
 		/**
@@ -183,7 +183,6 @@ namespace Jungle\XPlate {
 		}
 
 		/**
-		 *
 		 */
 		protected function onOptionChanged(){
 			$this->update();

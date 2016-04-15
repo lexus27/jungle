@@ -8,16 +8,16 @@
 namespace Jungle\XPlate\Services {
 
 	use Jungle\Smart\Keyword\Factory;
-	use Jungle\Smart\Keyword\Manager;
+	use Jungle\Smart\Keyword\Pool;
 	use Jungle\Smart\Keyword\Storage;
 	use Jungle\XPlate\CSS\Selector\Dependency;
 
 	/**
-	 * Class SelectorDependencyManager
+	 * Class SelectorDependencyPool
 	 * @package Jungle\XPlate\Services
 	 * '>', '+', '~', ' '
 	 */
-	class SelectorDependencyManager extends Manager{
+	class SelectorDependencyPool extends Pool{
 
 		/**
 		 * @param Storage $store

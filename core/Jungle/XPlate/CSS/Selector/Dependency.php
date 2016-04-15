@@ -8,7 +8,7 @@
 
 namespace Jungle\XPlate\CSS\Selector {
 
-	use Jungle\Basic\INamedBase;
+	use Jungle\Basic\INamed;
 	use Jungle\Smart\Keyword\Keyword;
 	use Jungle\XPlate\HTML\IElement;
 
@@ -25,7 +25,7 @@ namespace Jungle\XPlate\CSS\Selector {
 	 * #identifier       >                  .class1.class2                      .class3:hover
 	 * #identifier > .class1.class2 .class3:hover
 	 */
-	class Dependency extends Keyword implements INamedBase{
+	class Dependency extends Keyword implements INamed{
 
 		/**
 		 * @var string

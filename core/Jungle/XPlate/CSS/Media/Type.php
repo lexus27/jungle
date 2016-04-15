@@ -11,7 +11,7 @@ namespace Jungle\XPlate\CSS\Media {
 	use Jungle\XPlate\Interfaces\IType;
 
 	/**
-	 * Class Type
+	 * Class TypeChecker
 	 * @package Jungle\XPlate\CSS\Media
 	 *
 	 * Device Media viewport type  all, screen, braille and them

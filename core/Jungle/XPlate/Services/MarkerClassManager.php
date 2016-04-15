@@ -8,19 +8,19 @@
 namespace Jungle\XPlate\Services {
 
 	use Jungle\Smart\Keyword\Factory;
-	use Jungle\Smart\Keyword\Manager;
+	use Jungle\Smart\Keyword\Pool;
 	use Jungle\Smart\Keyword\Storage;
 	use Jungle\XPlate\CSS\Selector\Marker\Cls;
 
 	/**
-	 * Class MarkerClassManager
+	 * Class MarkerClassPool
 	 * @package Jungle\XPlate\Services
 	 */
-	class MarkerClassManager extends Manager{
+	class MarkerClassPool extends Pool{
 
 		public function __construct(){
 			$this->caseSetInsensitive(true);
-			parent::__construct('MarkerClassManager', Storage::getDummy());
+			parent::__construct('MarkerClassPool', Storage::getDummy());
 		}
 
 		/**

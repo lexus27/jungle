@@ -7,13 +7,15 @@
  */
 namespace Jungle\Basic\Collection {
 
-	use Traversable;
-
-
 	/**
-	 * Class CollectionEach
 	 * @package Jungle\Basic\Collection
-	 * TODO доделать коллекцию
+	 *
+	 * Class CollectionEach предоставляет коллекцию объектов определенного класса
+	 * и дает возможность обращатся к методам содержимых объектов непосредственно через прямое обращение к
+	 * коллекции(произойдет делегирование)
+	 *
+	 *
+	 * TODO
 	 */
 	class CollectionEach implements \ArrayAccess, \IteratorAggregate{
 
@@ -55,6 +57,9 @@ namespace Jungle\Basic\Collection {
 			}
 		}
 
+		/**
+		 * @return bool
+		 */
 		public function isArray(){
 			return $this->type === self::TYPE_ARRAY;
 		}

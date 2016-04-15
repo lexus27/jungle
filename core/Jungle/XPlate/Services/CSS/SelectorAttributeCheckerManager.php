@@ -8,7 +8,7 @@
 namespace Jungle\XPlate\Services {
 
 	use Jungle\Smart\Keyword\Factory;
-	use Jungle\Smart\Keyword\Manager;
+	use Jungle\Smart\Keyword\Pool;
 	use Jungle\Smart\Keyword\Storage;
 	use Jungle\XPlate\CSS\Selector\AttributeQuery\Checker;
 
@@ -18,7 +18,7 @@ namespace Jungle\XPlate\Services {
 	 * '~=', '^=', '$=', '!=', '*='
 	 * 
 	 */
-	class SelectorAttributeCheckerManager extends Manager{
+	class SelectorAttributeCheckerPool extends Pool{
 
 		/**
 		 * @param Storage $store

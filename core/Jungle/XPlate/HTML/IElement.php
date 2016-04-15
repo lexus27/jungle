@@ -106,6 +106,25 @@ namespace Jungle\XPlate\HTML {
 		 */
 		public function insertAfter($element, IElement $after);
 
+
+
+		/**
+		 * @param $element
+		 * @return $this
+		 * @TODO implement in inheritors
+		 */
+		public function insertBehind($element);
+
+		/**
+		 * @param $element
+		 * @return $this
+		 * @TODO implement in inheritors
+		 */
+		public function insertAhead($element);
+
+
+
+
 		/**
 		 * @param IElement $element
 		 * @return mixed
@@ -215,6 +234,8 @@ namespace Jungle\XPlate\HTML {
 		public function prevPlain();
 
 		/**
+		 * @param $index
+		 *
 		 * @return IElement
 		 */
 		public function getChild($index);
@@ -238,6 +259,7 @@ namespace Jungle\XPlate\HTML {
 		 * @return IElement|null
 		 */
 		public function prevSibling();
+
 
 
 	}

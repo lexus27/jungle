@@ -9,13 +9,13 @@
 namespace Jungle\XPlate\Interfaces {
 
 
-	use Jungle\Basic\INamedBase;
+	use Jungle\Basic\INamed;
 
 	/**
 	 * Interface IWebEngine
 	 * @package Jungle\XPlate\Interfaces
 	 */
-	interface IWebEngine extends INamedBase{
+	interface IWebEngine extends INamed{
 
 		/**
 		 * @param $prefix

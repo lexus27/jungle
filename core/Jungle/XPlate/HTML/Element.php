@@ -9,7 +9,6 @@
 namespace Jungle\XPlate\HTML {
 
 	use Jungle\Basic\Collection\ObjectStorage;
-	use Jungle\Basic\IObservable;
 	use Jungle\Basic\ObservableTrait;
 	use Jungle\XPlate\HTML\Element\Attribute;
 	use Jungle\XPlate\HTML\Element\Tag;
@@ -411,6 +410,25 @@ namespace Jungle\XPlate\HTML {
 		}
 
 		/**
+		 * @param $element
+		 * @return $this
+		 */
+		public function insertBehind($element){
+			return $this->getParent()->insertBefore($element,$this);
+		}
+
+		/**
+		 * @param $element
+		 * @return $this
+		 */
+		public function insertAhead($element){
+
+
+
+		}
+
+
+		/**
 		 * @param $subject
 		 * @param IElement $srcEl
 		 * @return array|null
@@ -624,7 +642,7 @@ namespace Jungle\XPlate\HTML {
 
 		/**
 		 * @param Element $oldParent
-		 * @listener onParentChange
+		 * @getCurrentListener onParentChange
 		 */
 		protected function onParentChange(Element $oldParent = null){
 			$newParent = $this->getParent();
@@ -672,7 +690,7 @@ namespace Jungle\XPlate\HTML {
 
 		/**
 		 * @param Document $oldOwner
-		 * @listener onOwnerDocumentChange
+		 * @getCurrentListener onOwnerDocumentChange
 		 */
 		protected function onOwnerDocumentChange(Document $oldOwner = null){
 			if($oldOwner){
@@ -1008,6 +1026,5 @@ namespace Jungle\XPlate\HTML {
 		public static function minimizeSpaces($plainText){
 			return preg_replace('@[\s\t\r\n]+@', ' ', $plainText);
 		}
-
 	}
 }

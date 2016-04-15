@@ -8,13 +8,13 @@
 
 namespace Jungle\Smart\WorkSpace {
 
-	use Jungle\Basic\INamedBase;
+	use Jungle\Basic\INamed;
 
 	/**
 	 * Class NaSpace
 	 * @package Jungle\Smart\NaSpace
 	 */
-	class WorkSpace implements INamedBase{
+	class WorkSpace implements INamed{
 
 		const DELIMITER = '.';
 
@@ -168,19 +168,24 @@ namespace Jungle\Smart\WorkSpace {
 		}
 
 		/**
-		 * @param \ArrayAccess $container
+		 * @param \ArrayAccess|array $container
 		 * @return $this
 		 */
-		public function setContainer(\ArrayAccess $container){
+		public function setContainer($container){
+			if(!is_array($container) || !($container instanceof \ArrayAccess)){
+				throw new \InvalidArgumentException('Container must be array or \ArrayAccess');
+			}
 			$this->container = $container;
 			return $this;
 		}
 
 		/**
 		 * @param $query
-		 * @return mixed
+		 * @param callable $handler
+		 * @return \ArrayAccess|mixed|null
+		 * @internal param $isset
 		 */
-		public function queryGet($query){
+		protected function _query($query, callable $handler){
 			if(!is_array($query)) $query = explode(self::DELIMITER, $query);
 			$container = null;
 			$space = $this;
@@ -193,23 +198,45 @@ namespace Jungle\Smart\WorkSpace {
 						$container = $_c->container;
 						$space = null;
 						if(!count($query)){
-							return $container->offsetGet($item);
+							return call_user_func($handler,$container,$item);
 						}
 					}
 				}elseif($container instanceof \ArrayAccess){
 					if(!count($query)){
-						return $container->offsetGet($item);
+						return call_user_func($handler,$container,$item);
 					}else{
 						$container = $container->offsetGet($item);
-						if(!$container instanceof \ArrayAccess){
+						if(!is_array($container) && !$container instanceof \ArrayAccess){
 							$container = null;
-							return null;
+							return call_user_func($handler,$container,$item);
 						}
 					}
 
+				}elseif(is_array($container)){
+					if(!count($query)){
+						return call_user_func($handler,$container,$item);
+					}else{
+						$container = $container[$item];
+						if(!is_array($container) && !$container instanceof \ArrayAccess){
+							$container = null;
+							return call_user_func($handler,$container,$item);
+						}
+					}
 				}
 			}while($query);
-			return $space?$space->container:$container;
+			return call_user_func($handler,($space?$space->container:$container),null);
+		}
+
+		/**
+		 * @param $query
+		 * @return mixed
+		 */
+		public function queryGet($query){
+			static $fn = null;
+			if(!$fn) $fn = function(\ArrayAccess $container = null,$key){
+				return $container && $key && isset($container[$key])?$container[$key]:null;
+			};
+			return $this->_query($query,$fn);
 		}
 
 		/**
@@ -217,35 +244,11 @@ namespace Jungle\Smart\WorkSpace {
 		 * @return bool
 		 */
 		public function queryIsset($query){
-			if(!is_array($query)) $query = explode(self::DELIMITER, $query);
-			$container = null;
-			$space = $this;
-			do{
-				$item = array_shift($query);
-				if($container instanceof \ArrayAccess){
-					if(!count($query)){
-						return $container->offsetExists($item);
-					}else{
-						$container = $container->offsetGet($item);
-						if(!$container instanceof \ArrayAccess){
-							$container = null;
-							return false;
-						}
-					}
-
-				}elseif($space){
-					$_c = $space;
-					$space = $space->find($item);
-					if(!$space && $_c->container){
-						$container = $_c->container;
-						$space = null;
-						if(!count($query)){
-							return $container->offsetExists($item);
-						}
-					}
-				}
-			}while($query);
-			return (boolean) ( $space ? $space->container : $container );
+			static $fn = null;
+			if(!$fn) $fn = function($container = null,$key){
+				return $container && $key && isset($container[$key]);
+			};
+			return $this->_query($query,$fn);
 		}
 
 		/**
@@ -254,36 +257,9 @@ namespace Jungle\Smart\WorkSpace {
 		 * @return bool
 		 */
 		public function querySet($query,$value){
-			if(!is_array($query)) $query = explode(self::DELIMITER, $query);
-			$container = null;
-			$space = $this;
-			do{
-				$item = array_shift($query);
-				if($container instanceof \ArrayAccess){
-					if(!count($query)){
-						$container->offsetSet($item, $value);
-						return true;
-					}else{
-						$container = $container->offsetGet($item);
-						if(!$container instanceof \ArrayAccess){
-							$container = null;
-							return false;
-						}
-					}
-
-				}elseif($space){
-					$_c = $space;
-					$space = $space->find($item);
-					if(!$space && $_c->container){
-						$container = $_c->container;
-						$space = null;
-						if(!count($query)){
-							return $container->offsetSet($item, $value);
-						}
-					}
-				}
-			}while($query);
-			return false;
+			return $this->_query($query,function($container = null,$key) use ($value){
+				return $container && $key?$container[$key] = $value:false;
+			});
 		}
 
 
@@ -292,37 +268,14 @@ namespace Jungle\Smart\WorkSpace {
 		 * @return bool
 		 */
 		public function queryRemove($query){
-			if(!is_array($query)) $query = explode(self::DELIMITER, $query);
-			$container = null;
-			$space = $this;
-			do{
-				$item = array_shift($query);
-				if($container instanceof \ArrayAccess){
-					if(!count($query)){
-						$container->offsetUnset($item);
-						return true;
-					}else{
-						$container = $container->offsetGet($item);
-						if(!$container instanceof \ArrayAccess){
-							$container = null;
-							return false;
-						}
-					}
-
-				}elseif($space){
-					$_c = $space;
-					$space = $space->find($item);
-					if(!$space && $_c->container){
-						$container = $_c->container;
-						$space = null;
-						if(!count($query)){
-							$container->offsetUnset($item);
-							return true;
-						}
-					}
+			static $fn = null;
+			if(!$fn) $fn = function($container = null,$key){
+				if($container && $key){
+					unset($container[$key]);
 				}
-			}while($query);
-			return false;
+				return true;
+			};
+			return $this->_query($query,$fn);
 		}
 
 		/**

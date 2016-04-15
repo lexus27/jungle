@@ -9,17 +9,17 @@
 namespace Jungle\XPlate\Services {
 
 
-	use Jungle\Smart\Keyword\Factory,
-		Jungle\Smart\Keyword\Manager,
-		Jungle\Smart\Keyword\Storage,
-		Jungle\XPlate\HTML\Element\Tag;
+	use Jungle\Smart\Keyword\Factory;
+	use Jungle\Smart\Keyword\Pool;
+	use Jungle\Smart\Keyword\Storage;
+	use Jungle\XPlate\HTML\Element\Tag;
 	use Jungle\XPlate\Interfaces\IService;
 
 	/**
-	 * Class TagManager
+	 * Class TagPool
 	 * @package Jungle\XPlate\Services
 	 */
-	class TagManager extends Manager{
+	class TagPool extends Pool{
 
 		/**
 		 * @param Storage $store

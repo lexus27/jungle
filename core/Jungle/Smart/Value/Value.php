@@ -12,11 +12,37 @@ namespace Jungle\Smart\Value {
 	 * Class Value
 	 * @package Jungle\Smart\Value
 	 * Значение которое умеет наследоваться
+	 *
+	 *
+	 * TODO Реализовать определитель значений
+	 * rgb(12213,123213,12312)      to      @see Color
+	 * 45px                         to      @see Measurement
+	 * http://site.ru               to      @see URL
+	 * 45.2                         to      @see Float
+	 * 45                           to      @see Integer
+	 * msdsa                        to      @see String
+	 *
+	 * TODO Реализовать форматирование данных на выходе
+	 * 45000 $                      to      45,000.00 Dollars
+	 * 45000 $                      to      Forty-five thousand dollars
+	 * TODO Реализовать Language Lexer
+	 * 45,000.00 Dollars            to      45,000.00 Долларов|Доллара|Доллар
+	 * Forty-five thousand dollars  to      Сорок Пять Тысяч Долларов|Доллара|Доллар
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
+	 *
 	 */
 	class Value implements IValue, IValueSettable, IValueDescendant, IValueExtendable{
 
+
+
 		/**
 		 * @var null
+		 * Статически значение по умолчанию
 		 */
 		protected static $default_value = null;
 
@@ -50,7 +76,7 @@ namespace Jungle\Smart\Value {
 		 * <--- Ancestor[3]:derivative   - extenders = [ Base[1] -> 2 -> 3*]
 		 * <--- Ancestor[4]:derivative   - extenders = [ Base[1] -> 2 -> 3 -> 4*]
 		 *
-		 * <--- Current[5]:exhibited     - extended, but value is redefined
+		 * <--- Descendant[5]:exhibited     - extended, but value is redefined
 		 * <--- Descendant[6]:derivative - extenders = [ Base[5] -> 6*]
 		 * <--- Descendant[7]:derivative - extenders = [ Base[5] -> 6 -> 7]
 		 * <--- Descendant[8]:derivative - extenders = [ Base[5] -> 6 -> 7 -> 8]
@@ -72,7 +98,7 @@ namespace Jungle\Smart\Value {
 		protected $extending = false;
 
 		/**
-		 * @var callable|array
+		 * @var callable
 		 * Наследственный конфигуратор
 		 */
 		protected $extender;
@@ -97,9 +123,9 @@ namespace Jungle\Smart\Value {
 		 * @return $this
 		 */
 		public function setAncestor(
-			Value $ancestor = null,
-			$appliedInAncestor = false,
-			$appliedInOld = false
+			Value $ancestor     = null,
+			$appliedInAncestor  = false,
+			$appliedInOld       = false
 		){
 			$old = $this->ancestor;
 			if($old !== $ancestor){
@@ -123,6 +149,16 @@ namespace Jungle\Smart\Value {
 		}
 
 		/**
+		 * Сброс exhibited значения
+		 */
+		public function reset(){
+			if($this->exhibited){
+				$this->exhibited = false;
+				$this->refresh();
+			}
+		}
+
+		/**
 		 * @param $value
 		 * @return $this
 		 */
@@ -139,6 +175,7 @@ namespace Jungle\Smart\Value {
 				}
 				$this->refresh();
 			}
+
 			return $this;
 		}
 
@@ -158,6 +195,8 @@ namespace Jungle\Smart\Value {
 		 *
 		 * @param callable $extender
 		 * @return $this
+		 *
+		 * TODO
 		 */
 		public function setExtender(callable $extender = null){
 			if($this->extender !== $extender){
@@ -170,6 +209,32 @@ namespace Jungle\Smart\Value {
 		/** Создать наследника, и указать наследственный конфигуратор
 		 * @param callable $extender
 		 * @return $this
+		 *
+		 * TODO TASK
+		 * Реализовать быстрый наследственный конфигуратор в виде строки "string|callable $extender = null"
+		 * Строка по типу: ' increment(2) ', 'incrementHUE(20)', 'concat(' hello world')'
+		 * Тоесть интерпретация строки в код - который внутри статически преобразуется в callable и используется потом уже из кеша
+		 *
+		 *
+		 * -------------------------------------
+		 * $func = Value::extender($extenderKey = 'increment(2)') >>> {
+		 *     $extenderKey = trim(strtolower(extenderKey))
+		 *      if(!isset(self::$extenders[$extenderKey])){
+		 *          self::$extenders[$extenderKey] = self::_parseExtenderDefinition(extenderKey)
+		 *      }
+		 *      return self::$extenders[$extenderKey]
+		 * }
+		 * $v = new Number(5)
+		 * $d = $v->extend($func)
+		 * ----------------------------
+		 * $v = new Number(5)
+		 * $d = $v->extend($extender = 'increment(2)') >>> {
+		 *      $extender = Value::extender($extender)
+		 *      return ~VALUE::EXTEND METHOD AFTER~
+		 * };
+		 *
+		 *
+		 *
 		 */
 		public function extend(callable $extender = null){
 			if(!$this->extending){
@@ -181,7 +246,7 @@ namespace Jungle\Smart\Value {
 				$this->onDelivery($descendant);
 				return $descendant;
 			}else{
-				throw new \LogicException('could not be call extend in extender!!');
+				throw new \LogicException('could not be _call extend in extender!!');
 			}
 		}
 
@@ -217,7 +282,11 @@ namespace Jungle\Smart\Value {
 		 * @return string
 		 */
 		public function __toString(){
-			return (string)$this->getValue();
+			try{
+				return (string)$this->getValue();
+			}catch(\Exception $e){
+				return trigger_error($e,E_USER_ERROR);
+			}
 		}
 
 		/**
@@ -246,6 +315,13 @@ namespace Jungle\Smart\Value {
 		 * @return mixed
 		 */
 		protected function getRaw(){
+			return $this->checkout()->value;
+		}
+
+		/**
+		 * @return $this
+		 */
+		protected function checkout(){
 			if(!$this->exhibited && !$this->extending && !$this->extended && $this->ancestor){
 
 				$this->value      = $this->ancestor->getRaw();
@@ -259,7 +335,7 @@ namespace Jungle\Smart\Value {
 				$this->extended   = true;
 
 			}
-			return $this->value;
+			return $this;
 		}
 
 		/**
@@ -329,7 +405,7 @@ namespace Jungle\Smart\Value {
 		 *
 		 *
 		 */
-		protected function beforeValueSet(& $value){ }
+		protected function beforeValueSet(& $value){}
 
 		/**
 		 * @param Value|static $descendant
@@ -339,22 +415,22 @@ namespace Jungle\Smart\Value {
 		 * $descendant->setAncestor($this)
 		 * $descendant->setExtender(callable $extender)
 		 */
-		protected function onDelivery($descendant){ }
+		protected function onDelivery($descendant){}
 
 		/**
-		 * Событие вызывается сразу после начала активности $this->extending и до вызова конфигуратора
+		 * Событие вызывается сразу после начала активности $this->extending до вызова конфигуратора
 		 */
-		protected function beforeExtenderCall(){ }
+		protected function beforeExtenderCall(){}
 
 		/**
-		 * Событие вызывается до конца активности $this->extending и после вызова конфигуратора
+		 * Событие вызывается до конца активности $this->extending после вызова конфигуратора
 		 */
-		protected function afterExtenderCall(){ }
+		protected function afterExtenderCall(){}
 
 		/**
 		 * Событие вызывается после сбрасывания Value->extended в Value->update()
 		 */
-		protected function onExtendedReset(){ }
+		protected function onExtendedReset(){}
 
 
 		/**

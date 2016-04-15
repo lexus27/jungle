@@ -9,7 +9,6 @@ namespace Jungle\Smart\Value\Measure\CoefficientParser {
 
 	use Jungle\Smart\Value\Measure\CoefficientParser;
 	use Jungle\Smart\Value\Measure\IUnit;
-	use Jungle\Smart\Value\Measure\IUnitType;
 
 	/**
 	 * Class Simple
@@ -18,7 +17,7 @@ namespace Jungle\Smart\Value\Measure\CoefficientParser {
 	class Simple extends CoefficientParser{
 
 		/** @var  string */
-		protected $regex = '@(?<factor>[\d]+\.?[\d]+)\s?(?<unit>[\w]+)@';
+		protected $regex = '@(?<factor>[\d]+(\.[\d]+)?)\s?(?<unit>[\w]+)@';
 
 		/**
 		 * @param string $definition

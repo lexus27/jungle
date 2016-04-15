@@ -8,14 +8,14 @@
 
 namespace Jungle\Smart\Value\Measure {
 
-	use Jungle\Basic\INamedBase;
+	use Jungle\Basic\INamed;
 
 	/**
 	 * Единица измерения
 	 * Interface IMeasureUnit
 	 * @package Jungle\Smart\Value\Measure
 	 */
-	interface IUnit extends INamedBase{
+	interface IUnit extends INamed{
 
 		/**
 		 * @param IUnit $unit
@@ -23,6 +23,13 @@ namespace Jungle\Smart\Value\Measure {
 		 * @return double|int
 		 */
 		public function convertTo(IUnit $unit,$number);
+
+		/**
+		 * Выставить коеффициент по отношению к ведущей единице измерения
+		 * @param int $multiplier
+		 * @return $this
+		 */
+		public function associate($multiplier = 1);
 
 		/**
 		 * Выставить коеффициент по отношению к ведущей единице измерения

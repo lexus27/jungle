@@ -63,7 +63,28 @@ class Unit implements IUnit{
 	 * @return $this
 	 */
 	public function setName($name){
-		$this->name = $name;
+		if($this->name !== $name){
+			if($this->type && $this->type->getUnit($name)){
+				throw new \LogicException('Unit "'.$name.'" already exists in "'.$this->type->getName().'" type');
+			}
+			$this->name = $name;
+		}
+
+		return $this;
+	}
+
+	/**
+	 * Выставить коеффициент по отношению к ведущей единице измерения
+	 * @param int $coefficient
+	 * @return $this
+	 */
+	public function associate($coefficient = 1){
+		if($coefficient === null){
+			$coefficient = 1;
+		}
+		if($this->coefficient !== $coefficient){
+			$this->coefficient = $coefficient;
+		}
 		return $this;
 	}
 
@@ -73,13 +94,7 @@ class Unit implements IUnit{
 	 * @return $this
 	 */
 	public function setCoefficient($coefficient = 1){
-		if($coefficient === null){
-			$coefficient = 1;
-		}
-		if($this->coefficient !== $coefficient){
-			$this->coefficient = $coefficient;
-		}
-		return $this;
+		return $this->associate($coefficient);
 	}
 
 	/**
@@ -173,8 +188,9 @@ class Unit implements IUnit{
 	 * @return array [value,unitName]
 	 */
 	public static function parseUnit($value){
-		if(preg_match('@([\d\.]+)\s?(' . self::UNIT_NAME_PATTERN . ')@', $value,$matches)){
-			return [floatval($matches[1]),$matches[2]];
+		if(preg_match('@([\d]+(\.[\d]+)?)\s?(' . self::UNIT_NAME_PATTERN . ')?@', $value,$matches)){
+			$num = floatval($matches[1]); list($main,$second) = explode('/',preg_replace(['@[/\\\\]+@','@\s+@'],['/',''],$matches[3]));
+			return [$num,$main,$second];
 		}else{
 			return false;
 		}

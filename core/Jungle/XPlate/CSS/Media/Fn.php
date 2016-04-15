@@ -195,7 +195,7 @@ namespace Jungle\XPlate\CSS\Media {
 					(
 						$value instanceof IMeasure &&
 						$this->allowedMeasure &&
-						$this->isMeasureUnitAllowed($value->getUnit())
+						$this->isMeasureUnitAllowed($value->getPrimaryUnit())
 					) || (
 						$value instanceof String &&
 						$this->isStringAllowed($value->getValue())

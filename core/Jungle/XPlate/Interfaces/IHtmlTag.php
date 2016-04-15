@@ -8,13 +8,13 @@
 
 namespace Jungle\XPlate\Interfaces {
 
-	use Jungle\Basic\INamedBase;
+	use Jungle\Basic\INamed;
 
 	/**
 	 * Interface IHtmlTag
 	 * @package Jungle\XPlate\Interfaces
 	 */
-	interface IHtmlTag extends INamedBase{
+	interface IHtmlTag extends INamed{
 
 		/**
 		 * @return array

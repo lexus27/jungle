@@ -10,16 +10,16 @@ namespace Jungle\XPlate\Services {
 
 
 	use Jungle\Smart\Keyword\Factory;
-	use Jungle\Smart\Keyword\Manager;
+	use Jungle\Smart\Keyword\Pool;
 	use Jungle\Smart\Keyword\Storage;
 	use Jungle\XPlate\HTML\Element\Attribute;
 	use Jungle\XPlate\Interfaces\IService;
 
 	/**
-	 * Class StyleManager
+	 * Class StylePool
 	 * @package Jungle\XPlate\Services
 	 */
-	class StyleManager extends Manager{
+	class StylePool extends Pool{
 
 		/**
 		 * @param Storage $store

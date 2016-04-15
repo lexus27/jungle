@@ -10,9 +10,13 @@ namespace Jungle\Smart\Keyword;
 
 use Jungle\Smart\Keyword\Storage\Dummy as DummyStorage;
 
+/**
+ * Class Storage
+ * @package Jungle\Smart\Keyword
+ */
 abstract class Storage {
 
-	/** @var  Manager */
+	/** @var  Pool */
 	protected $manager;
 
 	protected $config;
@@ -40,9 +44,9 @@ abstract class Storage {
 	}
 
 	/**
-	 * @param Manager $manager
+	 * @param Pool $manager
 	 */
-	public function setManager(Manager $manager){
+	public function setManager(Pool $manager){
 		if($this->manager!==$manager){
 			$this->manager = $manager;
 			$manager->setStorage($this);
@@ -50,7 +54,7 @@ abstract class Storage {
 	}
 
 	/**
-	 * @return Manager
+	 * @return Pool
 	 */
 	public function getManager(){
 		return $this->manager;
@@ -66,6 +70,20 @@ abstract class Storage {
 	 * @return Keyword
 	 */
 	abstract public function load($identifier);
+
+	/**
+	 * @TODO $matcher CLASS MATCHER
+	 * @param $matcher
+	 * @return array identifiers
+	 */
+	abstract public function getList($matcher = null);
+
+	/**
+	 * @TODO $matcher CLASS MATCHER
+	 * @param $matcher
+	 * @return mixed
+	 */
+	abstract public function getCount($matcher=null);
 
 	/**
 	 * @param $identifier

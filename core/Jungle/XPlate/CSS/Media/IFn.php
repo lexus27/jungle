@@ -8,7 +8,7 @@
 
 namespace Jungle\XPlate\CSS\Media {
 
-	use Jungle\Basic\INamedBase;
+	use Jungle\Basic\INamed;
 	use Jungle\Smart\Value\Measure\IUnit;
 
 	/**
@@ -18,7 +18,7 @@ namespace Jungle\XPlate\CSS\Media {
 	 * CSS Медиа-функция @media all and mediaFn and mediaFn
 	 *
 	 */
-	interface IFn extends INamedBase{
+	interface IFn extends INamed{
 
 		/**
 		 * @param $string

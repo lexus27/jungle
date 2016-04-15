@@ -109,12 +109,12 @@ namespace Jungle\Smart\Value {
 		 * @return string
 		 */
 		public function getValue(){
-			$this->getRaw();
+			$val = $this->getRaw();
 			return $this->type->render(
-				$this->value[self::HSL_HUE],
-				$this->value[self::HSL_SATURATION],
-				$this->value[self::HSL_LUMINANCE],
-				$this->value[self::HSL_ALPHA]
+				$val[self::HSL_HUE],
+				$val[self::HSL_SATURATION],
+				$val[self::HSL_LUMINANCE],
+				$val[self::HSL_ALPHA]
 			);
 		}
 
@@ -180,7 +180,7 @@ namespace Jungle\Smart\Value {
 		 * Событие вызывается сразу после начала активности $this->extending и до вызова конфигуратора
 		 */
 		protected function beforeExtenderCall(){
-			if($this->ancestor instanceof Color && !$this->exhibited){
+			if($this->ancestor instanceof Color){
 				$this->type = $this->ancestor->getType();
 			}
 		}
@@ -522,33 +522,35 @@ namespace Jungle\Smart\Value {
 		 * @return $this
 		 */
 		protected function _hslManipulation($i, $value = null, $maxValue = 100, $isCyclic = false, $offset = false, $increase = null){
+			$v = $this->getRaw();
 			if($value === null){
-				return $this->value[$i];
+				return $v[$i];
 			}elseif($offset && $increase === null){
-				$this->value[$i] += $value;
+				$v[$i] += $value;
 			}elseif($offset && $increase === true){
-				$this->value[$i] += abs($value);
+				$v[$i] += abs($value);
 			}elseif($offset && $increase === false){
-				$this->value[$i] -= abs($value);
+				$v[$i] -= abs($value);
 			}else{
-				$this->value[$i] = $value;
+				$v[$i] = $value;
 			}
 			if($isCyclic){
-				if($this->value[$i] > $maxValue){
-					$this->value[$i] = ($this->value[$i] % ($maxValue + 1));
-				}elseif($this->value[$i] < 0){
-					$this->value[$i] = ($this->value[$i] % ($maxValue + 1));
-					if($this->value[$i] < 0){
-						$this->value[self::HSL_HUE] += $maxValue;
+				if($v[$i] > $maxValue){
+					$v[$i] = ($v[$i] % ($maxValue + 1));
+				}elseif($v[$i] < 0){
+					$v[$i] = ($v[$i] % ($maxValue + 1));
+					if($v[$i] < 0){
+						$v[self::HSL_HUE] += $maxValue;
 					}
 				}
 			}else{
-				if($this->value[$i] > $maxValue){
-					$this->value[$i] = $maxValue;
-				}elseif($this->value[$i] < 0.0){
-					$this->value[$i] = 0.0;
+				if($v[$i] > $maxValue){
+					$v[$i] = $maxValue;
+				}elseif($v[$i] < 0.0){
+					$v[$i] = 0.0;
 				}
 			}
+			$this->setValue($v);
 			return $this;
 		}
 
@@ -580,7 +582,7 @@ namespace Jungle\Smart\Value {
 			elseif($cmy[$i] < 0) $cmy[$i] = 0;
 
 			$rgb = Color::CMYtoRGB($cmy[0], $cmy[1], $cmy[2], $cmy[3]);
-			$this->setRaw(Color::RGBtoHSL($rgb[0], $rgb[1], $rgb[2], $rgb[3]));
+			$this->setValue(Color::RGBtoHSL($rgb[0], $rgb[1], $rgb[2], $rgb[3]));
 			return $this;
 		}
 
@@ -609,7 +611,7 @@ namespace Jungle\Smart\Value {
 			if($rgb[$i] > 255) $rgb[$i] = 255;
 			elseif($rgb[$i] < 0) $rgb[$i] = 0;
 
-			$this->setRaw(Color::RGBtoHSL($rgb[0], $rgb[1], $rgb[2], $rgb[3]));
+			$this->setValue(Color::RGBtoHSL($rgb[0], $rgb[1], $rgb[2], $rgb[3]));
 			return $this;
 		}
 
@@ -665,9 +667,9 @@ namespace Jungle\Smart\Value {
 		 * @return array
 		 */
 		public static function RGBtoHSL($red, $green, $blue, $alpha = 1.0){
-			$red/=255;
-			$green/=255;
-			$blue/=255;
+			$red    /= 255;
+			$green  /= 255;
+			$blue   /= 255;
 
 			$min = min($red, $green, $blue);
 			$max = max($red, $green, $blue);
@@ -676,7 +678,7 @@ namespace Jungle\Smart\Value {
 			$Luminance = ($max + $min) / 2;
 
 			if($delta == 0){
-				$Hue = 0;
+				$Hue        = 0;
 			    $Saturation = 0;
 			}else{
 				$Saturation = $Luminance < 0.5? $delta / ($max + $min): $delta / (2 - $max - $min) ;

@@ -10,17 +10,17 @@ namespace Jungle\XPlate\HTML\Element {
 
 	use Jungle\Smart\Keyword\Keyword;
 	use Jungle\XPlate\HTML\Element;
-	use Jungle\XPlate\Interfaces\IHtmlTag;
 	use Jungle\XPlate\HTML\IElement;
+	use Jungle\XPlate\Interfaces\IHtmlTag;
 
 	/**
 	 * Class Tag
 	 * @package Jungle\XPlate2\HTML\Element
 	 *
-	 * @listener onUpdate
-	 * @listener beforeAttach
-	 * @listener onAttach
-	 * @listener onDetach
+	 * @getCurrentListener onUpdate
+	 * @getCurrentListener beforeAttach
+	 * @getCurrentListener onAttach
+	 * @getCurrentListener onDetach
 	 */
 	class Tag extends Keyword implements IHtmlTag{
 

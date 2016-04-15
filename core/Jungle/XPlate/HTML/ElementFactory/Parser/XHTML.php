@@ -15,6 +15,14 @@ namespace Jungle\XPlate\HTML\ElementFactory\Parser {
 	/**
 	 * Class HTML
 	 * @package Jungle\XPlate2\HTML\ElementFactory\Parser
+	 *
+	 * Very Nice regex
+	 * @
+		(<(\w+)(?:([^>]+))?>(.*)<\/((?i)\2)>) | #Tag Structure
+		(<!--(.*)-->) |                         #Comment
+		(<!([^>]+)>) |                          #Doctype
+		([^<>]+)                                #Simple Text
+	 * @msx
 	 */
 	class XHTML extends Parser{
 

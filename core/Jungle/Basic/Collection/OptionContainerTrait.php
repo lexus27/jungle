@@ -19,18 +19,25 @@ trait OptionContainerTrait {
 
 	protected $_OptionContainerTrait_options = [];
 
-	public function getOption($key,$default = null){
+
+	/**
+	 * @param $key
+	 * @param null $default
+	 * @return null
+	 */
+	public function &getOption($key,$default = null){
 		if($this->hasOption($key)){
 			return $this->_OptionContainerTrait_options[$key];
 		}else{
-			return $default;
+			$d = $default;
+			return $d;
 		}
 	}
 
 	public function setOption($key,$value){
-		if($this->_OptionContainerTrait_options[$key]!==$value){
+		if(!isset($this->_OptionContainerTrait_options[$key]) || $this->_OptionContainerTrait_options[$key]!==$value){
 			$this->_OptionContainerTrait_options[$key] = $value;
-			$this->onOptionChanged();
+			$this->onOptionChanged($key);
 		}
 	}
 
@@ -42,7 +49,7 @@ trait OptionContainerTrait {
 		unset($this->_OptionContainerTrait_options[$key]);
 	}
 
-	protected function onOptionChanged(){}
+	protected function onOptionChanged($key){}
 
 
 }

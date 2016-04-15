@@ -9,7 +9,7 @@
 namespace Jungle\Smart\Keyword;
 
 /**
- * Class Factory
+ * Class Builder
  * @package Jungle\Smart\Keyword
  */
 class Factory {

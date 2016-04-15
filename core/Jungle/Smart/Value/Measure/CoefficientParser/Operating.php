@@ -9,7 +9,6 @@ namespace Jungle\Smart\Value\Measure\CoefficientParser {
 
 	use Jungle\Smart\Value\Measure\CoefficientParser;
 	use Jungle\Smart\Value\Measure\IUnit;
-	use Jungle\Smart\Value\Measure\IUnitType;
 
 	/**
 	 * Class Operating
@@ -19,7 +18,11 @@ namespace Jungle\Smart\Value\Measure\CoefficientParser {
 	 */
 	class Operating extends CoefficientParser{
 
-		/** @var string */
+		/**
+		 * @var string
+		 *
+		 * TODO REGEX maybe replace to Jungle\RegExp fast patterns usage (DataMapping structure)
+		 */
 		protected $regex = '@([\w\d\\\\/]+)\s?([\+\-\*/])\s?([\d\.]+|[\w\d]+)@';
 
 		/**
@@ -60,6 +63,9 @@ namespace Jungle\Smart\Value\Measure\CoefficientParser {
 					}
 				}
 
+				/**
+				 * TODO Operator maybe used from OBJECT PULL CONTAIN`S Jungle\CodeForm\LogicConstruction\Operator o = oPull->get('+');
+				 */
 				switch($operatorDefinition){
 					case '+': return  $main + $second; break;
 					case '-': return  $main - $second; break;

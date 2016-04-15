@@ -8,12 +8,12 @@
 namespace Jungle\XPlate\Services {
 
 	use Jungle\Smart\Keyword\Factory;
-	use Jungle\Smart\Keyword\Manager;
+	use Jungle\Smart\Keyword\Pool;
 	use Jungle\Smart\Keyword\Storage;
 	use Jungle\XPlate\CSS\Selector\Modifier;
 
 	/**
-	 * Class SelectorModifierManager
+	 * Class SelectorModifierPool
 	 * @package Jungle\XPlate\Services
 	 * ':hover',
 	 * ':visited',
@@ -23,7 +23,7 @@ namespace Jungle\XPlate\Services {
 	 * '::after',
 	 * '::before'
 	 */
-	class SelectorModifierManager extends Manager{
+	class SelectorModifierPool extends Pool{
 
 		/**
 		 * @param Storage $store

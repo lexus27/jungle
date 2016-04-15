@@ -75,11 +75,13 @@ namespace Jungle\Smart\Value\Color {
 			if($hue > 360) $hue = 360;
 			elseif($hue < 0) $hue = 0;
 
-			if($saturation > 100) $saturation = 360;
+			if($saturation > 100) $saturation = 100;
 			elseif($saturation < 0) $saturation = 0;
+			$saturation = round($saturation,4);
 
-			if($luminance > 100) $luminance = 360;
+			if($luminance > 100) $luminance = 100;
 			elseif($luminance < 0) $luminance = 0;
+			$luminance = round($luminance,4);
 
 			if($alpha > 1.0) $alpha = 1.0;
 			elseif($alpha < 0.0) $alpha = 0.0;

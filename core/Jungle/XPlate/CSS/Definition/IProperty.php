@@ -8,7 +8,7 @@
 
 namespace Jungle\XPlate\CSS\Definition {
 
-	use Jungle\Basic\INamedBase;
+	use Jungle\Basic\INamed;
 
 	/**
 	 * Interface ICssProperty
@@ -17,7 +17,7 @@ namespace Jungle\XPlate\CSS\Definition {
 	 * CSS свойство
 	 *
 	 */
-	interface IProperty extends INamedBase{
+	interface IProperty extends INamed{
 
 		/**
 		 * @return bool

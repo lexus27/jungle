@@ -9,18 +9,18 @@
 namespace Jungle\XPlate\HTML\Element {
 
 	use Jungle\Smart\Keyword\Keyword;
-	use Jungle\XPlate\Interfaces\IHtmlAttribute;
 	use Jungle\XPlate\HTML\IElement;
+	use Jungle\XPlate\Interfaces\IHtmlAttribute;
 
 	/**
 	 * Class Attribute
 	 * @package Jungle\XPlate2\HTML\Element
 	 *
-	 * @listener onUpdate
-	 * @listener beforeChange
-	 * @listener onChange
-	 * @listener onAttach
-	 * @listener onDetach
+	 * @getCurrentListener onUpdate
+	 * @getCurrentListener beforeChange
+	 * @getCurrentListener onChange
+	 * @getCurrentListener onAttach
+	 * @getCurrentListener onDetach
 	 */
 	class Attribute extends Keyword implements IHtmlAttribute{
 
@@ -52,7 +52,7 @@ namespace Jungle\XPlate\HTML\Element {
 		 * @param mixed $value
 		 * @param mixed $old
 		 * @param bool $new
-		 * @listener перед сменой значения атрибута в элементе(Который состоит в иерархии документа)
+		 * @getCurrentListener перед сменой значения атрибута в элементе(Который состоит в иерархии документа)
 		 */
 		public function beforeChange(IElement $element, $value, $old, $new){
 
@@ -63,7 +63,7 @@ namespace Jungle\XPlate\HTML\Element {
 		 * @param $value
 		 * @param $old
 		 * @param $new
-		 * @listener при смене значения уже присоединенного атрибута внутри Элемента(Который состоит в иерархии документа)
+		 * @getCurrentListener при смене значения уже присоединенного атрибута внутри Элемента(Который состоит в иерархии документа)
 		 */
 		public function onChange(IElement $element, $value, $old, $new){
 
@@ -76,7 +76,7 @@ namespace Jungle\XPlate\HTML\Element {
 
 		/**
 		 * @param IElement $element
-		 * @listener при присоединении Объекта атрибута к Элементу(Который состоит в иерархии документа)
+		 * @getCurrentListener при присоединении Объекта атрибута к Элементу(Который состоит в иерархии документа)
 		 * (в котором ранее небыло данного атрибута или его состояние было подверженно onDetach(Отсоединение))
 		 */
 		public function onAttach(IElement $element){
@@ -85,7 +85,7 @@ namespace Jungle\XPlate\HTML\Element {
 
 		/**
 		 * @param IElement $element
-		 * @listener при отсоединении объекта атрибута от Элемента(Который состоит в иерархии документа)
+		 * @getCurrentListener при отсоединении объекта атрибута от Элемента(Который состоит в иерархии документа)
 		 * (в котором использовался данный атрибут, и ранее был к элементу присоединен)
 		 */
 		public function onDetach(IElement $element){

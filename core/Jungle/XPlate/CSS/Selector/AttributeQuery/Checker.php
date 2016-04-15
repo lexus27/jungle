@@ -8,8 +8,8 @@
 
 namespace Jungle\XPlate\CSS\Selector\AttributeQuery {
 
-	use Jungle\Logic\Condition,
-		Jungle\Logic\Operator;
+	use Jungle\CodeForm\LogicConstruction\Condition;
+	use Jungle\CodeForm\LogicConstruction\Operator;
 
 	/**
 	 * Class Checker
@@ -82,7 +82,7 @@ namespace Jungle\XPlate\CSS\Selector\AttributeQuery {
 		public function check($value, $collated){
 			$condition = $this->getCondition();
 			$condition->setValue($value);
-			$condition->setComparable($collated);
+			$condition->setSecondary($collated);
 			return boolval($condition->execute());
 		}
 

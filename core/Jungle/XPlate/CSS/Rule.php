@@ -8,6 +8,8 @@
 
 namespace Jungle\XPlate\CSS {
 
+	use Jungle\XPlate\CSS\Selector\Group as SelectorGroup;
+
 	/**
 	 * Class Rule
 	 * @package Jungle\XPlate\CSS

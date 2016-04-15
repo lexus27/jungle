@@ -8,13 +8,13 @@
 
 namespace Jungle\XPlate\CSS\Selector\AttributeQuery {
 
-	use Jungle\Basic\INamedBase;
+	use Jungle\Basic\INamed;
 
 	/**
 	 * Interface IChecker
 	 * @package Jungle\XPlate\CSS\Selector\AttributeQuery
 	 */
-	interface IChecker extends INamedBase{
+	interface IChecker extends INamed{
 
 		/**
 		 * @param mixed $value Поданное значение, существуемое

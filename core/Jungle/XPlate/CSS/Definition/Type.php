@@ -10,7 +10,7 @@ namespace Jungle\XPlate\CSS\Definition{
 
 
 	/**
-	 * Class Type
+	 * Class TypeChecker
 	 * @package Jungle\XPlate\CSS\Definition
 	 */
 	class Type {

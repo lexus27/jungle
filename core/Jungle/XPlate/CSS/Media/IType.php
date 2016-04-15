@@ -8,7 +8,7 @@
 
 namespace Jungle\XPlate\CSS\Media {
 
-	use Jungle\Basic\INamedBase;
+	use Jungle\Basic\INamed;
 
 	/**
 	 * Interface ICssMediaType
@@ -18,7 +18,7 @@ namespace Jungle\XPlate\CSS\Media {
 	 * @media MediaType and mediaFn and mediaFn
 	 *
 	 */
-	interface IType extends INamedBase{
+	interface IType extends INamed{
 
 		public function __toString();
 

@@ -8,7 +8,10 @@
 
 namespace Jungle\Basic\Collection;
 
-
+/**
+ * Class ObjectStorage
+ * @package Jungle\Basic\Collection
+ */
 class ObjectStorage implements \ArrayAccess, \Countable, \Iterator{
 
 	protected $_i = 0;
@@ -17,6 +20,20 @@ class ObjectStorage implements \ArrayAccess, \Countable, \Iterator{
 	protected $data = [];
 	protected $count = 0;
 
+
+	/**
+	 * @return array
+	 */
+	public function getAllObjects(){
+		return $this->objects;
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getAllData(){
+		return $this->data;
+	}
 
 	/**
 	 *
@@ -117,6 +134,24 @@ class ObjectStorage implements \ArrayAccess, \Countable, \Iterator{
 	 */
 	public function offsetUnset($object){
 		$this->remove($object);
+	}
+
+	/**
+	 * @param callable $sorter
+	 * @return $this
+	 */
+	public function sortBy(callable $sorter){
+		usort($this->objects,$sorter);
+		return $this;
+	}
+
+	/**
+	 * @param callable $sorter
+	 * @return $this
+	 */
+	public function sortByData(callable $sorter){
+		usort($this->data,$sorter);
+		return $this;
 	}
 
 

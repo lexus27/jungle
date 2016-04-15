@@ -7,9 +7,9 @@
  */
 namespace Jungle\XPlate\Interfaces {
 
-	use Jungle\XPlate\Services\AttributeManager;
-	use Jungle\XPlate\Services\StyleManager;
-	use Jungle\XPlate\Services\TagManager;
+	use Jungle\XPlate\Services\AttributePool;
+	use Jungle\XPlate\Services\StylePool;
+	use Jungle\XPlate\Services\TagPool;
 
 	/**
 	 * Interface IStrategy
@@ -18,17 +18,17 @@ namespace Jungle\XPlate\Interfaces {
 	interface IWebStrategy{
 
 		/**
-		 * @return AttributeManager
+		 * @return AttributePool
 		 */
 		public function getAttributeManager();
 
 		/**
-		 * @return TagManager
+		 * @return TagPool
 		 */
 		public function getTagManager();
 
 		/**
-		 * @return StyleManager
+		 * @return StylePool
 		 */
 		public function getStyleManager();
 

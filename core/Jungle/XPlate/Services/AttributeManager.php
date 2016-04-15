@@ -9,17 +9,17 @@
 namespace Jungle\XPlate\Services {
 
 
-	use Jungle\Smart\Keyword\Factory,
-		Jungle\Smart\Keyword\Manager,
-		Jungle\Smart\Keyword\Storage,
-		Jungle\XPlate\HTML\Element\Attribute;
+	use Jungle\Smart\Keyword\Factory;
+	use Jungle\Smart\Keyword\Pool;
+	use Jungle\Smart\Keyword\Storage;
+	use Jungle\XPlate\HTML\Element\Attribute;
 	use Jungle\XPlate\Interfaces\IService;
 
 	/**
-	 * Class AttributeManager
+	 * Class AttributePool
 	 * @package Jungle\XPlate2\Services
 	 */
-	class AttributeManager extends Manager{
+	class AttributePool extends Pool{
 
 		/**
 		 * @param Storage $store

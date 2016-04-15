@@ -5,12 +5,10 @@
  * Date: 12.03.2015
  * Time: 0:03
  */
-
 namespace Jungle\Smart\Keyword;
 
-use Jungle\Basic\ITransient;
 use Jungle\Basic\Collection\OptionContainerTrait;
-
+use Jungle\Basic\ITransient;
 
 /**
  * Class Keyword
@@ -22,13 +20,13 @@ use Jungle\Basic\Collection\OptionContainerTrait;
 abstract class Keyword implements ITransient , \Serializable{
 
 	use OptionContainerTrait{
-		OptionContainerTrait::setOption as protected _setOption;
+		setOption as protected _setOption;
 	}
 
 	/**
-	 * @var Manager
+	 * @var Pool
 	 */
-	protected $manager;
+	protected $pool;
 
 	/**
 	 * @var string
@@ -63,7 +61,7 @@ abstract class Keyword implements ITransient , \Serializable{
 	/**
 	 * @return string
 	 */
-	final public function getIdentifier(){
+	public function getIdentifier(){
 		return $this->identifier;
 	}
 
@@ -71,23 +69,81 @@ abstract class Keyword implements ITransient , \Serializable{
 	 * @param Keyword $with
 	 * @return bool
 	 */
-	final public function compareIdentifiersWith($with){
-		return $this->getManager()->compareIdentifiers($this->getIdentifier(),$with instanceof Keyword?$with->getIdentifier() :$with);
+	public function compareIdentifiersWith($with){
+		return $this->getPool()->compareIdentifiers($this->getIdentifier(),$with instanceof Keyword?$with->getIdentifier() :$with);
 	}
 
 	/**
 	 * @param string $identifier
 	 */
-	final public function setIdentifier($identifier){
+	public function setIdentifier($identifier){
 		if($identifier instanceof Keyword){
 			$identifier = $identifier->getIdentifier();
 		}
-		if(!is_string($identifier)){
-			throw new \InvalidArgumentException('Identifier must be string');
+		if(!is_string($identifier) && !is_numeric($identifier)){
+			throw new \InvalidArgumentException('Identifier must be string or numeric');
 		}
 		if($this->identifier!==$identifier){
 			$this->setDirty(true);
 			$this->identifier = $identifier;
+		}
+	}
+
+	/**
+	 * @param $mgrAlias
+	 * @param $identifier
+	 * @return Keyword
+	 */
+	public function getRelated($mgrAlias, $identifier){
+		$manager = $this->getPool();
+		if(!$manager){
+
+		}
+		$context = $manager->getManager();
+		if(!$context){
+
+		}
+		$relatedManager = $context->getPool($mgrAlias);
+		if(!$relatedManager){
+
+		}
+		return $relatedManager->get($identifier);
+
+	}
+
+	/**
+	 * @param $mgrAlias
+	 * @param $identifier
+	 * @return bool
+	 */
+	public function hasRelated($mgrAlias, $identifier){
+		$manager = $this->getPool();
+		if(!$manager){
+
+		}
+		$context = $manager->getManager();
+		if(!$context){
+
+		}
+		$relatedManager = $context->getPool($mgrAlias);
+		if(!$relatedManager){
+
+		}
+		return $relatedManager->has($identifier);
+	}
+
+	/**
+	 * @param $mgrAlias
+	 * @param $optionKey
+	 * @param null $default
+	 * @return Keyword|null
+	 */
+	public function getRelatedByOption($mgrAlias, $optionKey, $default = null){
+		$option = $this->getOption($optionKey,false);
+		if($option!==false){
+			return $this->getRelated($mgrAlias,$option);
+		}else{
+			return $default;
 		}
 	}
 
@@ -100,11 +156,12 @@ abstract class Keyword implements ITransient , \Serializable{
 
 	/**
 	 * @param bool $state
+	 * @return $this|void
 	 */
 	final public function setDirty($state = true){
 		if($this->dirty!==$state){
 			$this->dirty = $state===true;
-			if(!$this->isDummy() && $this->dirty && ($manager = $this->getManager())){
+			if(!$this->isDummy() && $this->dirty && ($manager = $this->getPool())){
 				$manager->setDirty(true);
 			}
 		}
@@ -124,24 +181,24 @@ abstract class Keyword implements ITransient , \Serializable{
 		if($this->dummy!==$dummy){
 			$oldDummy = $this->dummy;
 			$this->dummy = $dummy===true;
-			if($this->dummy===false && $oldDummy===true && $this->isDirty() && ($manager = $this->getManager())){
+			if($this->dummy===false && $oldDummy===true && $this->isDirty() && ($manager = $this->getPool())){
 				$manager->setDirty(true);
 			}
 		}
 	}
 
 	/**
-	 * @param Manager $manager
+	 * @param Pool $pool
 	 */
-	final public function setManager(Manager $manager = null){
-		$this->manager = $manager;
+	final public function setPool(Pool $pool = null){
+		$this->pool = $pool;
 	}
 
 	/**
-	 * @return Manager
+	 * @return Pool
 	 */
-	public function getManager(){
-		return $this->manager;
+	public function getPool(){
+		return $this->pool;
 	}
 
 	/**
@@ -149,7 +206,7 @@ abstract class Keyword implements ITransient , \Serializable{
 	 */
 	public function __destruct(){
 		if(!$this->isDummy() && $this->isDirty()){
-			$manager = $this->getManager();
+			$manager = $this->getPool();
 			if($manager){
 				$store = $manager->getStorage();
 				if($store){
@@ -164,7 +221,7 @@ abstract class Keyword implements ITransient , \Serializable{
 	 * @return string
 	 */
 	public function __toString(){
-		return $this->getIdentifier();
+		return (string)$this->getIdentifier();
 	}
 
 	/**
@@ -266,4 +323,13 @@ abstract class Keyword implements ITransient , \Serializable{
 		$this->fromArray($data);
 		$this->onConstruct();
 	}
+
+	/**
+	 * @param array $state
+	 * @return Keyword
+	 */
+	public static function __setState(array $state){
+		return self::instanceFromData($state);
+	}
+
 }

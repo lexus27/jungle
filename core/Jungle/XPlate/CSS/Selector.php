@@ -11,7 +11,6 @@ namespace Jungle\XPlate\CSS {
 	use Jungle\XPlate\CSS\Selector\AttributeQuery;
 	use Jungle\XPlate\CSS\Selector\Combination;
 	use Jungle\XPlate\CSS\Selector\Dependency;
-	use Jungle\XPlate\CSS\Selector\Marker\Cls;
 	use Jungle\XPlate\HTML\Document as HTMLDocument;
 	use Jungle\XPlate\HTML\IElement;
 
@@ -28,7 +27,7 @@ namespace Jungle\XPlate\CSS {
 	 * 			- Tag
 	 * 			- AttributeQuery
 	 * 				- Attribute
-	 * 				- Checker Type (AttributeName~=collatedValue != $= ^=)
+	 * 				- Checker TypeChecker (AttributeName~=collatedValue != $= ^=)
 	 * 				- Collated Value
 	 * 			- Subject
 	 * 				- Id(Marker)

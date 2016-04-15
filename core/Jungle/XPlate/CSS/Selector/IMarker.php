@@ -8,9 +8,9 @@
 
 namespace Jungle\XPlate\Interfaces{
 
-	use Jungle\Basic\INamedBase;
+	use Jungle\Basic\INamed;
 
-	interface IMarker extends INamedBase{
+	interface IMarker extends INamed{
 
 		public function getQuerySymbol();
 

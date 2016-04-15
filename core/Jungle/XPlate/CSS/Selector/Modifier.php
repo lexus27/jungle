@@ -8,7 +8,7 @@
 
 namespace Jungle\XPlate\CSS\Selector {
 
-	use Jungle\Basic\INamedBase;
+	use Jungle\Basic\INamed;
 	use Jungle\Smart\Keyword\Keyword;
 
 
@@ -17,7 +17,7 @@ namespace Jungle\XPlate\CSS\Selector {
 	 * @package Jungle\XPlate\CSS\Selector
 	 * Модификатор , используется в компбинации пресет + его модификаторы
 	 */
-	class Modifier extends Keyword implements INamedBase{
+	class Modifier extends Keyword implements INamed{
 
 		/**
 		 * (parameter)

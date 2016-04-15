@@ -9,10 +9,6 @@
 namespace Jungle\XPlate\CSS\Definition {
 
 	use Jungle\Smart\Keyword\Keyword;
-	use Jungle\Smart\Value\IValue;
-	use Jungle\XPlate\CSS\Document;
-	use Jungle\XPlate\Interfaces\IProperty;
-	use Jungle\XPlate\Interfaces\IValue;
 	use Jungle\XPlate\WebEngineSet;
 
 	/**

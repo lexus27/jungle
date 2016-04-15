@@ -51,6 +51,23 @@ namespace Jungle\Smart\Keyword\Storage {
 		public function remove($identifier){
 			return true;
 		}
+
+		/**
+		 * @param null $matcher
+		 * @return array
+		 */
+		public function getList($matcher = null){
+			return [];
+		}
+
+		/**
+		 * @TODO $matcher CLASS MATCHER
+		 * @param $matcher
+		 * @return mixed
+		 */
+		public function getCount($matcher = null){
+			return 0;
+		}
 	}
 }
 

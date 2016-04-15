@@ -1,2 +1,2 @@
-Jungle (paradigm toolkit)
+Jungle
 =================================

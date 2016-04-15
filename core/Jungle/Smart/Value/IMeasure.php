@@ -23,34 +23,66 @@ namespace Jungle\Smart\Value {
 		 * @param IUnit $unit
 		 * @return $this
 		 */
-		public function setUnit(IUnit $unit);
+		public function setPrimaryUnit(IUnit $unit);
 
 		/**
 		 * Конвертация значения к другой единице измерения
-		 * @param IUnit $unit
+		 * @param IUnit|string $to
 		 * @return $this
 		 */
-		public function changeUnit(IUnit $unit);
+		public function primary($to);
 
 		/**
 		 * Получить единицу измерения
 		 * @return IUnit|null
 		 */
-		public function getUnit();
+		public function getPrimaryUnit();
 
 
 		/**
+		 * Установить единицу измерения для значения
+		 * @param IUnit $unit
+		 * @return $this
+		 */
+		public function setSecondaryUnit(IUnit $unit);
+
+		/**
+		 * Конвертация значения к другой единице измерения
+		 * @param IUnit|string $to
+		 * @return $this
+		 */
+		public function secondary($to);
+
+		/**
+		 * Получить единицу измерения
+		 * @return IUnit|null
+		 */
+		public function getSecondaryUnit();
+
+		/**
 		 * @param $value
-		 * @param IUnitType $measureUnitType
-		 * @param IUnitType $measureUnitTypeSecond
+		 * @param IUnitType $primaryUnitType
+		 * @param IUnitType $secondaryUnitType
 		 * @return mixed
 		 */
-		public function setValue($value,IUnitType $measureUnitType=null,IUnitType $measureUnitTypeSecond=null);
+		public function setValue($value,IUnitType $primaryUnitType=null,IUnitType $secondaryUnitType=null);
 
 		/**
 		 * @return string
 		 */
 		public function getValue();
+
+		/**
+		 * @param int $round
+		 * @return mixed
+		 */
+		public function setRoundPrecision($round = null);
+
+		/**
+		 * @param int $round
+		 * @return mixed
+		 */
+		public function setRoundMode($round = PHP_ROUND_HALF_UP);
 
 		/**
 		 * @return int

@@ -44,7 +44,7 @@ namespace Jungle\Smart\Value\Color {
 		 */
 		public function render($hue, $saturation, $luminance, $alpha = 1.0){
 			$rgb = Color::HSLtoRGB($hue,$saturation,$luminance);
-			return '#' . implode('',COlor::RGBtoHEX($rgb[0], $rgb[1], $rgb[2], $alpha));
+			return '#' . implode('',Color::RGBtoHEX($rgb[0], $rgb[1], $rgb[2], $alpha));
 		}
 
 		/**

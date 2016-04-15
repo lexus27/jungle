@@ -9,13 +9,13 @@
 namespace Jungle\XPlate\CSS {
 
 
-	use Jungle\Basic\INamedBase;
+	use Jungle\Basic\INamed;
 
 	/**
 	 * Class Keyframe
 	 * @package Jungle\XPlate\CSS
 	 */
-	class Animation implements INamedBase, \ArrayAccess, \Countable, \Traversable, \Iterator{
+	class Animation implements INamed, \ArrayAccess, \Countable, \Traversable, \Iterator{
 
 		/**
 		 * @var string

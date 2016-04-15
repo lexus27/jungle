@@ -12,7 +12,7 @@ namespace Jungle\XPlate\CSS\Selector {
 	 * Комбинация используемых Модификаторов и Аттрибут-запросов с Субьектом
 	 *
 	 * <if tag><subject><modifiers>
-	 * combination = div#id.class1.class2:hover:visited
+	 * after_sequence = div#id.class1.class2:hover:visited
 	 */
 	class Combination{
 

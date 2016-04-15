@@ -8,14 +8,14 @@
 
 namespace Jungle\XPlate\CSS {
 
-	use Jungle\Basic\INamedBase;
+	use Jungle\Basic\INamed;
 	use Jungle\XPlate\CSS\Media\Query;
 
 	/**
 	 * Class Media
 	 * @package Jungle\XPlate\CSS
 	 */
-	class Media extends RuleSpace implements INamedBase{
+	class Media extends RuleSpace implements INamed{
 
 		/**
 		 * @var string

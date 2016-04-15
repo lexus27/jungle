@@ -10,9 +10,9 @@ $strategy = new \Jungle\XPlate\WebStrategy();
 $store = new \Jungle\Smart\Keyword\Storage\Files([
 	'directory' => __DIR__ . DIRECTORY_SEPARATOR . '_tmp' . DIRECTORY_SEPARATOR
 ]);
-$strategy->setTagManager(new \Jungle\XPlate\Services\TagManager($store));
-$strategy->setAttributeManager(new \Jungle\XPlate\Services\AttributeManager($store));
-$strategy->setStyleManager(new \Jungle\XPlate\Services\StyleManager($store));
+$strategy->setTagManager(new \Jungle\XPlate\Services\TagPool($store));
+$strategy->setAttributeManager(new \Jungle\XPlate\Services\AttributePool($store));
+$strategy->setStyleManager(new \Jungle\XPlate\Services\StylePool($store));
 $strategy->lock();
 $document = new Jungle\XPlate\HTML\Document($strategy);
 

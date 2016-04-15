@@ -27,8 +27,8 @@ class Files extends Storage{
 		if(!isset($c['file_perms'])){
 			$c['file_perms'] = '0700';
 		}
-		if(!isset($c['file_ext'])){
-			$c['file_ext'] = 'obj';
+		if(!isset($c['extension'])){
+			$c['extension'] = 'obj';
 		}
 
 		if(!$c['dir_recursively'] && !is_dir($c['directory'])){
@@ -44,20 +44,20 @@ class Files extends Storage{
 	 */
 	public function save(Keyword $key){
 
-		!defined('DS') && define('DS',DIRECTORY_SEPARATOR);
-
 		$p = $this->getPathData($key);
 		if(!is_dir($p[0]) && $this->config['dir_recursively']){
 			mkdir($p[0],intval($this->config['dir_perms'],8),$this->config['dir_recursively']);
 		}
 
-		$dir = $p[0].DS.$p[1].DS;
+		$dir = $p[0].DIRECTORY_SEPARATOR.$p[1].DIRECTORY_SEPARATOR;
 		if(!is_dir($dir)){
 			mkdir($dir,intval($this->config['dir_perms'],8),$this->config['dir_recursively']);
 		}
 
-		$path = implode(DS,$p);
-		if(!file_put_contents($path,serialize($key))){
+		$path = implode(DIRECTORY_SEPARATOR,$p);
+
+		$data = $this->prepareSave($key);
+		if(!$this->saveFile($path, $data)){
 			throw new \LogicException('Not Save');
 		}else{
 			chmod($path,intval($this->config['file_perms'],8));
@@ -65,15 +65,46 @@ class Files extends Storage{
 	}
 
 	/**
+	 * @param Keyword $key
+	 * @return string
+	 */
+	protected function prepareSave(Keyword $key){
+		return serialize($key);
+	}
+
+	/**
+	 * @param $keyData
+	 * @return mixed
+	 */
+	protected function prepareLoaded($keyData){
+		return unserialize($keyData);
+	}
+
+	/**
+	 * @param $path
+	 * @return string
+	 */
+	protected function loadFile($path){
+		return file_get_contents($path);
+	}
+
+	/**
+	 * @param $path
+	 * @param $data
+	 * @return int
+	 */
+	protected function saveFile($path, $data){
+		return file_put_contents($path,$data);
+	}
+
+	/**
 	 * @param $key
 	 * @return Keyword
 	 */
 	public function load($key){
-		!defined('DS') && define('DS',DIRECTORY_SEPARATOR);
-		$path = implode(DS,$this->getPathData($key));
+		$path = implode(DIRECTORY_SEPARATOR,$this->getPathData($key));
 		if(file_exists($path)){
-			$serialized = file_get_contents($path);
-			$object = unserialize($serialized);
+			$object = $this->prepareLoaded($this->loadFile($path));
 			if(!$object instanceof Keyword){
 				return null;
 			}
@@ -89,8 +120,7 @@ class Files extends Storage{
 	 * @return bool
 	 */
 	public function has($key){
-		!defined('DS') && define('DS',DIRECTORY_SEPARATOR);
-		$path = implode(DS,$this->getPathData($key));
+		$path = implode(DIRECTORY_SEPARATOR,$this->getPathData($key));
 		if(file_exists($path)){
 			return true;
 		}else{
@@ -103,12 +133,48 @@ class Files extends Storage{
 	 * @return bool
 	 */
 	public function remove($key){
-		!defined('DS') && define('DS',DIRECTORY_SEPARATOR);
-		$path = implode(DS,$this->getPathData($key));
+		$path = implode(DIRECTORY_SEPARATOR,$this->getPathData($key));
 		if(file_exists($path)){
 			unlink($path);
 		}
 		return true;
+	}
+
+	/**
+	 * @TODO $matcher CLASS MATCHER::match($string)
+	 * @param null $matcher
+	 * @return array
+	 */
+	public function getList($matcher = null){
+		$manager = $this->getManager();
+		$base = rtrim($this->config['directory'],'\\/');
+		$dir = $manager->getAlias();
+		$path = $base . DIRECTORY_SEPARATOR . $dir . DIRECTORY_SEPARATOR;
+		$a = [];
+		$files = glob($path.'*');
+		if(!$manager->caseIsInsensitive()){
+			foreach($files as $file){
+				if(preg_match('@^([^\.]+)([.]+)'.preg_quote($this->getExtension(),'@').'$@',$file,$m)){
+					$a[] = $m[2];
+				}
+			}
+		}else{
+			foreach($files as $file){
+				if(preg_match('@^([.]+)'.preg_quote($this->getExtension(),'@').'$@',$file,$m)){
+					$a[] = $m[1];
+				}
+			}
+		}
+		return $a;
+	}
+
+	/**
+	 * @TODO $matcher CLASS MATCHER::match($string)
+	 * @param $matcher
+	 * @return mixed
+	 */
+	public function getCount($matcher = null){
+		return count($this->getCount($matcher));
 	}
 
 	/**
@@ -122,10 +188,19 @@ class Files extends Storage{
 		$identifier = $key instanceof Keyword?$key->getIdentifier():$key;
 
 		if(!$manager->caseIsInsensitive()){
-			$identifier = md5($identifier).'_'.$identifier;
+			$identifier = base64_encode($identifier).'.'.$identifier;
 		}
 
-		$identifier.='.'.$this->config['file_ext'];
+		$identifier.='.'.$this->getExtension();
 		return [rtrim($base,'\\/'),$dir,$identifier];
 	}
+
+	/**
+	 * @return string
+	 */
+	protected function getExtension(){
+		return isset($this->config['extension'])?$this->config['extension']:'.key.obj';
+	}
+
+
 }

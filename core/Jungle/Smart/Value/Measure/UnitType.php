@@ -35,11 +35,22 @@ class UnitType implements IUnitType, \ArrayAccess{
 	/**
 	 * Выставить имя объекту
 	 * @param $name
-	 * @return $this
+	 * @return UnitType
 	 */
 	public function setName($name){
 		if($this->name !== $name){
 			$this->name = $name;
+		}
+		return $this;
+	}
+
+	/**
+	 * @param array $definition
+	 * @return $this
+	 */
+	public function __invoke(array $definition){
+		foreach($definition as $u => $c){
+			$this->offsetSet($u,$c);
 		}
 		return $this;
 	}
@@ -52,10 +63,12 @@ class UnitType implements IUnitType, \ArrayAccess{
 	 */
 	public function addUnit(IUnit $unit, $setType = true){
 		if($this->searchUnit($unit)===false){
-			$this->units[] = $unit;
-			if($setType){
-				$unit->setType($this,false);
+			$name = $unit->getName();
+			if($name && $this->getUnit($name)){
+				throw new \LogicException('Unit "'.$name.'" already exists in "'.$this->getName().'" type');
 			}
+			$this->units[] = $unit;
+			if($setType) $unit->setType($this,false);
 		}
 		return $this;
 	}
@@ -93,8 +106,8 @@ class UnitType implements IUnitType, \ArrayAccess{
 		if($from !== $to){
 			$fromCoefficient = $from->getCoefficient();
 			$toCoefficient = $to->getCoefficient();
-			$number*= $fromCoefficient;
-			$number/= $toCoefficient;
+			$number *= $fromCoefficient;
+			$number /= $toCoefficient;
 		}
 		return $number;
 	}

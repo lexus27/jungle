@@ -16,7 +16,7 @@ namespace Jungle\XPlate\Interfaces {
 	 * IWebStrategy.removeSubject
 	 *
 	 */
-	interface IWebSubject IWebSubject{
+	interface IWebSubject{
 
 		public function setStrategy(IWebStrategy $strategy, $appliedInStrategy = false, $appliedInOld = false);
 

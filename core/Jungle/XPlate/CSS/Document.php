@@ -2,11 +2,8 @@
 
 namespace Jungle\XPlate\CSS {
 
-	use Jungle\Basic\INamedBase;
+	use Jungle\Basic\INamed;
 	use Jungle\XPlate\Interfaces\IWebStrategy;
-	use Jungle\XPlate\Services\AttributeManager;
-	use Jungle\XPlate\Services\StyleManager;
-	use Jungle\XPlate\Services\TagManager;
 
 	/**
 	 * Class Document
@@ -15,7 +12,7 @@ namespace Jungle\XPlate\CSS {
 	 * Документ
 	 *
 	 */
-	class Document extends RuleSpace implements INamedBase{
+	class Document extends RuleSpace implements INamed{
 
 		protected static $pretty_mode = false;
 

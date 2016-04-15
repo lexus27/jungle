@@ -261,8 +261,8 @@ namespace Jungle\XPlate\HTML {
 			$this->ws_before_waiting = true;
 		}
 
-		/** Set before whitespace to passed Plain element and wait next whitespace for set after in passed Plain
-		 * Plain fix for next whitespace
+		/** Set before whitespace to passed Plain element and wait after_sequence whitespace for set after in passed Plain
+		 * Plain fix for after_sequence whitespace
 		 * @param Element $element
 		 */
 		public function pcWSBefore(Element $element){
@@ -274,7 +274,7 @@ namespace Jungle\XPlate\HTML {
 		}
 
 		/**
-		 * Set after whitespace to fixed Plain element and flush whitespace state for next fragment
+		 * Set after whitespace to fixed Plain element and flush whitespace state for after_sequence fragment
 		 */
 		public function pcSetWSAfter(){
 			if($this->pcHasWSAfterWaiting()){
@@ -284,7 +284,7 @@ namespace Jungle\XPlate\HTML {
 		}
 
 		/**
-		 * Clear last Plain element. for not wait next whitespace exception
+		 * Clear last Plain element. for not wait after_sequence whitespace exception
 		 */
 		public function pcClearWSAfterWaiter(){
 			$this->ws_after_waiter = null;
