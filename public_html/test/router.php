@@ -77,7 +77,13 @@ interface RequestInterface{
 	public function getMethod();
 
 	public function getUri();
-	
+
+
+	public function getUriSlug($index);
+
+	public function getUriSlugCount();
+
+
 	public function getBody();
 
 	public function getRawBody();

@@ -18,7 +18,7 @@ function count_masks($string){
 	$mask_count = 0;
 	$not_capturing_group_brackets = ['?#','?:','?>','?=','?!','?<=','?<!'];
 	while($string){
-		$token = string_shift($string);
+		$token = byte_shift($string);
 		if($token === '('){
 			$count_backslashes = str_get_repeat_end('\\',$elapsed);
 			if($count_backslashes%2==0){ // если скобка не экранирована
@@ -48,7 +48,7 @@ function analyze_groups($string){
 	$groups_count = 0;
 	$not_capturing_group_brackets = ['?#','?:','?>','?=','?!','?<=','?<!'];
 	while($string){
-		$token = string_shift($string);
+		$token = byte_shift($string);
 		if($token === '('){
 			$count_backslashes = str_get_repeat_end('\\',$elapsed);
 			if($count_backslashes%2==0){
@@ -92,7 +92,7 @@ function analyze_groups($string){
  * @return bool
  */
 function start_with($width, $subject){
-	return mb_substr($subject,0,mb_strlen($width)) === $width;
+	return substr($subject,0,strlen($width)) === $width;
 }
 
 /**
@@ -105,10 +105,10 @@ function start_with_any_of($anyOf, $subject){
 	if(!is_array($anyOf))$anyOf = [$anyOf];
 	$last_l = null;
 	foreach($anyOf as $width){
-		$l = mb_strlen($width);
+		$l = strlen($width);
 		if(!isset($comparable) || $l !== $last_l){
 			$last_l = $l;
-			$comparable = mb_substr($subject,0,$l);
+			$comparable = substr($subject,0,$l);
 		}
 		if($comparable === $width){
 			return true;
@@ -124,7 +124,7 @@ function start_with_any_of($anyOf, $subject){
  * @return bool
  */
 function end_with($width, $subject){
-	return mb_substr($subject,-mb_strlen($width)) === $width;
+	return substr($subject,-strlen($width)) === $width;
 }
 
 /**
@@ -137,10 +137,10 @@ function end_with_any_of($anyOf, $subject){
 	if(!is_array($anyOf))$anyOf = [$anyOf];
 	$last_c = null;
 	foreach($anyOf as $width){
-		$c = mb_strlen($width);
+		$c = strlen($width);
 		if(!isset($comparable) || $c !== $last_c){
 			$last_c = $c;
-			$comparable = mb_substr($subject,0,-$c);
+			$comparable = substr($subject,0,-$c);
 		}
 		if($comparable === $width){
 			return true;
@@ -157,7 +157,7 @@ function end_with_any_of($anyOf, $subject){
  */
 function str_get_repeat_end($needle, $subject){
 	if(!$subject)return 0;
-	$c = mb_strlen($needle);
+	$c = strlen($needle);
 	$repeating_count = 0;
 	while($subject){
 		$token = substr($subject,-$c);
@@ -178,7 +178,7 @@ function str_get_repeat_end($needle, $subject){
  */
 function str_get_repeat_start($needle, $subject){
 	if(!$subject)return 0;
-	$c = mb_strlen($needle);
+	$c = strlen($needle);
 	$repeating_count = 0;
 	while($subject){
 		$token = substr($subject,0,$c);
@@ -201,9 +201,9 @@ function str_get_repeat_start($needle, $subject){
  * @param string $string
  * @return string
  */
-function string_shift( & $string){
-	$char = mb_substr($string,0,1);
-	$string = mb_substr($string,1);
+function byte_shift( & $string){
+	$char = substr($string,0,1);
+	$string = substr($string,1);
 	return $char;
 }
 
@@ -212,10 +212,113 @@ function string_shift( & $string){
  * @param string $string
  * @return string
  */
-function string_pop( & $string){
-	$char = mb_substr($string,-1);
-	$string = mb_substr($string,0,-1);
+function byte_pop( & $string){
+	$char = substr($string,-1);
+	$string = substr($string,0,-1);
 	return $char;
+}
+
+
+/**
+ * Fastest variant
+ * @param $pattern
+ * @return array
+ */
+function analyze_groups_v2($pattern){
+	$len = strlen($pattern);
+	$not_capturing_group_brackets = ['?#','?:','?>','?=','?!','?<=','?<!'];
+	$total_opened = 0;
+	$opened = [];
+	$captured_groups = [];
+	$transparent_groups = [];
+	for($i=0;$i<$len;$i++){
+		$token = $pattern{$i};
+		if($token === '('){
+			for($backslashes = 0; read_before($pattern, $i, 1,$backslashes) === '\\' ;$backslashes++){}
+			if($backslashes%2==0){
+				$capture = !has_after($pattern, $i,$not_capturing_group_brackets);
+				$opened[] = [$i,$capture,$total_opened];
+				$total_opened++;
+			}
+		}elseif($token===')'){
+			for($backslashes = 0; read_before($pattern, $i, 1,$backslashes) === '\\' ;$backslashes++){}
+			if($backslashes%2==0){
+				if($opened){
+					list($pos, $capture,$index) = array_pop($opened);
+					if($capture){
+						$captured_groups[] = [$pos,$i,$index];
+					}else{
+						$transparent_groups[] = [$pos,$i,$index];
+					}
+				}else{
+					throw new \LogicException('Error have not expected closed groups!');
+				}
+			}
+		}
+	}
+
+	if($opened){
+		throw new \LogicException(
+				'Error have not closed opened groups by offset at \'' . implode('\' and \'',array_column($opened,0)).'\''
+		);
+	}
+
+	$u = function($d1,$d2){
+		$a = $d1[0];
+		$b = $d2[0];
+		return ($a === $b?0: (($a<$b)? -1 : 1 ));
+	};
+	usort($captured_groups,$u);
+	usort($transparent_groups,$u);
+
+	return [
+		'total'         => $total_opened,
+		'captured'      => $captured_groups,
+		'transparent'   => $transparent_groups
+	];
+}
+function read_after($string, $position, $len = 1,$offset = 0){
+	return substr($string,$position+1+$offset,$len);
+}
+function read_before($string, $position, $len = 1,$offset = 0){
+	$pos  = $position - $offset;
+	$start = $pos-$len;
+	if($start < 0){
+		$len+=$start;
+		if(!$len)return '';
+		$start = 0;
+	}
+	return substr($string,$start,$len);
+}
+function has_before($string, $position, $needle, $offset=0){
+	if(!is_array($needle)){
+		$needle = [$needle];
+	}
+	$ll = null;
+	foreach($needle as $item){
+		$l = strlen($item);
+		if(!isset($s) || $ll != $l){
+			$s = read_before($string,$position,$l,$offset);
+			$ll = $l;
+		}
+		if($s === $item) return true;
+	}
+	return false;
+}
+function has_after($string, $position, $needle, $offset=0){
+	if(!is_array($needle)){
+		$needle = [$needle];
+	}
+	$ll = null;
+	foreach($needle as $item){
+		$l = strlen($item);
+		if(!isset($s) || $ll != $l){
+			$s = read_after($string,$position,$l,$offset);
+			$ll = $l;
+		}
+		if($s === $item) return true;
+	}
+	return false;
 }
 
 
@@ -224,17 +327,28 @@ $pattern_chunk_1 = '\\((\d+)\.(\w+)\\)';        // two captured groups, 1 and 2
 $pattern_chunk_2 = '\\\\((\d+)\.(\w+)\\\\)';    // three captured groups, 1 and 2 and 3
 $pattern_chunk_3 = '((\d+)\.(\w+)) (?>\.\w)';   // three captured groups and has not capturing groups (total captured = 3)
 $pattern_chunk_4 = '\\((\d+)\.(\w+)\\) (';      // ERROR analyze_groups
-
+$mt = microtime(true);
 echo count_masks($pattern_chunk_1) . ' ' . $pattern_chunk_1 . "<br/>";
 echo count_masks($pattern_chunk_2) . ' ' . $pattern_chunk_2 . "<br/>";
 echo count_masks($pattern_chunk_3) . ' ' . $pattern_chunk_3 . "<br/>";
 echo count_masks($pattern_chunk_4) . ' ' . $pattern_chunk_4;
+echo sprintf('%.4F',microtime(true) - $mt);
 
+$mt = microtime(true);
 
+echo '<pre>';
+print_r(analyze_groups_v2($pattern_chunk_1));
+print_r(analyze_groups_v2($pattern_chunk_2));
+print_r(analyze_groups_v2($pattern_chunk_3));
+//print_r(analyze_groups_v2($pattern_chunk_4));
+echo '</pre>';
+echo sprintf('%.4F',microtime(true) - $mt);
 
+$mt = microtime(true);
 echo '<pre>';
 print_r(analyze_groups($pattern_chunk_1));
 print_r(analyze_groups($pattern_chunk_2));
 print_r(analyze_groups($pattern_chunk_3));
-print_r(analyze_groups($pattern_chunk_4));
+//print_r(analyze_groups($pattern_chunk_4));
 echo '</pre>';
+echo sprintf('%.4F',microtime(true) - $mt);
