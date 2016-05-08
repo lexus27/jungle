@@ -36,6 +36,63 @@ namespace Jungle\Util\Value {
 
 		protected function __construct(){}
 
+		/**
+		 * @param array $array
+		 * @param $path
+		 * @param $value
+		 * @param string $delimiter
+		 * @return array
+		 */
+		public static function setNestedValue(array & $array, $path, $value, $delimiter = '.') {
+			$pathParts = explode($delimiter, $path);
+			$current = &$array;
+			foreach($pathParts as $key){
+				if(!is_array($current)){
+					$current = [];
+				}
+				if(!isset($current[$key])){
+					$current[$key] = null;
+				}
+				$current = & $current[$key];
+			}
+			$current = $value;
+			return $array;
+		}
+
+		/**
+		 * @param array $array
+		 * @param $path
+		 * @param string $delimiter
+		 * @return array
+		 */
+		public static function getNestedArrayValue(array $array, $path, $delimiter = '.'){
+			$pathParts = explode($delimiter, $path);
+			$current = &$array;
+			foreach($pathParts as $key){
+				if(!is_array($current)){
+					$current = [];
+				}
+				if(!isset($current[$key])){
+					$current[$key] = null;
+				}
+				$current = & $current[$key];
+			}
+			$backup = $current;
+			return $backup;
+		}
+
+		/**
+		 * @param $nestedKey
+		 * @param $value
+		 * @param string $delimiter
+		 * @return mixed
+		 */
+		public static function initArrayWithNestedElement($nestedKey, $value, $delimiter = '.'){
+			if(!is_array($nestedKey)){
+				$nestedKey = explode($delimiter, $nestedKey);
+			}
+			return ($key = array_pop($nestedKey)) ? self::initArrayWithNestedElement($nestedKey, [ $key => $value ],$delimiter) : $value;
+		}
 
 		/**
 		 * @param $array
@@ -107,7 +164,7 @@ namespace Jungle\Util\Value {
 		 */
 		public static function deleteKeys(array $array,array $keys, $caseLess = false){
 			if(!$keys) return $array;
-			foreach($array as $key => & $_){
+			foreach($array as $key => $_){
 				if(($caseLess && Massive::stringExists($keys,$key,$caseLess)) || !in_array($key,$keys,true)){
 					unset($array[$key]);
 				}
@@ -123,7 +180,7 @@ namespace Jungle\Util\Value {
 		 */
 		public static function leaveKeys(array $array,array $keys, $caseLess = false){
 			if(!$keys) return [];
-			foreach($array as $key => & $_){
+			foreach($array as $key => $_){
 				if( ($caseLess && !Massive::stringExists($keys,$key,$caseLess)) || !in_array($key,$keys,true)){
 					unset($array[$key]);
 				}
@@ -583,7 +640,7 @@ namespace Jungle\Util\Value {
 		 *          empty       === проверка на пустое значение
 		 * @return array $array
 		 */
-		public static function & setItem(array & $array,  $key, $value, $modeExists = null, $checkType = self::CHECK_TYPE_ISSET){
+		public static function &setItem(array & $array,  $key, $value, $modeExists = null, $checkType = self::CHECK_TYPE_ISSET){
 			if(!in_array($modeExists,[null,false,true],true)){
 				throw new \LogicException('Mode exists is invalid, must be [null|false|true], passed: "'.String::representFrom($modeExists).'" ');
 			}
@@ -624,7 +681,7 @@ namespace Jungle\Util\Value {
 		 *          empty === проверка на пустое значение
 		 * @return array
 		 */
-		public static function & getItem(array & $array, $key, $default = null, array $defaults = null, $modeExists = null, $checkType = self::CHECK_TYPE_ISSET){
+		public static function &getItem(array & $array, $key, $default = null, array $defaults = null, $modeExists = null, $checkType = self::CHECK_TYPE_ISSET){
 			if(!in_array($modeExists,[null,false,true],true)){
 				throw new \LogicException('Mode exists is invalid, must be [null|false|true], passed: "'.String::representFrom($modeExists).'" ');
 			}
@@ -661,7 +718,7 @@ namespace Jungle\Util\Value {
 		 *          empty === проверка на пустое значение
 		 * @return array
 		 */
-		public static function & setItems(array & $array,array $items, $modeExists = null, $checkType = self::CHECK_TYPE_ISSET){
+		public static function &setItems(array & $array,array $items, $modeExists = null, $checkType = self::CHECK_TYPE_ISSET){
 			if($modeExists===null){
 				$array = $items;
 			}else{
@@ -706,16 +763,133 @@ namespace Jungle\Util\Value {
 		/**
 		 * @param array $array
 		 * @param $key
-		 * @param bool|false $caseLess
 		 * @return bool
 		 */
-		public static function keyExists(array & $array,$key,$caseLess = false){
+		public static function keyCaseExists(array & $array,$key){
 			foreach($array as $param => $value){
-				if(is_string($key) && String::match($key,$param,$caseLess)){
+				if(is_string($key) && String::match($key,$param,true)){
 					return true;
 				}
 			}
 			return false;
+		}
+
+		/**
+		 * Вернет индексный массив содержащий значения из $array
+		 * соответствующие ключам в $assocKeys с упорядочиванием по порядку $assocKeys
+		 * @param array $array
+		 * @param array $keys
+		 * @param bool $checkIsset
+		 * @param null $default
+		 * @param bool $allowDefault
+		 * @return array
+		 */
+		public static function orderedKeys(array $array,array $keys, $checkIsset = false, $allowDefault = false, $default = null){
+			$a = [];
+			foreach($keys as $key){
+				if(($checkIsset && isset($array[$key])) || (!$checkIsset && array_key_exists($key,$array))){
+					$a[] = $array[$key];
+				}elseif($allowDefault){
+					$a[] = $default;
+				}else{
+					throw new \LogicException('Massive::orderedKeys Not found key "'.$key.'" in subject array');
+				}
+			}
+			return $a;
+		}
+
+		/**
+		 * Вернет индексный массив содержащий значения из $array
+		 * соответствующие ключам в $assocKeys с упорядочиванием по порядку $assocKeys
+		 * Отличается от @see orderedKeys тем что параметр $assocKeys
+		 * может быть ассоциативным массивом что дает возможность использовать значения по умолчанию если их нет в $array
+		 * @param array $array
+		 * @param array $keys
+		 * @param bool|null $skipStrict Если NULL то используется как значение по умолчанию для ключей которых нет в array
+		 * Если FALSE то вернет false в случае не находения ключа в $array
+		 * TRUE дает характер пропуска
+		 * @param bool $checkIsset
+		 * @return array
+		 */
+		public static function orderedAssoc(array $array,array $keys, $skipStrict = false, $checkIsset = false){
+			$a = [];
+			foreach($keys as $i => $key){
+				if(is_string($i)){
+					if(($checkIsset && isset($array[$i])) || (!$checkIsset && array_key_exists($i,$array))){
+						$a[] = $array[$i];
+					}else{
+						$a[] = $key;
+					}
+				}else{
+					if(array_key_exists($key,$array)){
+						$a[] = $array[$key];
+					}elseif($skipStrict===null){
+						$a[] = null;
+					}elseif($skipStrict===false){
+						return false;
+					}
+				}
+
+			}
+			return $a;
+		}
+
+		/**
+		 * $array = [
+		 * 		'module' => 'global'
+		 * ];
+		 * applyAssocInterface(array $array, array $interface, $skipNotExists = false, $checkIsset = false)
+		 * $interface = [
+		 * 		'module', 					//strict @see skipStrict
+		 * 		'controller', 				//strict @see $skipStrict
+		 * 		'action'					//strict @see $skipStrict
+		 * ]
+		 *
+		 * $interface = [
+		 * 		'module' => null,			// default if $checkIsset === false
+		 * 		'controller' => null,		// default if $checkIsset === false
+		 * 		'action' => null 			// default if $checkIsset === false
+		 * ]
+		 *
+		 * $interface = [
+		 * 		'module' => null, 			// default if $checkIsset === false
+		 * 		'controller' => 'index',	// default
+		 * 		'action' => 'index' 		// default
+		 * ]
+		 *
+		 * RESULT = [
+		 *
+		 *
+		 * ]
+		 *
+		 * @param array $array - Массив
+		 * @param array $interface - Интерфейс к которому следует привести массив
+		 * @param bool $skipStrict - Если Ложь то выдаст false
+		 * @param bool $checkIsset - Если Правда то будет проверять искомый в $array ключ с помощью isset
+		 * это значит ключ не будет найден даже если значение равно NULL
+		 * @return array|bool
+		 */
+		public static function applyAssocInterface(array $array, array $interface, $skipStrict = false, $checkIsset = false){
+			$strictArray = [];
+			foreach($interface as $i => $key){
+				if(is_string($i)){
+					if(($checkIsset && isset($array[$i])) || (!$checkIsset && array_key_exists($i,$array))){
+						$strictArray[$i] = $array[$i];
+					}else{
+						$strictArray[$i] = $key;
+					}
+				}else{
+					if(array_key_exists($key,$array)){
+						$strictArray[$key] = $array[$key];
+					}elseif($skipStrict===null){
+						$a[$key] = null;
+					}elseif($skipStrict===false){
+						return false;
+					}
+				}
+
+			}
+			return $strictArray;
 		}
 
 

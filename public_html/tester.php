@@ -224,20 +224,20 @@ echo nl2br($c->read(512,$r)) . '</br>';*/
 
 
 
-use Jungle\Messager;
-use Jungle\Messager\Mail\Contact;
+use Jungle\Messenger;
+use Jungle\Messenger\Mail\Contact;
 
-$messager = new Messager\Mail\SMTP\SMTP([
+$messager = new Messenger\Mail\SMTP\SMTP([
 	'auth'      => ['lexus.1995@mail.ru', '@JungleTechLabs2016@'],
 	'mailer'    => 'Алексей Кутузов <lexus.1995@mail.ru>',
 	'url'       => 'ssl://smtp.mail.ru:465',
 ]);
 
-$attachment = new Messager\Mail\Attachment();
+$attachment = new Messenger\Mail\Attachment();
 $attachment->setRaw('<div style="color:red">Это вложение!.</div>');
 $attachment->setName('text.html');
 
-$message = new Messager\Mail\Message();
+$message = new Messenger\Mail\Message();
 $message->setSubject('');
 $message->setContent('<a href="cid:text.html">Посмотрите это письмо</a>');
 $message->setType('text/html');
@@ -247,7 +247,7 @@ $message->addAttachment($attachment);
 $contact1 = Contact::getContact('Алексей <lexus.1995@mail.ru>');
 $contact2 = Contact::getContact('Алексей CC <lexus27.khv@gmail.com>')->setType(Contact::TYPE_CC);
 $contact3 = Contact::getContact('Алексей BCC <lexus27.khv@gmail.com>')->setType(Contact::TYPE_BCC);
-$combo = new Messager\Combination();
+$combo = new Messenger\Combination();
 $combo->addDestination($contact1);
 $combo->addDestination($contact2);
 $combo->addDestination($contact3);

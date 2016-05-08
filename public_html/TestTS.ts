@@ -1,20 +1,19 @@
-/**
- * Created by Alexey on 09.11.2015.
- */
-class Class1{
+interface RouterInterface{
 
-	public static regExp: RegExp = /^Y/;
+	match<Type>(): RouteInterface;
+}
+interface RouteInterface{
 
-	/** @type {number} */
-	private var1:ArrayBuffer;
+}
+class Router implements  RouterInterface{
 
-	public constructor(string){
-
+	match<Type>():RouteInterface {
+		return Type;
 	}
 
-}
-class Class2 extends Class1{
-
 
 }
-Class2.regExp.test('Y');
+
+let router= new Router();
+
+let b = router.match<"string">();

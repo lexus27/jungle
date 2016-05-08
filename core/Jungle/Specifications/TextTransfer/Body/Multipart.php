@@ -95,17 +95,18 @@ namespace Jungle\Specifications\TextTransfer\Body {
 		 * @return mixed
 		 */
 		public function getPreparedContent(){
-			$bound = $this->getBoundary();
+
 			$body = '';
 			if($this->partitions){
-				$this->getDocument()->setHeader('Content-Type','multipart/mixed; boundary="'.$bound.'"');
-				if(($document = $this->getDocument())){
-					$this->getDocument()->setHeader('Content-Type','multipart/mixed; boundary="'.$this->getBoundary().'"');
+				$bound = $this->getBoundary();
+				$document = $this->getDocument();
+				if($document){
+					$this->getDocument()->setHeader('Content-Type','multipart/mixed; boundary="'.$bound.'"');
 				}
 				$i=0;
-				foreach($this->partitions as $document){
+				foreach($this->partitions as $partition_document){
 					$body.= ($i>0?"\r\n":'')."--{$bound}\r\n";
-					$body.=$document->represent();
+					$body.=$partition_document->represent();
 					$i++;
 				}
 				if($i>0){
@@ -152,12 +153,9 @@ namespace Jungle\Specifications\TextTransfer\Body {
 			$multipart->setBoundary($boundary);
 			$boundary ='--'.$boundary;
 			$partitions = explode($boundary,$partitions);
-			$partitions = array_filter(array_map(function($v){
-				if(preg_match("@^[\n\-\s]+$@",$v)){
-					return null;
-				}
-				return $v;
-			},$partitions));
+			$partitions = array_filter($partitions, function($v){
+				return !preg_match("@^[\n\-\s]+$@",$v);
+			});
 			foreach($partitions as $part){
 				$part = Document::getDocument($part);
 				if($part){

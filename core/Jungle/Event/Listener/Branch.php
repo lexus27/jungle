@@ -84,7 +84,7 @@ namespace Jungle\Event\Listener {
 		/**
 		 * @return ListenerInterface[]
 		 */
-		public function & getEventListeners(){
+		public function &getEventListeners(){
 			if(!$this->_sorted){
 				$this->_sorted = true;
 				Massive::sortColumn($this->_listeners,function(ListenerInterface $listener){

@@ -127,7 +127,7 @@ $FieldMap = [
 
 		'name'      => 'id-name-city',
 		'type'      => 'string',
-		'validate'  => function($value){
+		'match'  => function($value){
 			return boolval(preg_match('@[\d]+\-[\w\s]+\-[\w\s]+@',$value));
 		},
 		'read-only' => false, // read-only flag

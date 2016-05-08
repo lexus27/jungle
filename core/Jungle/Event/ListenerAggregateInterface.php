@@ -20,7 +20,7 @@ namespace Jungle\Event {
 		/**
 		 * @return ListenerInterface[]
 		 */
-		public function & getEventListeners();
+		public function &getEventListeners();
 
 	}
 }

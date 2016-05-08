@@ -34,6 +34,7 @@ class Tokenizer implements \Iterator{
 	}
 
 	/**
+	 * Считать впереди текущей позиции
 	 * @param int $offset
 	 * @param int $len
 	 * @return string
@@ -43,6 +44,7 @@ class Tokenizer implements \Iterator{
 	}
 
 	/**
+	 * Считать позади текущей позиции
 	 * @param int $offset
 	 * @param int $len
 	 * @return string
@@ -60,6 +62,7 @@ class Tokenizer implements \Iterator{
 	}
 
 	/**
+	 * Проверка впереди
 	 * @param $needle
 	 * @param bool|false $caseless
 	 * @param int $offset
@@ -85,6 +88,7 @@ class Tokenizer implements \Iterator{
 	}
 
 	/**
+	 * Проверка позади
 	 * @param $needle
 	 * @param bool|false $caseless
 	 * @param int $offset
@@ -108,6 +112,18 @@ class Tokenizer implements \Iterator{
 
 		return false;
 	}
+
+	/**
+	 * @param callable $handler
+	 */
+	public function handle(callable $handler){
+		for($this->position = 0 ; $this->position < $this->length ; $this->position++){
+			if(call_user_func($handler,$this,$this->position,$this->length)===false){
+				return;
+			}
+		}
+	}
+
 
 	/**
 	 * @return mixed
@@ -145,10 +161,16 @@ class Tokenizer implements \Iterator{
 	}
 }
 
+/**
+ * Набор 1500 байтов
+ */
 $string = str_repeat('й(',500).'\\\\\\(';
 
 
-
+/**
+ * @Variant
+ * 1 Использование побайтовой выборки из источника
+ */
 echo '<h1>Variant 1.0 ( select char by pos )</h1>';
 $t = microtime(true);
 $len = strlen($string);
@@ -180,9 +202,26 @@ for($i=0;$i<$len;$i++){
 		}
 	}
 }
+/**
+ * Считывает определенное кол-во байтов начиная с $position + $offset на $len байтов (впереди позиции)
+ * @param $string
+ * @param $position
+ * @param int $len
+ * @param int $offset
+ * @return string
+ */
 function read_after($string, $position, $len = 1,$offset = 0){
 	return substr($string,$position+$offset,$len);
 }
+
+/**
+ * Считывает определенное кол-во байтов начиная с $position + $offset на $len байтов (позади позиции)
+ * @param $string
+ * @param $position
+ * @param int $len
+ * @param int $offset
+ * @return string
+ */
 function read_before($string, $position, $len = 1,$offset = 0){
 	$pos  = $position - $offset;
 	$start = $pos-$len;
@@ -193,6 +232,15 @@ function read_before($string, $position, $len = 1,$offset = 0){
 	}
 	return substr($string,$start,$len);
 }
+
+/**
+ * Проверяет есть ли позади позиции одна из необходимой последовательности байтов
+ * @param $string
+ * @param $position
+ * @param $needle
+ * @param int $offset
+ * @return bool
+ */
 function has_before($string, $position, $needle, $offset=0){
 	if(!is_array($needle)){
 		$needle = [$needle];
@@ -208,6 +256,15 @@ function has_before($string, $position, $needle, $offset=0){
 	}
 	return false;
 }
+
+/**
+ * Проверяет есть ли позади позиции одна из необходимой последовательности байтов
+ * @param $string
+ * @param $position
+ * @param $needle
+ * @param int $offset
+ * @return bool
+ */
 function has_after($string, $position, $needle, $offset=0){
 	if(!is_array($needle)){
 		$needle = [$needle];
@@ -225,49 +282,89 @@ function has_after($string, $position, $needle, $offset=0){
 }
 echo sprintf('%.4F',microtime(true) - $t).'<br/>';
 
-
+/**
+ * @Variant
+ * 1.1 Обработка с использованием предыдущего варианта, только в реализованом классе @see Tokenizer
+ */
 echo '<h1>Variant 1.1 OO version </h1>';
 $tokenizer  = new Tokenizer($string);
 $t = microtime(true);
+$not_capturing_group_brackets = ['?#','?:','?>','?=','?!','?<=','?<!'];
+$opened = [];
+$groups_captured = [];
+$groups_not_captured = [];
+$groups_count = 0;
 foreach($tokenizer as $position => $token){
 	if($token === '('){
 		for($backslashes = 0; $tokenizer->before(1,$backslashes) === '\\' ;$backslashes++){}
-		if($backslashes){
-			echo '<b>'.$position.' BS: '.$backslashes.'</b> '.$token.'<br/>';
+		if($backslashes%2==0){
+			$capture = !$tokenizer->hasAfter($not_capturing_group_brackets);
+			$opened[] = [$position,$capture];
+		}
+	}elseif($token===')'){
+		for($backslashes = 0; $tokenizer->before(1,$backslashes) === '\\' ;$backslashes++){}
+		if($opened){
+			list($pos, $capture) = array_shift($opened);
+			if($capture){
+				$groups_captured[] = [$pos,$position,$groups_count];
+			}else{
+				$groups_not_captured[] = [$pos,$position,$groups_count];
+			}
+			$groups_count++;
+		}else{
+			throw new \LogicException('Error have not expected closed groups!');
 		}
 	}
 }
 echo sprintf('%.4F',microtime(true) - $t).'<br/>';
 
 
-
-
-
+/**
+ * @Variant
+ * 2 Обработка с преобразованием в массив, и вытаскиванием каждого первого элемента (байта)
+ */
 echo '<h1>variant 2 (array, array_shift sequence)</h1>';
+$t = microtime(true);
 $tokens = str_split($string);
 while($tokens){
 	$token = array_shift($tokens);
+	//bla bla
 }
 echo sprintf('%.4F',microtime(true) - $t).'<br/>';
 
 
-
+/**
+ * @Variant
+ * 3 Обработка с substr с вытаскиванием каждого первого элемента (байта) (Без преобразования в массив)
+ */
 
 echo '<h1>Variant 3 (char shifting sequence)</h1>';
 $t = microtime(true);
 while($string){
 	$token = shift($string);
-}
-
-
-function pop(&$s){
-	$ch = substr($s,-1);
-	$s = substr($s,0,-1);
-	return $ch;
-}
-function shift(&$s){
-	$ch = substr($s,0,1);
-	$s = substr($s,1);
-	return $ch;
+	//bla bla
 }
 echo sprintf('%.4F',microtime(true) - $t);
+
+
+/**
+ * Вытаскивает последний байт из строки, модифицируя аргумент $s @see array_pop
+ * @param $string
+ * @return string
+ */
+function pop(&$string){
+	$b = substr($string,-1);
+	$string = substr($string,0,-1);
+	return $b;
+}
+
+/**
+ * Вытаскивает первый байт из строки, модифицируя аргумент $s @see array_shift
+ * @param $string
+ * @return string
+ */
+function shift(&$string){
+	$b = substr($string,0,1);
+	$string = substr($string,1);
+	return $b;
+}

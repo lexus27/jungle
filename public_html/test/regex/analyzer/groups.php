@@ -219,6 +219,28 @@ function byte_pop( & $string){
 }
 
 
+/* ---------------------------------------------------------------------*/
+
+/**
+ * @param $pattern
+ * @return int
+ */
+function has_captured($pattern){
+	$len = strlen($pattern);
+	$not_capturing_group_brackets = ['?#','?:','?>','?=','?!','?<=','?<!'];
+	for($i=0;$i<$len;$i++){
+		$token = $pattern{$i};
+		if($token === '('){
+			for($backslashes = 0; read_before($pattern, $i, 1, $backslashes) === '\\'; $backslashes++){}
+			if($backslashes % 2 == 0){
+				if(!has_after($pattern, $i, $not_capturing_group_brackets)){
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
 /**
  * Fastest variant
  * @param $pattern

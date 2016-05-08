@@ -125,19 +125,19 @@ $data_interface_2 = [
  * Синтаксический вариант
  */
 $data_interface_3  = '
-	id:int
-	parent_id:int
-	name:string
-	family:string
+	id			:int
+	parent_id	:int
+	name		:string
+	family		:string
 	cash
 		operations[]
-			id:int
-			amount:int
-			time:int
+			id		:int
+			amount	:int
+			time	:int
 			info
-				r_i:string
-				rupi:string
-	children[]:#
+				r_i		:string
+				rupi	:string
+	children[]	:#
 ';
 
 
