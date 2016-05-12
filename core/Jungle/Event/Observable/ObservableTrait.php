@@ -123,7 +123,7 @@ namespace Jungle\Event\Observable {
 		/**
 		 * @return ListenerInterface[] &
 		 */
-		public function & getEventListeners(){
+		public function &getEventListeners(){
 			if(!$this->_event_listeners_sorted){
 				$this->_event_listeners_sorted = true;
 				Massive::sortColumn($this->_event_listeners,function($listener){
