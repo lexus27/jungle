@@ -15,24 +15,11 @@ namespace Jungle\Application {
 	 */
 	interface ResponseInterface{
 
-		public function isSuccess();
+		public function getFormatterType();
 
-		public function getNotices();
-
-		public function getErrors();
-
-
-
-		public function getObject();
-
-		public function getCollection();
-
-		public function getCount();
-
-		/**
-		 * @return string
-		 */
 		public function getContent();
+
+		public function send();
 
 	}
 }

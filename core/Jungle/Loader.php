@@ -155,7 +155,7 @@ namespace Jungle {
 			foreach($this->namespaces as $ns => $path){
 				if(strpos($namespace, $ns)===0){
 					$suffix = substr($namespace,strlen($ns));
-					return $path . preg_replace('@[\\\\/]+@',DIRECTORY_SEPARATOR, $suffix);
+					return $path . $suffix;
 				}
 			}
 			return null;
@@ -269,6 +269,13 @@ namespace Jungle {
 			}
 
 			return false;
+		}
+
+		/**
+		 *
+		 */
+		public function register(){
+			spl_autoload_register([$this,'autoLoad']);
 		}
 
 

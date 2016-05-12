@@ -9,7 +9,9 @@
  */
 namespace Jungle\Application\Dispatcher\Controller {
 
-	use Jungle\Application\Dispatcher\Router\Routing;
+	use Jungle\Application\Dispatcher;
+	use Jungle\Application\Dispatcher\ModuleInterface;
+	use Jungle\Application\Dispatcher\Router\RoutingInterface;
 
 	/**
 	 * Interface ProcessInterface
@@ -18,23 +20,48 @@ namespace Jungle\Application\Dispatcher\Controller {
 	interface ProcessInterface{
 
 		/**
+		 * @return Dispatcher
+		 */
+		public function getDispatcher();
+
+		/**
+		 * @return ModuleInterface|null
+		 */
+		public function getModule();
+
+		/**
+		 * @return object|ControllerInterface|ControllerManuallyInterface
+		 */
+		public function getController();
+
+		/**
 		 * HMVC-Architecture
 		 * @return bool
 		 */
 		public function isExternal();
 
 		/**
-		 * @return Routing
+		 * @return RoutingInterface
 		 */
 		public function getRouting();
 
 		/**
-		 * @return ProcessInterface
+		 * @return RoutingInterface
 		 */
-		public function getProcess();
+		public function getBasedRouting();
 
 		/**
-		 * @return ProcessInterface|Routing|null
+		 * @return ProcessInterface
+		 */
+		public function getBasedProcess();
+
+		/**
+		 * @return ProcessInterface
+		 */
+		public function getParentProcess();
+
+		/**
+		 * @return ProcessInterface|RoutingInterface|null
 		 */
 		public function getInitiator();
 
@@ -42,6 +69,11 @@ namespace Jungle\Application\Dispatcher\Controller {
 		 * @return mixed
 		 */
 		public function getReference();
+
+		/**
+		 * @return string
+		 */
+		public function getReferenceString();
 
 		/**
 		 * @return array
@@ -53,14 +85,14 @@ namespace Jungle\Application\Dispatcher\Controller {
 		 * @param $data
 		 * @return mixed
 		 */
-		public function call($reference, $data);
+		public function call($reference, $data = null);
 
 		/**
 		 * @param $reference
 		 * @param $data
 		 * @return mixed
 		 */
-		public function callIn($reference, $data);
+		public function callIn($reference, $data = null);
 
 		/**
 		 * @param $key
@@ -87,6 +119,28 @@ namespace Jungle\Application\Dispatcher\Controller {
 		 */
 		public function __unset($key);
 
+		/**
+		 * @return bool
+		 */
+		public function isCompleted();
+
+		/**
+		 * @param bool|true $completed
+		 * @return $this
+		 */
+		public function setCompleted($completed = true);
+
+		/**
+		 * @param $result
+		 * @param bool $completed
+		 * @return mixed
+		 */
+		public function setResult($result,$completed = true);
+
+		/**
+		 * @return mixed
+		 */
+		public function getResult();
 	}
 }
 

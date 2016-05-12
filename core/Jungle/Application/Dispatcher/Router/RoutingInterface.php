@@ -11,6 +11,7 @@ namespace Jungle\Application\Dispatcher\Router {
 	
 	use Jungle\Application\Dispatcher\RouteInterface;
 	use Jungle\Application\Dispatcher\Router\Exception\MatchedException;
+	use Jungle\Application\Dispatcher\RouterInterface;
 	use Jungle\Application\RequestInterface;
 
 	/**
@@ -57,6 +58,11 @@ namespace Jungle\Application\Dispatcher\Router {
 		 * @return RouteInterface
 		 */
 		public function getRoute();
+
+		/**
+		 * @return RouterInterface
+		 */
+		public function getRouter();
 
 		/**
 		 * @return array

@@ -4,19 +4,18 @@
  * Author: Kutuzov Alexey Konstantinovich <lexus.1995@mail.ru>
  * Project: jungle
  * IDE: PhpStorm
- * Date: 08.05.2016
- * Time: 0:53
+ * Date: 10.05.2016
+ * Time: 19:40
  */
-namespace App\Modules\Manager\Controller {
+namespace App\Modules\Main\View\json {
 
 	/**
-	 * @Controller
-	 * Class IndexController
-	 * @package App\Manager
+	 * Class JsonView
+	 * @package App\Modules\Main\View\json
 	 */
-	class Index{
+	class JsonView{
 
-		public function indexAction(){
+		public function format($data){
 
 		}
 

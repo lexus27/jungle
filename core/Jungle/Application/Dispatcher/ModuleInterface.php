@@ -9,6 +9,10 @@
  */
 namespace Jungle\Application\Dispatcher {
 
+	use Jungle\Application\Dispatcher;
+	use Jungle\Application\Dispatcher\Controller\ProcessInitiatorInterface;
+	use Jungle\Application\Dispatcher\Controller\ProcessInterface;
+
 	/**
 	 * Interface ModuleInterface
 	 * @package Jungle\Application\Dispatcher
@@ -25,6 +29,17 @@ namespace Jungle\Application\Dispatcher {
 		 * @return string
 		 */
 		public function getName();
+
+		/**
+		 * @param array $properties
+		 * @return mixed
+		 */
+		public function fromArray(array $properties);
+
+		/**
+		 * @return string
+		 */
+		public function getCacheDirname();
 
 		/**
 		 * @param $namespace
@@ -85,16 +100,24 @@ namespace Jungle\Application\Dispatcher {
 		public function getActionSuffix();
 
 		/**
-		 * @param $params
+		 * @param Dispatcher $dispatcher
+		 * @param array $data
 		 * @param array|null $reference
-		 * @return mixed
+		 * @param ProcessInitiatorInterface $initiator
+		 * @return ProcessInterface
 		 */
-		public function execute(array $params, $reference = null);
+		public function execute(Dispatcher $dispatcher, array $data, $reference = null, ProcessInitiatorInterface $initiator = null);
 
 		/**
 		 * @return mixed
 		 */
 		public function getDi();
+
+
+		public function initialize();
+
+
+
 
 	}
 }

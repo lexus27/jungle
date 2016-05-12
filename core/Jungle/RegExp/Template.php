@@ -89,7 +89,7 @@ namespace Jungle\RegExp {
 		public function getPlaceholderNames(){
 			if(null===$this->placeholder_names){
 				$this->placeholder_names = [];
-				foreach($this->placeholders as $ph){
+				foreach($this->getPlaceholders() as $ph){
 					$this->placeholder_names[] = $ph;
 				}
 			}
@@ -100,6 +100,9 @@ namespace Jungle\RegExp {
 		 * @return Placeholder[]
 		 */
 		public function getPlaceholders(){
+			if(!$this->compiled){
+				$this->_compile();
+			}
 			return $this->placeholders;
 		}
 

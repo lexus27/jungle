@@ -1,19 +1,28 @@
 <?php
-include __DIR__ . DIRECTORY_SEPARATOR . 'test' . DIRECTORY_SEPARATOR . 'loader.php';
 
 $t = microtime(true);
+include __DIR__ . DIRECTORY_SEPARATOR . 'lab' . DIRECTORY_SEPARATOR . 'loader.php';
+
+
 
 $dispatcher = new \Jungle\Application\Dispatcher();
-$dispatcher->setControllerNamespace('App\\Controllers');
 
+
+
+$dispatcher->registerModules([
+	'main' => [
+		'class' => App\Modules\Main::class
+	]
+]);
 
 $router = new \Jungle\Application\Dispatcher\Router\HTTP\Router();
 $router->removeExtraRight('/');
-$router->any('',[
+$router->any('/',[
 	'reference' => [
 		'controller' 	=> 'index',
 		'action' 		=> 'index'
-	]
+	],
+	'modify' => false
 ])->setName('root');
 
 $router->post('/user/login',[
@@ -36,14 +45,14 @@ $router->any('/user/{id:int.nozero}',[
 ])->setName('user-info');
 
 
-$dispatcher->setRouter($router);
+$dispatcher->addRouter($router);
 
 $dispatcher->dispatch(\Jungle\HTTPFoundation\Request::fromCurrent());
 
 
 echo '<br/>'.sprintf('%.4F',microtime(true) - $t);
 
-
+echo '<pre>',print_r($dispatcher->getModule('main')->getControllerNames(), 1),'</pre>';
 
 
 

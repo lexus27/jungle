@@ -4,22 +4,21 @@
  * Author: Kutuzov Alexey Konstantinovich <lexus.1995@mail.ru>
  * Project: jungle
  * IDE: PhpStorm
- * Date: 22.04.2016
- * Time: 21:18
+ * Date: 09.05.2016
+ * Time: 23:27
  */
 namespace Jungle\Application\Dispatcher\Controller {
 
-
 	/**
-	 * Interface ControllerInterface
-	 * @package Jungle\Application
+	 * Interface FormatterAwareInterface
+	 * @package Jungle\Application\Dispatcher\Controller
 	 */
-	interface ControllerInterface{
+	interface FormatterAwareInterface{
 
 		/**
-		 * @return
+		 * @return FormatterInterface|null
 		 */
-		public function initialize();
+		public function getFormatter();
 
 	}
 }

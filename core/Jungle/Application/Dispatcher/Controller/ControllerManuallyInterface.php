@@ -10,10 +10,10 @@
 namespace Jungle\Application\Dispatcher\Controller {
 
 	/**
-	 * Interface ManuallyControllerInterface
+	 * Interface ControllerManuallyInterface
 	 * @package Jungle\Application\Dispatcher\Controller
 	 */
-	interface ManuallyControllerInterface extends ControllerInterface{
+	interface ControllerManuallyInterface extends ControllerInterface{
 
 		/**
 		 * @param string $actionName
@@ -24,25 +24,29 @@ namespace Jungle\Application\Dispatcher\Controller {
 		/**
 		 * @param string $actionName
 		 * @param ProcessInterface $process
+		 * @param array $options
 		 * @return mixed
 		 */
-		public function call($actionName, ProcessInterface $process);
-
+		public function call($actionName, ProcessInterface $process, array $options = []);
 
 
 		/**
-		 * Является ли контроллер приватным,
-		 * такой контроллер разрешается использовать только из другого контроллера
+		 * @param $actionName
 		 * @return bool
 		 */
-		public function isPrivate();
+		public function supportPublic($actionName);
 
 		/**
-		 * Является форматирующим, берет на себя контроль форматирования вывода
+		 * @param $actionName
 		 * @return bool
 		 */
-		public function isFormatter();
+		public function supportHierarchy($actionName);
 
+		/**
+		 * @param $actionName
+		 * @return bool
+		 */
+		public function supportFormat($actionName);
 
 	}
 }

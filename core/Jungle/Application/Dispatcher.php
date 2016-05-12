@@ -9,17 +9,16 @@
  */
 namespace Jungle\Application {
 
-	use Jungle\Application\Dispatcher\Controller\ControllerInterface;
-	use Jungle\Application\Dispatcher\Controller\Process;
+	use Jungle\Application\Dispatcher\Controller\FormatterInterface;
 	use Jungle\Application\Dispatcher\Controller\ProcessInitiatorInterface;
 	use Jungle\Application\Dispatcher\Controller\ProcessInterface;
 	use Jungle\Application\Dispatcher\Exception;
 	use Jungle\Application\Dispatcher\Exception\Control;
 	use Jungle\Application\Dispatcher\Exception\NotFound;
+	use Jungle\Application\Dispatcher\Module;
 	use Jungle\Application\Dispatcher\ModuleInterface;
 	use Jungle\Application\Dispatcher\Router;
 	use Jungle\Application\Dispatcher\RouterInterface;
-	use Jungle\Util\Value\Massive;
 
 	/**
 	 * Class Dispatcher
@@ -27,45 +26,33 @@ namespace Jungle\Application {
 	 */
 	class Dispatcher{
 
-		/** @var  Router */
-		protected $router;
-
-		/**
-		 * @var array
-		 */
+		/** @var  RouterInterface[] */
 		protected $routers = [];
 
-		/**
-		 * @var
-		 */
-		protected $router_recognizer;
+		/** @var  ModuleInterface[]|array[]  */
+		protected $modules = [];
 
-
-
-		/**
-		 * @var array
-		 */
-		protected $default_reference = [
-			'module' 		=> null,
-			'controller' 	=> 'index',
-			'action' 		=> 'index'
-		];
+		/** @var  FormatterInterface[]  */
+		protected $formatters = [];
 
 		/** @var  string */
-		protected $controller_namespace;
+		protected $default_module = 'main';
 
-		/** @var string  */
-		protected $controller_suffix = 'Controller';
+		/** @var  bool  */
+		protected $dispatching = false;
 
-		/** @var string  */
-		protected $action_suffix = 'Action';
-
-		/** @var  array  */
-		protected $controller_objects = [];
+		/** @var  RequestInterface */
+		protected $dispatching_request;
 
 
-		/** @var  ModuleInterface[]  */
-		protected $modules = [];
+		/**
+		 * @param FormatterInterface $formatter
+		 * @return $this
+		 */
+		public function addFormatter(FormatterInterface $formatter){
+			$this->formatters[] = $formatter;
+			return $this;
+		}
 
 
 		/**
@@ -76,327 +63,338 @@ namespace Jungle\Application {
 		public function addModule(ModuleInterface $module, $check = true){
 			if($check){
 				$name = $module->getName();
-				foreach($this->modules as $index => $module){
-					if($module->getName() === $name){
+				foreach($this->modules as $index => $m){
+					if($m->getName() === $name){
 						throw new \LogicException('Module "'.$name.'" already exists!');
 					}
 				}
 			}
-			$this->modules[] = $module;
+			$this->modules[$module->getName()] = $module;
 			return $this;
 		}
 
 		/**
-		 * @param $module
-		 * @return null
+		 * @param $moduleName
+		 * @return null|ModuleInterface
 		 */
-		public function getModule($module){
-			if(is_string($module)){
-				$i = false;
-				foreach($this->modules as $index => $module){
-					if($module->getName() === $module){
-						$i = $index;
-						break;
-					}
+		public function getModule($moduleName){
+			if(isset($this->modules[$moduleName])){
+				$module = $this->modules[$moduleName];
+				if($module instanceof ModuleInterface){
+					return $module;
+				}else{
+					$module = $this->loadModule($moduleName,$module);
+					$this->modules[$moduleName] = $module;
+					return $module;
 				}
-			}else{
-				$i = array_search($module,$this->modules, true);
-			}
-			if($i !== false){
-				return $this->modules[$i];
 			}
 			return null;
 		}
 
 		/**
+		 * @param $moduleName
+		 * @param array $definition
+		 * @return mixed
+		 * @throws Exception
+		 */
+		protected function loadModule($moduleName,array $definition){
+			$definition = array_replace([
+				'class' => Module\DynamicModule::class,
+			],$definition);
+			$className = $definition['class'];
+			if(class_exists($className)){
+				$module = new $className();
+				if(!$module instanceof ModuleInterface){
+					throw new Exception('Module instance is not '.ModuleInterface::class);
+				}
+				$module->fromArray($definition);
+				$module->setName($moduleName);
+				$module->initialize();
+				return $module;
+			}else{
+				throw new Exception('Module load error: not found module class "'.$className.'"');
+			}
+		}
+
+		/**
+		 * @param array $modules key pairs assoc
+		 * @param bool|false $merge
+		 * @return $this
+		 */
+		public function registerModules(array $modules, $merge = false){
+			foreach($modules as $moduleName => & $moduleDefinition){
+				if($moduleDefinition instanceof ModuleInterface){
+					$moduleDefinition->setName($moduleName);
+				}elseif(is_string($moduleDefinition)){
+					$moduleDefinition = [
+						'class' => $moduleDefinition
+					];
+				}
+			}
+			$this->modules = $merge?array_replace($this->modules,$modules):$modules;
+			return $this;
+		}
+
+		/**
 		 * @param $module
+		 * @return $this
 		 */
 		public function removeModule($module){
-			if(is_string($module)){
-				$i = false;
-				foreach($this->modules as $index => $module){
-					if($module->getName() === $module){
-						$i = $index;
-						break;
-					}
-				}
-			}else{
-				$i = array_search($module,$this->modules, true);
+			if(isset($this->modules[$module])){
+				unset($this->modules[$module]);
 			}
+			return $this;
+		}
 
-			if($i !== false){
-				array_splice($this->modules, $i,1);
-			}
 
+
+		/**
+		 * @param RouterInterface $router
+		 * @return $this
+		 */
+		public function addRouter(RouterInterface $router){
+			$this->routers[] = $router;
+			return $this;
+		}
+
+		/**
+		 * @param RouterInterface $router
+		 * @return mixed
+		 */
+		public function searchRouter(RouterInterface $router){
+			return array_search($router,$this->routers,true);
 		}
 
 		/**
 		 * @param RouterInterface $router
 		 * @return $this
 		 */
-		public function setRouter(RouterInterface $router){
-			$this->router = $router;
+		public function removeRouter(RouterInterface $router){
+			$i = $this->searchRouter($router);
+			if($i!==false){
+				array_splice($this->routers,$i,1);
+			}
 			return $this;
 		}
 
-		/**
-		 * @return Router
-		 */
-		public function getRouter(){
-			return $this->router;
-		}
 
-		/**
-		 * @param $namespace
-		 * @return $this
-		 */
-		public function setControllerNamespace($namespace){
-			$this->controller_namespace = $namespace;
-			return $this;
-		}
 
-		/**
-		 * @param $suffix
-		 * @return $this
-		 */
-		public function setControllerSuffix($suffix){
-			$this->controller_suffix = $suffix;
-			return $this;
-		}
-
-		/**
-		 * @return string
-		 */
-		public function getControllerSuffix(){
-			return $this->controller_suffix;
-		}
-
-		/**
-		 * @param $suffix
-		 * @return $this
-		 */
-		public function setActionSuffix($suffix){
-			$this->action_suffix = $suffix;
-			return $this;
-		}
-
-		/**
-		 * @return string
-		 */
-		public function getActionSuffix(){
-			return $this->action_suffix;
-		}
 
 		/**
 		 * @param RequestInterface $request
 		 * @return mixed
 		 * @throws Control
+		 * @throws Exception
 		 * @throws NotFound
 		 */
 		public function dispatch(RequestInterface $request){
-			$routing = $this->router->match($request);
-			if($routing->isNotFound()){
+			if($this->dispatching){
+				throw new \LogicException('dispatch already run!');
+			}
+			$this->dispatching = true;
+			$this->dispatching_request = $request;
+			try{
+
+				// Routing
+				$router = $this->getDesiredRouter($request);
+				if(!$router){
+					throw new Exception('Not found desired Router by Request!');
+				}
+				$routing = $router->match($request);
+
+				// Control
 				if($routing->isUnknown()){
 					throw new NotFound('Not found route by request!');
 				}else{
-					return $this->control($routing->getReference(),$routing->getParams(), $routing);
+					$result = $this->control($routing->getReference(), $routing->getParams(), true, $routing);
 				}
-			}else{
-				return $this->control($routing->getReference(),$routing->getParams(), $routing);
+
+				// Prepare preferred response
+				$response = $this->prepareResponse($result);
+
+				$this->dispatching = false;
+				$this->dispatching_request = null;
+
+				return $response;
+
+			}finally{
+				$this->dispatching = false;
+				$this->dispatching_request = null;
 			}
 		}
 
 
 		/**
 		 * @param $reference
-		 * @param $params
+		 * @param $data
+		 * @param bool $format
 		 * @param null|ProcessInitiatorInterface|ProcessInterface|Router\Routing $initiator
 		 * @return mixed
 		 * @throws Control
-		 * @throws Exception
 		 */
-		public function control($reference, $params,ProcessInitiatorInterface $initiator = null){
-			$reference = $this->_normalizeReference($reference);
-			list($m,$c,$a) = Massive::orderedKeys($reference,['module','controller','action']);
-
-			$controllerQualified = $this->getQualifiedReferenceString($reference,false);
-			$referenceString = $this->appendQualifiedAction($controllerQualified,$reference);
-
-			if(!isset($this->controller_objects[$controllerQualified])){
-				$controller_class = $this->_prepareControllerClassName($c);
-				if(class_exists($controller_class)){
-					$controller = new $controller_class;
-					if(method_exists($controller, 'initialize')){
-						$controller->initialize();
-					}
-					$this->controller_objects[$controllerQualified] = $controller;
-				}else{
-					throw new Control('Controller with name: '.$referenceString.' not found (class: '.$controller_class.')');
-				}
+		public function control($reference,$data = null, $format = false, ProcessInitiatorInterface $initiator = null){
+			$reference = self::normalizeReference($reference,[
+				'module' => $this->default_module
+			]);
+			$moduleName = $reference['module'];
+			$module = $this->getModule($moduleName);
+			if(!$module){
+				throw new Control('Module "'.$moduleName.'" not found!');
 			}
-
-
-
-			$controller = $this->controller_objects[$controllerQualified];
-
-			$process = new Process($this, $controller, $params, $reference,$initiator);
-
-			$action_method = $this->_prepareActionMethodName($a);
-			if($controller instanceof ControllerInterface){
-				return $this->_controlControllerInterface($process, $c, $a, $controller);
-			}elseif(method_exists($controller,$action_method)){
-				return $this->_controlNativeObject($process, $c, $a, $action_method, $controller);
+			$process = $module->execute($this,(array) $data, $reference, $initiator);
+			if($format){
+				return $this->format($process,is_array($format)?$format:null);
 			}else{
-				throw new Control('Action not found: ' . $referenceString);
+				return $process->getResult();
 			}
 		}
 
 		/**
-		 * @param $reference
-		 * @return array
-		 */
-		protected function _normalizeReference($reference){
-			if(!is_array($reference)){
-				$reference = [];
-			}
-			foreach($this->default_reference as $k => $v){
-				if(!isset($reference[$k])){
-					$reference[$k] = $v;
-				}
-			}
-			return array_map('strtolower',$reference);
-		}
-
-		/**
-		 *
-		 * Call:
-		 *
-		 * 		beforeControl					system
-		 * 			beforeControl				controller
-		 * 				beforeControl{Action}	controller
-		 *
-		 * 					execution
-		 *
-		 * 				afterControl{Action}	controller
-		 * 			afterControl				controller
-		 * 		afterControl					system
-		 *
 		 * @param ProcessInterface $process
-		 * @param $controllerName
-		 * @param $actionName
-		 * @param $actionMethod
-		 * @param $controller
-		 * @return bool
-		 */
-		protected function _controlNativeObject(ProcessInterface $process, $controllerName, $actionName, $actionMethod, $controller){
-
-			$beforeControlMethod = 'beforeControl';
-			$beforeControlActionMethod = $beforeControlMethod . $actionName;
-			if($this->_beforeControl($process, $controllerName, $actionName, $controller) === false) return false;
-			if(method_exists($controller, $beforeControlMethod)){
-				if($controller->{$beforeControlMethod}($process, $actionName, $controllerName) === false) return false;
-			}
-			if(method_exists($controller, $beforeControlActionMethod)){
-				if($controller->{$beforeControlActionMethod}($process, $actionName, $controllerName) === false) return false;
-			}
-
-
-			$result = $controller->{$actionMethod}($process, $this);
-
-
-			$afterControlMethod = 'afterControl';
-			$afterControlActionMethod = $afterControlMethod . $actionName;
-			if(method_exists($controller, $afterControlActionMethod)){
-				$controller->{$afterControlActionMethod}($process, $result, $actionName, $controllerName);
-			}
-			if(method_exists($controller, $afterControlMethod)){
-				$controller->{$afterControlMethod}($process, $result, $actionName, $controllerName);
-			}
-			$this->_afterControl($process, $result, $controllerName, $actionName, $controller);
-
-			return $result;
-
-		}
-
-		/**
-		 * TODO
-		 * @param $context
-		 * @param $controllerName
-		 * @param $actionName
-		 * @param ControllerInterface $controller
+		 * @param array $options
 		 * @return mixed
 		 */
-		public function _controlControllerInterface($context, $controllerName, $actionName,ControllerInterface $controller){
+		public function format(ProcessInterface $process,$options = null){
+			if(is_array($options)){
 
-		}
-
-
-		/**
-		 * @param $context
-		 * @param $controllerName
-		 * @param $actionName
-		 * @param $controllerObject
-		 */
-		protected function _beforeControl($context, $controllerName, $actionName, $controllerObject){
-
-		}
-
-		/**
-		 * @param $context
-		 * @param $result
-		 * @param $controllerName
-		 * @param $actionName
-		 * @param $controllerObject
-		 */
-		protected function _afterControl($context, $result, $controllerName, $actionName, $controllerObject){
-
-		}
-
-		/**
-		 * @param $controller_name
-		 * @return string
-		 * @throws Exception
-		 */
-		protected function _prepareControllerClassName($controller_name){
-			if(strpos($controller_name,'.')!==false){
-				$controller_name = explode('.',$controller_name);
-				foreach($controller_name as $i => $chunk){
-					if(!$chunk){
-						throw new Exception('Error qualified controller name');
-					}
-					$controller_name[$i] = ucfirst($chunk);
+			}elseif(is_string($options)){
+				if($options === 'json'){
+					return json_encode($process->getResult());
+				}elseif($options === 'xml'){
+					return json_encode($process->getResult());
 				}
-				$controller_name = implode('\\',$controller_name);
+			}elseif($options = null){
+				$options = $this->getFormatFromRequest($this->dispatching_request);
 			}
-			return $this->controller_namespace . '\\' . $controller_name . $this->controller_suffix;
+			return $process->getResult();
 		}
 
-		/**
-		 * @param $action_name
-		 * @return string
-		 */
-		protected function _prepareActionMethodName($action_name){
-			return $action_name . $this->action_suffix;
+		public function getFormatFromRequest(RequestInterface $request){
+			return [
+				'type' => 'text/html'
+			];
 		}
+
+
+		/**
+		 * @param $result
+		 * @return ResponseInterface
+		 */
+		protected function prepareResponse($result){
+
+		}
+
+
+
+
+		/**
+		 * @param $process
+		 * @return bool|void
+		 */
+		public function beforeControl(ProcessInterface $process){ }
+
+		/**
+		 * @param $process
+		 * @param $result
+		 */
+		public function afterControl(ProcessInterface $process, $result){ }
+
 
 		/**
 		 * @param $reference
-		 * @param bool $withAction
-		 * @return string
+		 * @param array|null $default_reference
+		 * @param bool $finallyNormalize
+		 * @return array
 		 */
-		protected function getQualifiedReferenceString($reference,$withAction = true){
-			return ($reference['module']?'#'.$reference['module']:'').
-				   ($reference['controller']?':'.$reference['controller']:'').
-				   ($withAction && $reference['action']?':'.$reference['action']:'');
+		public static function normalizeReference($reference = null,array $default_reference = null, $finallyNormalize = true){
+			if($reference === null) $reference = [];
+			if(is_string($reference)){
+
+				$module = null;
+				$controller = null;
+				$action = null;
+
+				if(strpos($reference,':')!==false){
+					$reference = explode(':',$reference);
+					if(isset($reference[0])){
+						if($reference[0]{0}==='#'){
+							$module = substr($reference[0],1);
+						}else{
+							$controller = $reference[0];
+						}
+					}
+					if(isset($reference[1])){
+						if($controller!==null){
+							$action = $reference[1];
+						}else{
+							$controller = $reference[1];
+						}
+					}
+					if($action === null && isset($reference[2])){
+						$action = $reference[2];
+					}
+				}else{
+					$action = $reference;
+				}
+
+				if(strpos($action,'.')!==false){
+					throw new \LogicException('Wrong string reference');
+				}
+
+				$reference = [
+					'module' => $module,
+					'controller' => $controller,
+					'action' => $action
+				];
+				if($finallyNormalize){
+					if($default_reference === null){
+						$default_reference = [
+								'module'		=> null,
+								'controller'	=> null,
+								'action'		=> null,
+						];
+					}
+					foreach($default_reference as $k => $v){
+						if(!isset($reference[$k])){
+							$reference[$k] = $v;
+						}
+					}
+				}
+			}elseif($finallyNormalize){
+				if($default_reference === null){
+					$default_reference = [
+						'module'		=> null,
+						'controller'	=> null,
+						'action'		=> null,
+					];
+				}
+				foreach($default_reference as $k => $v){
+					if(!isset($reference[$k])){
+						$reference[$k] = $v;
+					}
+				}
+			}
+			if($finallyNormalize){
+				foreach($reference as $k => $v){
+					if(!is_null($v)){
+						$reference[$k] = strtolower($v);
+					}
+				}
+			}
+			return $reference;
 		}
 
+
+
 		/**
-		 * @param $qualified
-		 * @param $reference
-		 * @return string
+		 * @param RequestInterface $request
+		 * @return RouterInterface|null
 		 */
-		protected function appendQualifiedAction($qualified, $reference){
-			return $qualified. ($reference['action']?':'.$reference['action']:'');
+		protected function getDesiredRouter(RequestInterface $request){
+			foreach($this->routers as $router){
+				if($router->isDesiredRequest($request))return $router;
+			}
+			return null;
 		}
 
 	}

@@ -10,7 +10,7 @@
 namespace Jungle\Application\Dispatcher {
 
 	use Jungle\Application\Dispatcher\Context;
-	use Jungle\Application\Dispatcher\Reference\ModularReferenceInterface;
+	use Jungle\Application\Dispatcher\Router\RoutingInterface;
 	use Jungle\Application\RequestInterface;
 	use Jungle\RegExp\Template;
 
@@ -22,7 +22,13 @@ namespace Jungle\Application\Dispatcher {
 
 		/**
 		 * @param RequestInterface $request
-		 * @return ModularReferenceInterface|false
+		 * @return mixed
+		 */
+		public function isDesiredRequest(RequestInterface $request);
+
+		/**
+		 * @param RequestInterface $request
+		 * @return RoutingInterface
 		 */
 		public function match(RequestInterface $request);
 
@@ -55,7 +61,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @param string $path
 		 * @return string
 		 */
-		public function normalizePath($path);
+		public function modifyPath($path);
 	}
 }
 

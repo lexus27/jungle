@@ -9,7 +9,9 @@
  */
 namespace App\Modules {
 	
-	class Manager{
+	use Jungle\Application\Dispatcher\Module;
+
+	class Manager extends Module{
 		
 	}
 }

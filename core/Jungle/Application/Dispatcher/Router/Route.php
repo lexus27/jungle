@@ -9,11 +9,10 @@
  */
 namespace Jungle\Application\Dispatcher\Router {
 
-	use Jungle\Application\Dispatcher\Context\External;
+	use Jungle\Application\Dispatcher;
 	use Jungle\Application\Dispatcher\RouteInterface;
 	use Jungle\Application\Dispatcher\Router\Exception\GenerateLink;
 	use Jungle\Application\Dispatcher\RouterInterface;
-	use Jungle\Application\RequestInterface;
 	use Jungle\RegExp\Template;
 	use Jungle\Util\Value\Massive;
 
@@ -98,14 +97,25 @@ namespace Jungle\Application\Dispatcher\Router {
 		protected $routing;
 
 
+		/** @var bool  */
+		protected $modifyPath = true;
 
 
+		/**
+		 * @param bool|true $modifyAllowed
+		 * @return $this
+		 */
+		public function setModifyPath($modifyAllowed = true){
+			$this->modifyPath = $modifyAllowed;
+			return $this;
+		}
 
-
-
-
-
-
+		/**
+		 * @return bool
+		 */
+		public function isModifyPath(){
+			return $this->modifyPath;
+		}
 
 		/**
 		 * @param $name
@@ -304,16 +314,25 @@ namespace Jungle\Application\Dispatcher\Router {
 		 */
 		public function generateLink(array $params = null,$reference = null,array $specials = null){
 			$tpl = $this->_compilePattern();
+			$reference = Dispatcher::normalizeReference($reference,$this->default_reference);
 			$specials = $this->_importReference($reference, (array)$specials);
-			$params = $this->_compositeSpecials($specials, (array)$params);
+			$params = (array)$params;
+			$templateParams = $this->_compositeSpecials($specials, $params);
+			$names = [];
 			foreach($tpl->getPlaceholders() as $ph){
 				$name = $ph->getName();
-				if(!isset($params[$name]) || $params[$name]===null){
+				$names[] = $name;
+				if(!isset($templateParams[$name]) || $templateParams[$name]===null){
 					if(!$ph->isOptional()){
 						throw new GenerateLink('Error generate link: parameter required "'.$name.'"');
 					}
-				}elseif(!$ph->getType()->isValid($params[$name])){
+				}elseif(!$ph->getType()->isValid($templateParams[$name])){
 					throw new GenerateLink('Error generate link: Invalid parameter type "' . $name . '"!');
+				}
+			}
+			foreach($params as $key => $value){
+				if(!in_array($key, $names,true)){
+					throw new GenerateLink('Param key "'.$key.'" It does not match the host template parameters!');
 				}
 			}
 			try{
@@ -423,20 +442,10 @@ namespace Jungle\Application\Dispatcher\Router {
 		 * @return array
 		 */
 		protected function _importReference($reference,array $specials = []){
-			if(!is_array($reference)){
-				$reference = [];
-			}
-
-			if(!isset($reference['module'])){
-				$specials['module'] = isset($this->default_reference['module'])?$this->default_reference['module']:null;
-			}
-
-			if(!isset($reference['controller'])){
-				$specials['controller'] = isset($this->default_reference['controller'])?$this->default_reference['controller']:null;
-			}
-
-			if(!isset($reference['action'])){
-				$specials['action'] = isset($this->default_reference['action'])?$this->default_reference['action']:null;
+			foreach($reference as $k => $v){
+				if(!is_null($v)){
+					$specials[$k] = $v;
+				}
 			}
 			return $specials;
 		}
@@ -472,7 +481,10 @@ namespace Jungle\Application\Dispatcher\Router {
 		 */
 		protected function _matchPattern(){
 			$this->_compilePattern();
-			$path = $this->normalizePath($this->routing->getRequest());
+			$path = $this->routing->getRequest()->getPath();
+			if($this->modifyPath){
+				$path = $this->modifyPath($path);
+			}
 			return $this->pattern_compiled->match($path);
 		}
 
@@ -526,11 +538,11 @@ namespace Jungle\Application\Dispatcher\Router {
 		}
 
 		/**
-		 * @param RequestInterface $request
+		 * @param string $path
 		 * @return string
 		 */
-		public function normalizePath(RequestInterface $request){
-			return $this->router->normalizePath($request->getPath());
+		public function modifyPath($path){
+			return $this->router->modifyPath($path);
 		}
 
 	}

@@ -9,8 +9,22 @@
  */
 namespace App\Modules {
 	
-	class Main{
-		
+	use Jungle\Application\Dispatcher;
+
+	/**
+	 * Class Main
+	 * @package App\Modules
+	 */
+	class Main extends Dispatcher\Module{
+
+		/**
+		 * @return string
+		 */
+		public function getControllerNamespace(){
+			return __NAMESPACE__ . '\\Main\\Controller';
+		}
+
+
 	}
 }
 

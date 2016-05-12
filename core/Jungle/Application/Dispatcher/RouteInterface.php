@@ -10,7 +10,6 @@
 namespace Jungle\Application\Dispatcher {
 
 	use Jungle\Application\Dispatcher\Router\RoutingInterface;
-	use Jungle\Application\RequestInterface;
 
 	/**
 	 * Interface RouteInterface
@@ -84,10 +83,10 @@ namespace Jungle\Application\Dispatcher {
 		public function match(RoutingInterface $routing);
 
 		/**
-		 * @param RequestInterface $request
+		 * @param string $path
 		 * @return string
 		 */
-		public function normalizePath(RequestInterface $request);
+		public function modifyPath($path);
 
 		/**
 		 * @return array [m,c,a]

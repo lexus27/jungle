@@ -20,13 +20,10 @@ namespace Jungle\Application\Dispatcher\Router\HTTP {
 
 		/**
 		 * @param RequestInterface $request
-		 * @return Mixed
+		 * @return bool
 		 */
-		public function match(RequestInterface $request){
-			if(!$request instanceof \Jungle\HTTPFoundation\RequestInterface){
-				throw new \LogicException('Request type error: Must be "'.\Jungle\HTTPFoundation\RequestInterface::class.'" instance');
-			}
-			return parent::match($request);
+		public function isDesiredRequest(RequestInterface $request){
+			return $request instanceof \Jungle\HTTPFoundation\RequestInterface;
 		}
 
 		/**
@@ -63,6 +60,9 @@ namespace Jungle\Application\Dispatcher\Router\HTTP {
 			$route->setDefaultReference($reference);
 			$route->setDefaultParams((array)$params);
 			$route->setPreferredMethod(null);
+			if(isset($options['modify'])){
+				$route->setModifyPath(boolval($options['modify']));
+			}
 			$route->setRouter($this);
 			$this->routes[] = $route;
 			return $route;

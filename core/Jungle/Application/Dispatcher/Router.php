@@ -53,7 +53,6 @@ namespace Jungle\Application\Dispatcher {
 		/** @var  Routing|null */
 		protected $last_success;
 
-
 		/**
 		 * @param string|string[]|null $subject
 		 * @return $this
@@ -85,7 +84,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @param $path
 		 * @return string
 		 */
-		public function normalizePath($path){
+		public function modifyPath($path){
 			return String::trimWordsSides($path, $this->remove_extra_left, $this->remove_extra_right, $this->remove_extra_caseless);
 		}
 
@@ -172,14 +171,12 @@ namespace Jungle\Application\Dispatcher {
 		 * @return Routing
 		 */
 		public function match(RequestInterface $request){
-			$this->last_matched = null;
-			$routing = new Routing($request);
+			$routing = new Routing($request,$this);
 			foreach($this->routes as $route){
 				try{
 					$route->match($routing);
 				}catch(MatchedException $e){
-					$this->last_matched = $e->getResult();
-					return $this->last_matched;
+					return $e->getResult();
 				}
 			}
 			list($reference, $params) = $this->notFoundConfig;

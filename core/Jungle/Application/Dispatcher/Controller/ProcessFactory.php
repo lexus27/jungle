@@ -4,22 +4,26 @@
  * Author: Kutuzov Alexey Konstantinovich <lexus.1995@mail.ru>
  * Project: jungle
  * IDE: PhpStorm
- * Date: 22.04.2016
- * Time: 21:18
+ * Date: 09.05.2016
+ * Time: 16:27
  */
 namespace Jungle\Application\Dispatcher\Controller {
-
+	
+	use Jungle\Application\Dispatcher;
 
 	/**
-	 * Interface ControllerInterface
-	 * @package Jungle\Application
+	 * TODO
+	 * Class ProcessFactory
+	 * @package Jungle\Application\Dispatcher\Controller
 	 */
-	interface ControllerInterface{
+	class ProcessFactory{
 
 		/**
-		 * @return
+		 *
 		 */
-		public function initialize();
+		public function createProcess(){
+
+		}
 
 	}
 }

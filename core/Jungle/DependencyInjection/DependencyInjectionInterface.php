@@ -15,14 +15,34 @@ namespace Jungle\DependencyInjection {
 	 */
 	interface DependencyInjectionInterface{
 
-		public function set($service_key, $service_definition);
-
-		public function get($service_key);
-
 		public function setShared($service_key,$service_definition);
 
 		public function getShared($service_key);
-		
+
+
+		/**
+		 * @param $service_key
+		 * @param callable $definition
+		 * @return mixed
+		 */
+		public function setBuilding($service_key, callable $definition);
+
+		/**
+		 * @param $serviceKey
+		 * @param null $instanceKey
+		 * @param ...$arguments
+		 * @return mixed
+		 */
+		public function buildInstance($serviceKey, $instanceKey = null, ...$arguments);
+
+
+		/**
+		 * @param $serviceKey
+		 * @param $instanceKey
+		 * @return mixed
+		 */
+		public function getInstance($serviceKey, $instanceKey);
+
 	}
 }
 

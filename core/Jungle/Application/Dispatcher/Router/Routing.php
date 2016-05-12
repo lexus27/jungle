@@ -12,6 +12,7 @@ namespace Jungle\Application\Dispatcher\Router {
 	use Jungle\Application\Dispatcher\Controller\ProcessInitiatorInterface;
 	use Jungle\Application\Dispatcher\RouteInterface;
 	use Jungle\Application\Dispatcher\Router\Exception\MatchedException;
+	use Jungle\Application\Dispatcher\RouterInterface;
 	use Jungle\Application\RequestInterface;
 
 	/**
@@ -26,6 +27,9 @@ namespace Jungle\Application\Dispatcher\Router {
 		/** @var  RouteInterface */
 		protected $route;
 
+		/** @var  RouterInterface */
+		protected $router;
+
 		/** @var  array|null */
 		protected $params;
 
@@ -38,12 +42,15 @@ namespace Jungle\Application\Dispatcher\Router {
 		/** @var  bool  */
 		protected $notFound = false;
 
+
 		/**
 		 * Routing constructor.
 		 * @param RequestInterface $request
+		 * @param RouterInterface $router
 		 */
-		public function __construct(RequestInterface $request){
+		public function __construct(RequestInterface $request, RouterInterface $router){
 			$this->request = $request;
+			$this->router = $router;
 		}
 
 		/**
@@ -117,6 +124,10 @@ namespace Jungle\Application\Dispatcher\Router {
 		 */
 		public function getRoute(){
 			return $this->route;
+		}
+
+		public function getRouter(){
+			return $this->router;
 		}
 
 		/**

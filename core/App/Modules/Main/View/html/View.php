@@ -4,13 +4,18 @@
  * Author: Kutuzov Alexey Konstantinovich <lexus.1995@mail.ru>
  * Project: jungle
  * IDE: PhpStorm
- * Date: 08.05.2016
- * Time: 0:49
+ * Date: 10.05.2016
+ * Time: 19:39
  */
-namespace App\Modules\Main\Controller\User {
+namespace App\Modules\Main\View\html {
 	
-	class Auth{
-		
+	class View{
+
+
+		public function format(){
+
+		}
+
 	}
 }
 

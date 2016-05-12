@@ -10,7 +10,7 @@
 namespace Jungle\Application\Dispatcher\Controller {
 	
 	use Jungle\Application\Dispatcher;
-	use Jungle\Application\Dispatcher\Router\Routing;
+	use Jungle\Application\Dispatcher\ModuleInterface;
 	use Jungle\Application\Dispatcher\Router\RoutingInterface;
 
 	/**
@@ -28,7 +28,10 @@ namespace Jungle\Application\Dispatcher\Controller {
 		/** @var  ProcessInitiatorInterface|RoutingInterface|ProcessInterface|null */
 		protected $initiator;
 
-		/** @var  object|ControllerInterface|ManuallyControllerInterface */
+		/** @var  ModuleInterface|null */
+		protected $module;
+
+		/** @var  object|ControllerInterface|ControllerManuallyInterface */
 		protected $controller;
 
 		/** @var  mixed */
@@ -37,16 +40,32 @@ namespace Jungle\Application\Dispatcher\Controller {
 		/** @var  array  */
 		protected $params = [];
 
+		/** @var  bool  */
+		protected $completed = false;
+
+		/** @var  mixed */
+		protected $result;
+
+
 		/**
 		 * Process constructor.
 		 * @param Dispatcher $dispatcher
-		 * @param object|ControllerInterface|ManuallyControllerInterface $controller
+		 * @param object|ControllerInterface|ControllerManuallyInterface $controller
 		 * @param array $params
 		 * @param mixed $reference
+		 * @param ModuleInterface $module
 		 * @param ProcessInitiatorInterface|RoutingInterface|ProcessInterface $initiator
 		 */
-		public function __construct(Dispatcher $dispatcher, $controller,array $params, $reference, ProcessInitiatorInterface $initiator = null){
-			$this->dispatcher = $dispatcher;
+		public function __construct(
+				Dispatcher $dispatcher,
+				$controller,
+				array $params,
+				$reference,
+				ModuleInterface $module = null,
+				ProcessInitiatorInterface $initiator = null
+		){
+			$this->module				= $module;
+			$this->dispatcher 			= $dispatcher;
 			$this->initiator_external 	= $initiator instanceof RoutingInterface;
 			$this->initiator 			= $initiator;
 			$this->controller 			= $controller;
@@ -55,10 +74,92 @@ namespace Jungle\Application\Dispatcher\Controller {
 		}
 
 		/**
+		 * @return RoutingInterface|null
+		 */
+		public function getBasedRouting(){
+			$initiator = $this->getInitiator();
+			if(!$initiator){
+				return null;
+			}
+			if($initiator instanceof RoutingInterface){
+				return $initiator;
+			}else{
+				return $initiator->getBasedRouting();
+			}
+		}
+
+		/**
+		 * @return ProcessInterface|null
+		 */
+		public function getBasedProcess(){
+			$initiator = $this->getInitiator();
+			if(!$initiator){
+				return null;
+			}
+			if($initiator instanceof ProcessInterface){
+				return $initiator;
+			}else{
+				return $initiator->getBasedProcess();
+			}
+		}
+
+		/**
+		 * @return Dispatcher\RouterInterface|null
+		 */
+		public function getRouter(){
+			$routing = $this->getBasedRouting();
+			if(!$routing){
+				return null;
+			}
+			return $routing->getRouter();
+		}
+
+		/**
+		 * @return Dispatcher
+		 */
+		public function getDispatcher(){
+			return $this->dispatcher;
+		}
+
+		/**
+		 * @return ModuleInterface|null
+		 */
+		public function getModule(){
+			return $this->module;
+		}
+
+		/**
+		 * @return ControllerInterface|ControllerManuallyInterface|object
+		 */
+		public function getController(){
+			return $this->controller;
+		}
+
+
+		/**
 		 * @return mixed
 		 */
 		public function getReference(){
 			return $this->reference;
+		}
+
+		/**
+		 * @return string
+		 */
+		public function getReferenceString(){
+
+			$module = $this->reference['module']?$this->reference['module']:false;
+			$controller = $this->reference['controller']?$this->reference['controller']:false;
+			$action = $this->reference['action']?$this->reference['action']:false;
+			if($module){
+				return '#' . $module . ':' . $controller . ':' . $action;
+			}else{
+				if($controller){
+					return $controller . ':' . $action;
+				}else{
+					return  $action;
+				}
+			}
 		}
 
 		/**
@@ -77,7 +178,7 @@ namespace Jungle\Application\Dispatcher\Controller {
 		}
 
 		/**
-		 * @return Routing|null
+		 * @return RoutingInterface|null
 		 */
 		public function getRouting(){
 			return $this->initiator_external? $this->initiator : null;
@@ -86,12 +187,12 @@ namespace Jungle\Application\Dispatcher\Controller {
 		/**
 		 * @return ProcessInterface|null
 		 */
-		public function getProcess(){
+		public function getParentProcess(){
 			return $this->initiator_external? null : $this->initiator;
 		}
 
 		/**
-		 * @return ProcessInterface|Routing|null
+		 * @return ProcessInterface|RoutingInterface|null
 		 */
 		public function getInitiator(){
 			return $this->initiator;
@@ -100,55 +201,59 @@ namespace Jungle\Application\Dispatcher\Controller {
 		/**
 		 * @param $reference
 		 * @param $data
+		 * @param bool|array $format
 		 * @return mixed
 		 * @throws Dispatcher\Exception\Control
 		 */
-		public function call($reference, $data){
-			$reference = $this->_normalizeReference($reference);
-			return $this->dispatcher->control($reference, $data, $this);
+		public function call($reference, $data = null, $format = false){
+			$reference = $this->dispatcher->normalizeReference($reference,null,false);
+			return $this->dispatcher->control($reference, $data, $format, $this);
 		}
 
 		/**
 		 * @param $reference
 		 * @param $data
+		 * @param bool|array $format
 		 * @return mixed
 		 * @throws Dispatcher\Exception\Control
 		 */
-		public function callIn($reference, $data){
-			$reference = $this->_normalizeReference($reference);
-			$reference['module'] = $this->reference['module'];
-			$reference['controller'] = $this->reference['controller'] . '.' . $reference['controller'];
-			return $this->dispatcher->control($reference, $data, $this);
+		public function callIn($reference, $data = null, $format = false){
+			$reference = $this->dispatcher->normalizeReference($reference,null,false);
+			$reference['module']		= $this->reference['module'];
+			$reference['controller']	= $this->reference['controller'] . '.' . $reference['controller'];
+			return $this->dispatcher->control($reference, $data, $format, $this);
 		}
 
 		/**
 		 * @param $action
 		 * @param $data
+		 * @param bool|array $format
 		 * @return mixed
 		 * @throws Dispatcher\Exception\Control
 		 */
-		public function callCurrent($action, $data){
+		public function callCurrent($action, $data, $format = false){
 			$reference = $this->reference;
 			if(strcasecmp($reference['action'],$action)===0){
 				throw new \LogicException('Executing current action not allowed');
 			}
 			$reference['action'] = $action;
-			return $this->dispatcher->control($reference, $data, $this);
+			return $this->dispatcher->control($reference, $data, $format, $this);
 		}
 
 		/**
-		 * @param $action
 		 * @param $data
+		 * @param $action
+		 * @param bool|array $format
 		 * @return mixed
 		 * @throws Dispatcher\Exception\Control
 		 */
-		public function callParent($data, $action = null){
+		public function callParent($data, $action = null, $format = false){
 			if($this->initiator instanceof Process){
 				$reference = $this->initiator->reference;
 				if($action!==null){
 					$reference['action'] = $action;
 				}
-				return $this->dispatcher->control($reference, $data, $this);
+				return $this->dispatcher->control($reference, $data, $format, $this);
 			}else{
 				throw new \LogicException('Call Parent: initiator is not Process');
 			}
@@ -187,36 +292,39 @@ namespace Jungle\Application\Dispatcher\Controller {
 			throw new \LogicException('Not Effect');
 		}
 
-
-
 		/**
-		 * @param mixed $reference
-		 * @return array|mixed
+		 * @return bool
 		 */
-		protected function _normalizeReference($reference){
-			if(is_string($reference)){
-
-				if(preg_match('@(?:#(?<module>[[alpha]]\w*))?(?::(?<controller>[[:alpha:]][\w\.\-]*)(?::(?<action>[[alpha]]\w*))?)?@',$reference, $_)){
-					$reference = [
-							'module'		=> null,
-							'controller'	=> null,
-							'action'		=> null
-					];
-
-					foreach($reference as $k => $v){
-						if($_[$k]){
-							$reference[$k] = $_[$k];
-						}
-					}
-				}else{
-					throw new \LogicException('Wrong string reference');
-				}
-
-			}
-			return $reference;
+		public function isCompleted(){
+			return $this->completed;
 		}
 
+		/**
+		 * @param bool|true $completed
+		 * @return $this
+		 */
+		public function setCompleted($completed = true){
+			$this->completed = $completed;
+			return $this;
+		}
 
+		/**
+		 * @param $result
+		 * @param bool $completed
+		 * @return $this
+		 */
+		public function setResult($result, $completed = true){
+			$this->result = $result;
+			$this->completed = $completed;
+			return $this;
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getResult(){
+			return $this->result;
+		}
 	}
 }
 

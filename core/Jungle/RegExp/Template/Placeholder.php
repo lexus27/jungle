@@ -25,6 +25,8 @@ namespace Jungle\RegExp\Template {
 		/** @var  string */
 		protected $name;
 
+		/** @var  string|null */
+		protected $name_regex;
 
 		/** @var  Type */
 		protected $type;
@@ -157,7 +159,10 @@ namespace Jungle\RegExp\Template {
 		 * @return $this
 		 */
 		public function setName($name){
-			$this->name = $name;
+			if($this->name !== $name){
+				$this->name = $name;
+				$this->name_regex = null;
+			}
 			return $this;
 		}
 
@@ -383,7 +388,10 @@ namespace Jungle\RegExp\Template {
 		 * @return mixed
 		 */
 		public function getNameRegex(){
-			return 'ph_'.str_replace('-','',crc32($this->name));
+			if($this->name_regex===null){
+				$this->name_regex = 'ph_'.str_replace('-','',crc32($this->name));
+			}
+			return $this->name_regex;
 		}
 
 		/**
@@ -392,6 +400,8 @@ namespace Jungle\RegExp\Template {
 		public function isIndexed(){
 			return is_numeric($this->name);
 		}
+
+
 
 	}
 

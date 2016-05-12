@@ -43,11 +43,9 @@ namespace Jungle\Data {
 		 * @param array $options
 		 */
 		public function __construct(array $options = []){
-
 			if(isset($options['message'])){
 				$this->setErrorMessage($options['message']);
 			}
-
 		}
 
 		public function setErrorMessage($error_message){

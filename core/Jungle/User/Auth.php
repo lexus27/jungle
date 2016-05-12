@@ -8,7 +8,7 @@
 namespace Jungle\User {
 
 	/**
-	 * Class Auth
+	 * Class AuthController
 	 * @package Jungle\User
 	 */
 	class Auth{
