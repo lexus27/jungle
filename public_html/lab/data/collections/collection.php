@@ -1,6 +1,6 @@
 <?php
 
-require dirname(__DIR__).DIRECTORY_SEPARATOR.'loader.php';
+require dirname(dirname(__DIR__)).DIRECTORY_SEPARATOR.'loader.php';
 /**
  * Created by Kutuzov Alexey Konstantinovich <lexus.1995@mail.ru>.
  * Author: Kutuzov Alexey Konstantinovich <lexus.1995@mail.ru>
