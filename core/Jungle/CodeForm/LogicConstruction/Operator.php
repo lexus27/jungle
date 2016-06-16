@@ -84,12 +84,12 @@ class Operator implements INamed{
 	public static function getOperator($name){
 		static $base_initialized = false;
 		if(!$base_initialized){
-			self::_initializeDefaultOperators();
+			static::_initializeDefaultOperators();
 			$base_initialized = true;
 		}
-		$i = self::searchOperator($name);
+		$i = static::searchOperator($name);
 		if($i!==false){
-			return self::$_operators[$i];
+			return static::$_operators[$i];
 		}
 		return null;
 	}
@@ -97,14 +97,14 @@ class Operator implements INamed{
 	public static function getAllowedOperators(){
 		static $base_initialized = false;
 		if(!$base_initialized){
-			self::_initializeDefaultOperators();
+			static::_initializeDefaultOperators();
 			$base_initialized = true;
 		}
-		return self::$_operators;
+		return static::$_operators;
 	}
 
 	protected static function _initializeDefaultOperators(){
-		self::$_operators = [
+		static::$_operators = [
 			(new Operator())->setName(false)->setHandler(function($a,$b=null){return !$a;}),
 			(new Operator())->setName(true)->setHandler(function($a,$b=null){return (bool)$a;}),
 			(new Operator())->setName('=')->setHandler(function($a,$b){return $a==$b;}),
@@ -156,7 +156,7 @@ class Operator implements INamed{
 	 */
 	public static function addOperator(Operator $operator){
 		if(self::searchOperator($operator)===false){
-			self::$_operators[] = $operator;
+			static::$_operators[] = $operator;
 		}
 	}
 
@@ -168,8 +168,8 @@ class Operator implements INamed{
 		if($operator instanceof Operator){
 			$operator = $operator->getName();
 		}
-		foreach(self::$_operators as $i => $o){
-			if($o->getName() === $operator){
+		foreach(static::$_operators as $i => $o){
+			if(strcasecmp($o->getName(),$operator)===0){
 				return $i;
 			}
 		}
@@ -180,8 +180,8 @@ class Operator implements INamed{
 	 * @param Operator $operator
 	 */
 	public static function removeOperator(Operator $operator){
-		if(($i = self::searchOperator($operator))!==false){
-			array_splice(self::$_operators,$i,1);
+		if(($i = static::searchOperator($operator))!==false){
+			array_splice(static::$_operators,$i,1);
 		}
 	}
 

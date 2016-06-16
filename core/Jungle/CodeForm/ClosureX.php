@@ -28,7 +28,27 @@ namespace Jungle\CodeForm {
 		 * @var callable
 		 */
 		protected $callable;
+		
 
+		/**
+		 * @param $code
+		 * @param array $blackFuncCall
+		 * @param array $blackVariables
+		 * @param array $blackStatements
+		 * @param bool|false $allowGlobalUse
+		 */
+		public static function validateCode( $code,
+			$blackFuncCall = [],
+			$blackVariables = [],
+			$blackStatements = [],
+			$allowGlobalUse = false
+		){
+
+			$regex = '@((["\'])(?:\\\g{-1}|.)*?\g{-1})|\$([[:alpha:]]\w*)|(?:;|\{|^)\s*([[:alpha:]]\w*)\(.*\)\s*;|(?:;|\{|^)\s*([[:alpha:]]\w*)@';
+
+
+			// TODO implements
+		}
 
 		/**
 		 * @param callable $callable

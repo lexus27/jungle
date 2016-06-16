@@ -168,13 +168,32 @@ class Condition {
 	 * @param mixed $a
 	 * @param Operator|string $operator
 	 * @param mixed $b
+	 * @param Operator|string $operatorClass
 	 * @return Condition
 	 */
-	public static function getCondition($a, $operator,$b){
+	public static function getCondition($a, $operator,$b, $operatorClass = null){
+		if(!$operatorClass){
+			$operatorClass = Operator::class;
+		}
 		return (new Condition())
 			->setOperator(
-				$operator instanceof Operator?$operator:Operator::getOperator($operator)
+				$operator instanceof Operator?$operator:$operatorClass::getOperator($operator)
 			)->setValue($a)->setSecondary($b);
+	}
+
+	/**
+	 * @param $a
+	 * @param $operator
+	 * @param $b
+	 * @param Operator|string $operatorClass
+	 * @return bool
+	 */
+	public static function collateRaw($a, $operator, $b, $operatorClass = null){
+		if(!$operatorClass){
+			$operatorClass = Operator::class;
+		}
+		$operator = $operatorClass::getOperator($operator);
+		return $operator->check($a,$b);
 	}
 
 }
