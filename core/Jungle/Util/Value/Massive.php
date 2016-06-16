@@ -8,8 +8,8 @@
 namespace Jungle\Util\Value {
 
 	use Jungle\Basic\INamed;
-	use Jungle\Data\Collection\Cmp;
-	use Jungle\Data\DataMap\ValueAccess;
+	use Jungle\DataOldRefactoring\Collection\Cmp;
+	use Jungle\DataOldRefactoring\DataMap\ValueAccess;
 	use Jungle\Util\Value\Cmp as UtilCmp;
 
 	/**
@@ -217,10 +217,10 @@ namespace Jungle\Util\Value {
 			$a = [];
 			foreach($array as $item){
 				if($item instanceof INamed){
-					$a[$caseOnly?mb_strtolower($item->getName()):$item->getName()] = null;
+					$a[] = $caseOnly?mb_strtolower($item->getName()):$item->getName();
 				}
 			}
-			return array_keys($a);
+			return $a;
 		}
 
 		/**

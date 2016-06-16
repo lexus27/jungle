@@ -16,13 +16,13 @@ require dirname(dirname(__DIR__)).DIRECTORY_SEPARATOR.'loader.php';
  *
  *
  */
-$persons = new \Jungle\Data\DataMap\Collection();
-$persons->setSchema((new \Jungle\Data\DataMap\Schema())->setFields([
+$persons = new \Jungle\DataOldRefactoring\DataMap\Collection();
+$persons->setSchema((new \Jungle\DataOldRefactoring\DataMap\Schema())->setFields([
 
-	(new \Jungle\Data\DataMap\Schema\Field('id'))      ->setType('int'),
-	(new \Jungle\Data\DataMap\Schema\Field('name'))    ->setType('string'),
-	(new \Jungle\Data\DataMap\Schema\Field('family'))  ->setType('string'),
-	(new \Jungle\Data\DataMap\Schema\Field('city'))    ->setType('string'),
+	(new \Jungle\DataOldRefactoring\DataMap\Schema\Field('id'))      ->setType('int'),
+	(new \Jungle\DataOldRefactoring\DataMap\Schema\Field('name'))    ->setType('string'),
+	(new \Jungle\DataOldRefactoring\DataMap\Schema\Field('family'))  ->setType('string'),
+	(new \Jungle\DataOldRefactoring\DataMap\Schema\Field('city'))    ->setType('string'),
 	/*
 		(new \Jungle\Data\DataMap\Schema\Field('messages'))->many([
 			'collection'    => $messages,
@@ -31,12 +31,12 @@ $persons->setSchema((new \Jungle\Data\DataMap\Schema())->setFields([
 	*/
 ],true)->setIndexes([
 
-	(new \Jungle\Data\DataMap\Schema\Index())
+	(new \Jungle\DataOldRefactoring\DataMap\Schema\Index())
 		->setField('id')
-		->setType(\Jungle\Data\DataMap\Schema\Index::TYPE_PRIMARY),
+		->setType(\Jungle\DataOldRefactoring\DataMap\Schema\Index::TYPE_PRIMARY),
 
 ]));
-$persons->setSource(new \Jungle\Data\DataMap\Collection\Source\ArraySource([
+$persons->setSource(new \Jungle\DataOldRefactoring\DataMap\Collection\Source\ArraySource([
 	[   1,  'Виктор',      'Петров',       'Николаевск-на-амуре'   ],
 	[   2,  'Елизавета',   'Григорьева',   'Владимир'              ],
 	[   3,  'Илья',        'Пупкин',       'Хабаровск'             ],

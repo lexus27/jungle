@@ -7,7 +7,7 @@
  * Date: 19.03.2016
  * Time: 23:16
  */
-use Jungle\Data\DataMap\Schema\Field;
+use Jungle\DataOldRefactoring\DataMap\Schema\Field;
 
 
 /**
@@ -362,13 +362,13 @@ interface DataSelfAccessorInterface{
 	public function getOriginalData();
 
 	/**
-	 * @param \Jungle\Data\DataMap\Schema $schema
+	 * @param \Jungle\DataOldRefactoring\DataMap\Schema $schema
 	 * @return $this
 	 */
-	public function setSchema(\Jungle\Data\DataMap\Schema $schema);
+	public function setSchema(\Jungle\DataOldRefactoring\DataMap\Schema $schema);
 
 	/**
-	 * @return \Jungle\Data\DataMap\Schema
+	 * @return \Jungle\DataOldRefactoring\DataMap\Schema
 	 */
 	public function getSchema();
 
@@ -379,7 +379,7 @@ interface DataSelfAccessorInterface{
  */
 class DataSelfAccessor implements DataSelfAccessorInterface{
 
-	/** @var  \Jungle\Data\DataMap\Schema */
+	/** @var  \Jungle\DataOldRefactoring\DataMap\Schema */
 	protected $schema;
 
 	/** @var  array|object */
@@ -388,10 +388,10 @@ class DataSelfAccessor implements DataSelfAccessorInterface{
 
 	/**
 	 * @param $data
-	 * @param \Jungle\Data\DataMap\Schema|null $schema
+	 * @param \Jungle\DataOldRefactoring\DataMap\Schema|null $schema
 	 * @return $this
 	 */
-	public function setOriginalData($data, \Jungle\Data\DataMap\Schema $schema = null){
+	public function setOriginalData($data, \Jungle\DataOldRefactoring\DataMap\Schema $schema = null){
 		$this->_setOriginalData($data);
 		if($schema!==null){
 			$this->setSchema($schema);
@@ -415,16 +415,16 @@ class DataSelfAccessor implements DataSelfAccessorInterface{
 
 
 	/**
-	 * @param \Jungle\Data\DataMap\Schema $schema
+	 * @param \Jungle\DataOldRefactoring\DataMap\Schema $schema
 	 * @return $this
 	 */
-	public function setSchema(\Jungle\Data\DataMap\Schema $schema){
+	public function setSchema(\Jungle\DataOldRefactoring\DataMap\Schema $schema){
 		$this->schema = $schema;
 		return $this;
 	}
 
 	/**
-	 * @return \Jungle\Data\DataMap\Schema
+	 * @return \Jungle\DataOldRefactoring\DataMap\Schema
 	 */
 	public function getSchema(){
 		return $this->schema;
@@ -476,10 +476,10 @@ class DataRepresent extends DataSelfAccessor implements \Iterator, \Countable{
 
 
 	/**
-	 * @param \Jungle\Data\DataMap\Schema $schema
+	 * @param \Jungle\DataOldRefactoring\DataMap\Schema $schema
 	 * @return $this
 	 */
-	public function setSchema(\Jungle\Data\DataMap\Schema $schema){
+	public function setSchema(\Jungle\DataOldRefactoring\DataMap\Schema $schema){
 		if($this->schema !== $schema){
 			$this->_i       = null;
 			$this->schema   = $schema;

@@ -8,7 +8,7 @@
  * Date: 23.03.2016
  * Time: 15:17
  */
-use Jungle\Data\Collection;
+use Jungle\DataOldRefactoring\Collection;
 
 
 /**

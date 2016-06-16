@@ -43,6 +43,11 @@ namespace Jungle\DependencyInjection {
 		 */
 		public function getInstance($serviceKey, $instanceKey);
 
+		/**
+		 * @return array
+		 */
+		public function getServiceNames();
+
 	}
 }
 

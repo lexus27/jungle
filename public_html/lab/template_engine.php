@@ -932,10 +932,10 @@ $scope->registerVariable('user_names',[
     'Игорь'
 ]);
 $scope->registerVariable('user_votes',[
-	'Василий' => 4,
-	'Анатолий' => 4,
-	'Евгения' => 4,
-	'Игорь' => 4
+	'Василий'   => 4,
+	'Анатолий'  => 3,
+	'Евгения'   => 4,
+	'Игорь'     => 1
 ]);
 echo '<div style="border:solid 1px;padding:10px"><h1>Родительский шаблон</h1>';
 echo $template->render($scope);

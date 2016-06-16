@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>PHP</ID>
+  <OriginalElement>\modelX\SchemaOuterInteraction</OriginalElement>
+  <nodes>
+    <node x="2474.921787709497" y="1996.2011173184358">\modelX\DataMapCollectionFrame</node>
+    <node x="1153.0" y="846.0">\modelX\SchemaOverlay</node>
+    <node x="1405.0" y="1312.5">\modelX\SmartSchemaTest</node>
+    <node x="0.0" y="1613.0">\modelX\ModelSchema</node>
+    <node x="758.0" y="725.0">\modelX\SchemaDecoratorBase</node>
+    <node x="29.5" y="846.0">\modelX\SchemaPrincipal</node>
+    <node x="2270.421787709497" y="2165.2011173184355">\modelX\ModelCollection</node>
+    <node x="4.0" y="1290.0">\modelX\SchemaCollectionBased</node>
+    <node x="1118.5" y="190.0">\modelX\Schema</node>
+    <node x="737.0" y="1235.0">\modelX\SchemaAccessor</node>
+    <node x="1314.0" y="579.0">\modelX\SimpleSchema</node>
+    <node x="1378.0" y="857.5">\modelX\ExampleStage1SchemaOuterInteraction</node>
+    <node x="276.1029411764706" y="835.5">\modelX\FieldAliasesAwareInterface</node>
+    <node x="219.0" y="1114.0">\modelX\SchemaAliased</node>
+    <node x="1100.0" y="1257.0">\modelX\SchemaHybrid</node>
+    <node x="30.5" y="2466.0">\modelX\ModelField</node>
+    <node x="1216.1005586592178" y="1756.1340782122907">\modelX\DataMap</node>
+    <node x="1203.25" y="0.0">\modelX\SchemaIndexedInterface</node>
+    <node x="0.0" y="1776.0">\modelX\Field</node>
+    <node x="932.25" y="333.5">\modelX\SchemaOuterInteractionInterface</node>
+    <node x="973.0" y="557.0">\modelX\SchemaOuterInteraction</node>
+    <node x="930.0" y="0.0">\modelX\SchemaInterface</node>
+    <node x="9.0" y="2143.0">\modelX\FieldOuterInteraction</node>
+    <node x="2341.171787709497" y="1761.2011173184358">\modelX\DataMapCollection</node>
+    <node x="2260.921787709497" y="2018.7011173184358">\modelX\DataMapCollectionPermanent</node>
+    <node x="400.0" y="1776.0">\modelX\Model</node>
+    <node x="2301.8136714443217" y="2388.1168687982363">\modelX\DataMapSorter</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="\modelX\SchemaPrincipal" target="\modelX\SchemaOuterInteraction">
+      <point x="0.0" y="-48.5" />
+      <point x="101.5" y="695.0" />
+      <point x="1004.875" y="695.0" />
+      <point x="-95.625" y="59.0" />
+    </edge>
+    <edge source="\modelX\SchemaAccessor" target="\modelX\FieldAliasesAwareInterface">
+      <point x="-69.5" y="-103.5" />
+      <point x="806.5" y="1084.0" />
+      <point x="580.6029411764706" y="1084.0" />
+      <point x="101.5" y="59.0" />
+    </edge>
+    <edge source="\modelX\ModelCollection" target="\modelX\DataMapCollectionPermanent">
+      <point x="0.0" y="-59.5" />
+      <point x="0.0" y="37.0" />
+    </edge>
+    <edge source="\modelX\ModelSchema" target="\modelX\SchemaCollectionBased">
+      <point x="0.0" y="-59.0" />
+      <point x="0.0" y="48.5" />
+    </edge>
+    <edge source="\modelX\SchemaAccessor" target="\modelX\SchemaDecoratorBase">
+      <point x="69.5" y="-103.5" />
+      <point x="0.0" y="169.5" />
+    </edge>
+    <edge source="\modelX\SchemaCollectionBased" target="\modelX\SchemaPrincipal">
+      <point x="0.0" y="-48.5" />
+      <point x="0.0" y="48.5" />
+    </edge>
+    <edge source="\modelX\SchemaAliased" target="\modelX\FieldAliasesAwareInterface">
+      <point x="-124.5" y="-224.5" />
+      <point x="343.5" y="1094.0" />
+      <point x="377.6029411764706" y="1094.0" />
+      <point x="-101.5" y="59.0" />
+    </edge>
+    <edge source="\modelX\SchemaOuterInteractionInterface" target="\modelX\SchemaIndexedInterface">
+      <point x="52.25" y="-15.0" />
+      <point x="1089.0" y="170.0" />
+      <point x="1260.5" y="170.0" />
+      <point x="-57.25" y="70.0" />
+    </edge>
+    <edge source="\modelX\SchemaOuterInteractionInterface" target="\modelX\SchemaInterface">
+      <point x="-52.25" y="-15.0" />
+      <point x="-54.5" y="70.0" />
+    </edge>
+    <edge source="\modelX\SmartSchemaTest" target="\modelX\ExampleStage1SchemaOuterInteraction">
+      <point x="0.0" y="-26.0" />
+      <point x="0.0" y="37.0" />
+    </edge>
+    <edge source="\modelX\SchemaHybrid" target="\modelX\SchemaDecoratorBase">
+      <point x="0.0" y="-81.5" />
+      <point x="1210.0" y="1094.0" />
+      <point x="1070.5" y="1094.0" />
+      <point x="125.0" y="169.5" />
+    </edge>
+    <edge source="\modelX\DataMapCollectionPermanent" target="\modelX\DataMapCollection">
+      <point x="0.0" y="-37.0" />
+      <point x="2357.921787709497" y="1971.2011173184358" />
+      <point x="2399.921787709497" y="1971.2011173184358" />
+      <point x="-58.75" y="92.5" />
+    </edge>
+    <edge source="\modelX\SchemaDecoratorBase" target="\modelX\SchemaOuterInteraction">
+      <point x="0.0" y="-169.5" />
+      <point x="945.5" y="705.0" />
+      <point x="1068.625" y="705.0" />
+      <point x="-31.875" y="59.0" />
+    </edge>
+    <edge source="\modelX\Schema" target="\modelX\SchemaInterface">
+      <point x="-85.5" y="-158.5" />
+      <point x="1204.0" y="160.0" />
+      <point x="1093.5" y="160.0" />
+      <point x="54.5" y="70.0" />
+    </edge>
+    <edge source="\modelX\SchemaOuterInteraction" target="\modelX\SchemaOuterInteractionInterface">
+      <point x="-63.75" y="-59.0" />
+      <point x="0.0" y="15.0" />
+    </edge>
+    <edge source="\modelX\ModelField" target="\modelX\FieldOuterInteraction">
+      <point x="0.0" y="-81.5" />
+      <point x="0.0" y="136.5" />
+    </edge>
+    <edge source="\modelX\SchemaAliased" target="\modelX\SchemaDecoratorBase">
+      <point x="124.5" y="-224.5" />
+      <point x="592.5" y="1094.0" />
+      <point x="820.5" y="1094.0" />
+      <point x="-125.0" y="169.5" />
+    </edge>
+    <edge source="\modelX\ExampleStage1SchemaOuterInteraction" target="\modelX\SchemaOuterInteraction">
+      <point x="0.0" y="-37.0" />
+      <point x="1499.0" y="695.0" />
+      <point x="1196.125" y="695.0" />
+      <point x="95.625" y="59.0" />
+    </edge>
+    <edge source="\modelX\SchemaOuterInteraction" target="\modelX\Schema">
+      <point x="63.75" y="-59.0" />
+      <point x="1164.25" y="532.0" />
+      <point x="1204.0" y="532.0" />
+      <point x="-85.5" y="158.5" />
+    </edge>
+    <edge source="\modelX\Schema" target="\modelX\SchemaIndexedInterface">
+      <point x="85.5" y="-158.5" />
+      <point x="57.25" y="70.0" />
+    </edge>
+    <edge source="\modelX\DataMapCollectionFrame" target="\modelX\DataMapCollection">
+      <point x="0.0" y="-59.5" />
+      <point x="2559.421787709497" y="1971.2011173184358" />
+      <point x="2517.421787709497" y="1971.2011173184358" />
+      <point x="58.75" y="92.5" />
+    </edge>
+    <edge source="\modelX\SimpleSchema" target="\modelX\Schema">
+      <point x="0.0" y="-37.0" />
+      <point x="85.5" y="158.5" />
+    </edge>
+    <edge source="\modelX\FieldOuterInteraction" target="\modelX\Field">
+      <point x="0.0" y="-136.5" />
+      <point x="0.0" y="158.5" />
+    </edge>
+    <edge source="\modelX\SchemaOverlay" target="\modelX\SchemaOuterInteraction">
+      <point x="0.0" y="-48.5" />
+      <point x="1255.5" y="705.0" />
+      <point x="1132.375" y="705.0" />
+      <point x="31.875" y="59.0" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="0.502718006795017" x="1066.1662536607344" y="2257.0966433881504" />
+  <SelectedNodes />
+  <Categories>
+    <Category>Fields</Category>
+    <Category>Methods</Category>
+  </Categories>
+  <VISIBILITY>protected</VISIBILITY>
+</Diagram>
+

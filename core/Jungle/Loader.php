@@ -14,9 +14,6 @@ namespace Jungle {
 	class Loader{
 
 		/** @var  null|array */
-		protected $foundPath 	= [];
-
-		/** @var  null|array */
 		protected $checkedPath 	= [];
 
 		/** @var  null|array */
@@ -31,6 +28,13 @@ namespace Jungle {
 		/** @var  null|array */
 		protected $namespaces 	= [];
 
+		/**
+		 * Idea for include file contains many classes in one namespace declared in single file
+		 *
+		 * @var array
+		 */
+		protected $namespace_files = [];
+
 		/** @var  null|array */
 		protected $directories 	= [];
 
@@ -39,6 +43,8 @@ namespace Jungle {
 
 		/** @var  mixed[]  */
 		protected $scripts_execute_cache = [];
+
+		protected $foundPaths = [];
 
 		/**
 		 * Загрузка скрипта с использованием кеширования в памяти
@@ -116,6 +122,32 @@ namespace Jungle {
 		}
 
 		/**
+		 * @param $namespace
+		 * @return null
+		 */
+		public function getNamespacePath($namespace){
+			if(isset($this->namespaces[$namespace])){
+				return $this->namespaces[$namespace];
+			}
+			return null;
+		}
+
+
+		/**
+		 * @param $namespace
+		 * @return string
+		 */
+		public function getInNamespacePath($namespace){
+			foreach($this->namespaces as $ns => $path){
+				if(strpos($namespace, $ns)===0){
+					$suffix = substr($namespace,strlen($ns));
+					return $path . $suffix;
+				}
+			}
+			return null;
+		}
+
+		/**
 		 * @param string[] $classes
 		 * @param bool|false $merge
 		 * @return $this
@@ -123,6 +155,20 @@ namespace Jungle {
 		public function registerClasses(array $classes, $merge = false){
 			$this->classes = $merge? array_merge($this->classes,$classes): $classes;
 			return $this;
+		}
+
+		/**
+		 * @param $class
+		 * @return null
+		 */
+		public function getClassPath($class){
+			if(isset($this->classes[$class])){
+				return $this->classes[$class];
+			}
+			if(strpos($class,'\\',1)!==false){
+				return $this->getInNamespacePath($class);
+			}
+			return null;
 		}
 
 		/**
@@ -147,19 +193,6 @@ namespace Jungle {
 			return $default;
 		}
 
-		/**
-		 * @param $namespace
-		 * @return string
-		 */
-		public function getFilePathByNamespace($namespace){
-			foreach($this->namespaces as $ns => $path){
-				if(strpos($namespace, $ns)===0){
-					$suffix = substr($namespace,strlen($ns));
-					return $path . $suffix;
-				}
-			}
-			return null;
-		}
 
 		/**
 		 * @param string $className - NameSpace\NameSpace\ClassClass or Vendor_Class or VendorClass
@@ -185,11 +218,8 @@ namespace Jungle {
 							$namespace_class = substr($className,$namespaceLength);
 							foreach($this->extensions as $ext){
 								$p = $path . $namespace_class . '.' . $ext;
-								if(file_exists($p)){
-									require $p;
-									if(class_exists($className,false)){
-										return true;
-									}
+								if($this->check($p,$className)){
+									return true;
 								}
 							}
 						}
@@ -215,11 +245,8 @@ namespace Jungle {
 							$suffix = substr($className, $pLen);
 							foreach($this->extensions as $ext){
 								$p = $path_behind . DIRECTORY_SEPARATOR . $suffix . '.' . $ext;
-								if(file_exists($p)){
-									require $p;
-									if(class_exists($className, false)){
-										return true;
-									}
+								if($this->check($p,$className)){
+									return true;
 								}
 							}
 						}
@@ -246,11 +273,8 @@ namespace Jungle {
 					foreach($this->directories as $directory){
 						foreach($this->extensions as $ext){
 							$p = $directory . DIRECTORY_SEPARATOR . $className . '.' . $ext;
-							if(file_exists($p)){
-								require $p;
-								if(class_exists($className, false)){
-									return true;
-								}
+							if($this->check($p,$className)){
+								return true;
 							}
 						}
 					}
@@ -260,8 +284,19 @@ namespace Jungle {
 
 			if(isset($this->classes[$className]) && $this->classes[$className]){
 				$path = $this->classes[$className];
+				if($this->check($path,$className)){
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		protected function check($path,$className){
+			if(!isset($this->foundPaths[$path])){
 				if(file_exists($path)){
-					require $path;
+					$this->foundPaths[$path] = true;
+					include $path;
 					if(class_exists($className,false)){
 						return true;
 					}

@@ -18,13 +18,13 @@ namespace Jungle\DependencyInjection {
 		/**
 		 * @return DependencyInjectionInterface
 		 */
-		public function getDI();
+		public function getDi();
 
 		/**
 		 * @param DependencyInjectionInterface $di
 		 * @return $this
 		 */
-		public function setDI(DependencyInjectionInterface $di);
+		public function setDi(DependencyInjectionInterface $di);
 
 	}
 }

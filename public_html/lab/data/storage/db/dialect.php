@@ -10,11 +10,7 @@ $loader->register();
 
 $dialect = new \Jungle\Storage\Db\Dialect\MySQL();
 
-$servant = new \Jungle\Storage\Db\Sql();
-
-
-
-echo "<pre>Select: \r\n\r\n",$dialect->select($servant,[
+echo "<pre>Select: \r\n\r\n",$dialect->select([
 	'table'     => ['notes','doodle'],
 	'alias'     => 'a',
 	'columns'   => ['a.id','a.title'],

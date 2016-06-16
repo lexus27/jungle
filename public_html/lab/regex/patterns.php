@@ -87,6 +87,10 @@ $subject = 'user.name.length.lo'; // matches: user.name.length.lo
 rgx_tester($pattern,$subject);
 
 
+$pattern = '@(?<bracket>\{(?:[^\{\}]+|(?P>bracket))*\})@'; // concrete recursive block bracket
+$pattern = '@\{(?:[^\{\}]+|(?R))*\}@'; // Full recursive bracket
+
+
 $pattern = '.+';
 
 /**

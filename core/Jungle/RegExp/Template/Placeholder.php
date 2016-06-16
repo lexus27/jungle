@@ -13,6 +13,7 @@ namespace Jungle\RegExp\Template {
 	use Jungle\RegExp\Pattern;
 	use Jungle\RegExp\Template;
 	use Jungle\RegExp\Type;
+	use Jungle\Util\Value\String;
 
 	/**
 	 * Class Placeholder
@@ -389,7 +390,7 @@ namespace Jungle\RegExp\Template {
 		 */
 		public function getNameRegex(){
 			if($this->name_regex===null){
-				$this->name_regex = 'ph_'.str_replace('-','',crc32($this->name));
+				$this->name_regex = 'ph_'.String::crc32Alnum($this->name);
 			}
 			return $this->name_regex;
 		}

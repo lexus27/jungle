@@ -1,8 +1,8 @@
 <?php
 
 
-use Jungle\Storage\Db\Lexer\Sign;
-use Jungle\Storage\Db\Lexer\SignGroup;
+use Jungle\Data\Storage\Db\Lexer\Sign;
+use Jungle\Data\Storage\Db\Lexer\SignGroup;
 
 $loader = new \Phalcon\Loader();
 $loader->registerNamespaces([
@@ -11,9 +11,9 @@ $loader->registerNamespaces([
 $loader->register();
 
 
-$dialect = new \Jungle\Storage\Db\Dialect\MySQL();
+$dialect = new \Jungle\Data\Storage\Db\Dialect\MySQL();
 
-$servant = new \Jungle\Storage\Db\Sql();/*
+$servant = new \Jungle\Data\Storage\Db\Sql();/*
 echo '<pre>',$dialect->select($servant,[
 	'table'     => ['notes','doodle'],
 	'alias'     => 'a',
@@ -51,8 +51,8 @@ echo '<pre>',$dialect->createTable('doodle.notes',[
 
 */
 
-$manager = new \Jungle\Storage\Db\Lexer\SignManager(\Jungle\Smart\Keyword\Storage::getDummy());
-$lexer = new \Jungle\Storage\Db\Lexer();
+$manager = new \Jungle\Data\Storage\Db\Lexer\SignManager(\Jungle\Smart\Keyword\Storage::getDummy());
+$lexer = new \Jungle\Data\Storage\Db\Lexer();
 $lexer->setSignManager($manager);
 
 $signPool = $manager->getPool('SignPool');
@@ -124,7 +124,7 @@ $sql = 'CREATE TABLE IF NOT EXISTS `doodle`.`notes` (
 )';
 
 /**
- * @param \Jungle\Storage\Db\Lexer\Token[]|\Jungle\Storage\Db\Lexer\Token $holders
+ * @param \Jungle\Data\Storage\Db\Lexer\Token[]|\Jungle\Data\Storage\Db\Lexer\Token $holders
  * @return string
  */
 function printHolders($holders){
@@ -135,7 +135,7 @@ function printHolders($holders){
 			$html.= printHolders($holder);
 		}
 		$html.= '</div>';
-	}elseif($holders instanceof \Jungle\Storage\Db\Lexer\Token){
+	}elseif($holders instanceof \Jungle\Data\Storage\Db\Lexer\Token){
 		$html = '<div style="font-size:26px;padding:7px 7px;margin:5px 5px;border: solid 1px;">';
 
 		$html.= '<p>Recognized: <span style="color:darkcyan;font-size:32px;font-weight:bold;">'.$holders->getRecognized().'</span></p>';
@@ -150,7 +150,7 @@ function printHolders($holders){
 
 
 		$html.='</div>';
-	}elseif($holders instanceof \Jungle\Storage\Db\Lexer\TokenGroup){
+	}elseif($holders instanceof \Jungle\Data\Storage\Db\Lexer\TokenGroup){
 		$html= '<div><span style="font-size:38px;font-weight:bold;">'.($holders->getName()?' Group `'.$holders->getName().'`:</span>':'');
 		foreach($holders->getTokens() as $holder){
 			$html.= printHolders($holder);

@@ -25,6 +25,17 @@ namespace Jungle\Util\Value {
 		protected function __construct(){}
 
 		/**
+		 * @param $string
+		 * @return string
+		 * Функция конвертирует строку содержащую любые символы в том числе спец символы!
+		 * в строку не содержащую спец символов,
+		 * вида 345435S345r64s6756
+		 */
+		public static function crc32Alnum($string){
+			return str_replace('-','',crc32($string));
+		}
+
+		/**
 		 * @param $value
 		 * @param array $parameters
 		 * @return string
