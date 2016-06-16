@@ -9,7 +9,7 @@
  */
 namespace Jungle\Application\Dispatcher\Controller {
 
-	use Jungle\Data\DataMap;
+	use Jungle\DataOldRefactoring\DataMap;
 	use Jungle\Util\Data\Map\Collection;
 
 	/**

@@ -416,7 +416,7 @@ namespace Jungle\Application\Dispatcher {
 		public function getControllerNames(){
 			$loader = Loader::getDefault();
 			$controllerNamespaceName = $this->getControllerNamespace();
-			$basedir = $loader->getFilePathByNamespace($controllerNamespaceName);
+			$basedir = $loader->getInNamespacePath($controllerNamespaceName);
 			$container = $this->scanClasses($basedir, null);
 			$controllers = [];
 
