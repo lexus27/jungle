@@ -9,7 +9,7 @@
  */
 
 namespace rgx;
-use Jungle\Basic\INamed;
+use Jungle\Util\INamed;
 
 
 /**

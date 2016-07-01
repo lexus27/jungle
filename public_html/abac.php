@@ -1,10 +1,10 @@
 <?php
-use Jungle\User\Access\ABAC\Context;
-use Jungle\User\Access\ABAC\Manager;
-use Jungle\User\Access\ABAC\Policy\PolicyElement;
-use Jungle\User\Access\ABAC\Policy\PolicyGroup;
-use Jungle\User\Access\ABAC\Policy\Rule;
-use Jungle\User\Access\ABAC\Policy\Target;
+use Jungle\User\AccessControl\Context;
+use Jungle\User\AccessControl\Manager;
+use Jungle\User\AccessControl\Policy\PolicyElement;
+use Jungle\User\AccessControl\Policy\PolicyGroup;
+use Jungle\User\AccessControl\Policy\Rule;
+use Jungle\User\AccessControl\Policy\Target;
 
 $loader = new \Phalcon\Loader();
 $loader->registerNamespaces([
@@ -39,7 +39,7 @@ $policies = [
 			->anyOf('[Scope.time.week_day] in [TIME.WORK_DAYS]')
 			->allOf(['[User.group] = Developer'])
 		)
-		->setObligation(function(\Jungle\User\Access\ABAC\Policy\MatchResult $result){
+		->setObligation(function(\Jungle\User\AccessControl\Policy\MatchResult $result){
 			echo 'Доступ закрыт: ['.$result.']'.$result->getMatchable()->getName().' - Ты разработчик, тебе тут нечего делать в рабочие дни, Рубиш только по выходным, уяснил?';
 		})
 		->setEffect(false),
@@ -136,7 +136,7 @@ $policies = [
 
 
 $manager = new Manager();
-$policyAdapter = new \Jungle\User\Access\ABAC\Adapter\PolicyAdater\Memory();
+$policyAdapter = new \Jungle\User\AccessControl\Adapter\PolicyAdater\Memory();
 foreach($rules as $rule){
 	$policyAdapter->addRule($rule);
 }
@@ -200,7 +200,7 @@ function getManager(){
 				->anyOf('[Scope.time.week_day] in [TIME.WORK_DAYS]')
 				->allOf(['[User.group] = Developer'])
 			)
-			->setObligation(function(\Jungle\User\Access\ABAC\Policy\MatchResult $result){
+			->setObligation(function(\Jungle\User\AccessControl\Policy\MatchResult $result){
 				echo 'Доступ закрыт: ['.$result.']'.$result->getMatchable()->getName().' - Ты разработчик, тебе тут нечего делать в рабочие дни, Рубиш только по выходным, уяснил?';
 			})
 			->setEffect(false),

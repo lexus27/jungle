@@ -165,7 +165,7 @@ $Keyboard = new Keyboard(2,[
 
 
 
-class KeyboardButton implements KeyboardAxisInterface, \Jungle\Basic\INamed{
+class KeyboardButton implements KeyboardAxisInterface, \Jungle\Util\INamed{
 
 	/** @var  KeyboardAxisInterface|null */
 	protected $parent;

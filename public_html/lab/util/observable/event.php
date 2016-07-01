@@ -8,7 +8,7 @@
  * Time: 0:05
  */
 namespace Util;
-use Jungle\Basic\INamed;
+use Jungle\Util\INamed;
 use Jungle\Util\Value\Massive;
 
 /**

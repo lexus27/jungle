@@ -320,7 +320,7 @@ interface DataMapValidatorInterface{
 /**
  * Class DataMapValidator
  */
-class DataMapValidator implements DataMapValidatorInterface, \Jungle\Basic\INamed{
+class DataMapValidator implements DataMapValidatorInterface, \Jungle\Util\INamed{
 
 	protected $error_message;
 
@@ -469,7 +469,7 @@ class DataMapValidatorAggregate implements DataMapValidatorInterface{
 /**
  * Class DataMapSchemaField
  */
-class DataMapSchemaField implements \Jungle\Basic\INamed{
+class DataMapSchemaField implements \Jungle\Util\INamed{
 
 	/** @var string|int */
 	protected $original_key;
@@ -773,7 +773,7 @@ class DataMapSchema{
 
 	/**
 	 * @param $name
-	 * @return \Jungle\Basic\INamed|null
+	 * @return \Jungle\Util\INamed|null
 	 */
 	public function getFieldType($name){
 		if(($field = $this->getField($name))){

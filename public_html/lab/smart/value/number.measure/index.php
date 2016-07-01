@@ -1,8 +1,8 @@
 <?php require __DIR__ . '/../base.php';
 
-use Jungle\Smart\Value\Measure;
-use Jungle\Smart\Value\Measure\Unit;
-use Jungle\Smart\Value\Measure\UnitType;
+use Jungle\Util\Smart\Value\Measure;
+use Jungle\Util\Smart\Value\Measure\Unit;
+use Jungle\Util\Smart\Value\Measure\UnitType;
 
 /**
  * Test measurement
@@ -89,7 +89,7 @@ $extenders = [
 	'Прибавим просто 30 сантиметров' => function(Measure $measure){
 		$measure->increment('30cm');
 	},
-	'Прибавить просто 10 единиц в значение'  => function(\Jungle\Smart\Value\Number $measure){
+	'Прибавить просто 10 единиц в значение'  => function(\Jungle\Util\Smart\Value\Number $measure){
 		$measure->increment(10);
 	},
 	'Конвертировать в Метры в Секунду (м/с)'       => function(Measure $measure){

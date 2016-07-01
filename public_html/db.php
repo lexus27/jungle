@@ -51,7 +51,7 @@ echo '<pre>',$dialect->createTable('doodle.notes',[
 
 */
 
-$manager = new \Jungle\Data\Storage\Db\Lexer\SignManager(\Jungle\Smart\Keyword\Storage::getDummy());
+$manager = new \Jungle\Data\Storage\Db\Lexer\SignManager(\Jungle\Util\Smart\Keyword\Storage::getDummy());
 $lexer = new \Jungle\Data\Storage\Db\Lexer();
 $lexer->setSignManager($manager);
 
@@ -232,7 +232,7 @@ $db = new \Phalcon\Db\Adapter\Pdo\Mysql([
 ]);
 echo '<pre>';
 //var_dump($db->insert('notes',['NewHello3'],['title'],[\Phalcon\Db\Column::BIND_PARAM_STR]));
-var_dump($db->lastInsertId());
+var_dump($db->lastCreatedIdentifier());
 */
 
 

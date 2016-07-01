@@ -313,3 +313,8 @@ $classAnalyzer->setBaseDirectories([
 	$loader->getNamespacePath('Jungle') . DIRECTORY_SEPARATOR . 'Data'
 ]);
 echo '<pre>',print_r($classAnalyzer->analyze(), 1),'</pre>';
+
+$classAnalyzer->setBaseDirectories([
+	$loader->getNamespacePath('Jungle') . DIRECTORY_SEPARATOR . 'XPlate'
+]);
+echo '<pre>',print_r($classAnalyzer->analyze(), 1),'</pre>';

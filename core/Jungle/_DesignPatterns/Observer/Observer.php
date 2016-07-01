@@ -14,13 +14,13 @@ namespace Jungle\_DesignPatterns\Observer {
 	class Observer{
 
 		/**
-		 * @param \Jungle\_DesignPatterns\Observer\Object $object
+		 * @param \Jungle\_DesignPatterns\Observer\Object|Object $object
 		 */
-		public function update(\Jungle\_DesignPatterns\Observer\Object $object){
+		public function update(Object $object){
 
 		}
 
-		public function subscribe(\Jungle\_DesignPatterns\Observer\Object $object){
+		public function subscribe(Object $object){
 
 			$object->subscribe($this);
 

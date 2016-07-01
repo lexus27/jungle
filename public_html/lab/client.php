@@ -69,24 +69,58 @@ class Request{
 
 
 }
-//$list= getallheaders();
 
+setcookie('cookie_name','my_value',$_SERVER['REQUEST_TIME'] + 87001,'/',$_SERVER['HTTP_HOST'],false,false);
+//setrawcookie();
+//header();
+//headers_sent();
+//header_remove();
+//headers_list();
+//header_register_callback();
+
+//$list= getallheaders();
+ob_start();
 $list=apache_request_headers();
 //$list = headers_list();
-echo '<pre>';
+echo '<pre>Request headers ';
 var_dump($list);
 echo '</pre>';
-
-
+echo '<pre>Request ';
+var_dump($_REQUEST);
+echo '</pre>';
+echo '<pre>Cookie ';
+var_dump($_COOKIE);
+echo '</pre>';
 $response = headers_list();
-echo '<pre>';
-var_dump($response);
+
+echo '<pre>Headers to sent ';
+var_dump(headers_sent(),$response);
 echo '</pre>';
 
 header_register_callback(function(){});
 
-echo '<pre>';
+echo '<pre>Server and ENV';
 
 var_dump($_SERVER,$_ENV);
 
 echo '</pre>';
+
+ob_end_flush();
+
+$value = file_get_contents('php://input');
+$r = $value;
+$_FILES;
+echo '<form method="post" enctype="multipart/form-data">
+
+	<input type="hidden" name="property_1" value="value_hidden_field">
+
+	<input type="text" name="property_2">
+
+	<input type="file" name="img1"/>
+
+	<input type="file" name="img2"/>
+
+	<input type="submit" value="Отправить">
+
+</form>';
+

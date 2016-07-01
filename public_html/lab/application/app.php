@@ -15,7 +15,7 @@ include(dirname(__DIR__) . DIRECTORY_SEPARATOR . 'loader.php');
 
 
 
-class Request implements Jungle\Application\RequestInterface,\Jungle\HTTPFoundation\RequestInterface{
+class Request implements Jungle\Application\RequestInterface,\Jungle\Http\RequestInterface{
 
 	protected $path = '/s/s/s';
 
@@ -55,7 +55,7 @@ class Request implements Jungle\Application\RequestInterface,\Jungle\HTTPFoundat
 	 * @return string
 	 */
 	public function getHostname(){
-		// TODO: Implement getHostname() method.
+		// TODO: Implement getServerHost() method.
 	}
 
 	/**
@@ -91,7 +91,7 @@ class Request implements Jungle\Application\RequestInterface,\Jungle\HTTPFoundat
 	 * @return mixed
 	 */
 	public function getParameter($parameter){
-		// TODO: Implement getParameter() method.
+		// TODO: Implement getParam() method.
 	}
 
 	/**
@@ -99,7 +99,7 @@ class Request implements Jungle\Application\RequestInterface,\Jungle\HTTPFoundat
 	 * @return bool
 	 */
 	public function hasParameter($parameter){
-		// TODO: Implement hasParameter() method.
+		// TODO: Implement hasParam() method.
 	}
 
 	/**
@@ -126,14 +126,14 @@ class Request implements Jungle\Application\RequestInterface,\Jungle\HTTPFoundat
 	}
 
 	/**
-	 * @return \Jungle\HTTPFoundation\ClientInterface
+	 * @return \Jungle\Http\ClientInterface
 	 */
 	public function getClient(){
 		// TODO: Implement getClient() method.
 	}
 
 	/**
-	 * @return \Jungle\HTTPFoundation\ContentInterface
+	 * @return \Jungle\Http\ContentInterface
 	 */
 	public function getContent(){
 		// TODO: Implement getContent() method.
@@ -169,7 +169,6 @@ $router->any('/user/{id:int.nozero}',[
 ])->setName('user-login');
 
 $dispatcher->setRouter($router);
-
 $dispatcher->dispatch(new Request('/user/login','POST'));
 
 

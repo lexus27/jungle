@@ -479,16 +479,6 @@ interface RouteInterface{
 }
 
 /**
- * Interface Dispatcher
- * @package router
- */
-interface DispatcherInterface{
-
-	public function dispatch($module, $controller, $action, $data);
-	
-}
-
-/**
  * Структура Контроллеров пока не определена
  *  * то ли контроллер как callable
  *  * то-ли контроллер как module.controller.action

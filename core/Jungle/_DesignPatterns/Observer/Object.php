@@ -7,6 +7,10 @@
  */
 namespace Jungle\_DesignPatterns\Observer {
 
+	/**
+	 * Class Object
+	 * @package Jungle\_DesignPatterns\Observer
+	 */
 	class Object{
 
 

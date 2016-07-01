@@ -16,6 +16,10 @@ namespace Jungle\_DesignPatterns\EAV {
 		/** @var  string */
 		protected $name;
 
+		// protected $collection = false;
+
+
+
 		/**
 		 * @param string $name
 		 * @return $this

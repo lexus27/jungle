@@ -1,17 +1,10 @@
 <?php
-
 $t = microtime(true);
 include __DIR__ . DIRECTORY_SEPARATOR . 'lab' . DIRECTORY_SEPARATOR . 'loader.php';
-
-
-
 $dispatcher = new \Jungle\Application\Dispatcher();
-
-
-
 $dispatcher->registerModules([
-	'main' => [
-		'class' => App\Modules\Main::class
+	'index' => [
+		'class' => App\Modules\Index::class
 	]
 ]);
 
@@ -31,12 +24,14 @@ $router->post('/user/login',[
 		'action' 		=> 'login'
 	]
 ])->setName('user-login');
+
 $router->any('/{id:int.nozero}',[
 	'reference' => [
 		'controller' 	=> 'user',
 		'action' 		=> 'index'
 	]
 ])->setName('user-info-short');
+
 $router->any('/user/{id:int.nozero}',[
 	'reference' => [
 		'controller' 	=> 'user',
@@ -44,27 +39,7 @@ $router->any('/user/{id:int.nozero}',[
 	]
 ])->setName('user-info');
 
-
 $dispatcher->addRouter($router);
-
-$dispatcher->dispatch(\Jungle\HTTPFoundation\Request::fromCurrent());
-
-
+$dispatcher->dispatch(\Jungle\Http\Request::fromCurrent());
 echo '<br/>'.sprintf('%.4F',microtime(true) - $t);
-
-echo '<pre>',print_r($dispatcher->getModule('main')->getControllerNames(), 1),'</pre>';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+echo '<pre>',print_r($dispatcher->getModule('index')->getControllerNames(), 1),'</pre>';

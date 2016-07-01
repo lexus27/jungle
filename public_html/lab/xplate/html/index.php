@@ -7,7 +7,7 @@ $loader->register();
 
 
 $strategy = new \Jungle\XPlate\WebStrategy();
-$store = new \Jungle\Smart\Keyword\Storage\Files([
+$store = new \Jungle\Util\Smart\Keyword\Storage\Files([
 	'directory' => __DIR__ . DIRECTORY_SEPARATOR . '_tmp' . DIRECTORY_SEPARATOR
 ]);
 $strategy->setTagManager(new \Jungle\XPlate\Services\TagPool($store));

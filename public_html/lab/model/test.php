@@ -8,7 +8,7 @@
  * Time: 19:13
  */
 
-use Jungle\Data\Foundation\Record;
+use Jungle\Data\Record;
 use Jungle\Data\Storage\Db;
 
 
@@ -92,204 +92,483 @@ $schemaGM->addField((new Record\Head\Field('group_id','integer'))->internal());
 $schemaGM->addField((new Record\Head\Field\Relation('user','string'))->belongsTo('user',['user_id'],['id']));
 $schemaGM->addField((new Record\Head\Field\Relation('group','string'))->belongsTo('user_group',['group_id'],['id']));
 
-/*
-// Test: Create
-$newUser = new Record\DataMap($schemaU);
-$newUser->username = uniqid('username_');
-$newUser->password = uniqid('username_');
+class AbstractTestComplex implements TestCollectionInterface{
 
-for($i = 0 ; $i < 10; $i++){
-	$newNote = new Record\DataMap($schemaN);
-	$newNote->header = 'Head body';
-	$newNote->body = 'Test body';
+	/** @var  Test[]  */
+	protected $tests = [];
 
-	// Direct
-	$newUser->notes->add($newNote);
-	// Back
-	$newNote->user = $newUser;
+	/**
+	 * @param $name
+	 * @param int $priority
+	 * @return TestBlock
+	 */
+	public function addBlock($name,$priority = 0){
+		return $this->tests[$name] = new TestBlock($priority);
+	}
+
+	/**
+	 * @param Closure $closure
+	 * @param int $priority
+	 * @param bool $active
+	 * @param null $alias
+	 * @return $this
+	 */
+	public function addTest(\Closure $closure, $priority = 0,$active = false, $alias = null){
+		if(!$alias){
+			$alias = count($this->tests);
+		}
+		$this->tests[$alias] = new Test($closure, $priority, $active);
+		return $this;
+	}
+
+	/**
+	 * @param Closure $closure
+	 * @param int $priority
+	 * @param bool $active
+	 * @param null $alias
+	 * @return $this
+	 */
+	public function addAliasedTest($alias, \Closure $closure, $priority = 0,$active = false){
+		if(!$alias){
+			$alias = count($this->tests);
+		}
+		$this->tests[$alias] = new Test($closure, $priority, $active);
+		return $this;
+	}
+
+
+	/**
+	 * @param $testName
+	 * @return $this
+	 */
+	public function disable($testName){
+		if(isset($this->tests[$testName])){
+			$this->tests[$testName]->setActive(false);
+		}
+		return $this;
+	}
+
+	/**
+	 * @param $testName
+	 * @return $this
+	 */
+	public function activate($testName){
+		if(isset($this->tests[$testName])){
+			$this->tests[$testName]->setActive(true);
+		}
+		return $this;
+	}
+
+	public function getTest($testName){
+		if(isset($this->tests[$testName])){
+			return $this->tests[$testName];
+		}
+		return null;
+	}
+
+
+	/**
+	 * @return mixed
+	 */
+	public function getTests(){
+		return $this->tests;
+	}
+
+}
+/**
+ * Class TestManager
+ */
+class TestManager extends AbstractTestComplex{
+
+	/**
+	 * @param $testName
+	 * @param int $priority
+	 * @return $this
+	 */
+	public function setPriority($testName, $priority = 0){
+		if(isset($this->tests[$testName])){
+			$this->tests[$testName]->setPriority($priority);
+		}
+		return $this;
+	}
+
+	/**
+	 * @param $array
+	 * @return TestInterface[]
+	 */
+	public static function sort($array){
+		static $fn;
+		if(!$fn){
+			$fn = function(Test $a,Test $b){
+				$a = $a->getPriority();
+				$b = $b->getPriority();
+				if($a === $b){
+					return 0;
+				}
+				return $a > $b? 1 : -1;
+			};
+		}
+		usort($array,$fn);
+		return $array;
+	}
+
+	/**
+	 * @param null $testName
+	 * @param array $arguments
+	 */
+	public function run($testName = null, array $arguments = []){
+		if($testName){
+			if(isset($this->tests[$testName])){
+				$this->tests[$testName]->run($this,$arguments);
+			}
+		}else{
+			$this->aggregate($this);
+		}
+	}
+
+	/**
+	 * @param TestCollectionInterface|TestInterface $test
+	 */
+	public function aggregate(TestCollectionInterface $test,array $arguments = []){
+		foreach($this->sort($test->getTests()) as $test){
+			if($test->isActive()){
+				$test->run($this,$arguments);
+			}
+		}
+	}
 
 }
 
-// Test: Create & Use Through
+interface TestCollectionInterface{
 
-foreach($schemaG->load(null,5) as $group){
-	// Direct ADD
-	$newUser->memberIn->add($group);
-	// Back ADD
-	//$group->members->add($newUser);
+	/**
+	 * @return TestInterface[]
+	 */
+	public function getTests();
+
 }
 
-$newUser->save();
-*/
+/**
+ * Interface TestInterface
+ */
+interface TestInterface{
 
+	/**
+	 * @param $active
+	 * @return $this
+	 */
+	public function setActive($active);
 
-/*
-// Test: Update
-$user = $schemaU->loadFirst(81);
+	/**
+	 * @return bool
+	 */
+	public function isActive();
 
-// Add Profile (One relation)
-//$profile = new Record\DataMap($schemaP);
-//$profile->first_name = 'Alexeyi';
-//$profile->last_name = 'Kutuz27';
-//$profile->city = 'Khabarovskiy kray';
-//$user->profile = $profile;
+	/**
+	 * @param int $priority
+	 * @return $this
+	 */
+	public function setPriority($priority = 0);
 
+	/**
+	 * @return int
+	 */
+	public function getPriority();
 
-
-
-// ADD to Many
-//$newNote = new Record\DataMap($schemaN);
-//$newNote->header = 'Head body 2 ';
-//$newNote->body = 'Test body 2 ';
-//$user->notes->add($newNote);
-
-// Remove From Many
-//$user->notes->remove(['header'=>'Head body 2 ']);
-
-// Remove Through
-//$user->memberIn = [];
-
-// ADD after all remove
-//$newGroup = $schemaG->initializeRecord();
-//$newGroup->title    = uniqid('group2_');
-//$newGroup->rank     = rand(5,20);
-//$user->memberIn->add($newGroup);
-
-
-$user->save();
-
-*/
-
-// Test: Remove
-$user = $schemaU->loadFirst(81);
-foreach($user->notes as $note){
-	echo '<p>'.$note->getIdentifierValue().'</p>';
-}
-$user->remove();
-foreach($user->notes as $note){
-	echo '<p>'.$note->getIdentifierValue().'</p>';
+	/**
+	 * @param TestManager $manager
+	 * @param array $arguments
+	 * @return
+	 */
+	public function run(TestManager $manager,array $arguments = []);
 }
 
 
 
-/*
-$result = $schemaU->find(['id' => 52 ]);
-echo '<pre>Count ';var_dump($result->count());echo '</pre>';
-foreach($result as $record){
-	echo $record->username.'</br>';
+/**
+ * Class Test
+ */
+class Test implements TestInterface{
+	/** @var bool  */
+	protected $active = true;
+	/** @var int  */
+	protected $priority = 0;
+	/** @var Closure  */
+	protected $closure;
+
+	protected $start_time = 0;
+
+	protected $last_execute_time;
+
+	/**
+	 * Test constructor.
+	 * @param Closure $closure
+	 * @param int $priority
+	 * @param bool $active
+	 */
+	public function __construct(\Closure $closure, $priority = 0, $active = false){
+		$this->closure = $closure;
+		$this->priority = $priority;
+		$this->active = $active;
+	}
+
+	/**
+	 * @param $active
+	 * @return $this
+	 */
+	public function setActive($active){
+		$this->active = $active;
+		return $this;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function isActive(){
+		return $this->active;
+	}
+
+	/**
+	 * @param int $priority
+	 * @return $this
+	 */
+	public function setPriority($priority = 0){
+		$this->priority = $priority;
+		return $this;
+	}
+
+	/**
+	 * @return int
+	 */
+	public function getPriority(){
+		return $this->priority;
+	}
+
+	/**
+	 * @param TestManager $manager
+	 * @param array $argumetns
+	 */
+	public function run(TestManager $manager, array $argumetns = []){
+		$this->_beforeRun();
+		$this->_run($manager,$argumetns);
+
+		$this->_afterRun();
+	}
+
+	/**
+	 * @param TestManager $manager
+	 * @param array $arguments
+	 */
+	protected function _run(TestManager $manager, array $arguments = []){
+		call_user_func_array($this->closure,$arguments);
+	}
+
+	/**
+	 *
+	 */
+	protected function _beforeRun(){
+		$this->start_time = microtime(true);
+	}
+
+	/**
+	 *
+	 */
+	protected function _afterRun(){
+		$this->last_execute_time = sprintf('%.4F',microtime(true) - $this->start_time);
+	}
+
 }
-*/
+
+/**
+ * Class TestBlock
+ */
+class TestBlock extends AbstractTestComplex implements TestInterface{
+
+	/** @var  TestInterface[]  */
+	protected $tests = [];
+
+	/** @var bool  */
+	protected $active = true;
+	/** @var int  */
+	protected $priority = 0;
+
+	protected $start_time = 0;
+
+	protected $last_execute_time;
+
+	public function __construct($priority = 0){
+		$this->setPriority($priority);
+	}
+
+	/**
+	 * @param TestManager $manager
+	 * @param array $arguments
+	 */
+	public function run(TestManager $manager, array $arguments = []){
+		$this->_beforeRun();
+		$this->_run($manager,$arguments);
+		$this->_afterRun();
+	}
 
 
-//
-// В случае когда такой объект был загружен ранее, данных запрос вернет все тот же объект,
-// при этом не загрузив посредника, т.к данная запись была отфильтрована контролем присутствия (NOT IN existing_ids)
-//
-//$collection = $schemaU->findThrough('profile',['id'=>'id'],['first_name' => 'Alexey'],null);
-//
-//$collection = $schemaU->findThrough('profile',['id'=>'id'],null,['username'=>'Anutik']);
+	/**
+	 * @param TestManager $manager
+	 */
+	protected function _run(TestManager $manager, array $arguments = []){
+		$manager->aggregate($this,$arguments);
+	}
 
+	/**
+	 *
+	 */
+	protected function _beforeRun(){
+		$this->start_time = microtime(true);
+	}
 
-/*
-echo '</br><h2>Users '.$collectionU->count().'</h2></br>';
-foreach($collectionU as $record){
-	echo $record->getIdentifierValue().' - '.$record->username.'</br>';
-}
-echo '</br><h2>Profiles '.$collectionP->count().'</h2></br>';
-foreach($collectionP as $record){
-	echo $record->getIdentifierValue().' - '.$record->first_name.' '.$record->last_name.'</br>';
-}
-*/
-/*
-$user = $schemaU->loadFirst(1);
+	/**
+	 *
+	 */
+	protected function _afterRun(){
+		$this->last_execute_time = sprintf('%.4F',microtime(true) - $this->start_time);
+	}
 
-var_dump($user->username);
+	/**
+	 * @return mixed
+	 */
+	public function getTests(){
+		return $this->tests;
+	}
 
-echo '<h4>User</h4>';
-foreach($user as $k => $v){
-	echo '<p>'.$k.' : '.$v.'</p>';
-}
-echo '<h4>Profile</h4>';
-foreach($user->profile as $k => $v){
-	echo '<p>'.$k.' : '.$v.'</p>';
-}
-echo '<h4>Notes('.$user->notes->count().' items)</h4>';
-foreach($user->notes as $note){
-	var_dump($note->user === $user); // такая фишка займет очень много времени, т.к каждый раз происходит выборка из БД
-	// Решение: реализовать Relationship collection = Когда произойдет выборка коллекции $user->notes,
-	// в каждый note при итерации внутри загрузчика Collection , будет происходить выставление user,
-	// и при таком обращении $note->user - значение просто отдастся из стека свойств для связаного поля
-	echo '<p>Note('.$note->id.')</p>';
-	foreach($note as $k => $v){
-		echo '<p>'.$k.' : '.$v.'</p>';
+	/**
+	 * @param $active
+	 * @return $this
+	 */
+	public function setActive($active){
+		$this->active = $active;
+		return $this;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function isActive(){
+		return $this->active;
+	}
+
+	/**
+	 * @param int $priority
+	 * @return $this
+	 */
+	public function setPriority($priority = 0){
+		$this->priority = $priority;
+		return $this;
+	}
+
+	/**
+	 * @return int
+	 */
+	public function getPriority(){
+		return $this->priority;
 	}
 }
-*/
-/*
-// Добавление НОВОГО объекта в MANY
-$noter = new Record\DataMap($schemaN);
-$noter->header = 'Записка 4';
-$noter->body = 'Текст 4';
 
-$user->notes[] = $noter;*/
-//$user->save();
+$test = new TestManager();
 
+$test->addAliasedTest('create',function() use($schemaU,$schemaN, $schemaG){
+	// Test: Create
+	$user = new Record\DataMap($schemaU);
+	$user->username = uniqid('username_');
+	$user->password = uniqid('username_');
 
-/*
-$newUser = new Record\DataMap($schemaU);
-$newUser->username = uniqid('username_');
-$newUser->password = uniqid('username_');
+	for($i = 0 ; $i < 5; $i++){
+		$newNote = new Record\DataMap($schemaN);
+		$newNote->header = 'Head body';
+		$newNote->body = 'Test body';
 
-echo '<h4>Member In(' . $user->memberIn->count() . ' items)</h4>';
-foreach($user->memberIn as $group){
-	echo '<p>Group('.$group->id.')</p>';
-	foreach($group as $k => $v){
-		echo '<p>'.$k.' : '.$v.'</p>';
+		// Direct
+		$user->notes->add($newNote);
+		// Back
+		//$newNote->user = $user;
+
 	}
-	$newUser->memberIn->add($group);
-}
-var_dump($newUser->save());
-*/
 
-//$user->notes->removeItem($schemaN->loadFirst(10));
+	// Test: Create & Use Through
+	foreach($schemaG->load(null,5) as $group){
+		// Direct ADD
+		$user->memberIn->add($group);
+		// Back ADD
+		//$group->members->add($user);
+	}
 
-//$a = $schemaG->findFirst(1);
-//$user->memberIn->remove($a);
+	$user->save();
+
+});
+
+$test->addAliasedTest('update',function($id) use($schemaU,$schemaN, $schemaG,$schemaP){
+	// Test: Update
+	$user = $schemaU->loadFirst($id);
+
+	// Add Profile (One relation)
+	$profile = new Record\DataMap($schemaP);
+	$profile->first_name = 'Alexeyi';
+	$profile->last_name = 'Kutuz27';
+	$profile->city = 'Khabarovskiy kray';
+	$user->profile = $profile;
 
 
-/*
-$newGroup = new Record\DataMap($schemaG);
-$newGroup->title    = uniqid('group_');
-$newGroup->rank     = rand(5,20);
-$user->memberIn->add($newGroup);*/
 
-//var_dump($user->save());
 
-/*
-$object = $schemaU->loadFirst(51);
-$notes = $object->notes;
-echo '<p>Count '.$notes->count().'</p>';
-foreach($notes as $n){
-	echo '<p>'.$n->getIdentifierValue().'</p>';
-}
-$object->remove();
-echo '<p>Count '.$notes->count().'</p>';
-foreach($notes as $n){
-	echo '<p>'.$n->getIdentifierValue().'</p>';
-}
-
-*/
-/*
-$notes = $newUser->notes;
-for($i = 0;$i<15;$i++){
+	// ADD to Many
 	$newNote = new Record\DataMap($schemaN);
-	$newNote->header = uniqid('note_');
-	$newNote->body = uniqid('note_');
-	$notes->add($newNote);
-}
-echo sprintf('%.4F',microtime(true) - $t);
-var_dump($newUser->save());
-*/
+	$newNote->header = 'Head body 2 ';
+	$newNote->body = 'Test body 2 ';
+	$user->notes->add($newNote);
+
+	// Remove From Many
+	//$user->notes->remove(['header'=>'Head body 2 ']);
+
+	// Remove Through
+	//$user->memberIn = [];
+
+	// ADD after all remove
+	$newGroup = $schemaG->initializeRecord();
+	$newGroup->title    = uniqid('group2_');
+	$newGroup->rank     = rand(5,20);
+	$user->memberIn->add($newGroup);
+
+	$user->save();
+});
+
+
+$test->addAliasedTest('remove',function($id) use($schemaU,$schemaN, $schemaG,$schemaP){
+	// Test: Remove
+	$user = $schemaU->loadFirst($id);
+	echo '<p>Count '.$user->notes->count().'</p>';
+	foreach($user->notes as $note){
+		echo '<p>'.$note->getIdentifierValue().'</p>';
+	}
+	$user->remove();
+	echo '<p>Count '.$user->notes->count().'</p>';
+	foreach($user->notes as $note){
+		echo '<p>'.$note->getIdentifierValue().'</p>';
+	}
+});
+
+
+$test->addAliasedTest('sorting',function() use($schemaU,$schemaN, $schemaG,$schemaP){
+	$collection = $schemaG->load(null,null,null,
+		(new Record\Collection\Sorter())->setSortFields(['title' => 'DESC'])
+	);
+
+	foreach($collection as $object){
+		echo $object->title.'<br/>';
+	}
+
+});
+
+
+$test->run('sorting');
+
 
 echo '<p/>Loaded: '.$manager->getStatusRecordsLoadedCount();
 echo '<p/>Instantiated: '.$manager->getStatusRecordsInstantiatedCount();

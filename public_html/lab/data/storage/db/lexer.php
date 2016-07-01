@@ -7,7 +7,7 @@ use Jungle\Data\Storage\Db\Lexer\SignGroup;
 require dirname(dirname(__DIR__)) . DIRECTORY_SEPARATOR . 'loader.php';
 
 
-$manager = new \Jungle\Data\Storage\Db\Lexer\SignManager(\Jungle\Smart\Keyword\Storage::getDummy());
+$manager = new \Jungle\Data\Storage\Db\Lexer\SignManager(\Jungle\Util\Smart\Keyword\Storage::getDummy());
 $lexer = new \Jungle\Data\Storage\Db\Lexer();
 $lexer->setSignManager($manager);
 

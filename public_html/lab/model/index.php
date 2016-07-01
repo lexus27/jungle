@@ -9,8 +9,8 @@
  */
 namespace modelX;
 
-use Jungle\Basic\INamed;
 use Jungle\DataOldRefactoring\DataMap\ValueAccess;
+use Jungle\Util\INamed;
 use Jungle\Util\Value\Callback;
 
 include dirname(__DIR__) . DIRECTORY_SEPARATOR . 'loader.php';

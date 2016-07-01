@@ -118,7 +118,7 @@ foreach($m[0] as $i => $string){
 */
 /*
 
-$specification = new \Jungle\Communication\Stream\Specification();
+$specification = new \Jungle\Util\Communication\Stream\Specification();
 $specification->setCode(100,'Info');
 $specification->setCode(200,'Success');
 $specification->setCode(300,'Notify');
@@ -128,7 +128,7 @@ $specification->setCommandStructureModifier(function($s){
 	return $s . ':SSS'."\r\n";
 });
 $specification->setCodeRecognizer(function($r){return intval(substr($r,0,3));});
-$stream = new \Jungle\Communication\Stream(new \Jungle\Communication\Stream\Connection\Test());
+$stream = new \Jungle\Util\Communication\Stream(new \Jungle\Util\Communication\Stream\Connection\Test());
 $stream->setSpecification($specification);
 try{
 	$defaults = [
@@ -151,7 +151,7 @@ try{
 				'rules' => [[
 					'code' => 300,
 					'msg' => 'Ошибка команды APAVLO код ответа не является 300',
-					'behaviour' => function(\Jungle\Communication\Stream\Specification $spec,\Jungle\Communication\Stream\Command $command, $matched) use($stream, $defaults){
+					'behaviour' => function(\Jungle\Util\Communication\Stream\Specification $spec,\Jungle\Util\Communication\Stream\Command $command, $matched) use($stream, $defaults){
 						if(!$matched){
 
 							$stream->execute([
@@ -173,7 +173,7 @@ try{
 
 		]
 	]);
-}catch(\Jungle\Communication\Stream\Exception $e){
+}catch(\Jungle\Util\Communication\Stream\Exception $e){
 
 }
 
@@ -185,10 +185,10 @@ print_r($stream);
 
 
 
-$domain = \Jungle\Communication\URL\Host\Domain::get('google.ru');
+$domain = \Jungle\Util\Communication\URL\Host\Domain::get('google.ru');
 
 
-$url = \Jungle\Communication\URL::getURL('http://google.com/');
+$url = \Jungle\Util\Communication\URL::getURL('http://google.com/');
 
 $url->getHostIP();
 print_r($url);
@@ -197,8 +197,8 @@ echo $url;*/
 
 
 /*
-$c = new Jungle\Communication\Stream\Connection\Socket();
-$c->setUrl(\Jungle\Communication\URL::getURL('ssl://smtp.mail.ru:465'));
+$c = new Jungle\Util\Communication\Stream\Connection\Socket();
+$c->setUrl(\Jungle\Util\Communication\URL::getURL('ssl://smtp.mail.ru:465'));
 $c->setTimeout(10);
 $fp = $c->getResource();
 $r = function($fp){
@@ -260,8 +260,8 @@ $messager->send($combo);
 /*
 
 
-use Jungle\Specifications\TextTransfer\Body\Multipart;
-use Jungle\Specifications\TextTransfer\Document;
+use Jungle\Util\Specifications\TextTransfer\Body\Multipart;
+use Jungle\Util\Specifications\TextTransfer\Document;
 
 $document = new Document();
 $multipart = new Multipart();

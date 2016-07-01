@@ -7,8 +7,6 @@
  */
 namespace Jungle\_DesignPatterns\ParadigmLabs\Collections {
 
-	use Jungle\Basic\INamed;
-
 	/**
 	 * Interface INamedAware
 	 * @package Jungle\_DesignPatterns\ParadigmLabs\Collections
@@ -18,7 +16,7 @@ namespace Jungle\_DesignPatterns\ParadigmLabs\Collections {
 		/**
 		 * @see IRegistryRead::get alias in IRegistry
 		 * @param $key
-		 * @return INamed
+		 * @return \Jungle\Util\INamed
 		 */
 		public function getByKey($key);
 
