@@ -4,21 +4,19 @@
  * Author: Kutuzov Alexey Konstantinovich <lexus.1995@mail.ru>
  * Project: jungle
  * IDE: PhpStorm
- * Date: 10.05.2016
- * Time: 19:40
+ * Date: 19.06.2016
+ * Time: 22:47
  */
-namespace App\Modules\Main\View\json {
+namespace App\Model {
+	
+	use Jungle\Data\Record\Model;
 
 	/**
-	 * Class JsonView
-	 * @package App\Modules\Main\View\json
+	 * Class Configuration
+	 * @package App\Model
 	 */
-	class JsonView{
-
-		public function format($data){
-
-		}
-
+	class Configuration extends Model{
+		
 	}
 }
 

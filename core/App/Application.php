@@ -9,23 +9,37 @@
  */
 namespace App {
 
+	use Jungle\Application\RequestInterface;
+	use Jungle\Http\Current\Request;
+	use Jungle\Http\Current\Response;
+
 	/**
 	 * Class Application
 	 * @package App
 	 */
-	class Application{
+	class Application extends \Jungle\Application{
 
 		/** @var  \ReflectionClass */
 		protected $reflection;
 
+		/** @var  bool  */
 		protected $initialized = false;
 
-		public function initialize(){
+		/** @var  string  */
+		protected $modules_root_folder = 'Modules';
 
-		}
-
+		/**
+		 * Application constructor.
+		 */
 		public function __construct(){
 			$this->reflection = new \ReflectionClass($this);
+		}
+
+		/**
+		 *
+		 */
+		public function initialize(){
+
 		}
 
 		/**
@@ -46,9 +60,12 @@ namespace App {
 			];
 		}
 
+		/**
+		 * @return array
+		 */
 		public function getBootstrapModules(){
 			$modules = [];
-			foreach(glob(dirname($this->reflection->getFileName()) . DIRECTORY_SEPARATOR . 'Modules' . DIRECTORY_SEPARATOR . '*') as $path){
+			foreach(glob(dirname($this->reflection->getFileName()) . DIRECTORY_SEPARATOR . $this->modules_root_folder . DIRECTORY_SEPARATOR . '*') as $path){
 				if(is_dir($path)){
 					$modules[basename($path)] = $path.'.php';
 				}
@@ -56,14 +73,20 @@ namespace App {
 			return $modules;
 		}
 
+		/**
+		 * @return array
+		 */
 		public function getBootstrapRoutes(){
-
+			return [];
 		}
 
 		/**
-		 *
+		 * @param RequestInterface $request
+		 * @return mixed
+		 * @throws \Jungle\Application\Dispatcher\Exception
+		 * @throws \Jungle\Application\Dispatcher\Exception\NotFound
 		 */
-		public function handle(){
+		public function handle(RequestInterface $request = null){
 			if(!$this->initialized){
 				$this->initialized = true;
 				$this->registerNamespaces();
@@ -71,25 +94,76 @@ namespace App {
 				$this->registerRoutes();
 				$this->initialize();
 			}
-
-
-			//code
-
+			if(!$request){
+				$request = Request::getInstance();
+			}
+			$response = new Response();
+			$this->dependency_injector->setShared('request',$request);
+			$this->dependency_injector->setShared('response',$response);
+			return $this->dispatcher->dispatch($request);
 		}
 
-
+		/**
+		 *
+		 */
 		protected function registerNamespaces(){
-
+			$this->getLoader()->registerNamespaces($this->getBootstrapNamespaces());
 		}
 
+		/**
+		 *
+		 */
 		protected function registerModules(){
-
+			$this->getDispatcher()->registerModules($this->getBootstrapModules());
 		}
 
+		/**
+		 *
+		 */
 		protected function registerRoutes(){
 
 		}
 
+		/**
+		 *
+		 */
+		protected function registerDirectories(){
+			$directories = $this->getBootstrapRootDirectories();
+			foreach($directories as $path){
+				if(!is_dir($path)){
+					mkdir($path,0555,true);
+				}
+			}
+		}
+
+
+		/**
+		 *
+		 */
+		public function getMemoryUsage(){
+
+		}
+
+		/**
+		 *
+		 */
+		public function getDataBaseTotalSize(){
+
+		}
+
+		/**
+		 *
+		 */
+		public function clearAllCache(){
+
+		}
+
+		/**
+		 *
+		 */
+		public function getActionsCount(){
+
+		}
 	}
 }
 

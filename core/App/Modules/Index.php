@@ -12,16 +12,16 @@ namespace App\Modules {
 	use Jungle\Application\Dispatcher;
 
 	/**
-	 * Class Main
+	 * Class Index
 	 * @package App\Modules
 	 */
-	class Main extends Dispatcher\Module{
+	class Index extends Dispatcher\Module{
 
 		/**
 		 * @return string
 		 */
 		public function getControllerNamespace(){
-			return __NAMESPACE__ . '\\Main\\Controller';
+			return __NAMESPACE__ . '\\Index\\Controller';
 		}
 
 
