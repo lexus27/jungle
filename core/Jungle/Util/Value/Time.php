@@ -160,7 +160,8 @@ namespace Jungle\Util\Value {
 
 
 		/**
-		 * Достигнутый срок
+		 * Достигнутый период.
+		 * Достигнуло ли $time, Срока назначенного со $startCheckpoint на $delay период
 		 * @param $startCheckpoint
 		 * @param $delay
 		 * @param null $time
@@ -175,7 +176,7 @@ namespace Jungle\Util\Value {
 		 *           function lock($delay, $reason){}
 		 *
 		 *           function isLocked($auto_amnesty){
-		 *               if($auto_amnesty && $this->locked && Time::timeIsReached($this->locked_time, $this->locked_delay)){
+		 *               if($auto_amnesty && $this->locked && Time::isReached($this->locked_time, $this->locked_delay)){
 		 *                   $this->amnesty();
 		 *               }
 		 *               return $this->locked;
@@ -188,7 +189,8 @@ namespace Jungle\Util\Value {
 		}
 
 		/**
-		 * Просроченый срок
+		 * Просроченный период
+		 * Прошло ли $time , время назначенное со $startCheckpoint на $delay период
 		 * @param $startCheckpoint
 		 * @param $delay
 		 * @param null $time
@@ -200,6 +202,7 @@ namespace Jungle\Util\Value {
 		}
 
 		/**
+		 * Время, которое прошло спустя $checkpoint
 		 * @param $checkpoint
 		 * @param null $time
 		 * @return mixed|null
@@ -210,6 +213,7 @@ namespace Jungle\Util\Value {
 		}
 
 		/**
+		 * Время, которое осталось до $checkpoint
 		 * @param $checkpoint
 		 * @param null $time
 		 * @return mixed|null

@@ -8,8 +8,8 @@
 
 namespace Jungle\XPlate\CSS\Selector {
 
-	use Jungle\Basic\INamed;
-	use Jungle\Smart\Keyword\Keyword;
+	use Jungle\Util\INamed;
+	use Jungle\Util\Smart\Keyword\Keyword;
 	use Jungle\XPlate\HTML\IElement;
 
 	/**

@@ -9,7 +9,7 @@
 namespace Jungle\XPlate\CSS\Media {
 
 
-	use Jungle\Smart\Value\IMeasure;
+	use Jungle\Util\Smart\Value\IMeasure;
 
 
 	/**

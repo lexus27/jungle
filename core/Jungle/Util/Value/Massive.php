@@ -7,9 +7,9 @@
  */
 namespace Jungle\Util\Value {
 
-	use Jungle\Basic\INamed;
 	use Jungle\DataOldRefactoring\Collection\Cmp;
 	use Jungle\DataOldRefactoring\DataMap\ValueAccess;
+	use Jungle\Util\INamed;
 	use Jungle\Util\Value\Cmp as UtilCmp;
 
 	/**
@@ -224,10 +224,10 @@ namespace Jungle\Util\Value {
 		}
 
 		/**
-		 * @param INamed[] $array
+		 * @param \Jungle\Util\INamed[] $array
 		 * @param $name
 		 * @param callable $cmp
-		 * @return INamed[]
+		 * @return \Jungle\Util\INamed[]
 		 */
 		public static function collectNames(array $array, $name,callable $cmp = null){
 			if($cmp===null)$cmp = 'strcmp';
@@ -247,7 +247,7 @@ namespace Jungle\Util\Value {
 		 * @param INamed[] $array
 		 * @param $name
 		 * @param callable $cmp
-		 * @return INamed[]
+		 * @return \Jungle\Util\INamed[]
 		 */
 		public static function filterNamed(array $array, $name,callable $cmp = null){
 			if($cmp===null)$cmp = 'strcmp';
@@ -268,7 +268,7 @@ namespace Jungle\Util\Value {
 
 		/**
 		 * @param INamed[] $array
-		 * @param INamed $name
+		 * @param \Jungle\Util\INamed $name
 		 * @param callable $cmp
 		 * @param null $modeExists
 		 */
@@ -300,7 +300,7 @@ namespace Jungle\Util\Value {
 		}
 
 		/**
-		 * @param INamed[] $array
+		 * @param \Jungle\Util\INamed[] $array
 		 * @param string $name
 		 * @param callable $cmp
 		 * @return bool|int

@@ -288,13 +288,6 @@ namespace Jungle\Application\Dispatcher\Router {
 			return $a;
 		}
 
-		/**
-		 * HTTP specific
-		 */
-		public function isDirectVisible(){
-
-		}
-
 
 		/**
 		 * HTTP specific

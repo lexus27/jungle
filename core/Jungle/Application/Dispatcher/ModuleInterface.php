@@ -26,6 +26,11 @@ namespace Jungle\Application\Dispatcher {
 		public function setName($name);
 
 		/**
+		 * @return string[]
+		 */
+		public function getControllerNames();
+
+		/**
 		 * @return string
 		 */
 		public function getName();

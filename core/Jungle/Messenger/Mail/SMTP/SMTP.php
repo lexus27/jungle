@@ -15,9 +15,9 @@ namespace Jungle\Messenger\Mail\SMTP {
 	use Jungle\Messenger\IContact;
 	use Jungle\Messenger\Mail\Contact;
 	use Jungle\Messenger\Mail\IMessage;
-	use Jungle\Specifications\TextTransfer\Body\Multipart;
-	use Jungle\Specifications\TextTransfer\Document;
 	use Jungle\User\AccessAuth\Auth;
+	use Jungle\Util\Specifications\TextTransfer\Body\Multipart;
+	use Jungle\Util\Specifications\TextTransfer\Document;
 
 	/**
 	 * Class SMTP

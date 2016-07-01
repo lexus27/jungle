@@ -84,7 +84,7 @@ namespace Jungle\Data\Storage\Db\Adapter {
 		/**
 		 * @return string
 		 */
-		public function lastInsertId($sequenceName = null){
+		public function lastCreatedIdentifier($sequenceName = null){
 			return $this->connection->lastInsertId($sequenceName);
 		}
 

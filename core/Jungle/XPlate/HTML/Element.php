@@ -8,8 +8,7 @@
 
 namespace Jungle\XPlate\HTML {
 
-	use Jungle\Basic\Collection\ObjectStorage;
-	use Jungle\Basic\ObservableTrait;
+	use Jungle\Util\ObjectStorage;
 	use Jungle\XPlate\HTML\Element\Attribute;
 	use Jungle\XPlate\HTML\Element\Tag;
 	use Jungle\XPlate\WebStrategy;
@@ -20,7 +19,7 @@ namespace Jungle\XPlate\HTML {
 	 */
 	class Element implements IElement{
 
-		use ObservableTrait;
+		use \Jungle\Util\ObservableTrait;
 
 		const WS_BEFORE = 1;
 		const WS_AFTER = 2;

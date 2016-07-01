@@ -170,6 +170,8 @@ namespace Jungle\RegExp\Type {
 				$intCt->add('nozero')->setVartype('integer')->setPattern('[+\-]?[1-9]\d*');
 				$intCt->add('unsigned')->setVartype('integer')->setPattern('(?:[1-9]\d*|0)');
 				$intCt->add('unsigned-nozero')->setVartype('integer')->setPattern('[1-9]\d*');
+				$intCt->add('nozero')->setVartype('integer')->setPattern('[+\-]?[1-9]\d*(?:\.\d+)?');
+				$intCt->add('unsigned-nozero')->setVartype('integer')->setPattern('[1-9]\d*(?:\.\d+)?');
 
 				/**
 				 * Float
@@ -177,9 +179,9 @@ namespace Jungle\RegExp\Type {
 				$floatCt = $r->addContainer(['float','double','number','numeric'])
 						->setVartype('double')
 						->setPattern('[+\-]?(?:[1-9]\d*|0)(?:\.\d+)?');
-				$intCt->add('nozero')->setVartype('integer')->setPattern('[+\-]?[1-9]\d*(?:\.\d+)?');
+
 				$floatCt->add('unsigned')->setVartype('double')->setPattern('(?:[1-9]\d*|0)(?:\.\d+)?');
-				$intCt->add('unsigned-nozero')->setVartype('integer')->setPattern('[1-9]\d*(?:\.\d+)?');
+
 
 				/**
 				 * Arrays

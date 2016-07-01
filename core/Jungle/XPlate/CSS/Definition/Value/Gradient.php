@@ -7,7 +7,7 @@
  */
 
 namespace Jungle\XPlate\CSS\Definition\Value;
-use Jungle\Smart\Value\IColor;
+use Jungle\Util\Smart\Value\IColor;
 use Jungle\XPlate\WebEngineSet;
 
 /**
@@ -55,7 +55,7 @@ class Gradient {
 
 	/**
 	 * @param int $percentage
-	 * @param \Jungle\Smart\Value\IColor $color
+	 * @param \Jungle\Util\Smart\Value\IColor $color
 	 * @return $this
 	 */
 	public function setColor($percentage,IColor $color){

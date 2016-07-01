@@ -8,7 +8,7 @@
 
 namespace Jungle\XPlate\CSS\Selector\AttributeQuery {
 
-	use Jungle\Basic\INamed;
+	use Jungle\Util\INamed;
 
 	/**
 	 * Interface IChecker

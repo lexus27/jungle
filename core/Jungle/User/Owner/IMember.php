@@ -7,6 +7,10 @@
  */
 namespace Jungle\User\Owner {
 
+	/**
+	 * Interface IMember
+	 * @package Jungle\User\Owner
+	 */
 	interface IMember{
 
 		/**  */

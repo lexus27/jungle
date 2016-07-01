@@ -7,9 +7,9 @@
  */
 namespace Jungle\Data\Storage\Db\Structure {
 
-	use Jungle\Basic\INamed;
 	use Jungle\Data\Storage\Db\Dialect;
 	use Jungle\Data\Storage\Db\Structure;
+	use Jungle\Util\INamed;
 
 	/**
 	 * Class Database

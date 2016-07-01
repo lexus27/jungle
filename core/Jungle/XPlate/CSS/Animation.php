@@ -9,7 +9,7 @@
 namespace Jungle\XPlate\CSS {
 
 
-	use Jungle\Basic\INamed;
+	use Jungle\Util\INamed;
 
 	/**
 	 * Class Keyframe

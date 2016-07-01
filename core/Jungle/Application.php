@@ -10,12 +10,14 @@
 namespace Jungle {
 	
 	use Jungle\Application\Dispatcher;
+	use Jungle\Di\DiInterface;
+	use Jungle\Di\InjectionAwareInterface;
 
 	/**
 	 * Class Application
 	 * @package Jungle
 	 */
-	class Application{
+	class Application implements InjectionAwareInterface{
 
 		/** @var  \ReflectionObject */
 		protected $reflection;
@@ -26,9 +28,32 @@ namespace Jungle {
 		/** @var  Loader */
 		protected $loader;
 
+		/** @var  DiInterface */
+		protected $dependency_injector;
 
+		/** @var  Application */
+		protected static $latest_application;
+
+		/**
+		 * @return mixed
+		 */
+		public static function app(){
+			return self::$latest_application;
+		}
+
+		/**
+		 * @param Application $application
+		 */
+		public static function setDefault(Application $application){
+			self::$latest_application = $application;
+		}
+
+		/**
+		 * Application constructor.
+		 */
 		public function __construct(){
 			$this->reflection = new \ReflectionObject($this);
+			self::$latest_application = $this;
 		}
 
 		/**
@@ -48,7 +73,7 @@ namespace Jungle {
 		}
 
 		/**
-		 * @return mixed
+		 * @return Loader
 		 */
 		public function getLoader(){
 			return $this->loader;
@@ -56,6 +81,22 @@ namespace Jungle {
 
 		public function handle(){
 
+		}
+
+		/**
+		 * @param DiInterface $di
+		 * @return $this
+		 */
+		public function setDi(DiInterface $di){
+			$this->dependency_injector = $di;
+			return $this;
+		}
+
+		/**
+		 * @return DiInterface
+		 */
+		public function getDi(){
+			return $this->dependency_injector;
 		}
 
 

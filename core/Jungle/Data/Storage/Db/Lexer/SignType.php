@@ -7,7 +7,7 @@
  */
 namespace Jungle\Data\Storage\Db\Lexer {
 
-	use Jungle\Smart\Keyword\Keyword;
+	use Jungle\Util\Smart\Keyword\Keyword;
 
 	/**
 	 * Class SignType

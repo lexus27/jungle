@@ -7,9 +7,9 @@
  */
 namespace Jungle\TypeHint\Rule {
 
-	use Jungle\Basic\INamed;
 	use Jungle\TypeHint;
 	use Jungle\TypeHint\Rule;
+	use Jungle\Util\INamed;
 
 	/**
 	 * Class Builder

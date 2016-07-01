@@ -7,7 +7,7 @@
  */
 
 namespace Jungle\CodeForm\LogicConstruction;
-use Jungle\Basic\INamed;
+use Jungle\Util\INamed;
 use Jungle\Util\Value\Massive;
 use Jungle\Util\Value\String;
 

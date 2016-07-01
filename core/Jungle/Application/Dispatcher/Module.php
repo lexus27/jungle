@@ -28,23 +28,28 @@ namespace Jungle\Application\Dispatcher {
 		/** @var  string */
 		protected $name;
 
+		/** @var  Dispatcher */
+		protected $dispatcher;
+
 		/** @var  string */
 		protected $controller_namespace;
 
 		/** @var  string */
-		protected $controllerSuffix = 'Controller';
+		protected $controller_suffix;
 
 		/** @var  string */
-		protected $actionSuffix = 'Action';
+		protected $action_suffix;
 
 		/** @var  string */
-		protected $defaultController = 'index';
+		protected $default_controller;
 
 		/** @var  string */
-		protected $defaultAction = 'index';
+		protected $default_action;
 
 		/** @var  object[]|ControllerInterface[]|ControllerManuallyInterface[]  */
 		protected $controllers = [];
+
+
 
 		/**
 		 * @param $name
@@ -65,9 +70,9 @@ namespace Jungle\Application\Dispatcher {
 		public function initialize(){}
 
 
-
-
-
+		/**
+		 *
+		 */
 		public function getCacheDirname(){
 			// TODO: Implement getCacheDirname() method.
 		}
@@ -94,7 +99,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @return $this
 		 */
 		public function setDefaultController($controller){
-			$this->defaultController = $controller;
+			$this->default_controller = $controller;
 			return $this;
 		}
 
@@ -102,7 +107,10 @@ namespace Jungle\Application\Dispatcher {
 		 * @return string
 		 */
 		public function getDefaultController(){
-			return $this->defaultController;
+			if(!$this->default_controller && $this->dispatcher){
+				return $this->dispatcher->getDefaultController();
+			}
+			return $this->default_controller;
 		}
 
 		/**
@@ -110,7 +118,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @return $this
 		 */
 		public function setDefaultAction($action){
-			$this->defaultAction = $action;
+			$this->default_action = $action;
 			return $this;
 		}
 
@@ -118,15 +126,18 @@ namespace Jungle\Application\Dispatcher {
 		 * @return string
 		 */
 		public function getDefaultAction(){
-			return $this->defaultAction;
+			if(!$this->default_action && $this->dispatcher){
+				return $this->dispatcher->getDefaultAction();
+			}
+			return $this->default_action;
 		}
 
 		/**
 		 * @param $suffix
 		 * @return mixed
 		 */
-		public function setControllerSuffix($suffix){
-			$this->controllerSuffix = $suffix;
+		public function setControllerSuffix($suffix=null){
+			$this->controller_suffix = $suffix;
 			return $this;
 		}
 
@@ -134,15 +145,18 @@ namespace Jungle\Application\Dispatcher {
 		 * @return mixed
 		 */
 		public function getControllerSuffix(){
-			return $this->controllerSuffix;
+			if(is_null($this->controller_suffix) && $this->dispatcher){
+				return $this->dispatcher->getControllerSuffix();
+			}
+			return $this->controller_suffix;
 		}
 
 		/**
 		 * @param $suffix
 		 * @return mixed
 		 */
-		public function setActionSuffix($suffix){
-			$this->actionSuffix = $suffix;
+		public function setActionSuffix($suffix=null){
+			$this->action_suffix = $suffix;
 			return $this;
 		}
 
@@ -150,7 +164,10 @@ namespace Jungle\Application\Dispatcher {
 		 * @return mixed
 		 */
 		public function getActionSuffix(){
-			return $this->actionSuffix;
+			if(is_null($this->controller_suffix) && $this->dispatcher){
+				return $this->dispatcher->getActionSuffix();
+			}
+			return $this->action_suffix;
 		}
 
 		/**
@@ -162,7 +179,11 @@ namespace Jungle\Application\Dispatcher {
 		 * @throws Exception
 		 */
 		public function execute(Dispatcher $dispatcher, array $data, $reference = null,ProcessInitiatorInterface $initiator = null){
-			$reference = $dispatcher->normalizeReference($reference);
+			$this->dispatcher = $dispatcher;
+			$reference = $dispatcher->normalizeReference($reference,[
+				'controller'    => $this->getDefaultController(),
+				'action'        => $this->getDefaultAction()
+			],true);
 			list($controllerName, $actionName) = Massive::orderedKeys($reference, ['controller','action']);
 
 			$controllerQualified = $this->getQualifiedReferenceString($reference,false);
@@ -265,7 +286,7 @@ namespace Jungle\Application\Dispatcher {
 		protected function afterControl($process, $result){
 			
 		}
-		
+
 		
 		/**
 		 * @param $reference
@@ -389,7 +410,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @param $reference
 		 * @return bool
 		 */
-		public function supportPublic($reference){
+		public function hasPublicSupport($reference){
 			
 		}
 		
@@ -397,7 +418,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @param $reference
 		 * @return bool
 		 */
-		public function supportHierarchy($reference){
+		public function hasHierarchySupport($reference){
 			
 		}
 
@@ -406,7 +427,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @param $reference
 		 * @return bool
 		 */
-		public function supportFormatting($reference){
+		public function hasFormattingSupport($reference){
 
 		}
 		

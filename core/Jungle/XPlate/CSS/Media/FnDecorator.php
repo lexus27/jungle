@@ -8,8 +8,8 @@
 
 namespace Jungle\XPlate\CSS\Media {
 
-	use Jungle\Smart\Value\IMeasure;
-	use Jungle\Smart\Value\IValue;
+	use Jungle\Util\Smart\Value\IMeasure;
+	use Jungle\Util\Smart\Value\IValue;
 
 	/**
 	 * Class FnDecorator

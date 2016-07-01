@@ -7,9 +7,9 @@
  */
 namespace Jungle\Data\Storage\Db\Structure\Column {
 
-	use Jungle\Basic\INamed;
 	use Jungle\Data\Storage\Db\Structure\Column;
-	use Jungle\Smart\Keyword\Keyword;
+	use Jungle\Util\INamed;
+	use Jungle\Util\Smart\Keyword\Keyword;
 
 	/**
 	 * Class Type

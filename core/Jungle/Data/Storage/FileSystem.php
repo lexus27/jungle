@@ -9,8 +9,8 @@
  */
 namespace Jungle\Data\Storage {
 	
-	use Jungle\Data\Foundation\ShipmentInterface;
-	use Jungle\Data\Foundation\Storage\StorageInterface;
+	use Jungle\Util\Data\Foundation\ShipmentInterface;
+	use Jungle\Util\Data\Foundation\Storage\StorageInterface;
 
 	class FileSystem implements StorageInterface{
 
@@ -36,8 +36,8 @@ namespace Jungle\Data\Storage {
 		/**
 		 * @return mixed
 		 */
-		public function lastInsertId(){
-			// TODO: Implement lastInsertId() method.
+		public function lastCreatedIdentifier(){
+			// TODO: Implement lastCreatedIdentifier() method.
 		}
 
 		/**

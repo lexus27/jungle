@@ -8,7 +8,7 @@
 
 namespace Jungle\XPlate\CSS\Definition {
 
-	use Jungle\Basic\INamed;
+	use Jungle\Util\INamed;
 
 	/**
 	 * Interface ICssProperty

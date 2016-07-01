@@ -8,8 +8,6 @@
 
 namespace Jungle\XPlate\HTML {
 
-	use Jungle\Basic\Collection\OptionContainerTrait;
-	use Jungle\Basic\Collection\ServiceContainerTrait;
 	use Jungle\XPlate\Interfaces\IElementFinder;
 	use Jungle\XPlate\Interfaces\IWebStrategy;
 	use Jungle\XPlate\Interfaces\IWebSubject;
@@ -20,8 +18,8 @@ namespace Jungle\XPlate\HTML {
 	 */
 	class Document implements IElementFinder, IWebSubject{
 
-		use ServiceContainerTrait;
-		use OptionContainerTrait;
+		use \Jungle\Util\ServiceContainerTrait;
+		use \Jungle\Util\OptionContainerTrait;
 
 		/**
 		 * @var bool

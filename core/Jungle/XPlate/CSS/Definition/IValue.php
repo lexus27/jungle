@@ -9,7 +9,7 @@
 namespace Jungle\XPlate\CSS\Definition;
 
 
-use Jungle\Smart\Value\IValue as SmartValue;
+use Jungle\Util\Smart\Value\IValue as SmartValue;
 
 /**
  * Interface ICssPropertyValue

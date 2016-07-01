@@ -7,8 +7,6 @@
  */
 namespace Jungle\XPlate {
 
-	use Jungle\Basic\Collection\OptionContainerTrait;
-	use Jungle\Basic\Collection\ServiceContainerTrait;
 	use Jungle\XPlate\Interfaces\IWebStrategy;
 	use Jungle\XPlate\Interfaces\IWebSubject;
 	use Jungle\XPlate\Services\AttributePool;
@@ -24,8 +22,8 @@ namespace Jungle\XPlate {
 	 */
 	class WebStrategy implements IWebStrategy{
 
-		use ServiceContainerTrait;
-		use OptionContainerTrait;
+		use \Jungle\Util\ServiceContainerTrait;
+		use \Jungle\Util\OptionContainerTrait;
 
 		protected $locked = false;
 

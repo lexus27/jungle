@@ -7,8 +7,8 @@
  */
 namespace Jungle\TypeHint {
 
-	use Jungle\Basic\INamed;
 	use Jungle\TypeHint;
+	use Jungle\Util\INamed;
 	use Jungle\Util\Value\String;
 
 	/**

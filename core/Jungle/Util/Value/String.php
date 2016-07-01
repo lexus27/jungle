@@ -41,37 +41,27 @@ namespace Jungle\Util\Value {
 		 * @return string
 		 */
 		public static function representFrom($value,array $parameters = []){
-
-			Massive::applyIf($parameters,[
+			$parameters = array_replace_recursive([
 				'bool'              => [FALSE,TRUE],
 				'null'              => 'NULL',
-				'empty'             => 'EMPTY',
-				'empty_type_render' => true
-			]);
-
+				'empty'             => false,
+				'empty_type_render' => true,
+			    'lower'             => null
+			],$parameters);
 			if(is_bool($value)){
-				if(!isset($parameters['bool'])){
-					$parameters['bool'] = [];
-				}
-				$parameters['bool'][0] = isset($parameters['bool'][0])?$parameters['bool'][0]:'FALSE';
-				$parameters['bool'][1] = isset($parameters['bool'][1])?$parameters['bool'][1]:'TRUE';
 				$string = $parameters['bool'][intval($value)];
 			}elseif(is_null($value)){
-				if(!isset($parameters['null'])){
-					$parameters['null'] = 'NULL';
-				}
 				$string =  $parameters['null'];
-			}elseif(empty($value) && isset($parameters['empty'])){
+			}elseif(empty($value) && $parameters['empty']){
 				if(!is_string($parameters['empty']) || !$parameters['empty']){
 					$parameters['empty'] = 'EMPTY';
 				}
-				$typePrint = isset($parameters['empty_type_render'])?boolval($parameters['empty_type_render']):true;
-				$string =  $parameters['empty'].($typePrint?'('.gettype($value).')':'');
+				$string =  $parameters['empty'].($parameters['empty_type_render']?'('.gettype($value).')':'');
 			}else{
 				return (string)$value;
 			}
-			$lover = isset($parameters['lover'])?$parameters['lover']:null;
-			return $lover===null?$string:($lover?mb_strtolower($string):mb_strtoupper($string));
+			return $parameters['lover']===null?$string:
+				($parameters['lover']?mb_strtolower($string):mb_strtoupper($string));
 		}
 
 		/**

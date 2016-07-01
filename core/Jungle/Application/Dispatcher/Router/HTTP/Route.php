@@ -100,7 +100,7 @@ namespace Jungle\Application\Dispatcher\Router\HTTP {
 				return false;
 			}
 
-			/** @var \Jungle\HttpFoundation\RequestInterface $request */
+			/** @var \Jungle\Http\RequestInterface $request */
 			$request = $this->routing->getRequest();
 
 			if($this->_preferred_scheme && !String::match($request->getScheme(),$this->_preferred_scheme,true)){

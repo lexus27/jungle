@@ -8,7 +8,7 @@
 
 namespace Jungle\XPlate\CSS {
 
-	use Jungle\Basic\Collection\ObjectStorage;
+	use Jungle\Util\ObjectStorage;
 	use Jungle\XPlate\CSS\Definition\Property;
 	use Jungle\XPlate\Interfaces\IProperty;
 

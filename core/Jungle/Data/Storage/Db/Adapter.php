@@ -7,7 +7,6 @@
  */
 namespace Jungle\Data\Storage\Db {
 
-	use Jungle\Data\Foundation\Storage;
 	use Jungle\Data\Storage\Db;
 	use Jungle\Data\Storage\Db\Structure\Column;
 	use Jungle\Data\Storage\Db\Structure\Column\ForeignKey;
@@ -16,6 +15,7 @@ namespace Jungle\Data\Storage\Db {
 	use Jungle\Data\Storage\Db\Structure\Column\TypePool;
 	use Jungle\Data\Storage\Db\Structure\Database;
 	use Jungle\Data\Storage\Db\Structure\Table;
+	use Jungle\Util\Data\Foundation\Storage;
 
 	/**
 	 * Class Adapter
@@ -192,14 +192,29 @@ namespace Jungle\Data\Storage\Db {
 		 * @param null $sequenceName
 		 * @return string
 		 */
-		abstract public function lastInsertId($sequenceName = null);
+		abstract public function lastCreatedIdentifier($sequenceName = null);
 
 		/**
 		 * @return bool
 		 */
-		public function haveConditionSupport(){
+		public function hasConditionSupport(){
 			return true;
 		}
+
+		/**
+		 * @return mixed
+		 */
+		public function hasJoinSupport(){
+			return true;
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function hasForeignControlSupport(){
+			return true;
+		}
+
 
 		/**
 		 * @param $data

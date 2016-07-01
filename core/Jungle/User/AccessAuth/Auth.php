@@ -19,7 +19,7 @@ namespace Jungle\User\AccessAuth {
 		protected static $_allow_set_pair_on_construct = true;
 
 		/** @var Pair */
-		protected $accessAuth;
+		protected $pair;
 
 		/**
 		 * @param $login
@@ -27,7 +27,7 @@ namespace Jungle\User\AccessAuth {
 		 */
 		public function __construct($login = null, $password = null){
 			if(static::$_allow_set_pair_on_construct){
-				$this->accessAuth = self::getPair($login,$password);
+				$this->pair = self::getPair($login,$password);
 			}
 		}
 
@@ -36,7 +36,7 @@ namespace Jungle\User\AccessAuth {
 		 * @return array [login,password]
 		 */
 		protected function _getPair(){
-			return $this->accessAuth?[$this->accessAuth->getLogin(),$this->accessAuth->getPassword()]:[null,null];
+			return $this->pair?[ $this->pair->getLogin(), $this->pair->getPassword()]:[ null, null];
 		}
 
 		/**
@@ -45,7 +45,7 @@ namespace Jungle\User\AccessAuth {
 		 */
 		public function setLogin($login){
 			if($this->getLogin() !== $login){
-				$this->accessAuth = self::getPair($login, $this->getPassword());
+				$this->pair = self::getPair($login, $this->getPassword());
 			}
 			return $this;
 		}
@@ -54,14 +54,14 @@ namespace Jungle\User\AccessAuth {
 		 * @return string
 		 */
 		public function getLogin(){
-			return $this->accessAuth->getLogin();
+			return $this->pair->getLogin();
 		}
 
 		/**
 		 * @return string
 		 */
 		public function getBase64Login(){
-			return $this->accessAuth->getBase64Login();
+			return $this->pair->getBase64Login();
 		}
 
 		/**
@@ -70,7 +70,7 @@ namespace Jungle\User\AccessAuth {
 		 */
 		public function setPassword($password){
 			if($this->getPassword() !== $password){
-				$this->accessAuth = self::getPair($this->getLogin(), $password);
+				$this->pair = self::getPair($this->getLogin(), $password);
 			}
 			return $this;
 		}
@@ -79,14 +79,14 @@ namespace Jungle\User\AccessAuth {
 		 * @return string
 		 */
 		public function getPassword(){
-			return $this->accessAuth->getPassword();
+			return $this->pair->getPassword();
 		}
 
 		/**
 		 * @return string
 		 */
 		public function getBase64Password(){
-			return $this->accessAuth->getBase64Password();
+			return $this->pair->getBase64Password();
 		}
 
 		/**
@@ -94,7 +94,7 @@ namespace Jungle\User\AccessAuth {
 		 * @return bool|string
 		 */
 		public function hash(array $options = []){
-			return $this->accessAuth->hash($options);
+			return $this->pair->hash($options);
 		}
 
 		/**
@@ -102,7 +102,7 @@ namespace Jungle\User\AccessAuth {
 		 * @return bool
 		 */
 		public function match($passwordHash){
-			return $this->accessAuth->match($passwordHash);
+			return $this->pair->match($passwordHash);
 		}
 
 
@@ -201,7 +201,7 @@ namespace Jungle\User\AccessAuth {
 			self::$_allow_set_pair_on_construct = false;
 			$a = new Auth();
 			self::$_allow_set_pair_on_construct = true;
-			$a->accessAuth = self::getPair($login,$password);
+			$a->pair = self::getPair($login,$password);
 			return $a;
 		}
 

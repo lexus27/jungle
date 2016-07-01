@@ -7,10 +7,10 @@
  */
 namespace Jungle\Data\Storage\Db\Structure\Column {
 
-	use Jungle\Basic\INamed;
 	use Jungle\Data\Storage\Db\Structure\Column;
 	use Jungle\Data\Storage\Db\Structure\StructureObject;
 	use Jungle\Data\Storage\Db\Structure\Table;
+	use Jungle\Util\INamed;
 
 	/**
 	 * Class ForeignKey

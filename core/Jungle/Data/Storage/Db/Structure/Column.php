@@ -7,11 +7,11 @@
  */
 namespace Jungle\Data\Storage\Db\Structure {
 
-	use Jungle\Basic\INamed;
 	use Jungle\Data\Storage\Db\Adapter;
 	use Jungle\Data\Storage\Db\Structure\Column\ForeignKey;
 	use Jungle\Data\Storage\Db\Structure\Column\Index;
 	use Jungle\Data\Storage\Db\Structure\Column\Type;
+	use Jungle\Util\INamed;
 
 	/**
 	 * Class Column

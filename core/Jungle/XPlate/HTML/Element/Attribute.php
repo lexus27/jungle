@@ -8,7 +8,7 @@
 
 namespace Jungle\XPlate\HTML\Element {
 
-	use Jungle\Smart\Keyword\Keyword;
+	use Jungle\Util\Smart\Keyword\Keyword;
 	use Jungle\XPlate\HTML\IElement;
 	use Jungle\XPlate\Interfaces\IHtmlAttribute;
 

@@ -8,7 +8,7 @@
 
 namespace Jungle\XPlate\CSS\Media {
 
-	use Jungle\Basic\INamed;
+	use Jungle\Util\INamed;
 
 	/**
 	 * Interface ICssMediaType

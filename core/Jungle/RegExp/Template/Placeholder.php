@@ -9,10 +9,10 @@
  */
 namespace Jungle\RegExp\Template {
 
-	use Jungle\Basic\INamed;
 	use Jungle\RegExp\Pattern;
 	use Jungle\RegExp\Template;
 	use Jungle\RegExp\Type;
+	use Jungle\Util\INamed;
 	use Jungle\Util\Value\String;
 
 	/**

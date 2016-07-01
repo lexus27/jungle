@@ -23,8 +23,9 @@ namespace Jungle\Application\Dispatcher\Router\HTTP {
 		 * @return bool
 		 */
 		public function isDesiredRequest(RequestInterface $request){
-			return $request instanceof \Jungle\HTTPFoundation\RequestInterface;
+			return $request instanceof \Jungle\Http\RequestInterface;
 		}
+
 
 		/**
 		 * Create and add {Any} Method Route

@@ -8,7 +8,7 @@
 
 namespace Jungle\XPlate\CSS\Selector {
 
-	use Jungle\Smart\Keyword\Keyword;
+	use Jungle\Util\Smart\Keyword\Keyword;
 	use Jungle\XPlate\Interfaces\IMarker;
 
 

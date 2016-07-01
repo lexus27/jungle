@@ -8,9 +8,9 @@
 namespace Jungle\Data\Storage\Db\Lexer\SignManager {
 
 	use Jungle\Data\Storage\Db\Lexer\Sign;
-	use Jungle\Smart\Keyword\Factory;
-	use Jungle\Smart\Keyword\Pool;
-	use Jungle\Smart\Keyword\Storage;
+	use Jungle\Util\Smart\Keyword\Factory;
+	use Jungle\Util\Smart\Keyword\Pool;
+	use Jungle\Util\Smart\Keyword\Storage;
 
 	/**
 	 * Class SignPool

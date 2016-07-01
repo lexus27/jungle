@@ -7,7 +7,7 @@
  */
 namespace Jungle\XPlate\CSS {
 
-	use Jungle\Smart\Value\Value;
+	use Jungle\Util\Smart\Value\Value;
 	use Jungle\XPlate\CSS\Selector\Marker\Cls;
 
 	/**

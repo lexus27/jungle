@@ -8,8 +8,8 @@
 
 namespace Jungle\XPlate\CSS\Media {
 
-	use Jungle\Basic\INamed;
-	use Jungle\Smart\Value\Measure\IUnit;
+	use Jungle\Util\INamed;
+	use Jungle\Util\Smart\Value\Measure\IUnit;
 
 	/**
 	 * Interface ICssMediaFn

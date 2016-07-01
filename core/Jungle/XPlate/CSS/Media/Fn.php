@@ -8,10 +8,10 @@
 
 namespace Jungle\XPlate\CSS\Media {
 
-	use Jungle\Smart\Value\IMeasure;
-	use Jungle\Smart\Value\IValue;
-	use Jungle\Smart\Value\Measure\IUnit;
-	use Jungle\Smart\Value\String;
+	use Jungle\Util\Smart\Value\IMeasure;
+	use Jungle\Util\Smart\Value\IValue;
+	use Jungle\Util\Smart\Value\Measure\IUnit;
+	use Jungle\Util\Smart\Value\String;
 
 	/**
 	 * Class Condition

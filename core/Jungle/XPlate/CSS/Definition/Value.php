@@ -42,7 +42,7 @@ namespace Jungle\XPlate\CSS\Definition {
 		}
 
 		/**
-		 * @param \Jungle\Smart\Value\IValue|mixed $value
+		 * @param \Jungle\Util\Smart\Value\IValue|mixed $value
 		 * @return bool
 		 */
 		public function equal($value){

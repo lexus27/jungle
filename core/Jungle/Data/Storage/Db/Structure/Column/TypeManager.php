@@ -7,9 +7,9 @@
  */
 namespace Jungle\Data\Storage\Db\Structure\Column {
 
-	use Jungle\Smart\Keyword\Factory;
-	use Jungle\Smart\Keyword\Pool;
-	use Jungle\Smart\Keyword\Storage;
+	use Jungle\Util\Smart\Keyword\Factory;
+	use Jungle\Util\Smart\Keyword\Pool;
+	use Jungle\Util\Smart\Keyword\Storage;
 
 	/**
 	 * Class TypePool

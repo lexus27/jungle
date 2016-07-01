@@ -26,9 +26,8 @@ namespace Jungle\Application\Dispatcher\Module {
 		/** @var string */
 		protected $contain_dirname;
 
-
+		/** @var string  */
 		protected $module_dirname;
-
 
 		/** @var  bool  */
 		protected $class_based = true;
@@ -46,11 +45,7 @@ namespace Jungle\Application\Dispatcher\Module {
 			$this->reflection = new \ReflectionObject($this);
 			$this->contain_namespace = $this->reflection->getNamespaceName();
 			$this->contain_dirname = dirname($this->reflection->getFileName());
-
-
-			$this->module_dirname = $this->reflection->getFileName() . '\\' . basename(get_called_class());
-
-
+			$this->module_dirname = $this->reflection->getFileName() . DIRECTORY_SEPARATOR . basename(get_called_class());
 			$this->controller_namespace = $this->contain_namespace . '\\' . $this->controller_folder;
 		}
 
@@ -60,7 +55,6 @@ namespace Jungle\Application\Dispatcher\Module {
 		public function getClassPath(){
 			return $this->reflection->getFileName();
 		}
-
 
 		/**
 		 * @return string
@@ -85,8 +79,6 @@ namespace Jungle\Application\Dispatcher\Module {
 			}
 			return $this->reflection;
 		}
-
-
 
 	}
 }

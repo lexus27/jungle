@@ -14,27 +14,49 @@ namespace Jungle\User\Peripheral {
 	interface ILocation{
 
 		/**
-		 * @return mixed
+		 * @return int
 		 */
-		public function getCountry();
+		public function getLatitude();
 
 		/**
-		 * @return mixed
+		 * @return int
+		 */
+		public function getLongitude();
+
+
+		
+		/**
+		 * @return string
+		 */
+		public function getCountry();
+		
+		/**
+		 * @return string
+		 */
+		public function getRegion();
+		
+		/**
+		 * @return string
 		 */
 		public function getCity();
 
 		/**
-		 * @return mixed
+		 * @return string
 		 */
 		public function getStreet();
 
 		/**
-		 * @return mixed
+		 * @return string
 		 */
-		public function getHouse();
+		public function getHouseNum();
 
 		/**
 		 * @return mixed
+		 */
+		public function getHousingNum();
+		
+		/**
+		 * @return string
 		 */
 		public function getQuarter();
 

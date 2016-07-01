@@ -2,7 +2,7 @@
 
 namespace Jungle\XPlate\CSS {
 
-	use Jungle\Basic\INamed;
+	use Jungle\Util\INamed;
 	use Jungle\XPlate\Interfaces\IWebStrategy;
 
 	/**

@@ -36,7 +36,19 @@ namespace Jungle\Application {
 		protected $formatters = [];
 
 		/** @var  string */
-		protected $default_module = 'main';
+		protected $default_module = 'index';
+
+		/** @var  string */
+		protected $default_controller = 'index';
+
+		/** @var  string */
+		protected $default_action = 'index';
+
+		/** @var  string */
+		protected $action_suffix = 'Action';
+
+		/** @var  string */
+		protected $controller_suffix = 'Controller';
 
 		/** @var  bool  */
 		protected $dispatching = false;
@@ -44,6 +56,54 @@ namespace Jungle\Application {
 		/** @var  RequestInterface */
 		protected $dispatching_request;
 
+
+
+		/**
+		 * @param $name
+		 * @return $this
+		 */
+		public function setDefaultModule($name){
+			$this->default_module = $name;
+			return $this;
+		}
+
+		/**
+		 * @return string
+		 */
+		public function getDefaultModule(){
+			return $this->default_module;
+		}
+
+		/**
+		 * @param $name
+		 * @return $this
+		 */
+		public function setDefaultController($name){
+			$this->default_controller = $name;
+			return $this;
+		}
+		/**
+		 * @return string
+		 */
+		public function getDefaultController(){
+			return $this->default_controller;
+		}
+
+		/**
+		 * @param $name
+		 * @return $this
+		 */
+		public function setDefaultAction($name){
+			$this->default_action = $name;
+			return $this;
+		}
+
+		/**
+		 * @return string
+		 */
+		public function getDefaultAction(){
+			return $this->default_action;
+		}
 
 		/**
 		 * @param FormatterInterface $formatter
@@ -191,32 +251,25 @@ namespace Jungle\Application {
 			if($this->dispatching){
 				throw new \LogicException('dispatch already run!');
 			}
-			$this->dispatching = true;
-			$this->dispatching_request = $request;
 			try{
-
-				// Routing
-				$router = $this->getDesiredRouter($request);
-				if(!$router){
-					throw new Exception('Not found desired Router by Request!');
+				$this->dispatching = true;
+				$this->dispatching_request = $request;
+				if($this->beforeDispatch($request) !== false){
+					$router = $this->getDesiredRouter($request);
+					if(!$router){
+						throw new Exception('Not found desired Router by Request!');
+					}
+					$routing = $router->match($request);
+					if($routing->isUnknown()){
+						throw new NotFound('Нет представленных маршрутов для переданного запроса, пожалуйства укажите маршрут по умолчанию!');
+					}else{
+						$result = $this->control($routing->getReference(), $routing->getParams(), true, $routing);
+					}
+					$response = $this->prepareResponse($result);
+					$this->afterDispatch($request,$routing,$result);
+					return $response;
 				}
-				$routing = $router->match($request);
-
-				// Control
-				if($routing->isUnknown()){
-					throw new NotFound('Not found route by request!');
-				}else{
-					$result = $this->control($routing->getReference(), $routing->getParams(), true, $routing);
-				}
-
-				// Prepare preferred response
-				$response = $this->prepareResponse($result);
-
-				$this->dispatching = false;
-				$this->dispatching_request = null;
-
-				return $response;
-
+				return null;
 			}finally{
 				$this->dispatching = false;
 				$this->dispatching_request = null;
@@ -261,6 +314,7 @@ namespace Jungle\Application {
 				if($options === 'json'){
 					return json_encode($process->getResult());
 				}elseif($options === 'xml'){
+
 					return json_encode($process->getResult());
 				}
 			}elseif($options = null){
@@ -269,6 +323,10 @@ namespace Jungle\Application {
 			return $process->getResult();
 		}
 
+		/**
+		 * @param RequestInterface $request
+		 * @return array
+		 */
 		public function getFormatFromRequest(RequestInterface $request){
 			return [
 				'type' => 'text/html'
@@ -285,7 +343,17 @@ namespace Jungle\Application {
 		}
 
 
+		public function onNotFound(){
 
+		}
+
+		protected function beforeDispatch(RequestInterface $request){
+
+		}
+
+		protected function afterDispatch(RequestInterface $request,Router\RoutingInterface $routing,$result){
+
+		}
 
 		/**
 		 * @param $process
@@ -307,13 +375,13 @@ namespace Jungle\Application {
 		 * @return array
 		 */
 		public static function normalizeReference($reference = null,array $default_reference = null, $finallyNormalize = true){
-			if($reference === null) $reference = [];
+			if($reference === null){
+				$reference = [];
+			}
 			if(is_string($reference)){
-
-				$module = null;
+				$module     = null;
 				$controller = null;
-				$action = null;
-
+				$action     = null;
 				if(strpos($reference,':')!==false){
 					$reference = explode(':',$reference);
 					if(isset($reference[0])){
@@ -342,25 +410,12 @@ namespace Jungle\Application {
 				}
 
 				$reference = [
-					'module' => $module,
-					'controller' => $controller,
-					'action' => $action
+					'module'        => $module,
+					'controller'    => $controller,
+					'action'        => $action
 				];
-				if($finallyNormalize){
-					if($default_reference === null){
-						$default_reference = [
-								'module'		=> null,
-								'controller'	=> null,
-								'action'		=> null,
-						];
-					}
-					foreach($default_reference as $k => $v){
-						if(!isset($reference[$k])){
-							$reference[$k] = $v;
-						}
-					}
-				}
-			}elseif($finallyNormalize){
+			}
+			if($finallyNormalize){
 				if($default_reference === null){
 					$default_reference = [
 						'module'		=> null,
@@ -371,13 +426,6 @@ namespace Jungle\Application {
 				foreach($default_reference as $k => $v){
 					if(!isset($reference[$k])){
 						$reference[$k] = $v;
-					}
-				}
-			}
-			if($finallyNormalize){
-				foreach($reference as $k => $v){
-					if(!is_null($v)){
-						$reference[$k] = strtolower($v);
 					}
 				}
 			}
@@ -392,10 +440,45 @@ namespace Jungle\Application {
 		 */
 		protected function getDesiredRouter(RequestInterface $request){
 			foreach($this->routers as $router){
-				if($router->isDesiredRequest($request))return $router;
+				if($router->isDesiredRequest($request)){
+					return $router;
+				}
 			}
 			return null;
 		}
+
+		/**
+		 * @param $suffix
+		 * @return $this
+		 */
+		public function setActionSuffix($suffix){
+			$this->action_suffix = $suffix;
+			return $this;
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getActionSuffix(){
+			return $this->action_suffix;
+		}
+
+		/**
+		 * @param $suffix
+		 * @return $this
+		 */
+		public function setControllerSuffix($suffix){
+			$this->controller_suffix = $suffix;
+			return $this;
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getControllerSuffix(){
+			return $this->controller_suffix;
+		}
+
 
 	}
 }
