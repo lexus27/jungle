@@ -36,6 +36,7 @@ namespace Jungle {
 
 		/**
 		 * Di constructor.
+		 * @param DiInterface $parent
 		 */
 		public function __construct(DiInterface $parent = null){
 			if($parent === null){
@@ -262,8 +263,12 @@ namespace Jungle {
 					$container = $container->getServiceContainer($container_name);
 				}else{
 					$name = array_shift($key);$c--;
+					if($this->overlapping_mode && $this->overlap_service_key === $name){
+						throw new \LogicException('Service "'.$name.'" used as overlap for container!');
+					}
 					unset($container->services[$name]);
 					unset($container->shared_instances[$name]);
+
 				}
 			}
 			return $this;
@@ -464,6 +469,72 @@ namespace Jungle {
 				throw new \Exception('Service container "'.$container_name.'" not found');
 			}
 		}
+
+		/**
+		 * @param $object
+		 * @return ServiceInterface
+		 */
+		public function getSharedServiceBy($object){
+			foreach($this->services as $service){
+				if($service->isShared() && $service->resolve($this) === $object){
+					return $service;
+				}
+			}
+			return null;
+		}
+
+
+		/**
+		 * @return mixed
+		 */
+		public function resolveContainers(){
+			foreach($this->services as $name => $service){
+				if($service instanceof DiInterface){
+					yield $name => $service;
+				}
+			}
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function resolveAllServices(){
+			foreach($this->services as $service){
+				if($service instanceof ServiceInterface){
+					yield $service->getName() => $service->resolve($this);
+				}
+			}
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function resolveSharedServices(){
+			foreach($this->services as $service){
+				if($service instanceof ServiceInterface && $service->isShared()){
+					yield $service->getName() => $service->resolve($this);
+				}
+			}
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function resolveServices(){
+			foreach($this->services as $service){
+				if($service instanceof ServiceInterface && !$service->isShared()){
+					yield $service->getName() => $service->resolve($this);
+				}
+			}
+		}
+
+		/**
+		 * @return Di\DiInterface[]|Di\ServiceInterface[]
+		 */
+		public function getServices(){
+			return $this->services;
+		}
+
 
 		/**
 		 * @param $name

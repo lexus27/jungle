@@ -9,11 +9,28 @@
  */
 namespace Jungle\Util\Specifications\Http {
 
+	use Jungle\User\AccessAuth\Auth;
+
 	/**
 	 * Interface RequestInterface
 	 * @package Jungle\Util\Specifications\Http
 	 */
 	interface RequestInterface{
+
+		/**
+		 * @return ResponseInterface
+		 */
+		public function getResponse();
+
+		/**
+		 * @return BrowserInterface
+		 */
+		public function getBrowser();
+
+		/**
+		 * @return ServerInterface
+		 */
+		public function getServer();
 
 		/**
 		 * @return ClientInterface
@@ -23,34 +40,12 @@ namespace Jungle\Util\Specifications\Http {
 		/**
 		 * @return string
 		 */
-		public function getScheme();
-
-		public function getServerIp();
-
-		/**
-		 * @return int
-		 */
-		public function getServerPort();
-
-		/**
-		 * @return string
-		 */
-		public function getServerHost();
-
-		/**
-		 * @return string
-		 */
 		public function getAuthType();
 
 		/**
-		 * @return string|null
+		 * @return Auth|null
 		 */
-		public function getAuthLogin();
-
-		/**
-		 * @return string|null
-		 */
-		public function getAuthPassword();
+		public function getAuth();
 
 		/**
 		 * @return string
@@ -88,6 +83,16 @@ namespace Jungle\Util\Specifications\Http {
 		public function isOptions();
 
 		/**
+		 * @return mixed
+		 */
+		public function isSecure();
+
+		/**
+		 * @return mixed
+		 */
+		public function getScheme();
+
+		/**
 		 * @return string
 		 */
 		public function getUri();
@@ -96,25 +101,25 @@ namespace Jungle\Util\Specifications\Http {
 		 * @param $parameter
 		 * @return mixed
 		 */
-		public function getParam($parameter);
+		public function getParam($parameter = null);
 
 		/**
 		 * @param $parameter
 		 * @return bool
 		 */
-		public function hasParam($parameter);
+		public function hasParam($parameter = null);
 
 		/**
 		 * @param $key
 		 * @return mixed
 		 */
-		public function getQuery($key);
+		public function getQuery($key = null);
 
 		/**
 		 * @param $key
 		 * @return mixed
 		 */
-		public function hasQuery($key);
+		public function hasQuery($key = null);
 
 		/**
 		 * @return bool
@@ -125,13 +130,13 @@ namespace Jungle\Util\Specifications\Http {
 		 * @param $key
 		 * @return mixed
 		 */
-		public function getPost($key);
+		public function getPost($key = null);
 
 		/**
 		 * @param $key
 		 * @return mixed
 		 */
-		public function hasPost($key);
+		public function hasPost($key = null);
 
 		/**
 		 * @return bool
@@ -176,6 +181,18 @@ namespace Jungle\Util\Specifications\Http {
 		 * @return mixed
 		 */
 		public function getRequestedWith();
+
+		/**
+		 * @param $name
+		 * @return mixed
+		 */
+		public function getCookie($name);
+
+		/**
+		 * @param $name
+		 * @return mixed
+		 */
+		public function hasCookie($name);
 
 		/**
 		 * @return bool

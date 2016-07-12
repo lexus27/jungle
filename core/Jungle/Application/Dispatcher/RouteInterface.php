@@ -74,7 +74,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @param array|mixed $reference
 		 * @return string
 		 */
-		public function generateLink(array $params = null, $reference = null);
+		public function generateLink($params = null, $reference = null);
 
 		/**
 		 * @param RoutingInterface $routing

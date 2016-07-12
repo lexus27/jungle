@@ -21,7 +21,7 @@ namespace Jungle\FileSystem\Model\Manager {
 		protected $root_path;
 
 
-		public function transit(
+		public function transfer(
 			Adapter $origin,        $originPath,
 			Adapter $destination,   $destinationPath
 		){
@@ -92,7 +92,7 @@ namespace Jungle\FileSystem\Model\Manager {
 		 * @param $path
 		 * @return float
 		 */
-		abstract public function dist_total_space($path);
+		abstract public function disk_total_space($path);
 
 		/**
 		 * @param $path

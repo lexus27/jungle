@@ -7,8 +7,8 @@
  */
 namespace Jungle\User\AccessControl\Policy {
 
-	use Jungle\CodeForm\LogicConstruction\Condition;
-	use Jungle\CodeForm\LogicConstruction\Operator;
+	use Jungle\Code\LogicConstruction\Condition;
+	use Jungle\Code\LogicConstruction\Operator;
 	use Jungle\RegExp;
 	use Jungle\User\AccessControl\Context;
 	use Jungle\User\AccessControl\Exception;

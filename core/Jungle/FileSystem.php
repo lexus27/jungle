@@ -70,6 +70,38 @@ namespace Jungle {
 			return $separator === '\\'?'/':'\\';
 		}
 
+		/**
+		 * @param $path
+		 */
+		public static function remove($path){
+			if(is_file($path)){
+				chmod($path,0777);
+				unlink($path);
+				return;
+			}
+			if(is_dir($path)){
+				$path = rtrim($path,'\/') . DIRECTORY_SEPARATOR;
+				foreach(glob($path . '*') as $child){
+					self::remove($child);
+				}
+				chmod($path,0777);
+				rmdir($path);
+				return;
+			}
+		}
+
+		/**
+		 * @param $dirname
+		 */
+		public static function removeContain($dirname){
+			if(is_dir($dirname)){
+				$path = rtrim($dirname,'\/') . DIRECTORY_SEPARATOR;
+				foreach(glob($dirname . '*') as $child){
+					self::remove($child);
+				}
+			}
+		}
+
 	}
 }
 

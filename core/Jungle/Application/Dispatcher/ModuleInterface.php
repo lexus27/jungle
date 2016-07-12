@@ -79,8 +79,6 @@ namespace Jungle\Application\Dispatcher {
 		 */
 		public function getDefaultAction();
 
-
-
 		/**
 		 * @param $suffix
 		 * @return mixed
@@ -105,13 +103,13 @@ namespace Jungle\Application\Dispatcher {
 		public function getActionSuffix();
 
 		/**
-		 * @param Dispatcher $dispatcher
-		 * @param array $data
 		 * @param array|null $reference
+		 * @param array $data
+		 * @param array $options
 		 * @param ProcessInitiatorInterface $initiator
 		 * @return ProcessInterface
 		 */
-		public function execute(Dispatcher $dispatcher, array $data, $reference = null, ProcessInitiatorInterface $initiator = null);
+		public function control($reference = null,array $data, array $options = null, ProcessInitiatorInterface $initiator = null);
 
 		/**
 		 * @return mixed
@@ -119,10 +117,37 @@ namespace Jungle\Application\Dispatcher {
 		public function getDi();
 
 
-		public function initialize();
+		/**
+		 * @param Dispatcher $dispatcher
+		 * @return mixed
+		 */
+		public function initialize(Dispatcher $dispatcher);
 
+		/**
+		 * @return mixed
+		 */
+		public function getDispatcher();
 
+		/**
+		 * @param $controller
+		 * @param $action
+		 * @return mixed
+		 */
+		public function supportPublic($controller, $action);
 
+		/**
+		 * @param $controller
+		 * @param $action
+		 * @return bool
+		 */
+		public function supportHierarchy($controller, $action);
+
+		/**
+		 * @param $controller
+		 * @param $action
+		 * @return bool
+		 */
+		public function supportFormat($controller, $action);
 
 	}
 }

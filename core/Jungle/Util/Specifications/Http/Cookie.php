@@ -9,6 +9,8 @@
  */
 namespace Jungle\Util\Specifications\Http {
 
+	use Jungle\Util\Smart\Value\IValue;
+
 	/**
 	 * Class Cookie
 	 * @package Jungle\Util\Specifications\Http
@@ -161,6 +163,29 @@ namespace Jungle\Util\Specifications\Http {
 				return $this->cookie_manager->isHttpOnly();
 			}
 			return $this->httpOnly;
+		}
+
+		/**
+		 * @param IValue|mixed $value
+		 * @return bool
+		 */
+		public function equal($value){
+			if($value instanceof CookieInterface){
+				return $value->getPath() === $this->getPath() &&
+				       $value->getExpires() === $this->getExpires() &&
+				       $value->getHost() === $this->getHost() &&
+				       $value->getName() === $this->getName() &&
+				       $value->getValue() === $this->getValue();
+			}
+			return $this->value === $value;
+
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function isOverdue(){
+			return time() >= $this->getExpires();
 		}
 	}
 }

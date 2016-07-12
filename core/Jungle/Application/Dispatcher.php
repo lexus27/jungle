@@ -9,31 +9,33 @@
  */
 namespace Jungle\Application {
 
-	use Jungle\Application\Dispatcher\Controller\FormatterInterface;
+	use Jungle\Application;
+	use Jungle\Application\Dispatcher\Controller\Process;
 	use Jungle\Application\Dispatcher\Controller\ProcessInitiatorInterface;
 	use Jungle\Application\Dispatcher\Controller\ProcessInterface;
 	use Jungle\Application\Dispatcher\Exception;
 	use Jungle\Application\Dispatcher\Exception\Control;
-	use Jungle\Application\Dispatcher\Exception\NotFound;
 	use Jungle\Application\Dispatcher\Module;
 	use Jungle\Application\Dispatcher\ModuleInterface;
 	use Jungle\Application\Dispatcher\Router;
+	use Jungle\Application\Dispatcher\Router\Exception\NotFound;
 	use Jungle\Application\Dispatcher\RouterInterface;
+	use Jungle\Application\View;
+	use Jungle\Di\Injectable;
+	use Jungle\Di\InjectionAwareInterface;
+	use Jungle\FileSystem;
 
 	/**
 	 * Class Dispatcher
 	 * @package Jungle\Application
 	 */
-	class Dispatcher{
+	class Dispatcher extends Injectable{
 
 		/** @var  RouterInterface[] */
 		protected $routers = [];
 
 		/** @var  ModuleInterface[]|array[]  */
 		protected $modules = [];
-
-		/** @var  FormatterInterface[]  */
-		protected $formatters = [];
 
 		/** @var  string */
 		protected $default_module = 'index';
@@ -55,8 +57,6 @@ namespace Jungle\Application {
 
 		/** @var  RequestInterface */
 		protected $dispatching_request;
-
-
 
 		/**
 		 * @param $name
@@ -105,15 +105,6 @@ namespace Jungle\Application {
 			return $this->default_action;
 		}
 
-		/**
-		 * @param FormatterInterface $formatter
-		 * @return $this
-		 */
-		public function addFormatter(FormatterInterface $formatter){
-			$this->formatters[] = $formatter;
-			return $this;
-		}
-
 
 		/**
 		 * @param ModuleInterface $module
@@ -143,37 +134,12 @@ namespace Jungle\Application {
 				if($module instanceof ModuleInterface){
 					return $module;
 				}else{
-					$module = $this->loadModule($moduleName,$module);
+					$module = $this->_loadModule($moduleName,$module);
 					$this->modules[$moduleName] = $module;
 					return $module;
 				}
 			}
 			return null;
-		}
-
-		/**
-		 * @param $moduleName
-		 * @param array $definition
-		 * @return mixed
-		 * @throws Exception
-		 */
-		protected function loadModule($moduleName,array $definition){
-			$definition = array_replace([
-				'class' => Module\DynamicModule::class,
-			],$definition);
-			$className = $definition['class'];
-			if(class_exists($className)){
-				$module = new $className();
-				if(!$module instanceof ModuleInterface){
-					throw new Exception('Module instance is not '.ModuleInterface::class);
-				}
-				$module->fromArray($definition);
-				$module->setName($moduleName);
-				$module->initialize();
-				return $module;
-			}else{
-				throw new Exception('Module load error: not found module class "'.$className.'"');
-			}
 		}
 
 		/**
@@ -206,86 +172,122 @@ namespace Jungle\Application {
 			return $this;
 		}
 
-
-
 		/**
+		 * @param $alias
 		 * @param RouterInterface $router
 		 * @return $this
 		 */
-		public function addRouter(RouterInterface $router){
-			$this->routers[] = $router;
+		public function addRouter($alias, RouterInterface $router){
+			$this->routers[$alias] = $router;
 			return $this;
 		}
 
 		/**
 		 * @param RouterInterface $router
-		 * @return mixed
+		 * @return string
 		 */
 		public function searchRouter(RouterInterface $router){
 			return array_search($router,$this->routers,true);
 		}
 
 		/**
-		 * @param RouterInterface $router
+		 * @param $alias
+		 * @return RouterInterface|null
+		 */
+		public function getRouter($alias){
+			return isset($this->routers[$alias])?$this->routers[$alias]:null;
+		}
+
+		/**
+		 * @param string $alias
 		 * @return $this
 		 */
-		public function removeRouter(RouterInterface $router){
-			$i = $this->searchRouter($router);
-			if($i!==false){
-				array_splice($this->routers,$i,1);
-			}
+		public function removeRouter($alias){
+			unset($this->routers[$alias]);
 			return $this;
 		}
 
+		/**
+		 * @param RequestInterface $request
+		 * @return RouterInterface|null
+		 */
+		public function getDesiredRouter(RequestInterface $request){
+			foreach($this->routers as $name => $router){
+				if($router->isDesiredRequest($request)){
+					$router->setBeforeRouteMatchedChecker([$this,'beforeRouteMatched']);
+					return $router;
+				}
+			}
+			return null;
+		}
 
-
+		/**
+		 * @param $route
+		 * @param $reference
+		 * @param $routing
+		 * @return bool|mixed
+		 */
+		public function beforeRouteMatched($route, $reference, $routing){
+			$reference = self::normalizeReference($reference,null,false);
+			$moduleName = $reference['module']?:$this->getDefaultModule();
+			$module = $this->getModule($moduleName);
+			if(!$module){
+				return true;
+			}
+			return $module->supportPublic($reference['controller'],$reference['action']);
+		}
 
 		/**
 		 * @param RequestInterface $request
-		 * @return mixed
+		 * @return ResponseInterface
 		 * @throws Control
 		 * @throws Exception
-		 * @throws NotFound
+		 * @throws \Jungle\Application\Dispatcher\Router\Exception\NotFound
 		 */
 		public function dispatch(RequestInterface $request){
 			if($this->dispatching){
 				throw new \LogicException('dispatch already run!');
 			}
 			try{
-				$this->dispatching = true;
-				$this->dispatching_request = $request;
-				if($this->beforeDispatch($request) !== false){
+				if($this->_beforeDispatch($request) !== false){
+					$this->_onDispatchStarted($request);
 					$router = $this->getDesiredRouter($request);
 					if(!$router){
 						throw new Exception('Not found desired Router by Request!');
 					}
+					if($this->_dependency_injector){
+						$this->_dependency_injector->setShared('router',$router);
+					}
 					$routing = $router->match($request);
 					if($routing->isUnknown()){
-						throw new NotFound('Нет представленных маршрутов для переданного запроса, пожалуйства укажите маршрут по умолчанию!');
+						throw new NotFound('Not Found Affected Routes!');
 					}else{
-						$result = $this->control($routing->getReference(), $routing->getParams(), true, $routing);
+						$process = $this->control($routing->getReference(), $routing->getParams(), null, $routing);
 					}
-					$response = $this->prepareResponse($result);
-					$this->afterDispatch($request,$routing,$result);
+					$response = $this->prepareResponse($process);
+					$this->_afterDispatch($request,$routing,$process);
+					if($this->_dependency_injector){
+						$this->_dependency_injector->remove('router');
+					}
 					return $response;
 				}
 				return null;
 			}finally{
-				$this->dispatching = false;
-				$this->dispatching_request = null;
+				$this->_onDispatchContinue();
 			}
 		}
+
 
 
 		/**
 		 * @param $reference
 		 * @param $data
-		 * @param bool $format
+		 * @param $options
 		 * @param null|ProcessInitiatorInterface|ProcessInterface|Router\Routing $initiator
-		 * @return mixed
+		 * @return Process|mixed
 		 * @throws Control
 		 */
-		public function control($reference,$data = null, $format = false, ProcessInitiatorInterface $initiator = null){
+		public function control($reference,$data = null,array $options = null, ProcessInitiatorInterface $initiator = null){
 			$reference = self::normalizeReference($reference,[
 				'module' => $this->default_module
 			]);
@@ -294,66 +296,56 @@ namespace Jungle\Application {
 			if(!$module){
 				throw new Control('Module "'.$moduleName.'" not found!');
 			}
-			$process = $module->execute($this,(array) $data, $reference, $initiator);
-			if($format){
-				return $this->format($process,is_array($format)?$format:null);
-			}else{
-				return $process->getResult();
-			}
+			$this->_beforeControl($reference, $module, $initiator);
+			$process = $module->control($reference,(array) $data, $options, $initiator);
+			$output = $this->checkoutProcess($process, $options);
+			$this->_afterControl($output,$process);
+			return $output;
 		}
+
 
 		/**
 		 * @param ProcessInterface $process
-		 * @param array $options
-		 * @return mixed
+		 * @param array|null $options
+		 * @return ProcessInterface|mixed
 		 */
-		public function format(ProcessInterface $process,$options = null){
-			if(is_array($options)){
-
-			}elseif(is_string($options)){
-				if($options === 'json'){
-					return json_encode($process->getResult());
-				}elseif($options === 'xml'){
-
-					return json_encode($process->getResult());
+		public function checkoutProcess(ProcessInterface $process,array $options = null){
+			if($options){
+				if(isset($options['render'])){
+					return $this->view->render($process,$options['render']);
 				}
-			}elseif($options = null){
-				$options = $this->getFormatFromRequest($this->dispatching_request);
+				if(isset($options['result']) && $options['result']){
+					return $process->getResult();
+				}
+				if(isset($options['buffer']) && $options['buffer']){
+					return $process->getOutputBuffer();
+				}
 			}
-			return $process->getResult();
+			return $process;
 		}
 
 		/**
-		 * @param RequestInterface $request
-		 * @return array
-		 */
-		public function getFormatFromRequest(RequestInterface $request){
-			return [
-				'type' => 'text/html'
-			];
-		}
-
-
-		/**
-		 * @param $result
+		 * @param Process $process
 		 * @return ResponseInterface
 		 */
-		protected function prepareResponse($result){
+		public function prepareResponse(Process $process){
+			$response = $this->dispatching_request->getResponse();
+			if($response->getContent() === null){
+				$response->setContent($this->view->render($process));
+			}
+			return $response;
+		}
 
+		/**
+		 * @param $controller
+		 */
+		public function prepareControllerBeforeInitialize($controller){
+			if($controller instanceof InjectionAwareInterface){
+				$controller->setDi($this->getDi());
+			}
 		}
 
 
-		public function onNotFound(){
-
-		}
-
-		protected function beforeDispatch(RequestInterface $request){
-
-		}
-
-		protected function afterDispatch(RequestInterface $request,Router\RoutingInterface $routing,$result){
-
-		}
 
 		/**
 		 * @param $process
@@ -367,6 +359,119 @@ namespace Jungle\Application {
 		 */
 		public function afterControl(ProcessInterface $process, $result){ }
 
+
+		/**
+		 * @param $suffix
+		 * @return $this
+		 */
+		public function setActionSuffix($suffix){
+			$this->action_suffix = $suffix;
+			return $this;
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getActionSuffix(){
+			return $this->action_suffix;
+		}
+
+		/**
+		 * @param $suffix
+		 * @return $this
+		 */
+		public function setControllerSuffix($suffix){
+			$this->controller_suffix = $suffix;
+			return $this;
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getControllerSuffix(){
+			return $this->controller_suffix;
+		}
+
+
+
+		/**
+		 * @param $moduleName
+		 * @param array $definition
+		 * @return mixed
+		 * @throws Exception
+		 */
+		protected function _loadModule($moduleName,array $definition){
+			$definition = array_replace([
+				'class' => Module\DynamicModule::class,
+			],$definition);
+			$className = $definition['class'];
+			if(class_exists($className)){
+				$module = new $className();
+				if(!$module instanceof ModuleInterface){
+					throw new Exception('Module instance is not '.ModuleInterface::class);
+				}
+				$module->fromArray($definition);
+				$module->setName($moduleName);
+				$module->initialize($this);
+				return $module;
+			}else{
+				throw new Exception('Module load error: "'.$moduleName.'" module, not found module class "'.$className.'"');
+			}
+		}
+
+		protected function _beforeDispatch(RequestInterface $request){
+
+		}
+
+		protected function _afterDispatch(RequestInterface $request,Router\RoutingInterface $routing, ProcessInterface $result){
+
+		}
+
+		/**
+		 * @param RequestInterface $request
+		 */
+		protected function _onDispatchStarted(RequestInterface $request){
+			if($this->_dependency_injector){
+				$this->_dependency_injector->setShared('request',$request);
+				$this->_dependency_injector->setShared('response',$request->getResponse());
+			}
+			$this->dispatching = true;
+			$this->dispatching_request = $request;
+		}
+
+		/**
+		 *
+		 */
+		protected function _onDispatchContinue(){
+			if($this->_dependency_injector){
+				$this->_dependency_injector->remove('request');
+				$this->_dependency_injector->remove('response');
+			}
+			$this->dispatching = false;
+			$this->dispatching_request = null;
+		}
+
+
+
+		/**
+		 * @param $reference
+		 * @param ModuleInterface $module
+		 * @param null|ProcessInitiatorInterface|ProcessInterface|Router\Routing $initiator
+		 * @throws Control
+		 */
+		protected function _beforeControl($reference, ModuleInterface $module, ProcessInitiatorInterface $initiator = null){
+			if($initiator && $initiator instanceof ProcessInterface && !$module->supportHierarchy($reference['controller'],$reference['action'])){
+				throw new Control("{$module->getName()}:{$reference['controller']}:{$reference['action']} not support hierarchy calling!");
+			}
+		}
+
+		/**
+		 * @param $output
+		 * @param ProcessInterface $process
+		 */
+		protected function _afterControl($output,ProcessInterface $process){
+
+		}
 
 		/**
 		 * @param $reference
@@ -431,54 +536,6 @@ namespace Jungle\Application {
 			}
 			return $reference;
 		}
-
-
-
-		/**
-		 * @param RequestInterface $request
-		 * @return RouterInterface|null
-		 */
-		protected function getDesiredRouter(RequestInterface $request){
-			foreach($this->routers as $router){
-				if($router->isDesiredRequest($request)){
-					return $router;
-				}
-			}
-			return null;
-		}
-
-		/**
-		 * @param $suffix
-		 * @return $this
-		 */
-		public function setActionSuffix($suffix){
-			$this->action_suffix = $suffix;
-			return $this;
-		}
-
-		/**
-		 * @return mixed
-		 */
-		public function getActionSuffix(){
-			return $this->action_suffix;
-		}
-
-		/**
-		 * @param $suffix
-		 * @return $this
-		 */
-		public function setControllerSuffix($suffix){
-			$this->controller_suffix = $suffix;
-			return $this;
-		}
-
-		/**
-		 * @return mixed
-		 */
-		public function getControllerSuffix(){
-			return $this->controller_suffix;
-		}
-
 
 	}
 }

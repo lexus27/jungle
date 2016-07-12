@@ -67,6 +67,9 @@ namespace Jungle\Application\Dispatcher\Module {
 		 * @return string
 		 */
 		public function getCacheDirname(){
+			if(isset($this->cache_dirname)){
+				return $this->cache_dirname;
+			}
 			return $this->contain_dirname . DIRECTORY_SEPARATOR . $this->getName() . DIRECTORY_SEPARATOR . $this->cache_folder;
 		}
 

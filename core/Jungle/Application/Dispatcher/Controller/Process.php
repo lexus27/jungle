@@ -37,15 +37,23 @@ namespace Jungle\Application\Dispatcher\Controller {
 		/** @var  mixed */
 		protected $reference;
 
-		/** @var  array  */
+		/** @var  array */
 		protected $params = [];
 
-		/** @var  bool  */
+		/** @var  bool */
 		protected $completed = false;
 
-		/** @var  mixed */
-		protected $result;
+		/** @var  bool */
+		protected $canceled = false;
 
+		/** @var  mixed */
+		protected $result = null;
+
+		/** @var  bool */
+		protected $output_buffering = false;
+
+		/** @var  string|null */
+		protected $output_buffer;
 
 		/**
 		 * Process constructor.
@@ -74,24 +82,9 @@ namespace Jungle\Application\Dispatcher\Controller {
 		}
 
 		/**
-		 * @return RoutingInterface|null
-		 */
-		public function getBasedRouting(){
-			$initiator = $this->getInitiator();
-			if(!$initiator){
-				return null;
-			}
-			if($initiator instanceof RoutingInterface){
-				return $initiator;
-			}else{
-				return $initiator->getBasedRouting();
-			}
-		}
-
-		/**
 		 * @return ProcessInterface|null
 		 */
-		public function getBasedProcess(){
+		public function getRoot(){
 			$initiator = $this->getInitiator();
 			if(!$initiator){
 				return null;
@@ -99,19 +92,8 @@ namespace Jungle\Application\Dispatcher\Controller {
 			if($initiator instanceof ProcessInterface){
 				return $initiator;
 			}else{
-				return $initiator->getBasedProcess();
+				return $initiator->getRoot();
 			}
-		}
-
-		/**
-		 * @return Dispatcher\RouterInterface|null
-		 */
-		public function getRouter(){
-			$routing = $this->getBasedRouting();
-			if(!$routing){
-				return null;
-			}
-			return $routing->getRouter();
 		}
 
 		/**
@@ -133,6 +115,29 @@ namespace Jungle\Application\Dispatcher\Controller {
 		 */
 		public function getController(){
 			return $this->controller;
+		}
+
+		/**
+		 * @param array $requires
+		 * @return mixed|void
+		 */
+		public function requires(array $requires){
+			foreach($requires as $require){
+				list($param, $type, $default) = array_replace([null,null,null],explode(':',$require,3));
+				if(!array_key_exists($param,$this->params[$param])){
+
+
+
+				}
+
+			}
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getActionName(){
+			return $this->reference['action'];
 		}
 
 
@@ -178,20 +183,6 @@ namespace Jungle\Application\Dispatcher\Controller {
 		}
 
 		/**
-		 * @return RoutingInterface|null
-		 */
-		public function getRouting(){
-			return $this->initiator_external? $this->initiator : null;
-		}
-
-		/**
-		 * @return ProcessInterface|null
-		 */
-		public function getParentProcess(){
-			return $this->initiator_external? null : $this->initiator;
-		}
-
-		/**
 		 * @return ProcessInterface|RoutingInterface|null
 		 */
 		public function getInitiator(){
@@ -199,61 +190,96 @@ namespace Jungle\Application\Dispatcher\Controller {
 		}
 
 		/**
-		 * @param $reference
-		 * @param $data
-		 * @param bool|array $format
-		 * @return mixed
-		 * @throws Dispatcher\Exception\Control
+		 * @return RoutingInterface|null
 		 */
-		public function call($reference, $data = null, $format = false){
-			$reference = $this->dispatcher->normalizeReference($reference,null,false);
-			return $this->dispatcher->control($reference, $data, $format, $this);
+		public function getRouting(){
+			$initiator = $this->initiator;
+			if(!$initiator){
+				return null;
+			}
+			if($initiator instanceof RoutingInterface){
+				return $initiator;
+			}else{
+				return $initiator->getRouting();
+			}
+		}
+
+
+		/**
+		 * @return Dispatcher\RouterInterface|null
+		 */
+		public function getRouter(){
+			$routing = $this->getRouting();
+			if(!$routing){
+				return null;
+			}
+			return $routing->getRouter();
+		}
+
+
+		/**
+		 * @return ProcessInterface|null
+		 */
+		public function getParent(){
+			return $this->initiator_external? null : $this->initiator;
 		}
 
 		/**
 		 * @param $reference
 		 * @param $data
-		 * @param bool|array $format
+		 * @param array $options
 		 * @return mixed
 		 * @throws Dispatcher\Exception\Control
 		 */
-		public function callIn($reference, $data = null, $format = false){
+		public function call($reference, $data = null, array $options = null){
+			$reference = $this->dispatcher->normalizeReference($reference,null,false);
+			return $this->dispatcher->control($reference, $data, $options, $this);
+		}
+
+		/**
+		 * @param $reference
+		 * @param $data
+		 * @param array $options
+		 * @return mixed
+		 * @throws Dispatcher\Exception\Control
+		 */
+		public function callIn($reference, $data = null, array $options = null){
 			$reference = $this->dispatcher->normalizeReference($reference,null,false);
 			$reference['module']		= $this->reference['module'];
 			$reference['controller']	= $this->reference['controller'] . '.' . $reference['controller'];
-			return $this->dispatcher->control($reference, $data, $format, $this);
+			return $this->dispatcher->control($reference, $data, $options, $this);
 		}
 
 		/**
 		 * @param $action
 		 * @param $data
-		 * @param bool|array $format
+		 * @param array $options
 		 * @return mixed
 		 * @throws Dispatcher\Exception\Control
 		 */
-		public function callCurrent($action, $data, $format = false){
+		public function callCurrent($action, $data, array $options = null){
 			$reference = $this->reference;
 			if(strcasecmp($reference['action'],$action)===0){
 				throw new \LogicException('Executing current action not allowed');
 			}
 			$reference['action'] = $action;
-			return $this->dispatcher->control($reference, $data, $format, $this);
+			return $this->dispatcher->control($reference, $data, $options, $this);
 		}
 
 		/**
 		 * @param $data
 		 * @param $action
-		 * @param bool|array $format
+		 * @param array $options
 		 * @return mixed
 		 * @throws Dispatcher\Exception\Control
 		 */
-		public function callParent($data, $action = null, $format = false){
+		public function callParent($data, $action = null, array $options = null){
 			if($this->initiator instanceof Process){
 				$reference = $this->initiator->reference;
 				if($action!==null){
 					$reference['action'] = $action;
 				}
-				return $this->dispatcher->control($reference, $data, $format, $this);
+				return $this->dispatcher->control($reference, $data, $options, $this);
 			}else{
 				throw new \LogicException('Call Parent: initiator is not Process');
 			}
@@ -320,11 +346,56 @@ namespace Jungle\Application\Dispatcher\Controller {
 		}
 
 		/**
+		 * @return $this
+		 */
+		public function cancel(){
+			$this->canceled = true;
+			return $this;
+		}
+
+		/**
+		 * @return bool
+		 */
+		public function isCanceled(){
+			return $this->canceled;
+		}
+
+		/**
 		 * @return mixed
 		 */
 		public function getResult(){
 			return $this->result;
 		}
+
+		/**
+		 * @return mixed
+		 */
+		public function startOutputBuffering(){
+			if(!$this->output_buffering){
+				ob_start();
+				$this->output_buffer = null;
+				$this->output_buffering = true;
+			}
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function endOutputBuffering(){
+			if($this->output_buffering){
+				$this->output_buffer = ob_get_clean();
+				$this->output_buffering = false;
+			}
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getOutputBuffer(){
+			return $this->output_buffer;
+		}
+
+
 	}
 }
 

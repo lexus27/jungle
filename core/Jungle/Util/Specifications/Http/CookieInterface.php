@@ -8,34 +8,21 @@
  * Time: 15:21
  */
 namespace Jungle\Util\Specifications\Http {
+
+	use Jungle\Util\INamed;
+	use Jungle\Util\Smart\Value\IValue;
+	use Jungle\Util\Smart\Value\IValueSettable;
 	
 	/**
 	 * Interface CookieInterface
 	 * @package Jungle\Util\Specifications\Http
 	 */
-	interface CookieInterface extends CookieConfigurationInterface{
-
-		/**
-		 * @return string
-		 */
-		public function getName();
-
-		/**
-		 * @param $name
-		 * @return mixed
-		 */
-		public function setName($name);
+	interface CookieInterface extends CookieConfigurationInterface, IValue, IValueSettable, INamed{
 
 		/**
 		 * @return mixed
 		 */
-		public function getValue();
-
-		/**
-		 * @param $value
-		 * @return mixed
-		 */
-		public function setValue($value);
+		public function isOverdue();
 
 	}
 }

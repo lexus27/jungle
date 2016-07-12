@@ -72,7 +72,11 @@ namespace Jungle\Di {
 		 * @throws \Exception
 		 */
 		protected function _build(DiInterface $di, array $parameters = null){
-			if(is_array($this->definition)){
+			if(is_callable($this->definition)){
+				$parameters = (array)$parameters;
+				array_unshift($parameters,$di);
+				$object = call_user_func_array($this->definition,$parameters);
+			}elseif(is_array($this->definition)){
 				$definition = array_replace([
 				    'class' => null,
 				    'parameters' => $parameters,
@@ -91,10 +95,6 @@ namespace Jungle\Di {
 				}else{
 					$object = new $class(...$parameters);
 				}
-			}elseif($this->definition instanceof \Closure){
-				$parameters = (array)$parameters;
-				array_unshift($parameters,$di);
-				$object = call_user_func_array($this->definition,$parameters);
 			}elseif(is_object($this->definition)){
 				$object = $this->definition;
 			}else{

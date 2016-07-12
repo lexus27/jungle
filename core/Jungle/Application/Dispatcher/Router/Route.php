@@ -14,7 +14,6 @@ namespace Jungle\Application\Dispatcher\Router {
 	use Jungle\Application\Dispatcher\Router\Exception\GenerateLink;
 	use Jungle\Application\Dispatcher\RouterInterface;
 	use Jungle\RegExp\Template;
-	use Jungle\Util\Value\Massive;
 
 	/**
 	 * Class Route
@@ -33,6 +32,8 @@ namespace Jungle\Application\Dispatcher\Router {
 		 * @var \Jungle\Application\Dispatcher\RouterInterface
 		 */
 		protected $router;
+
+		protected $default_param_name;
 
 		/**
 		 * Приоритет в Маршрутизаторе
@@ -72,9 +73,9 @@ namespace Jungle\Application\Dispatcher\Router {
 
 		/**
 		 * Умная Привязка данных окружения к параметрам
-		 * @var array
+		 * @var BindingInterface[]
 		 */
-		protected $binding = [];
+		protected $bindings = [];
 
 		/**
 		 * Параметры по умолчанию
@@ -87,7 +88,6 @@ namespace Jungle\Application\Dispatcher\Router {
 		 * @var mixed
 		 */
 		protected $default_reference;
-
 
 		/**
 		 * Текущий процес маршрутизации
@@ -180,22 +180,11 @@ namespace Jungle\Application\Dispatcher\Router {
 		}
 
 		/**
-		 * @param callable $converter
+		 * @param $parameter
 		 * @return $this
 		 */
-		public function setConverter(callable $converter){
-			$this->converter = $converter;
-			return $this;
-		}
-
-		/**
-		 * @param string $prepare_parameter_key
-		 * @param string|callable|array $context
-		 * @return $this
-		 */
-		public function bind($prepare_parameter_key, $context){
-			$this->binding[$prepare_parameter_key] = $context;
-			ksort($this->binding);
+		public function setDefaultParam($parameter){
+			$this->default_param_name = $parameter;
 			return $this;
 		}
 
@@ -305,35 +294,51 @@ namespace Jungle\Application\Dispatcher\Router {
 		 * @return string
 		 * @throws GenerateLink
 		 */
-		public function generateLink(array $params = null,$reference = null,array $specials = null){
+		public function generateLink($params = null, $reference = null, array $specials = null){
 			$tpl = $this->_compilePattern();
 			$reference = Dispatcher::normalizeReference($reference,$this->default_reference);
-			$specials = $this->_importReference($reference, (array)$specials);
+
+			$specials = (array)$specials;
+			$specials = $this->_importReference($reference, $specials);
+
+			if(!is_null($params) && !is_array($params) && $this->default_param_name){
+				$params = [
+					$this->default_param_name => $params
+				];
+			}
+
 			$params = (array)$params;
-			$templateParams = $this->_compositeSpecials($specials, $params);
-			$names = [];
-			foreach($tpl->getPlaceholders() as $ph){
-				$name = $ph->getName();
-				$names[] = $name;
-				if(!isset($templateParams[$name]) || $templateParams[$name]===null){
-					if(!$ph->isOptional()){
+			$params = $this->prepareRenderBindParams($params);
+			$template_params = $this->_compositeSpecials($specials, $params);
+			// validate supplied parameters by placeholders
+			$existing_placeholder_names = [];
+			foreach($tpl->getPlaceholders() as $placeholder){
+				$name = $placeholder->getName();
+				$existing_placeholder_names[] = $name;
+				if(!isset($template_params[$name])){
+					if(!$placeholder->isOptional()){
 						throw new GenerateLink('Error generate link: parameter required "'.$name.'"');
 					}
-				}elseif(!$ph->getType()->isValid($templateParams[$name])){
+				}elseif(!$placeholder->getType()->isValid($template_params[$name])){
 					throw new GenerateLink('Error generate link: Invalid parameter type "' . $name . '"!');
 				}
 			}
+
+			// check supplier parameters support in placeholders
 			foreach($params as $key => $value){
-				if(!in_array($key, $names,true)){
+				if(!in_array($key, $existing_placeholder_names,true)){
 					throw new GenerateLink('Param key "'.$key.'" It does not match the host template parameters!');
 				}
 			}
+
 			try{
 				return $tpl->render($params);
 			}catch(Template\Exception $e){
 				throw new GenerateLink('Error generate link: '.$e->getMessage().'.',1,$e);
 			}
 		}
+
+
 
 
 		/**
@@ -345,9 +350,15 @@ namespace Jungle\Application\Dispatcher\Router {
 			if(($this->_beforeMatch()!==false) && ($params = $this->_matchPattern())!==false){
 				$specials = $this->_extractSpecials($params);
 				$reference = $this->_extractReference($specials);
-				$this->matched($params, $reference);
+				if($this->_beforeMatched($routing,$reference)!==false){
+					$this->matched($params, $reference);
+				}
 			}
 			$this->routing = null;
+		}
+
+		protected function _beforeMatched(RoutingInterface $routing,$reference){
+			return $routing->getRouter()->beforeRouteMatched($this,$reference,$routing);
 		}
 
 		/**
@@ -381,13 +392,7 @@ namespace Jungle\Application\Dispatcher\Router {
 			if($this->converter){
 				$params = call_user_func($this->converter, $params, $this->routing);
 			}
-			if($this->binding){
-				foreach($this->binding as $parameterKey => $contextAccessing){
-					$value = $this->_contextAccess($contextAccessing, $params);
-					Massive::setNestedValue($params, $parameterKey, $value, '.');
-				}
-			}
-			return $params;
+			return $this->prepareMatchedBindParams($params);
 		}
 
 
@@ -494,36 +499,6 @@ namespace Jungle\Application\Dispatcher\Router {
 		}
 
 		/**
-		 * @param $context_target_definition
-		 * @param $params
-		 * @return mixed
-		 */
-		protected function _contextAccess($context_target_definition, $params){
-			if(is_callable($context_target_definition)){
-				return call_user_func($context_target_definition, $this->routing);
-			}elseif(is_array($context_target_definition)){
-				if(!isset($context_target_definition['type'])){
-					return null;
-				}
-				if($context_target_definition['type'] === 'model'){
-					$model 			= $context_target_definition['model'];
-					$param 			= $context_target_definition['param'];
-					$field			= $context_target_definition['field'];
-					if(isset($params[$param])){
-						$o = new \stdClass();
-						$o->{$field} = $params[$param];
-						return $o;
-					}else{
-
-					}
-				}
-				return null;
-			}else{
-				return $context_target_definition;
-			}
-		}
-
-		/**
 		 * @return Template\Manager
 		 */
 		protected function getTemplateManager(){
@@ -537,6 +512,89 @@ namespace Jungle\Application\Dispatcher\Router {
 		public function modifyPath($path){
 			return $this->router->modifyPath($path);
 		}
+
+
+
+		/**
+		 * @param callable $converter
+		 * @return $this
+		 */
+		public function setConverter(callable $converter){
+			$this->converter = $converter;
+			return $this;
+		}
+
+		/**
+		 * @param $parameter
+		 * @param callable $decomposite - callable( $value )        { return [$paramKey => $paramValue]; }
+		 * @param callable $composite   - callable( array $params ) { return $value; }
+		 * @return $this
+		 */
+		public function bind($parameter,callable $decomposite,callable $composite){
+			$this->bindings[$parameter] = new Binding($decomposite,$composite);
+			return $this;
+		}
+
+		/**
+		 * @param $parameter
+		 * @param BindingInterface $binding
+		 * @return $this
+		 */
+		public function addBinding($parameter, BindingInterface $binding){
+			$this->bindings[$parameter] = $binding;
+			return $this;
+		}
+
+		/**
+		 * @param array $bindings
+		 * @param bool|true $merge
+		 * @return $this
+		 */
+		public function setBindings(array $bindings, $merge = false){
+			if(!$merge){
+				$this->bindings = [];
+			}
+			foreach($bindings as $key => $binding){
+				if($binding instanceof BindingInterface){
+					$this->addBinding($key,$binding);
+				}elseif(is_array($binding)){
+					$this->bind($key, isset($binding[0])?$binding[0]:null,isset($binding[1])?$binding[1]:null);
+				}
+			}
+			return $this;
+		}
+
+		/**
+		 * Нужно проверить параметры
+		 * @param array $params
+		 * @return array
+		 */
+		public function prepareRenderBindParams(array $params){
+			foreach($this->bindings as $paramKey => $binding){
+				if(array_key_exists($paramKey,$params)){
+					$elements = $binding->decomposite($params[$paramKey]);
+					unset($params[$paramKey]);
+					foreach($elements as $k=>$v){
+						$params[$k] = $v;
+					}
+				}
+			}
+			return $params;
+		}
+
+		/**
+		 * @param array $params
+		 * @return array
+		 */
+		public function prepareMatchedBindParams(array $params){
+			foreach($this->bindings as $paramKey => $binding){
+				$params[$paramKey] = $binding->composite($params);
+				$params = $binding->afterComposite($params);
+			}
+			return $params;
+		}
+
+
 
 	}
 }

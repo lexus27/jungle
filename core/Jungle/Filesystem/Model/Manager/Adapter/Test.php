@@ -234,8 +234,8 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @param $path
 		 * @return float
 		 */
-		public function dist_total_space($path){
-			// TODO: Implement dist_total_space() method.
+		public function disk_total_space($path){
+			// TODO: Implement disk_total_space() method.
 		}
 
 		/**

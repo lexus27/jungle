@@ -9,161 +9,103 @@
  */
 namespace App {
 
-	use Jungle\Application\RequestInterface;
-	use Jungle\Http\Current\Request;
-	use Jungle\Http\Current\Response;
+	use App\Model\User;
+	use Jungle\Application\Adaptee\Http\Dispatcher\Router as HTTP_Router;
+	use Jungle\Application\Dispatcher\Router\Binding;
+	use Jungle\Application\StaticApplication;
+	use Jungle\Application\View\RendererMatcherInterface;
+	use Jungle\Application\ViewInterface;
+	use Jungle\Data\Storage\Db\Adapter\Pdo\MySQL;
+	use Jungle\Di\DiInterface;
+	use Jungle\Loader;
 
 	/**
 	 * Class Application
 	 * @package App
 	 */
-	class Application extends \Jungle\Application{
+	class Application extends StaticApplication{
 
-		/** @var  \ReflectionClass */
-		protected $reflection;
-
-		/** @var  bool  */
-		protected $initialized = false;
-
-		/** @var  string  */
-		protected $modules_root_folder = 'Modules';
-
-		/**
-		 * Application constructor.
-		 */
-		public function __construct(){
-			$this->reflection = new \ReflectionClass($this);
+		protected function registerAutoload(Loader $loader){
+			require_once dirname($this->getBaseDirname()) . '/Libraries/Twig/lib/Twig/Autoloader.php';
+			\Twig_Autoloader::register();
 		}
 
 		/**
-		 *
+		 * @param HTTP_Router $router
 		 */
-		public function initialize(){
+		protected function initializeHttpRoutes(HTTP_Router $router){
+			$router->removeExtraRight('/');
 
+			$router->any('/',[
+				'name' => 'root',
+				'reference' => [
+					'controller' 	=> 'index',
+					'action' 		=> 'index'
+				],
+				'modify' => false
+			]);
+
+			$router->post('/user/login',[
+				'name' => 'user-login',
+				'reference' => [
+					'controller' 	=> 'user',
+					'action' 		=> 'login'
+				]
+			]);
+
+			$userBinding = new Binding(
+				function(User $value){      return ['id' => $value->id];            },
+				function(array $params){    return User::findFirst($params['id']);  },
+				['id']
+			);
+
+			$router->any('/{id:int.nozero}',[
+				'name'      => 'user-info-short',
+				'reference' => 'user:index',
+				'default'   => 'user',
+				'bindings'  => [
+					'user' => $userBinding
+				],
+			]);
+
+			$router->any('/user/{id:int.nozero}',[
+				'name'      => 'user-info',
+				'reference' => 'user:index',
+				'default'   => 'user',
+				'bindings'  => [
+					'user' => $userBinding
+				],
+			]);
+
+
+			$router->notFound('index:not_found');
 		}
 
 		/**
-		 * @return array
-		 */
-		public function getBootstrapNamespaces(){
-			return [
-				$this->reflection->getNamespaceName() => dirname($this->reflection->getFileName())
-			];
-		}
-
-		/**
-		 *
-		 */
-		public function getBootstrapRootDirectories(){
-			return [
-				'_cache'
-			];
-		}
-
-		/**
-		 * @return array
-		 */
-		public function getBootstrapModules(){
-			$modules = [];
-			foreach(glob(dirname($this->reflection->getFileName()) . DIRECTORY_SEPARATOR . $this->modules_root_folder . DIRECTORY_SEPARATOR . '*') as $path){
-				if(is_dir($path)){
-					$modules[basename($path)] = $path.'.php';
-				}
-			}
-			return $modules;
-		}
-
-		/**
-		 * @return array
-		 */
-		public function getBootstrapRoutes(){
-			return [];
-		}
-
-		/**
-		 * @param RequestInterface $request
+		 * @param DiInterface $di
 		 * @return mixed
-		 * @throws \Jungle\Application\Dispatcher\Exception
-		 * @throws \Jungle\Application\Dispatcher\Exception\NotFound
 		 */
-		public function handle(RequestInterface $request = null){
-			if(!$this->initialized){
-				$this->initialized = true;
-				$this->registerNamespaces();
-				$this->registerModules();
-				$this->registerRoutes();
-				$this->initialize();
-			}
-			if(!$request){
-				$request = Request::getInstance();
-			}
-			$response = new Response();
-			$this->dependency_injector->setShared('request',$request);
-			$this->dependency_injector->setShared('response',$response);
-			return $this->dispatcher->dispatch($request);
-		}
-
-		/**
-		 *
-		 */
-		protected function registerNamespaces(){
-			$this->getLoader()->registerNamespaces($this->getBootstrapNamespaces());
-		}
-
-		/**
-		 *
-		 */
-		protected function registerModules(){
-			$this->getDispatcher()->registerModules($this->getBootstrapModules());
-		}
-
-		/**
-		 *
-		 */
-		protected function registerRoutes(){
+		protected function registerDatabases(DiInterface $di){
+			$di->setOverlapFrom('mysql',function($di){
+				$adapter = new MySQL([
+					'host'      => 'localhost',
+					'port'      => '3306',
+					'dbname'    => 'jungle',
+					'username'  => 'root',
+					'password'  => ''
+				]);
+				$adapter->setDialect(new \Jungle\Data\Storage\Db\Dialect\MySQL());
+				return $adapter;
+			});
 
 		}
 
 		/**
-		 *
+		 * @param ViewInterface $view
+		 * @param RendererMatcherInterface $matcher
 		 */
-		protected function registerDirectories(){
-			$directories = $this->getBootstrapRootDirectories();
-			foreach($directories as $path){
-				if(!is_dir($path)){
-					mkdir($path,0555,true);
-				}
-			}
-		}
+		protected function initializeViewRenderers(ViewInterface $view, RendererMatcherInterface $matcher){}
 
-
-		/**
-		 *
-		 */
-		public function getMemoryUsage(){
-
-		}
-
-		/**
-		 *
-		 */
-		public function getDataBaseTotalSize(){
-
-		}
-
-		/**
-		 *
-		 */
-		public function clearAllCache(){
-
-		}
-
-		/**
-		 *
-		 */
-		public function getActionsCount(){
-
-		}
 	}
 }
 

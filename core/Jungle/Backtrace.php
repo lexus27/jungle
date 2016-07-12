@@ -127,6 +127,9 @@ namespace Jungle {
 			return isset($this->info['object'])?$this->info['object']:null;
 		}
 
+		/**
+		 * @return null
+		 */
 		public function getCallType(){
 			return isset($this->info['type'])?$this->info['type']:null;
 		}

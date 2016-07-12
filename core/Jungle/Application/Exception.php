@@ -8,9 +8,11 @@
  * Time: 18:29
  */
 namespace Jungle\Application {
-	
-	class Exception extends \Jungle\Exception{
-		
-	}
+
+	/**
+	 * Class Exception
+	 * @package Jungle\Application
+	 */
+	class Exception extends \Jungle\Exception{}
 }
 

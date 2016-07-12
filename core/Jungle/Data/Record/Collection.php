@@ -1124,7 +1124,6 @@ namespace Jungle\Data\Record {
 		 * @param null $orderBy
 		 */
 		protected function _deploy($condition = null, $limit = null, $offset = null, $orderBy = null){
-
 			if(!$orderBy && ($orderBy = $this->getSorter())){
 				$orderBy = $orderBy->toStorageSortFields($this->schema);
 			}

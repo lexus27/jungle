@@ -172,7 +172,7 @@ namespace Jungle\FileSystem\Model {
 		 * @return $this
 		 */
 		public function setReadOnly($recursive = false){
-			$this->setPermissions(IPermissions::PERMISSIONS_READ_ONLY_FILE);
+			$this->setPermissions(PermissionsInterface::PERMISSIONS_READ_ONLY_FILE);
 			return $this;
 		}
 

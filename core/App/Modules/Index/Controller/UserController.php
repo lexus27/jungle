@@ -9,6 +9,7 @@
  */
 namespace App\Modules\Index\Controller {
 	
+	use App\Model\User;
 	use Jungle\Application\Dispatcher\Controller\Process;
 	use Jungle\Application\Dispatcher\Controller\ProcessInterface;
 
@@ -18,23 +19,22 @@ namespace App\Modules\Index\Controller {
 	 */
 	class UserController{
 
+		public function indexMeta(array $meta = []){
+			$meta['hint'] = [
+				'hinting' => [
+					'user:'.User::class
+				]
+			];
+			return $meta;
+
+		}
+
 		/**
 		 * @param Process $process
 		 */
 		public function indexAction(Process $process){
-			echo $process->id;
 			echo '<h1>'.$process->getReferenceString().'</h1>';
-			echo '<p><a href="'.$process->getRouter()->generateLinkBy(
-					'user-info',
-					['id' => $process->id + 10],
-					'user:index'
-				).'">user:index(normal)</a></p>';
-			echo '<p><a href="'.$process->getRouter()->generateLinkBy(
-					'user-info-short',
-					['id' => $process->id + 80],
-					'user:index'
-				).'">user:index(short)</a></p>';
-			echo '<p><a href="'.$process->getRouter()->generateLinkBy('root').'">index:index</a></p>';
+			echo '<p><a href="'.$process->getRouter()->generateLinkBy('root').'">Главная</a></p>';
 		}
 
 		/**

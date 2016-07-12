@@ -9,6 +9,7 @@
  */
 namespace Jungle\Application\Dispatcher {
 
+	use Jungle\Application\Dispatcher;
 	use Jungle\Application\Dispatcher\Router\Exception\GenerateLink;
 	use Jungle\Application\Dispatcher\Router\Exception\MatchedException;
 	use Jungle\Application\Dispatcher\Router\Routing;
@@ -37,6 +38,8 @@ namespace Jungle\Application\Dispatcher {
 		/** @var  string|string[]|null */
 		protected $remove_extra_right;
 
+		/** @var  callable */
+		protected $before_route_matched_checker;
 
 		/** @var  RouteInterface[]  */
 		protected $routes = [];
@@ -88,6 +91,29 @@ namespace Jungle\Application\Dispatcher {
 			return String::trimWordsSides($path, $this->remove_extra_left, $this->remove_extra_right, $this->remove_extra_caseless);
 		}
 
+		/**
+		 * @param callable $checker
+		 * @return $this
+		 */
+		public function setBeforeRouteMatchedChecker(callable $checker){
+			if($this->before_route_matched_checker !== $checker){
+				$this->before_route_matched_checker = $checker;
+			}
+			return $this;
+		}
+
+		/**
+		 * @param $route
+		 * @param $reference
+		 * @param $routing
+		 * @return bool
+		 */
+		public function beforeRouteMatched($route, $reference, $routing){
+			if($this->before_route_matched_checker){
+				return call_user_func($this->before_route_matched_checker,$route,$reference,$routing);
+			}
+			return true;
+		}
 
 		/**
 		 * @param RouteInterface $route
@@ -113,16 +139,9 @@ namespace Jungle\Application\Dispatcher {
 		 * @param array $params
 		 * @return $this
 		 */
-		public function notFound($reference, array $params){
-			$this->notFoundConfig = [$reference, $params];
+		public function notFound($reference, array $params = []){
+			$this->notFoundConfig = [Dispatcher::normalizeReference($reference), $params];
 			return $this;
-		}
-
-		/**
-		 * @return Routing|null
-		 */
-		public function getLastMatched(){
-			return $this->last_matched;
 		}
 
 		/**
@@ -133,12 +152,12 @@ namespace Jungle\Application\Dispatcher {
 		 * {Action} > Default Module and Controller
 		 * #{Anonymous_Action} - Анонимное действие
 		 *
-		 * @param array $params
+		 * @param null|string|object|array $params
 		 * @param $reference
 		 * @return null|string
 		 * @throws GenerateLink
 		 */
-		public function generateLink(array $params = null, $reference = null){
+		public function generateLink($params = null, $reference = null){
 			foreach($this->routes as $route){
 				try{
 					return $route->generateLink($params,$reference);
@@ -155,10 +174,10 @@ namespace Jungle\Application\Dispatcher {
 		 * @return string
 		 * @throws GenerateLink
 		 */
-		public function generateLinkBy($route_alias, array $params = null, $reference = null){
+		public function generateLinkBy($route_alias, $params = null, $reference = null){
 			foreach($this->routes as $route){
 				if($route->getName() === $route_alias){
-					return $route->generateLink((array)$params, $reference);
+					return $route->generateLink($params, $reference);
 				}
 			}
 			throw new GenerateLink('Not Found suitable route by name "'.$route_alias.'"!');

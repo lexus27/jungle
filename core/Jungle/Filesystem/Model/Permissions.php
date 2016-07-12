@@ -13,7 +13,7 @@ namespace Jungle\FileSystem\Model {
 	 * Class Permissions
 	 * @package Jungle\FileSystem\Model
 	 */
-	class Permissions implements IPermissions{
+	class Permissions implements PermissionsInterface{
 
 
 
@@ -255,7 +255,7 @@ namespace Jungle\FileSystem\Model {
 		}
 
 		/**
-		 * @param string|int|array|IPermissions $permissions
+		 * @param string|int|array|PermissionsInterface $permissions
 		 * @return bool
 		 */
 		public function isEqual($permissions){
@@ -385,7 +385,7 @@ namespace Jungle\FileSystem\Model {
 				$permissions = $this->_permissionsFromString($permissions);
 			}elseif(is_array($permissions)){
 				$permissions = $this->_permissionsFromArray($permissions,($merge?$this->toArray():[]));
-			}elseif($permissions instanceof IPermissions){
+			}elseif($permissions instanceof PermissionsInterface){
 				$permissions = octdec($permissions->getPermissions());
 			}
 
@@ -423,7 +423,7 @@ namespace Jungle\FileSystem\Model {
 					}
 					$status =  boolval(is_numeric($s)?intval($s):$s);
 					if($status){
-						$decimal = $decimal | constant( IPermissions::class.'::PERMISSION_'.strtoupper($type).'_'.strtoupper($access) );
+						$decimal = $decimal | constant(PermissionsInterface::class . '::PERMISSION_' . strtoupper($type) . '_' . strtoupper($access) );
 					}
 				}
 			}

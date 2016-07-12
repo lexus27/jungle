@@ -20,6 +20,25 @@ namespace Jungle\Application {
 		 */
 		public function getPath();
 
+		/**
+		 * @return ResponseInterface
+		 */
+		public function getResponse();
+
+		/**
+		 * @param $key
+		 * @param null $format
+		 * @param null $default
+		 * @return mixed
+		 */
+		public function getParam($key, $format = null, $default = null);
+
+		/**
+		 * @param $specificity
+		 * @return bool
+		 */
+		public function hasSpecificity($specificity);
+
 	}
 }
 

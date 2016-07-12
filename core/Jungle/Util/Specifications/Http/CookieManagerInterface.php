@@ -28,10 +28,10 @@ namespace Jungle\Util\Specifications\Http {
 		 * @param null $path
 		 * @param null $secure
 		 * @param null $httpOnly
-		 * @param null $domain
+		 * @param null $host
 		 * @return mixed
 		 */
-		public function setCookie($key, $value, $expire = null, $path = null, $secure = null, $httpOnly = null, $domain = null);
+		public function setCookie($key, $value, $expire = null, $path = null, $secure = null, $httpOnly = null, $host = null);
 
 		/**
 		 * @param $name

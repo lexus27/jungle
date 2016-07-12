@@ -9,7 +9,7 @@
  */
 namespace Jungle\Util\Data\Foundation\Schema\OuterInteraction {
 
-	use Jungle\Data\Record\Properties\PropertyRegistryInterface;
+	use Jungle\Util\Data\Foundation\Record\PropertyRegistryInterface;
 	use Jungle\Util\Data\Foundation\Schema\OuterInteraction\ValueAccessor\Getter;
 	use Jungle\Util\Data\Foundation\Schema\OuterInteraction\ValueAccessor\GetterInterface;
 	use Jungle\Util\Data\Foundation\Schema\OuterInteraction\ValueAccessor\Setter;
@@ -306,7 +306,7 @@ namespace Jungle\Util\Data\Foundation\Schema\OuterInteraction {
 
 		/**
 		 * @param ValueAccessAwareInterface|callable|null $access
-		 * @param \Jungle\Data\Record\Properties\PropertyRegistryInterface|mixed $data
+		 * @param \Jungle\Util\Data\Foundation\Record\PropertyRegistryInterface|mixed $data
 		 * @param string $key
 		 * @return mixed
 		 */
@@ -325,10 +325,10 @@ namespace Jungle\Util\Data\Foundation\Schema\OuterInteraction {
 
 		/**
 		 * @param ValueAccessAwareInterface|callable|null $access
-		 * @param \Jungle\Data\Record\Properties\PropertyRegistryInterface|mixed $data
+		 * @param \Jungle\Util\Data\Foundation\Record\PropertyRegistryInterface|mixed $data
 		 * @param string $key
 		 * @param mixed $value
-		 * @return \Jungle\Data\Record\Properties\PropertyRegistryInterface|mixed
+		 * @return \Jungle\Util\Data\Foundation\Record\PropertyRegistryInterface|mixed
 		 */
 		public static function handleAccessSet($access, $data, $key, $value){
 			if($data instanceof PropertyRegistryInterface){

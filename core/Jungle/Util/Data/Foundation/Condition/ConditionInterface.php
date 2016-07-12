@@ -18,7 +18,7 @@ namespace Jungle\Util\Data\Foundation\Condition {
 	interface ConditionInterface{
 
 		/**
-		 * @param \Jungle\Data\Record\Properties\PropertyRegistryInterface|mixed $data
+		 * @param \Jungle\Util\Data\Foundation\Record\PropertyRegistryInterface|mixed $data
 		 * @param null|ValueAccessAwareInterface|callable $access - if data is outer original data
 		 * @return mixed
 		 */

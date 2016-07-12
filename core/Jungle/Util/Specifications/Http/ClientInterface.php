@@ -4,13 +4,10 @@
  * Author: Kutuzov Alexey Konstantinovich <lexus.1995@mail.ru>
  * Project: jungle
  * IDE: PhpStorm
- * Date: 30.06.2016
- * Time: 13:34
+ * Date: 02.07.2016
+ * Time: 16:53
  */
 namespace Jungle\Util\Specifications\Http {
-	
-	use Jungle\Util\BrowserInterface;
-	use Jungle\Util\OperationSystemInterface;
 
 	/**
 	 * Interface ClientInterface
@@ -21,7 +18,7 @@ namespace Jungle\Util\Specifications\Http {
 		/**
 		 * @return string
 		 */
-		public function getIpAddress();
+		public function getIp();
 
 		/**
 		 * @return int
@@ -29,14 +26,9 @@ namespace Jungle\Util\Specifications\Http {
 		public function getPort();
 
 		/**
-		 * @return BrowserInterface
+		 * @return string
 		 */
-		public function getBrowser();
-
-		/**
-		 * @return OperationSystemInterface
-		 */
-		public function getOperationSystem();
+		public function getHost();
 
 		/**
 		 * @return string
@@ -44,9 +36,20 @@ namespace Jungle\Util\Specifications\Http {
 		public function getBestLanguage();
 
 		/**
-		 * @return array
+		 * @return string[]
 		 */
 		public function getLanguages();
 
+		/**
+		 * @return bool
+		 */
+		public function isProxied();
+
+		/**
+		 * @return ProxyInterface
+		 */
+		public function getProxy();
+
 	}
 }
+

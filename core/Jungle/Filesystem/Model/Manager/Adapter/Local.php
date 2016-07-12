@@ -27,7 +27,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @param $path
 		 * @return float
 		 */
-		public function dist_total_space($path){
+		public function disk_total_space($path){
 			return disk_total_space($this->absolute($path));
 		}
 
@@ -272,9 +272,77 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @param Adapter $destination
 		 * @param $destinationPath
 		 */
-		public function transit(
+		public function transfer(
 				Adapter $origin,        $originPath,
 				Adapter $destination,   $destinationPath
+		){
+			if($origin instanceof Local && $destination instanceof Local){
+				// Local TO Local transfer
+				$this->transferLocalToLocal($origin,$originPath,$destination,$destinationPath);
+			}
+			if($origin instanceof Local && $destination instanceof Remote){
+				// Local TO Remote transfer
+				$this->transferLocalToRemote($origin,$originPath,$destination,$destinationPath);
+			}
+			if($origin instanceof Remote && $destination instanceof Local){
+				// Remote TO Local transfer
+				$this->transferRemoteToLocal($origin,$originPath,$destination,$destinationPath);
+			}
+			if($origin instanceof Remote && $destination instanceof Remote){
+				// Remote TO Remote transfer
+				$this->transferRemoteToRemote($origin,$originPath,$destination,$destinationPath);
+			}
+		}
+
+		/**
+		 * @param Local $origin
+		 * @param $originPath
+		 * @param Local $destination
+		 * @param $destinationPath
+		 */
+		public function transferLocalToLocal(
+			Local $origin,        $originPath,
+			Local $destination,   $destinationPath
+		){
+
+		}
+
+		/**
+		 * @param Local $origin
+		 * @param $originPath
+		 * @param Remote $destination
+		 * @param $destinationPath
+		 */
+		public function transferLocalToRemote(
+			Local $origin,        $originPath,
+			Remote $destination,   $destinationPath
+		){
+
+		}
+
+		/**
+		 * @param Remote $origin
+		 * @param $originPath
+		 * @param Local $destination
+		 * @param $destinationPath
+		 */
+		public function transferRemoteToLocal(
+			Remote $origin,        $originPath,
+			Local $destination,   $destinationPath
+		){
+
+		}
+
+		/**
+		 * TODO temporal drive
+		 * @param Remote $origin
+		 * @param $originPath
+		 * @param Remote $destination
+		 * @param $destinationPath
+		 */
+		public function transferRemoteToRemote(
+			Remote $origin,        $originPath,
+			Remote $destination,   $destinationPath
 		){
 
 		}

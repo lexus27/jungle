@@ -9,7 +9,7 @@
  */
 namespace Jungle\Util\Data\Foundation\Condition {
 
-	use Jungle\Util\Data\Foundation\Record\Properties\PropertyRegistryInterface;
+	use Jungle\Util\Data\Foundation\Record\PropertyRegistryInterface;
 	use Jungle\Util\Data\Foundation\Schema\OuterInteraction\ValueAccessAwareInterface;
 	use Jungle\Util\Data\Foundation\Schema\OuterInteraction\ValueAccessor;
 
@@ -34,7 +34,7 @@ namespace Jungle\Util\Data\Foundation\Condition {
 		 * @return mixed
 		 */
 		public function __invoke($data, $access = null){
-			return \Jungle\CodeForm\LogicConstruction\Condition::collateRaw(
+			return \Jungle\Code\LogicConstruction\Condition::collateRaw(
 				ValueAccessor::handleAccessGet($access, $data, $this->field),
 				$this->operator,
 				$this->wanted, Operator::class

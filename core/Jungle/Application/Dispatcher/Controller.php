@@ -15,6 +15,8 @@ namespace Jungle\Application\Dispatcher {
 	 * Class Controller
 	 * @package Jungle\Application
 	 */
-	abstract class Controller implements ControllerInterface{}
+	abstract class Controller implements ControllerInterface{
+
+	}
 }
 

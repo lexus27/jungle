@@ -260,12 +260,61 @@ namespace Jungle\Data\Record {
 			$field->setDefault($default);
 			$field->setNullable($nullable);
 			$field->setOriginalKey($originalKey);
+
+			/**
+			$getterMethod = null;
+			$setterMethod = null;
+			$getterPrefix = 'get';
+			$setterPrefix = 'set';
+			if($otherOptions){
+				$o = array_replace_recursive([
+					'face' => [
+						'getter_prefix' => 'get',
+						'setter_prefix' => 'set',
+						'getter' => null,
+					    'setter' => null,
+					]
+				],$otherOptions);
+
+				if($o['face']['getter']){
+					$getterMethod = $o['face']['getter'];
+				}
+				if($o['face']['setter']){
+					$setterMethod = $o['face']['setter'];
+				}
+
+				$getterPrefix = $o['face']['getter_prefix'];
+				$setterPrefix = $o['face']['setter_prefix'];
+			}
+
+			$mName = $getterPrefix.$name;
+			if(!$getterMethod && method_exists($this,$mName)){
+				$getterMethod = $mName;
+			}
+			$mName = $setterPrefix.$name;
+			if(!$setterMethod && method_exists($this,$mName)){
+				$setterMethod = $mName;
+			}
+
+
+			if($setterMethod){
+				$field->setSetterMethod($setterMethod);
+			}
+			if($getterMethod){
+				$field->setGetterMethod($getterMethod);
+			}
+			*/
+
 			if($notIn){
 				$this->_schema->addField($field);
 			}
 			return $this;
 		}
 
+
+
+		// TODO get related method
+		// TODO re define get|setProperty method
 		/**
 		 * @param $name
 		 * @param bool|true $readonly

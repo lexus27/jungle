@@ -904,7 +904,7 @@ namespace Jungle\FileSystem\Model {
 		 * @return $this
 		 */
 		public function setReadOnly($recursive = false){
-			$this->setPermissions(IPermissions::PERMISSIONS_READ_ONLY_DIRECTORY);
+			$this->setPermissions(PermissionsInterface::PERMISSIONS_READ_ONLY_DIRECTORY);
 			if($recursive){
 				foreach($this->getChildren() as $n){
 					$n->setReadOnly($recursive);

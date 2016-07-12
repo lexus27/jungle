@@ -9,24 +9,42 @@
  */
 namespace Jungle\Di {
 
+	use Jungle\Application;
+	use Jungle\Application\Dispatcher;
+	use Jungle\Application\Dispatcher\RouterInterface;
+	use Jungle\Application\RequestInterface as ApplicationRequestInterface;
+	use Jungle\Application\ResponseInterface as ApplicationResponseInterface;
+	use Jungle\Application\ViewInterface;
+	use Jungle\Data\Record\Head\SchemaManager;
+	use Jungle\Loader;
+	use Jungle\Messenger;
+	use Jungle\Util\Specifications\Http\RequestInterface;
+	use Jungle\Util\Specifications\Http\ResponseInterface;
+	use Jungle\Util\Specifications\Http\ResponseSettableInterface;
+
 	/**
 	 * Class Injectable
 	 * @package Jungle\Di
 	 *
-	 * @property $application
-	 * @property $dispatcher
-	 * @property $router
+	 * @property Application $application
+	 * @property Dispatcher $dispatcher
+	 * @property RouterInterface|\Jungle\Application\Adaptee\Http\Dispatcher\Router $router
+	 * @property ApplicationRequestInterface|RequestInterface $request
+	 * @property ApplicationResponseInterface|ResponseInterface|ResponseSettableInterface $response
 	 * @property $cache
 	 * @property $event
+	 * @property ViewInterface $view
 	 *
 	 * @property $filesystem
 	 * @property $database
-	 * @property $schema
+	 * @property SchemaManager $schema
+	 *
+	 * @property Loader $loader
 	 *
 	 * @property $user
 	 * @property $access
 	 * @property $session
-	 * @property $messenger
+	 * @property Messenger $messenger
 	 */
 	class Injectable implements InjectionAwareInterface{
 
@@ -54,6 +72,9 @@ namespace Jungle\Di {
 		 * @return mixed
 		 */
 		public function __get($name){
+			if(!$this->_dependency_injector){
+				throw new \LogicException('DependencyInjector is not supplied in object');
+			}
 			return $this->_dependency_injector->get($name);
 		}
 

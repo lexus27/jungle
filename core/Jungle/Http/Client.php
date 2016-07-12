@@ -9,9 +9,6 @@
  */
 namespace Jungle\Http {
 
-	use Jungle\Http\Current\Request;
-	use Jungle\Util\BrowserInterface;
-	use Jungle\Util\OperationSystemInterface;
 	use Jungle\Util\Specifications\Http\ClientInterface;
 
 	/**
@@ -26,53 +23,60 @@ namespace Jungle\Http {
 		/** @var  int */
 		protected $port;
 
-		/** @var  BrowserInterface */
-		protected $browser;
-
-		/** @var  OperationSystemInterface */
-		protected $operation_system;
-
 		/** @var  string[] */
 		protected $languages = [];
 
 		/** @var  Request */
 		protected $request;
 
-		public function setRequest(Request $request){
+		/**
+		 * Client constructor.
+		 * @param \Jungle\Http\Request $request
+		 */
+		public function __construct(Request $request){
 			$this->request = $request;
-			return $this;
+			$this->languages = self::parseAcceptLanguage($request->getHeader('Accept-Language','en'));
 		}
 
-		public function getRequest(){
-			return $this->request;
+		/**
+		 * @param $subject
+		 * @return array
+		 */
+		public static function parseAcceptLanguage($subject){
+			$subject = explode(';',$subject);
+			$languages = [];
+			foreach($subject as $lang){
+				if(preg_match('/((([a-zA-Z]+)(-[a-zA-Z]+)?)|\*)/',$lang,$matches)){
+					if(isset($matches[3]) && $matches[3]){
+						$value = strtolower($matches[3]);
+						if(!in_array($value,$languages, true)){
+							$languages[] = $value;
+						}
+					}
+				}
+			}
+			return $languages;
 		}
 
 		/**
 		 * @return string
 		 */
-		public function getIpAddress(){
-			return $this->request->getClientIp();
+		public function getIp(){
+			return $_SERVER['REMOTE_ADDR'];
 		}
 
 		/**
-		 * @return mixed
+		 * @return string
+		 */
+		public function getHost(){
+			return $_SERVER['REMOTE_HOST'];
+		}
+
+		/**
+		 * @return int
 		 */
 		public function getPort(){
-			return $this->request->getClientPort();
-		}
-
-		/**
-		 * @return BrowserInterface
-		 */
-		public function getBrowser(){
-			return $this->browser;
-		}
-
-		/**
-		 * @return OperationSystemInterface
-		 */
-		public function getOperationSystem(){
-			return $this->operation_system;
+			return $_SERVER['REMOTE_PORT'];
 		}
 
 		/**
@@ -89,6 +93,13 @@ namespace Jungle\Http {
 			return $this->languages;
 		}
 
+		public function isProxied(){
+			// TODO: Implement isProxied() method.
+		}
+
+		public function getProxy(){
+			// TODO: Implement getProxy() method.
+		}
 
 	}
 }

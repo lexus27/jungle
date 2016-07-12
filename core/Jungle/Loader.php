@@ -13,6 +13,11 @@ namespace Jungle {
 	 */
 	class Loader{
 
+		protected static $default;
+
+		/** @var  bool */
+		protected $registered 	= false;
+
 		/** @var  null|array */
 		protected $checkedPath 	= [];
 
@@ -28,23 +33,42 @@ namespace Jungle {
 		/** @var  null|array */
 		protected $namespaces 	= [];
 
-		/**
-		 * Idea for include file contains many classes in one namespace declared in single file
-		 *
-		 * @var array
-		 */
-		protected $namespace_files = [];
-
 		/** @var  null|array */
 		protected $directories 	= [];
-
-		/** @var  bool */
-		protected $registered 	= false;
 
 		/** @var  mixed[]  */
 		protected $scripts_execute_cache = [];
 
 		protected $foundPaths = [];
+
+		/**
+		 * Idea for include file contains many classes in one namespace declared in single file
+		 *
+		 * @var array
+		 */
+		//protected $namespace_files = [];
+
+
+
+
+		/**
+		 * Loader constructor.
+		 */
+		public function __construct(){
+			if(!self::$default){
+				self::$default = $this;
+			}
+		}
+
+		/**
+		 * @return Loader
+		 */
+		public static function getDefault(){
+			if(!self::$default){
+				return new self();
+			}
+			return self::$default;
+		}
 
 		/**
 		 * Загрузка скрипта с использованием кеширования в памяти
@@ -61,7 +85,7 @@ namespace Jungle {
 		 */
 		public function loadScriptData($file_path){
 			if(!isset($this->scripts_execute_cache[$file_path])){
-				if(is_readable($file_path)){
+				if(is_readable($file_path) && is_file($file_path)){
 					$this->scripts_execute_cache[$file_path] = require $file_path;
 				}else{
 					return false;
@@ -71,26 +95,12 @@ namespace Jungle {
 		}
 
 		/**
-		 * @param $php_script_path
-		 * @return bool|mixed
-		 */
-		public function executeScript($php_script_path){
-			if(is_readable($php_script_path)){
-				return require $php_script_path;
-			}else{
-				return false;
-			}
-		}
-
-
-
-		/**
 		 * @param string[] $extensions
 		 * @param bool $merge
 		 * @return $this
 		 */
 		public function setExtensions(array $extensions, $merge = false){
-			$this->extensions = $merge? array_merge($this->extensions,$extensions): $extensions;
+			$this->extensions = array_unique($merge? array_merge($this->extensions,$extensions): $extensions);
 			return $this;
 		}
 
@@ -107,7 +117,10 @@ namespace Jungle {
 		 * @return $this
 		 */
 		public function registerDirs(array $dirs, $merge = false){
-			$this->directories = $merge? array_merge($this->directories,$dirs): $dirs;
+			foreach($dirs as & $path){
+				$path = strtr($path,DIRECTORY_SEPARATOR === '\\'?'/':'\\',DIRECTORY_SEPARATOR);
+			}
+			$this->directories = $merge? array_replace($this->directories,$dirs): $dirs;
 			return $this;
 		}
 
@@ -117,7 +130,36 @@ namespace Jungle {
 		 * @return $this
 		 */
 		public function registerNamespaces(array $namespaces, $merge = false){
-			$this->namespaces = $merge? array_merge($this->namespaces,$namespaces): $namespaces;
+			foreach($namespaces as & $path){
+				$path = strtr($path,DIRECTORY_SEPARATOR === '\\'?'/':'\\',DIRECTORY_SEPARATOR);
+			}
+			$this->namespaces = $merge? array_replace($this->namespaces,$namespaces): $namespaces;
+			return $this;
+		}
+
+		/**
+		 * @param string[] $classes
+		 * @param bool|false $merge
+		 * @return $this
+		 */
+		public function registerClasses(array $classes, $merge = false){
+			foreach($classes as & $path){
+				$path = strtr($path,DIRECTORY_SEPARATOR === '\\'?'/':'\\',DIRECTORY_SEPARATOR);
+			}
+			$this->classes = $merge? array_replace($this->classes,$classes): $classes;
+			return $this;
+		}
+
+		/**
+		 * @param string[] $prefixes
+		 * @param bool|false $merge
+		 * @return $this
+		 */
+		public function registerPrefixes(array $prefixes, $merge = false){
+			foreach($prefixes as & $path){
+				$path = strtr($path,DIRECTORY_SEPARATOR === '\\'?'/':'\\',DIRECTORY_SEPARATOR);
+			}
+			$this->prefixes = $merge? array_replace($this->prefixes,$prefixes): $prefixes;
 			return $this;
 		}
 
@@ -137,24 +179,73 @@ namespace Jungle {
 		 * @param $namespace
 		 * @return string
 		 */
-		public function getInNamespacePath($namespace){
+		public function getPathnameByNamespace($namespace){
 			foreach($this->namespaces as $ns => $path){
 				if(strpos($namespace, $ns)===0){
 					$suffix = substr($namespace,strlen($ns));
-					return $path . $suffix;
+					return $path . strtr($suffix,DIRECTORY_SEPARATOR === '\\'?'/':'\\',DIRECTORY_SEPARATOR);
 				}
 			}
 			return null;
 		}
 
 		/**
-		 * @param string[] $classes
-		 * @param bool|false $merge
-		 * @return $this
+		 * @param $pathname
+		 * @return string
 		 */
-		public function registerClasses(array $classes, $merge = false){
-			$this->classes = $merge? array_merge($this->classes,$classes): $classes;
-			return $this;
+		public function getNamespaceByPathname($pathname){
+			foreach($this->namespaces as $ns => $path){
+				if(strpos($pathname,$path)===0){
+					$suffix = substr($pathname,strlen($path));
+					if(is_file($pathname)){
+						$suffix = pathinfo($suffix,PATHINFO_DIRNAME) . DIRECTORY_SEPARATOR . pathinfo($suffix,PATHINFO_FILENAME);
+					}
+					return $ns . str_replace('/','\\',$suffix);
+				}
+			}
+			return null;
+		}
+
+		/**
+		 * @param $dirname
+		 * @param null $namespace
+		 * @param bool|int $depth
+		 * @param array $container
+		 * @return array
+		 */
+		public function scanClasses($dirname, $namespace = null, $depth = true, & $container = []){
+			if(is_int($depth)){
+				if(!$depth) return $container;
+				$depth-=1;
+			}
+			foreach(glob($dirname . DIRECTORY_SEPARATOR . '*') as $path){
+				if(is_dir($path)){
+					if($depth){
+						$namespaceName = ($namespace? $namespace . '\\':'') . basename($path);
+						$this->scanClasses($path,$namespaceName, $depth, $container);
+					}
+				}else{
+					$extension = pathinfo($path,PATHINFO_EXTENSION);
+					if($this->isClassFileExtension($extension)){
+						$className = ($namespace? $namespace . '\\':'') . pathinfo($path,PATHINFO_FILENAME);
+						$container[$className] = $path;
+					}
+				}
+			}
+			return $container;
+		}
+
+		/**
+		 * @param $extension
+		 * @return bool
+		 */
+		public function isClassFileExtension($extension){
+			foreach($this->extensions as $ext){
+				if(strcasecmp($extension,$ext)===0){
+					return true;
+				}
+			}
+			return false;
 		}
 
 		/**
@@ -166,33 +257,10 @@ namespace Jungle {
 				return $this->classes[$class];
 			}
 			if(strpos($class,'\\',1)!==false){
-				return $this->getInNamespacePath($class);
+				return $this->getPathnameByNamespace($class);
 			}
 			return null;
 		}
-
-		/**
-		 * @param string[] $prefixes
-		 * @param bool|false $merge
-		 * @return $this
-		 */
-		public function registerPrefixes(array $prefixes, $merge = false){
-			$this->prefixes = $merge? array_merge($this->prefixes,$prefixes): $prefixes;
-			return $this;
-		}
-
-
-		/**
-		 * @return Loader
-		 */
-		public static function getDefault(){
-			static $default;
-			if(!$default){
-				$default = new self();
-			}
-			return $default;
-		}
-
 
 		/**
 		 * @param string $className - NameSpace\NameSpace\ClassClass or Vendor_Class or VendorClass
@@ -307,10 +375,31 @@ namespace Jungle {
 		}
 
 		/**
-		 *
+		 * @return bool
 		 */
 		public function register(){
-			spl_autoload_register([$this,'autoLoad']);
+			if(!$this->registered){
+				if(!spl_autoload_register([$this,'autoLoad'])){
+					return false;
+				}else{
+					$this->registered = true;
+				}
+			}
+			return true;
+		}
+
+		/**
+		 * @return bool
+		 */
+		public function unregister(){
+			if($this->registered){
+				if(!spl_autoload_unregister([$this,'autoLoad'])){
+					return false;
+				}else{
+					$this->registered = false;
+				}
+			}
+			return true;
 		}
 
 

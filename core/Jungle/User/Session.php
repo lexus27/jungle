@@ -14,42 +14,23 @@ namespace Jungle\User {
 	 * @package Jungle\User
 	 */
 	class Session{
-
-		public function initialize(){
-
+		
+		/** @var  string */
+		protected $id;
+		
+		/** @var  array */
+		protected $data;
+		
+		/** @var  mixed */
+		protected $user_id;
+		
+		/** @var  SessionManager */
+		protected $manager;
+		
+		public function setAccessedDomains(){
+			
 		}
-
-		/**
-		 * @param $name
-		 * @return null
-		 */
-		public function __get($name){
-			return isset($_SESSION[$name])?$_SESSION[$name]:null;
-		}
-
-		/**
-		 * @param $name
-		 * @param $value
-		 */
-		public function __set($name, $value){
-			$_SESSION[$name] = $value;
-		}
-
-		/**
-		 * @param $name
-		 * @return bool
-		 */
-		public function __isset($name){
-			return isset($_SESSION[$name]);
-		}
-
-		/**
-		 * @param $name
-		 */
-		public function __unset($name){
-			unset($_SESSION[$name]);
-		}
-
+		
 	}
 }
 

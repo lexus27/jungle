@@ -18,12 +18,12 @@ namespace Jungle\Util\Specifications\Http {
 		/**
 		 * @return string
 		 */
-		public function getHostName();
+		public function getIp();
 
 		/**
 		 * @return string
 		 */
-		public function getIpAddress();
+		public function getHost();
 
 		/**
 		 * @return int
@@ -33,12 +33,17 @@ namespace Jungle\Util\Specifications\Http {
 		/**
 		 * @return string
 		 */
-		public function getGatewayInterface();
+		public function getGateway();
 
 		/**
 		 * @return string
 		 */
 		public function getSoftware();
+
+		/**
+		 * @return string
+		 */
+		public function getEngine();
 
 		/**
 		 * @return string

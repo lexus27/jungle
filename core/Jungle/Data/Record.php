@@ -16,8 +16,8 @@ namespace Jungle\Data {
 	use Jungle\Data\Record\Head\Field\Relation;
 	use Jungle\Data\Record\Head\Field\Virtual;
 	use Jungle\Data\Record\Head\Schema;
-	use Jungle\Data\Record\Properties\PropertyRegistryInterface;
-	use Jungle\Data\Record\Properties\PropertyRegistryTransientInterface;
+	use Jungle\Util\Data\Foundation\Record\PropertyRegistryInterface;
+	use Jungle\Util\Data\Foundation\Record\PropertyRegistryTransientInterface;
 	use Jungle\Util\Data\Foundation\Schema\OuterInteraction\SchemaAwareInterface;
 	use Jungle\Util\Data\Foundation\Storage;
 	

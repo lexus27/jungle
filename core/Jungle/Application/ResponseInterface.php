@@ -15,10 +15,20 @@ namespace Jungle\Application {
 	 */
 	interface ResponseInterface{
 
-		public function getFormatterType();
-
+		/**
+		 * @return mixed
+		 */
 		public function getContent();
 
+		/**
+		 * @param $content
+		 * @return mixed
+		 */
+		public function setContent($content);
+
+		/**
+		 * @return mixed
+		 */
 		public function send();
 
 	}

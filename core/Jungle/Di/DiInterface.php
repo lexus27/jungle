@@ -9,8 +9,8 @@
  */
 namespace Jungle\Di {
 
-	use Jungle\Data\Foundation\Registry\RegistryInterface;
-	use Jungle\Data\Foundation\Registry\RegistryRemovableInterface;
+	use Jungle\Util\Data\Foundation\Registry\RegistryInterface;
+	use Jungle\Util\Data\Foundation\Registry\RegistryRemovableInterface;
 
 	/**
 	 * Interface DiInterface
@@ -110,9 +110,17 @@ namespace Jungle\Di {
 
 		/**
 		 * @param $name
-		 * @return mixed
+		 * @return DiInterface
 		 */
 		public function getServiceContainer($name);
+
+		public function getSharedServiceBy($object);
+
+
+		/**
+		 * @return DiInterface[]|ServiceInterface[]
+		 */
+		public function getServices();
 
 		/**
 		 * @param $name
@@ -125,6 +133,12 @@ namespace Jungle\Di {
 		 * @return $this
 		 */
 		public function removeContainer($name);
+
+		/**
+		 * @param $name
+		 * @return mixed
+		 */
+		public function remove($name);
 
 		/**
 		 * @param $name

@@ -34,13 +34,13 @@ namespace App\Modules\Index\Controller\User {
 		}
 
 		public function indexAction(ProcessInterface $process){
-			return get_class($this);
+			echo get_class($this);
 		}
 
 
 		public function indexAfterControl(){
 
-			echo 'BeforeControlIndex';
+			echo 'AfterControlIndex';
 
 		}
 	}

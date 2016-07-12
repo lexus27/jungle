@@ -35,17 +35,17 @@ namespace Jungle\Application\Dispatcher {
 		/**
 		 * @param $reference
 		 * @param array $params
-		 * @return mixed
+		 * @return string
 		 */
-		public function generateLink(array $params = null, $reference = null);
+		public function generateLink($params = null, $reference = null);
 
 		/**
 		 * @param $route_alias
-		 * @param array $params
+		 * @param null|array $params
 		 * @param null $reference
-		 * @return mixed
+		 * @return string
 		 */
-		public function generateLinkBy($route_alias, array $params = null,$reference = null);
+		public function generateLinkBy($route_alias, $params = null,$reference = null);
 
 		/**
 		 * @return Template
@@ -62,6 +62,21 @@ namespace Jungle\Application\Dispatcher {
 		 * @return string
 		 */
 		public function modifyPath($path);
+
+		/**
+		 * @param $route
+		 * @param $reference
+		 * @param $routing
+		 * @return mixed
+		 */
+		public function beforeRouteMatched($route, $reference, $routing);
+
+		/**
+		 * @param callable $checker
+		 * @return mixed
+		 */
+		public function setBeforeRouteMatchedChecker(callable $checker);
+
 	}
 }
 

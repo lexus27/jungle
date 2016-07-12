@@ -35,6 +35,11 @@ namespace Jungle\Application\Dispatcher\Controller {
 		public function getController();
 
 		/**
+		 * @return string
+		 */
+		public function getActionName();
+
+		/**
 		 * HMVC-Architecture
 		 * @return bool
 		 */
@@ -46,19 +51,14 @@ namespace Jungle\Application\Dispatcher\Controller {
 		public function getRouting();
 
 		/**
-		 * @return RoutingInterface
+		 * @return ProcessInterface
 		 */
-		public function getBasedRouting();
+		public function getRoot();
 
 		/**
 		 * @return ProcessInterface
 		 */
-		public function getBasedProcess();
-
-		/**
-		 * @return ProcessInterface
-		 */
-		public function getParentProcess();
+		public function getParent();
 
 		/**
 		 * @return ProcessInterface|RoutingInterface|null
@@ -141,6 +141,13 @@ namespace Jungle\Application\Dispatcher\Controller {
 		 * @return mixed
 		 */
 		public function getResult();
+
+
+		public function startOutputBuffering();
+
+		public function endOutputBuffering();
+
+		public function getOutputBuffer();
 	}
 }
 
