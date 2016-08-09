@@ -8,12 +8,14 @@
 namespace Jungle\User\AccessControl {
 
 	use Jungle\User\AccessControl\Policy\Combiner;
-	use Jungle\User\AccessControl\Policy\Matchable;
 	use Jungle\User\AccessControl\Policy\MatchResult;
 	use Jungle\User\AccessControl\Policy\PolicyGroup;
 	use Jungle\User\AccessControl\Policy\Target;
 
 	/**
+	 *
+	 * ABAC Политика
+	 *
 	 * Class Policy
 	 * @package Jungle\User\AccessControl
 	 */

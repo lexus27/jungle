@@ -31,10 +31,10 @@ namespace Jungle\Util\Data\Foundation\Condition {
 		/**
 		 * @param PropertyRegistryInterface|mixed $data
 		 * @param null|ValueAccessAwareInterface|callable $access - if data map is outer original data
-		 * @return mixed
+		 * @return bool
 		 */
 		public function __invoke($data, $access = null){
-			return \Jungle\Code\LogicConstruction\Condition::collateRaw(
+			return \Jungle\ExoCode\LogicConstruction\Condition::collateRaw(
 				ValueAccessor::handleAccessGet($access, $data, $this->field),
 				$this->operator,
 				$this->wanted, Operator::class

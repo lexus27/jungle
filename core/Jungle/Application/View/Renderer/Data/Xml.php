@@ -17,9 +17,16 @@ namespace Jungle\Application\View\Renderer\Data {
 	 */
 	class Xml extends Data{
 
+		/** @var string  */
 		protected $type = 'xml';
 
+		/** @var string  */
+		protected $mime_type = 'application/xml';
+
+		/** @var string  */
 		protected $version = '1.0';
+
+
 
 		public function setVersion($version){
 			$this->version = $version;

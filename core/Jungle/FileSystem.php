@@ -96,7 +96,7 @@ namespace Jungle {
 		public static function removeContain($dirname){
 			if(is_dir($dirname)){
 				$path = rtrim($dirname,'\/') . DIRECTORY_SEPARATOR;
-				foreach(glob($dirname . '*') as $child){
+				foreach(glob($path . '*') as $child){
 					self::remove($child);
 				}
 			}

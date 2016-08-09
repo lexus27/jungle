@@ -10,16 +10,17 @@
 namespace Jungle\Application {
 
 	use Jungle\Application;
-	use Jungle\Application\Dispatcher\Controller\Process;
-	use Jungle\Application\Dispatcher\Controller\ProcessInitiatorInterface;
-	use Jungle\Application\Dispatcher\Controller\ProcessInterface;
 	use Jungle\Application\Dispatcher\Exception;
 	use Jungle\Application\Dispatcher\Exception\Control;
+	use Jungle\Application\Dispatcher\Exception\NotCertainBehaviour;
 	use Jungle\Application\Dispatcher\Module;
 	use Jungle\Application\Dispatcher\ModuleInterface;
-	use Jungle\Application\Dispatcher\Router;
-	use Jungle\Application\Dispatcher\Router\Exception\NotFound;
-	use Jungle\Application\Dispatcher\RouterInterface;
+	use Jungle\Application\Dispatcher\Process;
+	use Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface;
+	use Jungle\Application\Dispatcher\ProcessInterface;
+	use Jungle\Application\Dispatcher\Reference;
+	use Jungle\Application\Router;
+	use Jungle\Application\Router\RoutingInterface;
 	use Jungle\Application\View;
 	use Jungle\Di\Injectable;
 	use Jungle\Di\InjectionAwareInterface;
@@ -29,34 +30,49 @@ namespace Jungle\Application {
 	 * Class Dispatcher
 	 * @package Jungle\Application
 	 */
-	class Dispatcher extends Injectable{
+	class Dispatcher extends Injectable implements DispatcherInterface{
 
-		/** @var  RouterInterface[] */
-		protected $routers = [];
+		/** @var  StrategyInterface[] */
+		protected $strategies = [];
+
+		/** @var  StrategyInterface */
+		protected $strategy;
 
 		/** @var  ModuleInterface[]|array[]  */
 		protected $modules = [];
 
-		/** @var  string */
-		protected $default_module = 'index';
+		protected $error_reference = [
+			'module'        => 'index',
+			'controller'    => 'index',
+			'action'        => 'error'
+		];
 
 		/** @var  string */
-		protected $default_controller = 'index';
+		protected $default_module       = 'index';
 
 		/** @var  string */
-		protected $default_action = 'index';
+		protected $default_controller   = 'index';
 
 		/** @var  string */
-		protected $action_suffix = 'Action';
+		protected $default_action       = 'index';
 
 		/** @var  string */
-		protected $controller_suffix = 'Controller';
+		protected $action_suffix        = 'Action';
+
+		/** @var  string */
+		protected $controller_suffix    = 'Controller';
 
 		/** @var  bool  */
 		protected $dispatching = false;
 
 		/** @var  RequestInterface */
-		protected $dispatching_request;
+		protected $last_request;
+
+		/** @var  ProcessInterface */
+		protected $last_process;
+
+		/** @var  RoutingInterface */
+		protected $last_routing;
 
 		/**
 		 * @param $name
@@ -173,124 +189,258 @@ namespace Jungle\Application {
 		}
 
 		/**
+		 * @param $reference
+		 * @return bool
+		 * @throws Exception
+		 */
+		public function hasControl($reference){
+			$reference = Reference::normalize($reference, [ 'module' => $this->default_module]);
+			$moduleName = $reference['module'];
+			if(!isset($this->modules[$moduleName])){
+				return false;
+			}
+			$module = $this->modules[$moduleName];
+			if(!$module instanceof ModuleInterface){
+				$module = $this->_loadModule($moduleName,$module);
+				$this->modules[$moduleName] = $module;
+			}
+			return $module->hasControl($reference['controller'], $reference['action'] );
+		}
+
+		/**
+		 * @param $reference
+		 * @return array
+		 */
+		public function getMetadata($reference){
+			$reference = Reference::normalize($reference, [ 'module' => $this->default_module]);
+			$moduleName = $reference['module'];
+			if(!isset($this->modules[$moduleName])){
+				return [];
+			}
+			$module = $this->modules[$moduleName];
+			if(!$module instanceof ModuleInterface){
+				$module = $this->_loadModule($moduleName,$module);
+				$this->modules[$moduleName] = $module;
+			}
+			return $module->getMetadata($reference['controller'], $reference['action'] );
+		}
+
+		/**
 		 * @param $alias
-		 * @param RouterInterface $router
+		 * @param StrategyInterface $strategy
 		 * @return $this
 		 */
-		public function addRouter($alias, RouterInterface $router){
-			$this->routers[$alias] = $router;
+		public function setStrategy($alias, StrategyInterface $strategy){
+			$this->strategies[$alias] = $strategy;
 			return $this;
 		}
 
 		/**
-		 * @param RouterInterface $router
-		 * @return string
-		 */
-		public function searchRouter(RouterInterface $router){
-			return array_search($router,$this->routers,true);
-		}
-
-		/**
 		 * @param $alias
-		 * @return RouterInterface|null
+		 * @return StrategyInterface|null
 		 */
-		public function getRouter($alias){
-			return isset($this->routers[$alias])?$this->routers[$alias]:null;
+		public function findStrategy($alias){
+			return isset($this->strategies[$alias])?$this->strategies[$alias]:null;
 		}
 
 		/**
-		 * @param string $alias
-		 * @return $this
+		 * @return StrategyInterface
 		 */
-		public function removeRouter($alias){
-			unset($this->routers[$alias]);
-			return $this;
+		public function getStrategy(){
+			return $this->strategy;
 		}
 
 		/**
 		 * @param RequestInterface $request
-		 * @return RouterInterface|null
+		 * @return StrategyInterface|null
 		 */
-		public function getDesiredRouter(RequestInterface $request){
-			foreach($this->routers as $name => $router){
-				if($router->isDesiredRequest($request)){
-					$router->setBeforeRouteMatchedChecker([$this,'beforeRouteMatched']);
-					return $router;
+		public function matchStrategyBy(RequestInterface $request){
+			foreach($this->strategies as $name => $strategy){
+				if($strategy->check($request)){
+					return $strategy;
 				}
 			}
 			return null;
 		}
 
 		/**
-		 * @param $route
-		 * @param $reference
-		 * @param $routing
-		 * @return bool|mixed
+		 * Dispatcher constructor.
 		 */
-		public function beforeRouteMatched($route, $reference, $routing){
-			$reference = self::normalizeReference($reference,null,false);
-			$moduleName = $reference['module']?:$this->getDefaultModule();
-			$module = $this->getModule($moduleName);
-			if(!$module){
-				return true;
-			}
-			return $module->supportPublic($reference['controller'],$reference['action']);
+		public function __construct(){
+			register_shutdown_function(function(){
+				if($this->dispatching){
+					$error = error_get_last();
+					if(isset($error) && ($error['type'] & (E_ERROR | E_PARSE | E_COMPILE_ERROR | E_CORE_ERROR))){
+						$this->handleFatalError($error['type'], $error['message'], $error['file'], $error['line']);
+					}else{
+						ob_end_flush();
+					}
+				}
+			});
 		}
 
 		/**
+		 * @param $num
+		 * @param $message
+		 * @param $filename
+		 * @param $line
+		 * @throws \Jungle\Application\Exception
+		 * @internal param bool $return
+		 */
+		public function handleFatalError($num, $message, $filename, $line){
+			if(ob_get_level()) ob_end_clean();
+			if($this->last_process){
+				$response = $this->forward($this->error_reference,[
+					'exception' => new \ErrorException($message,0,$num, $filename,$line)
+				], $this->last_process);
+			}elseif($this->last_routing){
+				$response = $this->forward($this->error_reference,[
+					'exception' => new \ErrorException($message,0,$num, $filename,$line)
+				], $this->last_routing);
+
+			}else{
+				throw new \Jungle\Application\Exception('Initiator is not recognized!');
+			}
+			$response->send();
+			exit();
+		}
+
+		/**
+		 * @param \Exception $e
+		 * @param bool $return
+		 * @return ResponseInterface
+		 * @throws \Jungle\Application\Exception
+		 */
+		public function handleException(\Exception $e, $return = true){
+			if(ob_get_level()) ob_end_clean();
+			if($this->last_process){
+				$response = $this->forward($this->error_reference,[
+					'exception' => $e
+				], $this->last_process);
+			}elseif($this->last_routing){
+				$response = $this->forward($this->error_reference,[
+					'exception' => $e
+				], $this->last_routing);
+			}else{
+				throw new \Jungle\Application\Exception('Initiator is not recognized!');
+			}
+			if(!$return){
+				$response->send();
+				exit();
+			}
+			return $response;
+		}
+
+		/**
+		 * Диспетчеризация непосредственно изначального запроса.
+		 * Происходит старт обертки HMVC в которой Контроль может вызываться рекурсивно для разных действий
+		 * в последствии генерируется итоговый "Ответ" на переданный "Запрос"
+		 *
+		 * В диспетчеризации учавствуют:
+		 * Маршрутизаторы! происходит выбор предпочитаемого запросу - маршрутизатора с индивидуальным набором маршрутов.
+		 * Целевой "Контроль"
+		 * Формирование Ответа.
+		 *
 		 * @param RequestInterface $request
 		 * @return ResponseInterface
-		 * @throws Control
-		 * @throws Exception
-		 * @throws \Jungle\Application\Dispatcher\Router\Exception\NotFound
+		 * @throws \Exception
+		 *
 		 */
 		public function dispatch(RequestInterface $request){
 			if($this->dispatching){
 				throw new \LogicException('dispatch already run!');
 			}
 			try{
+				$strategy = $this->matchStrategyBy($request);
+				if(!$strategy){
+					throw new Exception('Not have matched Strategy for current request!');
+				}
+				$this->_onStrategyRecognized($strategy);
 				if($this->_beforeDispatch($request) !== false){
 					$this->_onDispatchStarted($request);
-					$router = $this->getDesiredRouter($request);
-					if(!$router){
-						throw new Exception('Not found desired Router by Request!');
+					/**
+					 * @var RoutingInterface $routing
+					 * @var RouterInterface $router
+					 */
+					$router = $strategy->getShared('router');
+					$matching = $router->getMatchGenerator($request);
+					foreach($matching as $routing){
+						try{
+							$this->last_routing = $routing;
+							if($routing->isUnknown()){
+								throw new NotCertainBehaviour('Defined router, no have "not_found" route');
+							}else{
+								$process = $this->control($routing->getReference(), (array) $routing->getParams(), null, $routing);
+								$response = $this->prepareResponse($process);
+								$this->_afterDispatch($request,$routing,$process);
+								return $response;
+							}
+
+						}catch(Exception\ContinueRoute $e){
+							$routing->reset();
+							continue;
+						}
 					}
-					if($this->_dependency_injector){
-						$this->_dependency_injector->setShared('router',$router);
-					}
-					$routing = $router->match($request);
-					if($routing->isUnknown()){
-						throw new NotFound('Not Found Affected Routes!');
-					}else{
-						$process = $this->control($routing->getReference(), $routing->getParams(), null, $routing);
-					}
-					$response = $this->prepareResponse($process);
-					$this->_afterDispatch($request,$routing,$process);
-					if($this->_dependency_injector){
-						$this->_dependency_injector->remove('router');
-					}
-					return $response;
 				}
-				return null;
+				throw new NotCertainBehaviour('Defined router, no have "not_found" route');
+			}catch(\Exception $e){
+				return $this->handleException($e);
 			}finally{
 				$this->_onDispatchContinue();
 			}
 		}
 
-
+		/**
+		 *
+		 * Подмена целевого действия контроллера
+		 *
+		 * @param $reference
+		 * @param $params
+		 * @param ProcessInitiatorInterface|null $initiator
+		 * @return ResponseInterface
+		 * @throws Control
+		 */
+		public function forward($reference, $params, ProcessInitiatorInterface $initiator = null){
+			try{
+				$process = $this->control($reference, $params, null, $initiator);
+				throw new Exception\Forwarded($process);
+			}catch (Exception\Forwarded $forward){
+				$process = $forward->getProcess();
+				return $this->prepareResponse($process);
+			}
+		}
 
 		/**
+		 * Специфично для HTTP
+		 *
+		 * @param $reference
+		 * @param $permanent
+		 */
+		public function redirect($reference, $permanent = false){
+
+		}
+
+		/**
+		 *
+		 * Метод производит "Контроль" - это непосредственный вызов модулем-контроллером-действием.
+		 * Происходит вызов действия и после этого в зависимости от настроек вывода контроля
+		 * - генерируется возвращаемое значение, оно может быть разное для HTTP / Cli специфики,
+		 * также для разных типов клиентского HTTP запроса в том числе.
+		 * JSON, HTML, XML и так далее
+		 *
 		 * @param $reference
 		 * @param $data
 		 * @param $options
-		 * @param null|ProcessInitiatorInterface|ProcessInterface|Router\Routing $initiator
+		 * @param null|\Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface|ProcessInterface|Router\Routing $initiator
 		 * @return Process|mixed
 		 * @throws Control
 		 */
-		public function control($reference,$data = null,array $options = null, ProcessInitiatorInterface $initiator = null){
-			$reference = self::normalizeReference($reference,[
-				'module' => $this->default_module
-			]);
+		public function control($reference, $data = null, $options = null, ProcessInitiatorInterface $initiator = null){
+			$reference = Reference::normalize(
+				$reference,[
+					'module' => $this->default_module
+				]
+			);
 			$moduleName = $reference['module'];
 			$module = $this->getModule($moduleName);
 			if(!$module){
@@ -303,6 +453,21 @@ namespace Jungle\Application {
 			return $output;
 		}
 
+		/**
+		 * @param ProcessInterface $process
+		 * @return ResponseInterface
+		 */
+		public function prepareResponse(ProcessInterface $process){
+			$response = $this->last_request->getResponse();
+			/** @var ViewInterface $view */
+			$view = $this->_dependency_injector->getShared('view');
+			if($response->getContent() === null){
+				$rendered = $view->render(null,$process);
+				$response->setContent($rendered);
+			}
+			$this->strategy->complete($response, $view);
+			return $response;
+		}
 
 		/**
 		 * @param ProcessInterface $process
@@ -310,9 +475,22 @@ namespace Jungle\Application {
 		 * @return ProcessInterface|mixed
 		 */
 		public function checkoutProcess(ProcessInterface $process,array $options = null){
-			if($options){
-				if(isset($options['render'])){
-					return $this->view->render($process,$options['render']);
+			$this->last_process = $process;
+			if(is_array($options)){
+				if(isset($options['render']) && $options['render']){
+					/** @var ViewInterface $view */
+					$view = $this->_dependency_injector->getShared('view');
+					$alias = null;
+					$render_variables  = [];
+					$render_options    = [];
+					if(is_array($options['render'])){
+						$alias              = $options['render']['alias'];
+						$render_variables   = (array)$options['render']['variables'];
+						$render_options     = (array)$options['render']['options'];
+					}elseif(is_string($options['render'])){
+						$alias = $options['render'];
+					}
+					return $view->render($alias,$process,$render_variables, $render_options);
 				}
 				if(isset($options['result']) && $options['result']){
 					return $process->getResult();
@@ -324,17 +502,7 @@ namespace Jungle\Application {
 			return $process;
 		}
 
-		/**
-		 * @param Process $process
-		 * @return ResponseInterface
-		 */
-		public function prepareResponse(Process $process){
-			$response = $this->dispatching_request->getResponse();
-			if($response->getContent() === null){
-				$response->setContent($this->view->render($process));
-			}
-			return $response;
-		}
+
 
 		/**
 		 * @param $controller
@@ -397,7 +565,7 @@ namespace Jungle\Application {
 		/**
 		 * @param $moduleName
 		 * @param array $definition
-		 * @return mixed
+		 * @return ModuleInterface
 		 * @throws Exception
 		 */
 		protected function _loadModule($moduleName,array $definition){
@@ -423,8 +591,15 @@ namespace Jungle\Application {
 
 		}
 
-		protected function _afterDispatch(RequestInterface $request,Router\RoutingInterface $routing, ProcessInterface $result){
+		protected function _afterDispatch(RequestInterface $request, Router\RoutingInterface $routing, ProcessInterface $result){
 
+		}
+
+		/**
+		 * @param StrategyInterface $strategy
+		 */
+		protected function _onStrategyRecognized(StrategyInterface $strategy){
+			$this->strategy = $strategy;
 		}
 
 		/**
@@ -434,9 +609,11 @@ namespace Jungle\Application {
 			if($this->_dependency_injector){
 				$this->_dependency_injector->setShared('request',$request);
 				$this->_dependency_injector->setShared('response',$request->getResponse());
+				$this->_dependency_injector->setShared('strategy',$this->strategy);
+				$this->_dependency_injector->setNext($this->strategy);
 			}
 			$this->dispatching = true;
-			$this->dispatching_request = $request;
+			$this->last_request = $request;
 		}
 
 		/**
@@ -446,23 +623,58 @@ namespace Jungle\Application {
 			if($this->_dependency_injector){
 				$this->_dependency_injector->remove('request');
 				$this->_dependency_injector->remove('response');
+				$this->_dependency_injector->remove('strategy');
 			}
+			$this->strategy = null;
 			$this->dispatching = false;
-			$this->dispatching_request = null;
+			$this->last_request = null;
+			$this->last_process = null;
 		}
-
 
 
 		/**
 		 * @param $reference
 		 * @param ModuleInterface $module
-		 * @param null|ProcessInitiatorInterface|ProcessInterface|Router\Routing $initiator
+		 * @param null|\Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface|ProcessInterface|Router\Routing $initiator
 		 * @throws Control
+		 * @throws Exception\ContinueRoute
 		 */
 		protected function _beforeControl($reference, ModuleInterface $module, ProcessInitiatorInterface $initiator = null){
-			if($initiator && $initiator instanceof ProcessInterface && !$module->supportHierarchy($reference['controller'],$reference['action'])){
-				throw new Control("{$module->getName()}:{$reference['controller']}:{$reference['action']} not support hierarchy calling!");
+
+			/**
+			 * В данном методе происходит пре-контроль
+			 * : Проверка, может ли контроллер быть запущен из другого контроллера
+			 * : Проверка, Можно ли запускать контроллер публично, если нет, то пропустить текущий маршрут
+			 * : Проверка, поддерживает ли контроль текущую стратегию
+			 * : Проверка, если Маршрут имеет динамичные ссылки и в системе нету такого действия - то пропустить маршрут
+			 */
+			if($initiator){
+
+				$meta = $module->getMetadata($reference['controller'], $reference['action']);
+				if($initiator instanceof ProcessInterface && (!isset($meta['hierarchy']) || !$meta['hierarchy'])){
+					throw new Control("{$module->getName()}:{$reference['controller']}:{$reference['action']} not support hierarchy calling!");
+				}
+				if($initiator instanceof RoutingInterface && (
+					   (isset($meta['private']) && $meta['private']) ||
+				       (!$module->hasControl($reference['controller'], $reference['action']) && $initiator->getRoute()->isDynamic())
+				   )
+				){
+					throw new Exception\ContinueRoute();
+				}
 			}
+			if(isset($meta['strategy']) && $meta['strategy']){
+				$strategy = $meta['strategy'];
+				if(!is_array($strategy)) $strategy = [$strategy];
+				$current = $this->strategy->getType();
+				if(!in_array($this->strategy->getType(), $strategy, true)){
+					if($initiator instanceof RoutingInterface){
+						throw new Exception\ContinueRoute();
+					}else{
+						throw new Control("{$module->getName()}:{$reference['controller']}:{$reference['action']} not support \"{$current}\" application strategy!");
+					}
+				}
+			}
+
 		}
 
 		/**
@@ -473,69 +685,6 @@ namespace Jungle\Application {
 
 		}
 
-		/**
-		 * @param $reference
-		 * @param array|null $default_reference
-		 * @param bool $finallyNormalize
-		 * @return array
-		 */
-		public static function normalizeReference($reference = null,array $default_reference = null, $finallyNormalize = true){
-			if($reference === null){
-				$reference = [];
-			}
-			if(is_string($reference)){
-				$module     = null;
-				$controller = null;
-				$action     = null;
-				if(strpos($reference,':')!==false){
-					$reference = explode(':',$reference);
-					if(isset($reference[0])){
-						if($reference[0]{0}==='#'){
-							$module = substr($reference[0],1);
-						}else{
-							$controller = $reference[0];
-						}
-					}
-					if(isset($reference[1])){
-						if($controller!==null){
-							$action = $reference[1];
-						}else{
-							$controller = $reference[1];
-						}
-					}
-					if($action === null && isset($reference[2])){
-						$action = $reference[2];
-					}
-				}else{
-					$action = $reference;
-				}
-
-				if(strpos($action,'.')!==false){
-					throw new \LogicException('Wrong string reference');
-				}
-
-				$reference = [
-					'module'        => $module,
-					'controller'    => $controller,
-					'action'        => $action
-				];
-			}
-			if($finallyNormalize){
-				if($default_reference === null){
-					$default_reference = [
-						'module'		=> null,
-						'controller'	=> null,
-						'action'		=> null,
-					];
-				}
-				foreach($default_reference as $k => $v){
-					if(!isset($reference[$k])){
-						$reference[$k] = $v;
-					}
-				}
-			}
-			return $reference;
-		}
 
 	}
 }

@@ -11,6 +11,9 @@ namespace Jungle\Data {
 
 	use Jungle\Data\Record\Collection\Relationship;
 	use Jungle\Data\Record\Exception;
+	use Jungle\Data\Record\Exception\Field\AccessViolation;
+	use Jungle\Data\Record\Exception\Field\ReadonlyViolation;
+	use Jungle\Data\Record\Exception\Field\UnexpectedValue;
 	use Jungle\Data\Record\ExportableInterface;
 	use Jungle\Data\Record\Head\Field;
 	use Jungle\Data\Record\Head\Field\Relation;
@@ -63,7 +66,7 @@ namespace Jungle\Data {
 		protected $_set_property_relation_applied_in_old = false;
 		
 		/** @var bool  */
-		protected static $properties_changes_restrict = true;
+		protected static $properties_changes_restrict_level = 0;
 
 		
 
@@ -217,9 +220,15 @@ namespace Jungle\Data {
 		 * @param array $data
 		 * @param null|string[]|string|int[]|int $whiteList
 		 * @param null|string[]|string|int[]|int $blackList
+		 * @param bool $appliedInOld
+		 * @param bool $appliedInNew
 		 * @return $this
+		 * @throws AccessViolation
+		 * @throws Exception
+		 * @throws ReadonlyViolation
+		 * @throws UnexpectedValue
 		 */
-		public function assign(array $data, $whiteList = null, $blackList = null){
+		public function assign(array $data, $whiteList = null, $blackList = null, $appliedInOld = false, $appliedInNew = false, $dirtyApplied = false){
 			$attributes = $this->_schema->getFieldNames();
 			if($whiteList !== null){
 				if(!is_array($whiteList)){
@@ -240,7 +249,7 @@ namespace Jungle\Data {
 				$attributes = array_diff($attributes, $blackList);
 			}
 
-			if(self::$properties_changes_restrict){
+			if(!self::$properties_changes_restrict_level){
 				if($readOnly = $this->_schema->getReadonlyNames()){
 					$attributes = array_diff($attributes, $readOnly);
 				}
@@ -251,105 +260,163 @@ namespace Jungle\Data {
 
 			foreach($attributes as $key){
 				if(array_key_exists($key, $data)){
-					$this->setProperty($key,$data[$key]);
+					$this->setProperty($key,$data[$key],$appliedInOld,$appliedInNew,$dirtyApplied);
 				}
 			}
 			return $this;
 		}
 
+		/** @var bool  */
+		protected $_live_validating = false;
+
+		public function setLiveValidating($validating = true){
+			$this->_live_validating = $validating;
+			return $this;
+		}
+
+		/**
+		 * @return bool
+		 */
+		public function isLiveValidating(){
+			return $this->_live_validating;
+		}
+
 		/**
 		 * @param $key
 		 * @param $value
+		 * @param bool $appliedInOld
+		 * @param bool $appliedInNew
+		 * @param bool $dirtyApplied
 		 * @return $this
-		 * @throws \Exception
+		 * @throws AccessViolation
+		 * @throws Exception
+		 * @throws Exception\Field
+		 * @throws ReadonlyViolation
+		 * @throws UnexpectedValue
 		 */
-		public function setProperty($key, $value){
-			try{
-				$field = $this->_schema->getField($key);
-				if($field){
-					if(self::$properties_changes_restrict){
-						if($field->isReadonly()){
-							throw new Exception('Could not set readonly "'.$key.'" property');
-						}
-						if($field->isPrivate()){
-							throw new Exception('Could not set private "'.$key.'" property');
-						}
+		public function setProperty($key, $value, $appliedInOld = false, $appliedInNew = false, $dirtyApplied = false){
+			$field = $this->_schema->getField($key);
+			if($field){
+
+				if(!self::$properties_changes_restrict_level){
+					if($field->isReadonly()){
+						throw new ReadonlyViolation('Could not set readonly "'.$key.'" property');
 					}
-					if($field instanceof Relation){
-						if(!$field->isMany()){
-							if($this->isInitializedProperty($key)){
-								$old = $this->_getFrontProperty($key);
-								if($value !== $old){
-									$this->_setFrontProperty($key, $value);
-									/** @var Relation[] $opposites */
-									if((!$this->_set_property_relation_applied_in_old && $old) || (!$this->_set_property_relation_applied_in_new && $value)){
-										$opposites = $field->getOppositeRelations();
-									}
-									if(!$this->_set_property_relation_applied_in_old && $old instanceof Record){
-										foreach($opposites as $f){
-											if($f->isMany()){
-												$relationship = $old->getProperty($f->getName());
-												$relationship->removeItem($this);
-											}else{
-												$old->_set_property_relation_applied_in_new = true;
-												$old->_set_property_relation_applied_in_old = true;
-												$old->setProperty($f->getName(), null);
-											}
-										}
-									}
+					if($field->isPrivate()){
+						throw new AccessViolation('Could not set private property "'.$key.'"');
+					}
+				}
 
-									if(!$this->_set_property_relation_applied_in_new && $value instanceof Record){
-										foreach($opposites as $f){
-											if($f->isMany()){
-												$relationship = $value->getProperty($f->getName());
-												$relationship->add($this);
-											}else{
-												$value->_set_property_relation_applied_in_new = true;
-												$value->_set_property_relation_applied_in_old = true;
-												$value->setProperty($f->getName(), $this);
-											}
-										}
-									}
+				$value = $field->stabilize($value);
+				if($field->verify($value)===false){
+					throw new UnexpectedValue('Verification aborted!');
+				}
 
-								}
-							}else{
-								$this->_setFrontProperty($key, $value);
-							}
+				if($field instanceof Relation){
+					$this->_setRelationFieldValue($key, $value, $field, $appliedInOld, $appliedInNew);
+				}else{
+					$this->_setFrontProperty($key, $value);
+				}
 
+				if($dirtyApplied){
+					$this->_processed[$key] = $value;
+					$this->_original = $this->_schema->valueAccessSet($this->_original,$key, $value);
+				}
 
-							if(!$value && $field->isBelongs()){
+			}else{
+				throw new Exception('Set Field "'.$key.'" not exists in data map schema["'.$this->_schema->getName().'"]');
+			}
+			return $this;
+		}
 
-								foreach($field->getFields() as $f){
-									$this->setProperty($f,null);
-								}
+		/**
+		 *
+		 */
+		protected function _continueSetProperty(){
 
-							}
+		}
 
-						}else{
-							if($value === null || (is_array($value) && empty($value))){
-								$relationship = $this->_getFrontProperty($key);
-								$relationship->remove();
-							}else{
-								throw new Exception('Set property "'.$key.'" positive value is forbidden, but you can detach all by pass null or empty array');
-							}
-						}
-					}else{
+		/**
+		 * @param $key
+		 * @param $value
+		 * @param Relation $field
+		 * @param bool $appliedInOld
+		 * @param bool $appliedInNew
+		 * @throws AccessViolation
+		 * @throws Exception\Field
+		 * @throws ReadonlyViolation
+		 * @throws UnexpectedValue
+		 */
+		protected function _setRelationFieldValue($key, $value,Relation $field, $appliedInOld = false, $appliedInNew = false){
+			if(!$field->isMany()){
+				if($this->isInitializedProperty($key)){
+					$old = $this->_getFrontProperty($key);
+					if($value !== $old){
 						$this->_setFrontProperty($key, $value);
-					}
+						/** @var Relation[] $opposites */
+						if((!$appliedInOld && $old) || (!$appliedInNew && $value)){
+							$opposites = $field->getOppositeRelations($this);
+						}
+						if(!$appliedInOld && $old instanceof Record){
+							foreach($opposites as $f){
+								if($f->isMany()){
+									$relationship = $old->getProperty($f->getName());
+									$relationship->removeItem($this);
+								}else{
+									$old->setProperty($f->getName(), null, true ,true);
+								}
+							}
+						}
 
-					if($this->_set_property_dirty_applied){
-						$this->_processed[$key] = $value;
-						$this->_original = $this->_schema->valueAccessSet($this->_original,$key, $value);
-						$this->_set_property_dirty_applied = false;
+						if(!$appliedInNew && $value instanceof Record){
+							foreach($opposites as $f){
+								if($f->isMany()){
+									$relationship = $value->getProperty($f->getName());
+									$relationship->add($this);
+								}else{
+									$value->setProperty($f->getName(), $this, true ,true);
+								}
+							}
+						}
+
 					}
 				}else{
-					throw new \LogicException('Set Field "'.$key.'" not exists in data map schema["'.$this->_schema->getName().'"]');
+					$this->_setFrontProperty($key, $value);
 				}
-				return $this;
-			}finally{
-				$this->_set_property_relation_applied_in_new = false;
-				$this->_set_property_relation_applied_in_old = false;
+				if(!$value && $field->isBelongs()){
+					foreach($field->getFields() as $f){
+						$this->setProperty($f,null);
+					}
+					if($field->isDynamic()){
+						$this->setProperty($field->getDynamicSchemafield(), null);
+					}
+				}
+			}else{
+				if($value === null || (is_array($value) && empty($value))){
+					$relationship = $this->_getFrontProperty($key);
+					$relationship->remove();
+				}else{
+					throw new Exception\Field('Set property "'.$key.'" positive value is forbidden, but you can detach all by pass null or empty array');
+				}
 			}
+		}
+
+		/**
+		 * @param $key
+		 * @param $value
+		 * @param $field
+		 */
+		protected function _beforeSetProperty($key, $value, $field){
+
+		}
+
+		/**
+		 * @param $key
+		 * @param $value
+		 * @param $field
+		 */
+		protected function _afterSetProperty($key, $value, $field){
+
 		}
 
 		/**
@@ -364,16 +431,17 @@ namespace Jungle\Data {
 		 * @param $key
 		 * @return Record|Record[]|Relationship|mixed
 		 * @throws Exception
+		 * @throws Exception\Field
 		 */
 		public function getProperty($key){
 			$field = $this->_schema->getField($key);
 			if($field){
-				if(self::$properties_changes_restrict && $field->isPrivate()){
-					throw new Exception('Could not get private property');
+				if(!self::$properties_changes_restrict_level && $field->isPrivate()){
+					throw new AccessViolation('Could not get private property "'.$key.'"');
 				}
 				return $this->_getFrontProperty($key);
 			}else{
-				throw new \LogicException('Get Field "'.$key.'" not exists in data map schema["'.$this->_schema->getName().'"]');
+				throw new Exception\Field('Get Field "'.$key.'" not exists in data map schema["'.$this->_schema->getName().'"]');
 			}
 		}
 
@@ -439,6 +507,10 @@ namespace Jungle\Data {
 		/**
 		 * @param $name
 		 * @return mixed
+		 * @throws AccessViolation
+		 * @throws Exception\Field
+		 * @throws ReadonlyViolation
+		 * @throws UnexpectedValue
 		 */
 		public function resetPropertyDefault($name){
 			$field = $this->_schema->getField($name);
@@ -447,7 +519,7 @@ namespace Jungle\Data {
 				if(($default !== null) || ($default === null && $field->isNullable())){
 					return $this->setProperty($name, $default);
 				}else{
-					throw new \LogicException('Property "' . $name . '" no have default value');
+					throw new Exception\Field('Property "' . $name . '" no have default value');
 				}
 			}
 			return $this;
@@ -527,12 +599,17 @@ namespace Jungle\Data {
 		}
 
 		/**
+		 * @param bool $public
 		 * @return array
+		 * @throws Exception
 		 */
-		public function export(){
+		public function export( $public = true ){
 			$values = [ ];
-			foreach($this->_schema->getFieldNames() as $name){
-				$values[$name] = $this->getProperty($name);
+			foreach($this->_schema->getFields() as $field){
+				if(!$field->isPrivate() && $field->isOriginality()){
+					$name = $field->getName();
+					$values[$name] = $this->getProperty($name);
+				}
 			}
 			return $values;
 		}
@@ -650,11 +727,12 @@ namespace Jungle\Data {
 
 		/**
 		 * @return bool
+		 * @throws Exception
 		 */
 		public function save(){
 			if($this->_operation_processing){
 				if($this->_operation_made === self::OP_DELETE){
-					throw new \LogicException('Current operation execute is not allow saving record!');
+					throw new Exception('Current operation execute is not allow saving record!');
 				}
 				return true;
 			}
@@ -665,6 +743,7 @@ namespace Jungle\Data {
 						if($this->_doCreate()){
 							$this->_operation_made = self::OP_UPDATE;
 							$this->_operation_processing = false;
+							$this->_schema->getCollection()->itemCreated($this);
 							$this->onCreate();
 							$this->onSave();
 							return true;
@@ -678,11 +757,12 @@ namespace Jungle\Data {
 						return true;
 					}
 
-					if($this->beforeSave() !== false && $this->beforeUpdate() !== false){
+					if($this->beforeSave() !== false && $this->beforeUpdate($changed) !== false){
 						$this->_operation_processing = true;
-						if($this->_doUpdate($changed)){
+						if($this->_doUpdate($this->getChangedProperties())){
 							$this->_operation_made = self::OP_UPDATE;
 							$this->_operation_processing = false;
+							$this->_schema->getCollection()->itemUpdated($this);
 							$this->onUpdate();
 							$this->onSave();
 							return true;
@@ -698,11 +778,13 @@ namespace Jungle\Data {
 
 		/**
 		 * @return bool
+		 * @throws Exception
+		 * @throws \Exception
 		 */
-		public function remove(){
+		public function delete(){
 			if($this->_operation_processing){
 				if($this->_operation_made !== self::OP_DELETE){
-					throw new \LogicException('Current operation execute is not allow remove!');
+					throw new Exception('Current operation execute is not allow delete!');
 				}
 				return true;
 			}
@@ -732,7 +814,7 @@ namespace Jungle\Data {
 		 * @param $name
 		 * @return mixed
 		 */
-		abstract protected function _getFrontProperty($name);
+		abstract protected function &_getFrontProperty($name);
 
 		/**
 		 * @param $key
@@ -773,7 +855,7 @@ namespace Jungle\Data {
 			}
 
 			try{
-				self::$properties_changes_restrict = false;
+				self::$properties_changes_restrict_level++;
 				foreach($virtualFields as $field){
 
 				}
@@ -786,7 +868,7 @@ namespace Jungle\Data {
 				$data = null;
 				foreach($originalityFields as $field){
 					$name = $field->getName();
-					$value = $this->isInitializedProperty($name) ? $this->_getFrontProperty($name) : null;
+					$value = $this->_getFrontProperty($name);
 					$data = $this->_schema->valueAccessSet($data, $name, $value);
 				}
 
@@ -804,15 +886,36 @@ namespace Jungle\Data {
 					$store->commit();
 				}
 				$this->_onCreateCommit();
-				self::$properties_changes_restrict = true;
 				return true;
 			}catch (\Exception $e){
-				self::$properties_changes_restrict = true;
 				if($relationFields){
 					$store->rollback();
 				}
 				throw $e;
+			}finally{
+				self::$properties_changes_restrict_level--;
 			}
+		}
+
+		/**
+		 *
+		 */
+		public static function startAllChangesLevel(){
+			self::$properties_changes_restrict_level++;
+		}
+
+		/**
+		 *
+		 */
+		public static function stopAllChangesLevel(){
+			self::$properties_changes_restrict_level--;
+		}
+
+		/**
+		 *
+		 */
+		public static function disableAllChangesMode(){
+			self::$properties_changes_restrict_level = 0;
 		}
 
 		/**
@@ -892,13 +995,15 @@ namespace Jungle\Data {
 						$name = $field->getName();
 						$data = $this->_schema->valueAccessSet($data, $name, $this->_getFrontProperty($name));
 					}
-					if(!$this->_schema->storageUpdateById($data, $idValue)){
-						if($relationFields){
-							$store->rollback();
+					if($data){
+						if(!$this->_schema->storageUpdateById($data, $idValue)){
+							if($relationFields){
+								$store->rollback();
+							}
+							return false;
 						}
-						return false;
+						$this->_afterStorageUpdate($data, $pkName,$idValue, $changed);
 					}
-					$this->_afterStorageUpdate($data, $pkName,$idValue, $changed);
 				}
 
 				if($relationFields){
@@ -944,7 +1049,7 @@ namespace Jungle\Data {
 				if($relationFields){
 					$store->begin();
 					foreach($relationFields as $name => $field){
-						$field->beforeRecordRemove($this);
+						$field->beforeRecordDelete($this);
 					}
 				}
 				$pkField = $this->_schema->getPrimaryField();
@@ -959,7 +1064,7 @@ namespace Jungle\Data {
 				$this->_afterStorageRemove();
 				if($relationFields){
 					foreach($relationFields as $name => $field){
-						$field->afterRecordRemove($this);
+						$field->afterRecordDelete($this);
 					}
 					$store->commit();
 				}
@@ -979,11 +1084,27 @@ namespace Jungle\Data {
 
 		protected function onSave(){ }
 
-		protected function beforeCreate(){ }
+		protected function beforeCreate(){
+			foreach($this->_schema->getFields() as $field){
+				if($field->hasOption('on_create')){
+					call_user_func($field->getOption('on_create'),$this,$field);
+				}
+			}
+		}
 
 		protected function onCreate(){ }
 
-		protected function beforeUpdate(){ }
+		/**
+		 * @param array $changed
+		 * @return bool
+		 */
+		protected function beforeUpdate(array $changed){
+			foreach($this->_schema->getFields($changed) as $field){
+				if(!$field->getOption('changeable', true)){
+					return false;
+				}
+			}
+		}
 
 		protected function onUpdate(){ }
 

@@ -1,0 +1,111 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title><?=$this->pagetitle?> | Ω SecretNote </title>
+	<base href="<?=$this->process->linkMain()?>"/>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<link rel="icon" href="/test/favicon.jpg" type="image/x-icon" />
+	<link href="test/style.css" rel="stylesheet" type="text/css" />
+	<script type="text/javascript" src="test/js/cufon-yui.js"></script>
+	<script type="text/javascript" src="test/js/arial.js"></script>
+	<script type="text/javascript" src="test/js/cuf_run.js"></script>
+	<script type="text/javascript" src="test/js/jquery-1.3.2.min.js"></script>
+	<script type="text/javascript" src="test/js/radius.js"></script>
+</head>
+<body>
+<!-- START PAGE SOURCE -->
+<div class="main">
+	<div class="header">
+		<div class="header_resize">
+			<div class="menu_nav">
+				<ul>
+					<li class="active"><a href="/">Недвижимость</a></li>
+					<li ><a href="/">Продать</a></li>
+					<li ><a href="/">Правовые вопросы</a></li>
+					<!--li><a href="<?= $this->process->linkBy('user-create')?>">Создать пользователя</a></li-->
+					<li><?if(($u = $this->services->account->getUser())):?><span style="color:darkgreen;"><?=$u->username?></span> <a href="<?=$this->process->linkBy('user-logout')?>">Выйти</a><? else: ?><a href="<?= $this->process->linkBy('user-login')?>">Войти</a><?endif;?></li>
+				</ul>
+			</div>
+			<div class="logo">
+				<h1><a href="<?=$this->process->linkMain()?>">Гринвей</a> <small style="font-size:18px;">Эффективный агент</small></h1>
+			</div>
+			<div class="clr"></div>
+		</div>
+	</div>
+	<div class="content">
+		<div class="content_resize">
+			<div class="mainbar">
+				<?=$this->content;?>
+			</div>
+			<div class="sidebar">
+				<?
+				$currentId = null;
+				if((($u = $this->user) || ($u = $this->process->user)) && $u instanceof \App\Model\User){
+					$currentId = $u->id;
+				}
+				$users = \App\Model\User::find();
+				$users->setSorter(['username' => 'ASC']);
+				if($users):?>
+				<div class="gadget">
+					<h2 class="star"><span>Пользователи</span></h2>
+					<div class="clr"></div>
+					<ul class="ex_menu">
+						<? foreach($users as $user):?>
+							<li>
+								<a<?if($currentId===$user->id):?> style="color:dodgerblue;"<? endif;?> href="<?=$this->process->linkBy('user-short',$user)?>">
+									<?=$user->username?>
+								</a>
+							</li>
+						<? endforeach; ?>
+					</ul>
+				</div>
+				<? endif; ?>
+			</div>
+			<div class="clr"></div>
+		</div>
+	</div>
+	<div class="fbg">
+		<div class="fbg_resize">
+			<div class="col c1">
+				<h2><span>Image Gallery</span></h2>
+				<a href="#"><img src="test/images/pix1.jpg" width="58" height="58" alt="" /></a>
+				<a href="#"><img src="test/images/pix2.jpg" width="58" height="58" alt="" /></a>
+				<a href="#"><img src="test/images/pix3.jpg" width="58" height="58" alt="" /></a>
+				<a href="#"><img src="test/images/pix4.jpg" width="58" height="58" alt="" /></a>
+				<a href="#"><img src="test/images/pix5.jpg" width="58" height="58" alt="" /></a>
+				<a href="#"><img src="test/images/pix6.jpg" width="58" height="58" alt="" /></a>
+			</div>
+			<div class="col c2">
+				<h2><span>Lorem Ipsum</span></h2>
+				<p>Lorem ipsum dolor<br />
+					Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec libero. Suspendisse bibendum. Cras id urna. <a href="#">Morbi tincidunt, orci ac convallis aliquam</a>, lectus turpis varius lorem, eu posuere nunc justo tempus leo. Donec mattis, purus nec placerat bibendum, dui pede condimentum odio, ac blandit ante orci ut diam.</p>
+			</div>
+			<div class="col c3">
+				<h2><span>Contact</span></h2>
+				<p>Praesent dapibus, neque id cursus faucibus, tortor neque egestas augue.</p>
+				<p><a href="#">support@yoursite.com</a></p>
+				<p>+1 (123) 444-5677<br />
+					+1 (123) 444-5678</p>
+				<p>Address: 123 TemplateAccess Rd1</p>
+			</div>
+			<div class="clr"></div>
+		</div>
+	</div>
+	<div class="footer">
+		<div class="footer_resize">
+			<p class="lf">Copyright &copy; 2010 <a href="#">SiteName</a> - All Rights Reserved</p>
+			<p class="rf"><a href="http://www.free-css.com/">Free CSS Templates</a> by <a href="http://www.coolwebtemplates.net/">Cool Website Templates</a></p>
+			<div class="clr"></div>
+		</div>
+	</div>
+</div>
+<?
+global $t;
+echo '<div style="position:fixed;bottom:0;right:0;min-height:30px;min-width:130px;padding:15px;border-radius:15px 0 0 0;background:#3F3F3F;color:coral;">';
+	echo sprintf('%.4F',microtime(true) - $t);
+	//echo '<pre>',print_r($app->dispatcher->getModule('index')->getControllerNames(), 1),'</pre>';
+	echo '</div>';
+?>
+<!-- END PAGE SOURCE -->
+</body>
+</html>

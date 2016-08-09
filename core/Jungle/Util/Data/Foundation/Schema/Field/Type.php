@@ -15,20 +15,24 @@ namespace Jungle\Util\Data\Foundation\Schema\Field {
 	 */
 	class Type{
 
-		/**
-		 * @param $name
-		 * @return bool
-		 */
-		public function isName($name){
-			return in_array($name,$this->name);
-		}
-
 		/** @var  string[]  */
-		protected $name = [];
+		protected $aliases = [];
 
 		/** @var  string */
 		protected $vartype; // string, integer, double, boolean, object, array, function
 
+		public function __construct($aliases){
+			if(!is_array($aliases))$aliases = [$aliases];
+			$this->aliases = $aliases;
+		}
+
+		/**
+		 * @param $alias
+		 * @return bool
+		 */
+		public function isType($alias){
+			return in_array($alias,$this->aliases);
+		}
 
 		public function verify($native_value){
 
@@ -39,7 +43,7 @@ namespace Jungle\Util\Data\Foundation\Schema\Field {
 		}
 
 		public function evaluate($original_value){
-			
+
 		}
 
 	}

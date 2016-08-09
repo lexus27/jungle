@@ -24,7 +24,6 @@ namespace Jungle\Data\Record\Head {
 	 * @package modelX
 	 *
 	 * @property Field[]    $fields
-	 * @method Field        getField($key)
 	 * @method Field        getPrimaryField()
 	 *
 	 */
@@ -32,6 +31,9 @@ namespace Jungle\Data\Record\Head {
 
 		/** @var  string */
 		protected $name;
+
+		/** @var  Schema */
+		protected $ancestor;
 
 		/** @var  string */
 		protected $source;
@@ -44,9 +46,6 @@ namespace Jungle\Data\Record\Head {
 
 		/** @var  SchemaManager */
 		protected $schema_manager;
-
-		/** @var  array property relation names to One|Belongs related record */
-		protected $auto_load_relations = [];
 
 		/** @var  Collection */
 		protected $collection;
@@ -66,17 +65,17 @@ namespace Jungle\Data\Record\Head {
 		/** @var  bool  */
 		protected $dynamic_update = true;
 
-		/**
-		 * Universal instantiate class by class name from value specified in field
-		 * @var null|string
-		 */
-		protected $dynamic_record_class_field;
-
-		/** @var  Record[] */
-		protected $flyweight_class_records = [];
+		/** @var  Record */
+		protected $flyweight_record;
 
 		/** @var  string */
-		protected $base_class_name = DataMap::class;
+		protected $record_classname = DataMap::class;
+
+		/**
+		 * Universal instantiate class by classname from value specified in field
+		 * @var null|string
+		 */
+		protected $derivative_field;
 
 		/**
 		 * Schema constructor.
@@ -86,34 +85,15 @@ namespace Jungle\Data\Record\Head {
 			$this->setName($name);
 		}
 
-
 		/**
-		 * @param $name
 		 * @param Record $record
 		 * @return $this
 		 */
-		public function setFlyweight($name, Record $record){
-			$this->flyweight_class_records[$name] = $record;
+		public function setFlyweight(Record $record){
+			$this->flyweight_record = $record;
 			return $this;
 		}
 
-		/**
-		 * @param array|null $fieldNames
-		 * @return Field[]
-		 */
-		public function getFields(array $fieldNames = null){
-			if($fieldNames!==null){
-				$fs = [];
-				foreach($this->fields as $f){
-					$i = array_search($f->getName(),$fieldNames,true);
-					if($i !==false){
-						$fs[$i] = $f;
-					}
-				}
-				return $fs;
-			}
-			return parent::getFields();
-		}
 
 		/**
 		 * @param Collection $collection
@@ -129,7 +109,13 @@ namespace Jungle\Data\Record\Head {
 		 */
 		public function getCollection(){
 			if(!$this->collection){
-				$this->collection = new Collection();
+				if($this->ancestor){
+					$this->collection = $this->ancestor->collection->extend([
+						$this->getDerivativeField() => $this->name
+					]);
+				}else{
+					$this->collection = new Collection();
+				}
 				$this->collection->setSchema($this);
 			}
 			return $this->collection;
@@ -155,9 +141,6 @@ namespace Jungle\Data\Record\Head {
 		 *
 		 */
 		protected function _initCache(){
-			$names_fill = $this->_names===null;
-			if($names_fill) $this->_names = [];
-
 			$original_names_fill = $this->original_names===null;
 			if($original_names_fill) $this->original_names = [];
 
@@ -170,11 +153,8 @@ namespace Jungle\Data\Record\Head {
 			$private_fill = $this->private_names === null;
 			if($private_fill) $this->private_names = [];
 
-			if($enumerable_fill || $names_fill || $original_names_fill || $readonly_fill || $private_fill){
-				foreach($this->fields as $field){
-					if($names_fill){
-						$this->_names[] = $field->getName();
-					}
+			if($enumerable_fill || $original_names_fill || $readonly_fill || $private_fill){
+				foreach($this->getFields() as $field){
 					if($enumerable_fill && $field->isEnumerable()){
 						$this->enumerable_names[] = $field->getName();
 					}
@@ -182,10 +162,10 @@ namespace Jungle\Data\Record\Head {
 						$this->original_names[] = $field->getOriginalKey();
 					}
 					if($private_fill && $field->isPrivate()){
-						$this->original_names[] = $field->getName();
+						$this->private_names[] = $field->getName();
 					}
 					if($readonly_fill && $field->isReadonly()){
-						$this->original_names[] = $field->getName();
+						$this->readonly_names[] = $field->getName();
 					}
 				}
 			}
@@ -216,6 +196,8 @@ namespace Jungle\Data\Record\Head {
 		}
 
 
+
+
 		/**
 		 * @param $field
 		 */
@@ -239,6 +221,9 @@ namespace Jungle\Data\Record\Head {
 		 * @return $this
 		 */
 		public function setSource($source){
+			if($this->ancestor){
+				$this->ancestor->setSource($source);
+			}
 			$this->source = $source;
 			return $this;
 		}
@@ -275,6 +260,9 @@ namespace Jungle\Data\Record\Head {
 		 * @return bool
 		 */
 		public function isDynamicUpdate(){
+			if($this->ancestor && $this->dynamic_update === null){
+				return $this->ancestor->isDynamicUpdate();
+			}
 			return $this->dynamic_update;
 		}
 
@@ -283,39 +271,42 @@ namespace Jungle\Data\Record\Head {
 		 * @param $className
 		 * @return $this
 		 */
-		public function setBaseClassName($className){
-			$this->base_class_name = $className;
+		public function setRecordClassname($className){
+			$this->record_classname = $className;
 			return $this;
 		}
 
 		/**
 		 * @return string
 		 */
-		public function getBaseClassName(){
-			return $this->base_class_name;
+		public function getRecordClassname(){
+			return $this->record_classname;
 		}
 
 		/**
 		 * @return bool
 		 */
-		public function isDynamicRecordClass(){
-			return !!$this->dynamic_record_class_field;
+		public function isDynamic(){
+			return !!$this->derivative_field;
 		}
 
 		/**
 		 * @param $field_name
 		 * @return $this
 		 */
-		public function setDynamicRecordClassField($field_name){
-			$this->dynamic_record_class_field = $field_name;
+		public function setDerivativeField($field_name){
+			$this->derivative_field = $field_name;
 			return $this;
 		}
 		
 		/**
 		 * @return null|string
 		 */
-		public function getDynamicRecordClassField(){
-			return $this->dynamic_record_class_field;
+		public function getDerivativeField(){
+			if($this->ancestor && $this->derivative_field === null){
+				return $this->ancestor->getDerivativeField();
+			}
+			return $this->derivative_field;
 		}
 
 		/**
@@ -323,6 +314,9 @@ namespace Jungle\Data\Record\Head {
 		 * @return $this
 		 */
 		public function setStorage(StorageInterface $storage){
+			if($this->ancestor){
+				$this->ancestor->setStorage($storage);
+			}
 			$this->storage = $storage;
 			return $this;
 		}
@@ -331,6 +325,9 @@ namespace Jungle\Data\Record\Head {
 		 * @return StorageInterface
 		 */
 		public function getStorage(){
+			if($this->ancestor && $this->storage === null){
+				return $this->ancestor->getStorage();
+			}
 			if(!$this->storage){
 				throw new \LogicException('Storage is not defined!');
 			}
@@ -344,6 +341,9 @@ namespace Jungle\Data\Record\Head {
 		public function getWriteStorage(Record $record = null){
 			if($record && ($storage = $record->getWriteStorage())){
 				return $storage;
+			}
+			if($this->ancestor && $this->storage === null){
+				return $this->ancestor->getWriteStorage($record);
 			}
 			return $this->storage;
 		}
@@ -361,7 +361,156 @@ namespace Jungle\Data\Record\Head {
 		 * @return SchemaManager
 		 */
 		public function getSchemaManager(){
+			if($this->ancestor && $this->schema_manager === null){
+				return $this->ancestor->getSchemaManager();
+			}
 			return $this->schema_manager;
+		}
+
+
+		/**
+		 * @param Relation $field
+		 * @return Field\Relation[]
+		 */
+		public function getOppositeRelationsFor(Relation $field){
+			$fields = [];
+			foreach($this->getFields() as $f){
+				if($f instanceof Relation && $field->isOppositeRelation($f, false)){
+					$fields[] = $f;
+				}
+			}
+			return $fields;
+		}
+
+		/**
+		 * @param Relation $field
+		 * @return Relation[]
+		 */
+		public function getIntermediateRelationsFor(Relation $field){
+			$fields = [];
+			foreach($this->getFields() as $f){
+				if($f instanceof Relation && $field->isIntermediateRelation($f)){
+					$fields[] = $f;
+				}
+			}
+			return $fields;
+		}
+
+		/**
+		 * @param Record $record
+		 */
+		public function markInitialized(Record $record){
+			if($this->flyweight_record){
+				if($this->flyweight_record === $record){
+					$this->flyweight_record = null;
+				}
+			}
+		}
+
+		/**
+		 * @param null $data
+		 * @return string
+		 * @throws \Exception
+		 */
+		protected function _matchSchemaName($data = null){
+			if($this->ancestor){
+				return $this->ancestor->_matchSchemaName($data);
+			}
+			if($data && $this->derivative_field){
+				$schemaName = $this->valueAccessGet($data,$this->derivative_field);
+				if($schemaName !== null){
+					return $schemaName;
+				}
+			}
+			return $this->record_classname;
+		}
+
+
+		/**
+		 * @param $className
+		 * @return DataMap
+		 */
+		protected function _instantiate($className){
+			return new $className($this);
+		}
+
+		/**
+		 * @param $className
+		 * @return bool
+		 */
+		public function checkRecordClassname($className){
+			return is_a($className,$this->record_classname,true);
+		}
+
+
+		/**
+		 * @param Schema|string $schema
+		 * @return bool
+		 */
+		public function isDerivativeFrom($schema){
+			if($schema instanceof Schema){
+				$schema = $schema->getName();
+			}
+			if($schema === $this->getName()) return true;
+			if($this->ancestor){
+				$o = $this;
+				do{
+					if($o->name === $schema){
+						return true;
+					}
+				}while(($o = $o->ancestor));
+			}
+			return false;
+		}
+
+		/**
+		 * @param $data
+		 * @param int $operationMade
+		 * @param bool $withoutMatch
+		 * @return Record
+		 * @throws \Exception
+		 */
+		public function initializeRecord($data = null, $operationMade = null, $withoutMatch = false){
+
+			if($withoutMatch){
+				$schemaName = $this->name;
+			}else{
+				$schemaName = $this->_matchSchemaName($data);
+			}
+
+			if($withoutMatch || $this->name === $schemaName){
+				if($data === null){
+					if($this->flyweight_record){
+						$record = $this->flyweight_record;
+						$record->markRecordInitialized();
+					}else{
+						$record = $this->_instantiate($schemaName);
+					}
+					$record->setOperationMade(Record::OP_CREATE);
+					$record->setOriginalData(null);
+					return $record;
+				}else{
+					if($this->flyweight_record){
+						$record = $this->flyweight_record;
+					}else{
+						$record = $this->_instantiate($schemaName);
+						$record->toFlyweight();
+						$this->flyweight_record = $record;
+					}
+					$record->setOriginalData($data);
+					$record->setOperationMade($operationMade?:Record::OP_UPDATE);
+					return $record;
+				}
+			}else{
+				$schema = $this->getSchemaManager()->getSchema($schemaName);
+				if(!$schema){
+					throw new \Exception('Schema "'.$schemaName.'" not found for initialize record');
+				}
+				if(!$schema->isDerivativeFrom($this)){
+					throw new \Exception('Schema "'.$schemaName.'" is not derivative from "'.$this->name.'"');
+				}
+				return $schema->initializeRecord($data, $operationMade,  true  );
+			}
 		}
 
 
@@ -372,9 +521,11 @@ namespace Jungle\Data\Record\Head {
 		 * @return int
 		 */
 		public function count($condition = null, $limit = null, $offset = null){
-			$store = $this->getStorage();
-			$count = $store->count($condition,$offset,$limit);
-			return $count;
+			$collection = $this->getCollection();
+			$collection->setSyncLevel(Collection::SYNC_STORE);
+			$affected = $this->getCollection()->count( $condition, $offset, $limit);
+			$collection->setSyncLevel();
+			return $affected;
 		}
 
 
@@ -386,7 +537,7 @@ namespace Jungle\Data\Record\Head {
 		 * @return Collection
 		 */
 		public function load($condition = null, $limit = null, $offset = null, $orderBy = null){
-			return $this->getCollection()->extend($condition, $limit,$offset,$orderBy);
+			return $this->getCollection()->extend($condition, $limit, $offset, $orderBy);
 		}
 
 		/**
@@ -458,6 +609,18 @@ namespace Jungle\Data\Record\Head {
 			return $storage->create($data,$source);
 		}
 
+
+		/**
+		 * @param null $condition
+		 * @param null $offset
+		 * @param null $limit
+		 * @param array $options
+		 * @return int
+		 */
+		public function storageCount($condition = null, $offset = null, $limit = null, array $options = null){
+			return $this->getStorage()->count($condition,$this->getSource(), $offset, Collection::isInfinityLimit($limit)?null:$limit, $options);
+		}
+
 		/**
 		 * @param $condition
 		 * @param null $limit
@@ -489,18 +652,11 @@ namespace Jungle\Data\Record\Head {
 		 * @return int
 		 */
 		public function storageUpdate($data, $condition){
-			$normalizedData = [];
-			foreach($this->fields as $field){
-				$key = $field->getName();
-				if(array_key_exists($field->getName(),$data)){
-					$normalizedData[$field->getOriginalKey()] = $data[$key];
-				}
-			}
 			if($condition){
 				$condition = $this->normalizeCondition($condition);
 			}
 			$store = $this->getWriteStorage();
-			return $store->update($normalizedData,$condition,$this->getWriteSource());
+			return $store->update($data,$condition,$this->getWriteSource());
 		}
 
 		/**
@@ -589,7 +745,6 @@ namespace Jungle\Data\Record\Head {
 				'self' => $this,
 				'intermediate' => $intermediateSchema
 			]);
-
 
 			if($orderBy){
 				$o = [];
@@ -731,7 +886,7 @@ namespace Jungle\Data\Record\Head {
 		 * @return bool
 		 */
 		public function storageUpdateById($data, $id){
-			return !!$this->storageUpdate($data,[$this->getPrimaryField()->getName(),'=',$id]);
+			return !!$this->storageUpdate($data,[[$this->getPrimaryField()->getName(),'=',$id]]);
 		}
 
 		/**
@@ -741,126 +896,6 @@ namespace Jungle\Data\Record\Head {
 		public function storageRemoveById($id){
 			return !!$this->storageRemove([$this->getPrimaryField()->getName(),'=',$id]);
 		}
-
-
-
-
-
-
-
-
-
-		/**
-		 * @param Relation $field
-		 * @return Relation[]
-		 */
-		public function getOppositeRelationsFor(Relation $field){
-			$fields = [];
-			foreach($this->fields as $f){
-				if($f instanceof Relation && Relation::isOppositeRelations($f,$field)){
-					$fields[] = $f;
-				}
-			}
-			return $fields;
-		}
-
-		/**
-		 * @param Relation $field
-		 * @return Relation[]
-		 */
-		public function getIntermediateRelationsFor(Relation $field){
-			$fields = [];
-			foreach($this->fields as $f){
-				if($f instanceof Relation && Relation::isIntermediateRelations($f,$field)){
-					$fields[] = $f;
-				}
-			}
-			return $fields;
-		}
-
-		/**
-		 * @param Record $record
-		 */
-		public function markInitialized(Record $record){
-			$className = get_class($record);
-			if(isset($this->flyweight_class_records[$className])){
-				if($this->flyweight_class_records[$className] === $record){
-					unset($this->flyweight_class_records[$className]);
-				}
-			}
-		}
-
-		/**
-		 * @param null $data
-		 * @return string
-		 * @throws \Exception
-		 */
-		protected function _matchClassName($data = null){
-			if($data && $this->dynamic_record_class_field){
-				$className = $this->valueAccessGet($data,$this->dynamic_record_class_field);
-				if($className !== null){
-					return $className;
-				}
-			}
-			return $this->base_class_name;
-		}
-
-
-		/**
-		 * @param $className
-		 * @return DataMap
-		 */
-		protected function _instantiate($className){
-			return new $className($this);
-		}
-
-		/**
-		 * @param $className
-		 * @return bool
-		 */
-		public function isDerivative($className){
-			return is_a($className,$this->base_class_name,true);
-		}
-
-		/**
-		 * @param $data
-		 * @param int $operationMade
-		 * @return Record
-		 * @throws \Exception
-		 */
-		public function initializeRecord($data = null, $operationMade = null){
-			$className = $this->_matchClassName($data);
-			if(!class_exists($className)){
-				throw new \Exception('Class "'.$className.'" not found in "'.$this->name.'"');
-			}
-			if(!$this->isDerivative($className)){
-				throw new \Exception('Class "'.$className.'" is not derivative in "'.$this->name.'"');
-			}
-			if($data === null){
-				if(isset($this->flyweight_class_records[$className])){
-					$record = $this->flyweight_class_records[$className];
-					$record->markRecordInitialized();
-				}else{
-					$record = $this->_instantiate($className);
-				}
-				$record->setOperationMade(Record::OP_CREATE);
-				$record->setOriginalData(null);
-				return $record;
-			}
-			if(!isset($this->flyweight_class_records[$className])){
-				$record = $this->_instantiate($className);
-				$record->toFlyweight();
-				$this->flyweight_class_records[$className] = $record;
-			}else{
-				$record = $this->flyweight_class_records[$className];
-			}
-			$record->setOriginalData($data);
-			$record->setOperationMade($operationMade?:Record::OP_UPDATE);
-			return $record;
-		}
-
-
-
 
 
 
@@ -1004,6 +1039,366 @@ namespace Jungle\Data\Record\Head {
 			return $condition;
 		}
 
+		/**
+		 * @param $name
+		 * @return Field|null
+		 */
+		public function getField($name){
+			if(!($field = parent::getField($name)) && $this->ancestor){
+				return $this->ancestor->getField($name);
+			}
+			return $field;
+		}
+
+		/**
+		 * @return array
+		 */
+		public function getFieldNames(){
+			if(!$this->ancestor){
+				return array_keys($this->field_indexes);
+			}
+			$names = $this->ancestor->getFieldNames();
+			if($this->field_indexes){
+				foreach(array_keys($this->field_indexes) as $name){
+					if(!in_array($name,$names, true)){
+						$names[] = $name;
+					}
+				}
+			}
+			return $names;
+		}
+
+		/**
+		 * @param array|null $fieldNames
+		 * @return Field[]
+		 */
+		public function getFields(array $fieldNames = null){
+			if($fieldNames !== null){
+				$fields = [];
+				foreach($fieldNames as $name){
+					$field = $this->getField($name);
+					if($field){
+						$fields[$this->getFieldIndex($name)] = $field;
+					}
+				}
+				return $fields;
+			}else{
+				$fieldNames = $this->getFieldNames();
+				$fields = [];
+				foreach($fieldNames as $i => $name){
+					$field = $this->getField($name);
+					if($field){
+						$fields[$i] = $field;
+					}
+				}
+				return $fields;
+			}
+		}
+
+		/**
+		 * @param Schema $ancestor
+		 * @return $this
+		 */
+		public function setAncestor(Schema $ancestor){
+			$this->ancestor = $ancestor;
+			return $this;
+		}
+
+		/**
+		 * @return Schema
+		 */
+		public function getAncestor(){
+			return $this->ancestor;
+		}
+
+		/**
+		 * @return array
+		 */
+		public function getDerivedNames(){
+			$o = $this;
+			$names = [];
+			do{
+				$names[] = $o->name;
+			}while(($o = $o->ancestor));
+			return $names;
+		}
+
+		/**
+		 * @return bool
+		 */
+		public function isRoot(){
+			return !$this->ancestor;
+		}
+
+		/**
+		 * @param $name
+		 * @return static
+		 */
+		public function extend($name){
+			$schema = new static($name);
+			foreach($this->fields as $i => $field){
+				$nf = clone $field;
+				$nf->setSchema($schema);
+				$schema->fields[$i] = $nf;
+			}
+			$schema->setAncestor($this);
+			return $schema;
+		}
+
+
+
+		/**
+		 * @param $name
+		 * @param array $definition
+		 * @return \Jungle\Data\Record\Head\Field
+		 */
+		public function field($name, $definition = null){
+			if(is_array($definition)){
+				$c = array_replace([
+					'type'      => 'string',
+				], $definition);
+			}elseif($definition){
+				$c = [
+					'type' => $definition
+				];
+			}else{
+				$c = [];
+			}
+
+			$field = $this->getField($name);
+			if(!$field){
+				$field = new Field($name,isset($c['type'])?$c['type']:'string');
+				$field->setSchema($this);
+			}
+			$field->define($c);
+			$this->addField($field);
+			return $field;
+		}
+
+		/**
+		 * @param $name
+		 * @param array $definition
+		 * @return Relation
+		 * @throws Field\RelationError
+		 */
+		public function relation($name, array $definition){
+			$field = $this->getField($name);
+			if(!$field){
+				$field = new Relation($name);
+				$field->setSchema($this);
+			}
+			$field->define($definition);
+			$this->addField($field);
+			return $field;
+		}
+
+		/**
+		 * @param $name
+		 * @param $referencedSchema
+		 * @param $fields
+		 * @param $referencedFields
+		 * @param array|null $options
+		 * @return Relation
+		 */
+		public function belongsTo($name, $referencedSchema, $fields, $referencedFields, array $options = null){
+			return $this->relation($name, array_replace([
+				'type' => Relation::TYPE_BELONGS,
+				'fields' => $fields,
+				'referenced_fields' => $referencedFields,
+				'referenced_schema' => $referencedSchema,
+			], (array)$options));
+		}
+
+		/**
+		 * @param $name
+		 * @param $referencedSchema
+		 * @param $fields
+		 * @param $referencedFields
+		 * @param array|null $options
+		 * @return Relation
+		 */
+		public function hasOne($name, $referencedSchema, $fields, $referencedFields, array $options = null){
+			return $this->relation($name, array_replace([
+				'type' => Relation::TYPE_ONE,
+				'fields' => $fields,
+				'referenced_fields' => $referencedFields,
+				'referenced_schema' => $referencedSchema,
+			], (array)$options));
+		}
+
+		/**
+		 * @param $name
+		 * @param $referencedSchema
+		 * @param $fields
+		 * @param $referencedFields
+		 * @param array|null $options
+		 * @return Relation
+		 */
+		public function hasMany($name, $referencedSchema, $fields, $referencedFields, array $options = null){
+			return $this->relation($name, array_replace([
+				'type' => Relation::TYPE_MANY,
+				'fields' => $fields,
+				'referenced_fields' => $referencedFields,
+				'referenced_schema' => $referencedSchema,
+			], (array)$options));
+		}
+
+		/**
+		 * @param $name
+		 * @param $intermediateSchema
+		 * @param $referencedSchema
+		 * @param $fields
+		 * @param $intermediateFields
+		 * @param $intermediateReferencedFields
+		 * @param $referencedFields
+		 * @param array|null $options
+		 * @return Relation
+		 */
+		public function hasManyToMany($name,
+			$intermediateSchema,$referencedSchema, $fields,
+			$intermediateFields, $intermediateReferencedFields, $referencedFields,
+			array $options = null
+		){
+			return $this->relation($name, array_replace([
+				'type' => Relation::TYPE_MANY_THROUGH,
+				'fields' => $fields,
+				'intermediate_fields' => $intermediateFields,
+				'intermediate_referenced_fields' => $intermediateReferencedFields,
+				'intermediate_schema' => $intermediateSchema,
+				'referenced_fields' => $referencedFields,
+				'referenced_schema' => $referencedSchema,
+			], (array)$options));
+		}
+
+		/**
+		 * @param $name
+		 * @param $schemafield
+		 * @param $fields
+		 * @param null $defaultReferencedFields
+		 * @param array $allowedSchemaNames
+		 * @param array $schemasReferencedFields
+		 * @param array|null $options
+		 * @return Relation
+		 */
+		public function belongsToDynamic($name,
+			$schemafield, $fields, $defaultReferencedFields = null,
+			$allowedSchemaNames = [],
+			$schemasReferencedFields = [],
+			array $options = null
+		){
+			return $this->relation($name,array_replace_recursive([
+				'type' => Relation::TYPE_BELONGS,
+				'fields' => $fields,
+				'referenced_fields' => $defaultReferencedFields,
+				'dynamic' => true,
+				'dynamic_config' => [
+					'schemafield' => $schemafield,
+					'schemas' => $allowedSchemaNames,
+					'schemas_fields' => $schemasReferencedFields,
+				]
+			], (array)$options));
+		}
+
+		/**
+		 * @param $name
+		 * @param $referencedSchema
+		 * @param $fields
+		 * @param $referencedFields
+		 * @param $referencedSchemafield
+		 * @param array $referencedOppositeRelations
+		 * @param array|null $options
+		 * @return mixed
+		 */
+		public function hasOneDynamic($name,
+			$referencedSchema,
+			$fields,
+			$referencedFields,
+			$referencedSchemafield, $referencedOppositeRelations = [],
+			array $options = null
+		){
+			return $this->define(array_replace_recursive([
+				'type' => self::TYPE_ONE,
+				'fields' => $fields,
+				'referenced_fields' => $referencedFields,
+				'referenced_schema' => $referencedSchema,
+				'dynamic' => true,
+				'dynamic_config' => [
+					'referenced_schemafield' => $referencedSchemafield,
+					'referenced_opposites' => $referencedOppositeRelations
+				]
+			], (array)$options));
+		}
+
+		public function hasManyDynamic($name,
+			$referencedSchema,
+			$fields,
+			$referencedFields,
+			$referencedSchemafield,
+			$referencedOppositeRelations = [],
+			array $options = null
+		){
+			return $this->relation($name, array_replace_recursive([
+				'type' => Relation::TYPE_MANY,
+				'fields' => $fields,
+				'referenced_fields' => $referencedFields,
+				'referenced_schema' => $referencedSchema,
+				'dynamic' => true,
+				'dynamic_config' => [
+					'referenced_schemafield' => $referencedSchemafield,
+					'referenced_opposites' => $referencedOppositeRelations
+				]
+			], (array)$options));
+		}
+
+
+
+		// TODO get related method
+		// TODO re define get|setProperty method
+
+		/**
+		 * @param $name
+		 * @param array $options
+		 */
+		public function specifyVirtualField($name, array $options){
+
+		}
+
+		/**
+		 * @param $name
+		 * @param $setterMethodName
+		 */
+		public function specifySetterFor($name, $setterMethodName){
+
+		}
+
+		/**
+		 * @param $name
+		 * @param $getterMethodName
+		 */
+		public function specifyGetterFor($name, $getterMethodName){
+
+		}
+
+		/**
+		 * @param $singleRelationName
+		 */
+		public function useCompositeFetchingWith($singleRelationName){
+
+		}
+
+		/**
+		 * @param callable $validator
+		 */
+		public function addValidator(callable $validator){
+
+		}
+
+		/**
+		 * @param $behaviour
+		 */
+		public function addBehaviour($behaviour){
+
+		}
 
 	}
 

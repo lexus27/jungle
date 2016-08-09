@@ -117,21 +117,21 @@ interface ClientInterface{
 	public function getBrowser();
 
 }
-
-/**
- * Interface BrowserInterface
- */
-interface BrowserInterface{
-
-	public function getName();
-
-	public function getEngine();
-
-	public function getVersion();
-
-	public function getOperationSystem();
-
-}
+//
+///**
+// * Interface BrowserInterface
+// */
+//interface BrowserInterface{
+//
+//	public function getName();
+//
+//	public function getEngine();
+//
+//	public function getVersion();
+//
+//	public function getOperationSystem();
+//
+//}
 /**
  * Ответ
  * Interface ResponseInterface

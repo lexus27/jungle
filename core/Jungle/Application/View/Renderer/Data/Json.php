@@ -9,6 +9,7 @@
  */
 namespace Jungle\Application\View\Renderer\Data {
 	
+	use Jungle\Application\Dispatcher\Controller\ProcessInterface;
 	use Jungle\Application\View\Renderer\Data;
 
 	/**
@@ -17,12 +18,21 @@ namespace Jungle\Application\View\Renderer\Data {
 	 */
 	class Json extends Data{
 
+		/** @var string  */
+		protected $type = 'json';
+
+		/** @var string  */
+		protected $mime_type = 'application/json';
+
 		/**
 		 * @param $data
 		 * @return string
 		 */
 		public function convert($data){
-			return json_encode($data);
+			if( ($data = json_encode($data)) === false){
+				throw new \LogicException(json_last_error_msg());
+			}
+			return $data;
 		}
 
 	}

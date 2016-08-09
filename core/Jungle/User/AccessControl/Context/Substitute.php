@@ -21,7 +21,7 @@ namespace Jungle\User\AccessControl\Context {
 	 * Class Substitute
 	 * @package Jungle\User\AccessControl\Context
 	 */
-	class Substitute implements ISubstitute{
+	class Substitute implements SubstituteInterface{
 
 		/**
 		 * @var string class Name
@@ -168,17 +168,17 @@ namespace Jungle\User\AccessControl\Context {
 
 
 		/**
-		 * @param $info_key
-		 * @param $value
+		 * @param $info_key array range ['class','type','length','count' ]
+		 * @param $value SubstituteInterface|mixed
 		 * @return int|null|string
 		 */
 		public static function getInfoFor($info_key, $value){
-			if($value instanceof Substitute){
+			if($value instanceof SubstituteInterface){
 				switch($info_key){
-					case 'class':   return $value->getClass();
-					case 'type':    return $value->getType();
+					case 'class' :   return $value->getClass();
+					case 'type'  :    return $value->getType();
 					case 'length':  return $value->getLength();
-					case 'count':   return $value->getCount();
+					case 'count' :   return $value->getCount();
 				}
 			}else{
 				switch($info_key){

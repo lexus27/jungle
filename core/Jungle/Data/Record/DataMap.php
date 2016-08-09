@@ -83,9 +83,9 @@ namespace Jungle\Data\Record {
 		 * @param $name
 		 * @return mixed
 		 */
-		protected function _getFrontProperty($name){
+		protected function &_getFrontProperty($name){
 			if(!array_key_exists($name, $this->_properties)){
-				return $this->_properties[$name] = $this->_getProcessed($name);
+				$this->_properties[$name] = $this->_getProcessed($name);
 			}
 			return $this->_properties[$name];
 		}

@@ -13,9 +13,9 @@ namespace Jungle\Util\Data\Foundation\Condition {
 
 	/**
 	 * Class Operator
-	 * @package Jungle\Code\LogicConstruction
+	 * @package Jungle\ExoCode\LogicConstruction
 	 */
-	class Operator extends \Jungle\Code\LogicConstruction\Operator{
+	class Operator extends \Jungle\ExoCode\LogicConstruction\Operator{
 
 		/**
 		 *

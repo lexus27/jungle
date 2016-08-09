@@ -154,7 +154,7 @@ $dispatcher = new \Jungle\Application\Dispatcher();
 $dispatcher->setControllerNamespace('App\\Controllers');
 
 
-$router = new \Jungle\Application\Dispatcher\Router\HTTP\Router();
+$router = new \Jungle\Application\Adaptee\Http\Dispatcher\Router();
 
 for($i=0;$i<1000;$i++){
 	$router->post('/user/login',[

@@ -24,32 +24,40 @@ namespace Jungle\Application {
 		/** @var  string  */
 		protected $class_path;
 
-		/** @var string  */
+		/** @var  string  */
 		protected $modules_dirname;
 
-		/** @var string  */
+		/** @var  string  */
 		protected $views_dirname;
 
-		/** @var string  */
+		/** @var  string  */
 		protected $models_dirname;
 
-		/** @var string  */
+		/** @var  string  */
 		protected $cache_dirname;
 
-		/** @var string  */
+		/** @var  string */
+		protected $log_dirname;
+
+		/** @var  string  */
 		protected $base_dirname;
 
-		/** @var string  */
-		protected $views_folder = 'Views';
+		/** @var  string  */
+		protected $views_folder     = 'Views';
 
-		/** @var string  */
-		protected $cache_folder = '_cache';
+		/** @var  string  */
+		protected $cache_folder     = '_cache';
 
-		/** @var string  */
-		protected $modules_folder = 'Modules';
+		protected $log_folder       = '_log';
 
-		/** @var string  */
-		protected $models_folder = 'Models';
+		/** @var  string  */
+		protected $modules_folder   = 'Modules';
+
+		/** @var  string  */
+		protected $models_folder    = 'Models';
+
+
+
 
 		/**
 		 * StaticApplication constructor.
@@ -63,6 +71,7 @@ namespace Jungle\Application {
 			$this->views_dirname    = $prefix . $this->views_folder;
 			$this->modules_dirname  = $prefix . $this->modules_folder;
 			$this->cache_dirname    = $prefix . $this->cache_folder;
+			$this->log_dirname      = $prefix . $this->log_folder;
 			$this->models_dirname   = $prefix . $this->models_folder;
 			parent::__construct($loader);
 		}
@@ -117,6 +126,10 @@ namespace Jungle\Application {
 		 */
 		public function getCacheDirname(){
 			return $this->cache_dirname;
+		}
+
+		public function getLogDirname(){
+			return $this->log_dirname;
 		}
 
 		/**

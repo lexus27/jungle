@@ -1,0 +1,12 @@
+{%
+set browser = di.request.getBrowser()
+%}
+<?
+/** @var Browser $browser */
+use Jungle\Http\Browser;
+
+$browser = $this->services->request->getBrowser() ?>
+
+<h1>Это мобильная версия сайта, Вы зашли с <?=$browser->getName()?> <?=$browser->getVersion()?>  <?=$browser->getPlatform()?> </h1>
+
+<?= $this->content ?>

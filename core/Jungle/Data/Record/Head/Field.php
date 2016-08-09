@@ -12,6 +12,8 @@ namespace Jungle\Data\Record\Head {
 	use Jungle\Data\Record;
 	use Jungle\Util\Data\Foundation\Schema\FieldVisibilityControlInterface;
 	use Jungle\Util\Data\Foundation\Schema\OuterInteraction\Mapped\Field as MappedField;
+	use Jungle\Util\Data\Foundation\Schema\ValueType;
+	use Jungle\Util\Data\Foundation\Schema\ValueType\ValueTypePool;
 
 	/**
 	 * Class Field
@@ -26,6 +28,12 @@ namespace Jungle\Data\Record\Head {
 		/** @var  Schema */
 		protected $schema;
 
+		/** @var  ValueType */
+		protected $type;
+
+		/** @var   */
+		protected $type_params;
+
 		/** @var  bool  */
 		protected $readonly = false;
 
@@ -38,11 +46,73 @@ namespace Jungle\Data\Record\Head {
 		/**
 		 * @param $type
 		 * @return $this
+		 * @throws Record\Exception
 		 */
 		public function setType($type){
-			$this->type = $type;
+			if(is_array($type)){
+				if(isset($type['params'])){
+					$this->type_params = $type['params'];
+				}
+				if(isset($type['type'])){
+					$typeName = $type['type'];
+					$type = ValueTypePool::getDefault()->getType($typeName);
+					if(!$type){
+						throw new Record\Exception('Type error: '.$typeName);
+					}
+					$this->type = $type;
+				}
+			}else{
+				$typeName = $type;
+				$type = ValueTypePool::getDefault()->getType($typeName);
+				if(!$type){
+					throw new Record\Exception('Type error: '.$typeName);
+				}
+				$this->type = $type;
+			}
 			return $this;
 		}
+
+		/**
+		 * @param $native_value
+		 * @return mixed
+		 */
+		public function originate($native_value){
+			if($native_value === null & $this->isNullable()){
+				return null;
+			}
+			return $this->type->originate($native_value,$this->type_params);
+		}
+
+		/**
+		 * @param $originality_value
+		 * @return mixed
+		 */
+		public function evaluate($originality_value){
+			return $this->type->evaluate($originality_value,$this->type_params);
+		}
+
+		/**
+		 * @param $native_value
+		 * @return bool
+		 */
+		public function verify($native_value){
+			if($native_value === null && $this->isNullable()){
+				return true;
+			}
+			return $this->type->verify($native_value,$this->type_params);
+		}
+
+		/**
+		 * @param $value
+		 * @return mixed
+		 */
+		public function stabilize($value){
+			if($value === null && $this->isNullable()){
+				return $value;
+			}
+			return $this->type->stabilize($value,$this->type_params);
+		}
+
 
 		/**
 		 * @param $readonly
@@ -162,6 +232,35 @@ namespace Jungle\Data\Record\Head {
 
 		public function afterRecordSave(Record $record, array $processed, array $changed = null){
 
+		}
+
+		/**
+		 * @param array $definition
+		 */
+		public function define(array $definition){
+			$c = array_replace_recursive([
+				'type' => 'string',
+				'nullable' => false,
+			    'default' => null,
+			    'readonly' => false,
+			    'private' => false,
+			    'enumerable' => true,
+			    'original_key' => null,
+			    'changeable' => true,
+			    'on_create' => function(){},
+			    'on_update' => function(){}
+			],$definition);unset($definition);
+			if($c['type']){
+				$this->setType($c['type']);
+			}
+			$this->setNullable($c['nullable']);
+			$this->setDefault($c['default']);
+			if(!$c['enumerable']) $this->internal();
+			$this->setReadonly($c['readonly']);
+			$this->setPrivate($c['private']);
+			if($c['original_key']){
+				$this->setOriginalKey($c['original_key']);
+			}
 		}
 
 	}

@@ -50,6 +50,14 @@ namespace Jungle\Util {
 			return $valid;
 		}
 
+		/**
+		 * @param $vartype
+		 * @return bool
+		 */
+		public static function isMixedVartype($vartype){
+			return $vartype === 'mixed';
+		}
+
 
 		/**
 		 * @param $value

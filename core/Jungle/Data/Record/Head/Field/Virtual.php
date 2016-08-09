@@ -26,6 +26,9 @@ namespace Jungle\Data\Record\Head\Field {
 
 		protected $setter;
 
+		/** @var array list of relation fields required in this virtual formula  */
+		protected $required_relations = [];
+
 		/**
 		 * @param $formulaField
 		 * @param null $getter
@@ -86,7 +89,7 @@ namespace Jungle\Data\Record\Head\Field {
 			$value = $data->getProperty($this->formula_key);
 			$getter = $this->getGetter();
 			if(!$getter){
-				$value = call_user_func([$this,'formulaGet']);
+				$value = $this->formulaGet($data,$key);
 			}else{
 				$value = ValueAccessor::handleGetter($this->getGetter(),$data,$this->_getOuterInteractionKey(),[$this]);
 			}
@@ -124,9 +127,6 @@ namespace Jungle\Data\Record\Head\Field {
 			}
 			return parent::_getOuterInteractionKey();
 		}
-
-
-
 
 	}
 }

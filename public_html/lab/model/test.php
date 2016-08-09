@@ -25,7 +25,7 @@ $mysqlConnection = new Db\Adapter\Pdo\MySQL([
 	'password' => ''
 ]);
 $mysqlConnection->setDialect(new Jungle\Data\Storage\Db\Dialect\MySQL());
-
+/*
 $manager = new Record\Head\SchemaManager();
 
 $manager->addSchema($schemaU = new Record\Head\Schema('user'));
@@ -52,7 +52,9 @@ $schemaP->addField((new Record\Head\Field('first_name','string')));
 $schemaP->addField((new Record\Head\Field('last_name','string')));
 $schemaP->addField((new Record\Head\Field('city','string')));
 $schemaP->addField((new Record\Head\Field('state','string')));
-$schemaP->addField((new Record\Head\Field\Relation('user','string'))->belongsTo('user',['id'],['id'],null,['onDelete' => Record\Head\Field\Relation::ACTION_CASCADE, 'onDeleteVirtual' => false]));
+$schemaP->addField((new Record\Head\Field\Relation('user','string'))->belongsTo('user',['id'],['id'],[
+	'delete_rule' => Record\Head\Field\Relation::ACTION_CASCADE
+]));
 
 $manager->addSchema($schemaN = new Record\Head\Schema('user_note'));
 $collectionN = $schemaN->getCollection();
@@ -64,7 +66,9 @@ $schemaN->addField((new Record\Head\Field('id','integer')));
 $schemaN->addField((new Record\Head\Field('user_id','integer'))->internal());
 $schemaN->addField((new Record\Head\Field('header','string')));
 $schemaN->addField((new Record\Head\Field('body','string')));
-$schemaN->addField((new Record\Head\Field\Relation('user','string'))->belongsTo('user',['user_id'],['id'],null,['onDelete' => Record\Head\Field\Relation::ACTION_CASCADE, 'onDeleteVirtual' => false]));
+$schemaN->addField((new Record\Head\Field\Relation('user','string'))->belongsTo('user',['user_id'],['id'],[
+	'delete_rule' => Record\Head\Field\Relation::ACTION_CASCADE
+]));
 
 
 
@@ -91,7 +95,7 @@ $schemaGM->addField((new Record\Head\Field('user_id','integer'))->internal());
 $schemaGM->addField((new Record\Head\Field('group_id','integer'))->internal());
 $schemaGM->addField((new Record\Head\Field\Relation('user','string'))->belongsTo('user',['user_id'],['id']));
 $schemaGM->addField((new Record\Head\Field\Relation('group','string'))->belongsTo('user_group',['group_id'],['id']));
-
+*/
 class AbstractTestComplex implements TestCollectionInterface{
 
 	/** @var  Test[]  */
@@ -473,7 +477,7 @@ class TestBlock extends AbstractTestComplex implements TestInterface{
 }
 
 $test = new TestManager();
-
+/*
 $test->addAliasedTest('create',function() use($schemaU,$schemaN, $schemaG){
 	// Test: Create
 	$user = new Record\DataMap($schemaU);
@@ -525,12 +529,12 @@ $test->addAliasedTest('update',function($id) use($schemaU,$schemaN, $schemaG,$sc
 	$user->notes->add($newNote);
 
 	// Remove From Many
-	//$user->notes->remove(['header'=>'Head body 2 ']);
+	//$user->notes->delete(['header'=>'Head body 2 ']);
 
 	// Remove Through
 	//$user->memberIn = [];
 
-	// ADD after all remove
+	// ADD after all delete
 	$newGroup = $schemaG->initializeRecord();
 	$newGroup->title    = uniqid('group2_');
 	$newGroup->rank     = rand(5,20);
@@ -547,7 +551,7 @@ $test->addAliasedTest('remove',function($id) use($schemaU,$schemaN, $schemaG,$sc
 	foreach($user->notes as $note){
 		echo '<p>'.$note->getIdentifierValue().'</p>';
 	}
-	$user->remove();
+	$user->delete();
 	echo '<p>Count '.$user->notes->count().'</p>';
 	foreach($user->notes as $note){
 		echo '<p>'.$note->getIdentifierValue().'</p>';
@@ -566,9 +570,45 @@ $test->addAliasedTest('sorting',function() use($schemaU,$schemaN, $schemaG,$sche
 
 });
 
+*/
 
-$test->run('sorting');
+$test->addAliasedTest('create',function(){
+	// Test: Create
+	$user = new \App\Model\User();
+	$user->username = uniqid('username_');
+	$user->password = uniqid('username_');
+
+	for($i = 0 ; $i < 5; $i++){
+		$newNote = new \App\Model\User\Note();
+		$newNote->title = 'Head body';
+		$newNote->text = 'Test body';
+
+		// Direct
+		$user->notes->add($newNote);
+		// Back
+		//$newNote->user = $user;
+
+	}
+	/*
+	// Test: Create & Use Through
+	foreach($schemaG->load(null,5) as $group){
+		// Direct ADD
+		$user->memberIn->add($group);
+		// Back ADD
+		//$group->members->add($user);
+	}
+	*/
+	$user->save();
+
+});
+
+$di = new \Jungle\Di();
+$di->setShared('database', $mysqlConnection);
 
 
-echo '<p/>Loaded: '.$manager->getStatusRecordsLoadedCount();
+$test->run('create');
+
+/*
+echo '<p/>Loaded: '. $manager->getStatusRecordsLoadedCount();
 echo '<p/>Instantiated: '.$manager->getStatusRecordsInstantiatedCount();
+*/

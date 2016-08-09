@@ -101,7 +101,7 @@ namespace Jungle\Di {
 				throw new \Exception('Service "'.$this->name.'" is not valid service definition!');
 			}
 			if($object instanceof InjectionAwareInterface){
-				$object->setDi($di);
+				$object->setDi($di->getRoot());
 			}
 			return $object;
 		}

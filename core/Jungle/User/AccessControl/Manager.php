@@ -7,6 +7,7 @@
  */
 namespace Jungle\User\AccessControl {
 
+	use Jungle\Application\Component;
 	use Jungle\User\AccessControl\Adapter\ContextAdapter;
 	use Jungle\User\AccessControl\Adapter\PolicyAdapter;
 	use Jungle\User\AccessControl\Context\ObjectAccessor;
@@ -19,7 +20,6 @@ namespace Jungle\User\AccessControl {
 	use Jungle\Util\ObservableTrait;
 	use Jungle\Util\Value\Massive;
 	use Jungle\Util\Value\String;
-	use Phalcon\Mvc\User\Component;
 
 	/**
 	 * Class Pool
@@ -76,7 +76,7 @@ namespace Jungle\User\AccessControl {
 		 *
 		 * @var bool
 		 */
-		protected $based_effect = Policy\Matchable::PERMIT;
+		protected $based_effect = \Jungle\User\AccessControl\Matchable::PERMIT;
 
 		/**
 		 * Строгость базового эффекта если равен true
@@ -305,11 +305,12 @@ namespace Jungle\User\AccessControl {
 				}
 			}
 
-
-			return $this->getContextAdapter()->getBaseContext([
+			$context = $this->getContextAdapter()->getBaseContext([
 				'action' => is_string($action)?['name' => $action]:$action,
 				'object' => $object
-			],$otherUser,$otherScope)->setManager($this);
+			],$otherUser,$otherScope);
+			$context->setManager($this);
+			return $context;
 		}
 
 		/**
@@ -400,10 +401,10 @@ namespace Jungle\User\AccessControl {
 
 		/**
 		 * @param array $listeners
-		 * @param Policy\Matchable $policy
+		 * @param \Jungle\User\AccessControl\Matchable $policy
 		 * @param bool $internal
 		 */
-		public function propagateListeners(array $listeners, Policy\Matchable $policy = null,$internal = false){
+		public function propagateListeners(array $listeners, \Jungle\User\AccessControl\Matchable $policy = null,$internal = false){
 			if($listeners){
 				if(!$internal && $this->_listeners_propagation){
 					$this->stopPropagateListeners();
@@ -432,9 +433,9 @@ namespace Jungle\User\AccessControl {
 
 
 		/**
-		 * @param Policy\Matchable|null $policy
+		 * @param \Jungle\User\AccessControl\Matchable|null $policy
 		 */
-		protected function delegateEvents(Policy\Matchable $policy = null){
+		protected function delegateEvents(\Jungle\User\AccessControl\Matchable $policy = null){
 			if($policy!==null){
 				if($policy instanceof Policy){
 					foreach($policy->getContains() as $p){
@@ -451,9 +452,9 @@ namespace Jungle\User\AccessControl {
 
 		/**
 		 * @param array $listeners
-		 * @param Policy\Matchable|null $policy
+		 * @param \Jungle\User\AccessControl\Matchable|null $policy
 		 */
-		public function stopPropagateListeners(array $listeners = null,Policy\Matchable $policy = null){
+		public function stopPropagateListeners(array $listeners = null, \Jungle\User\AccessControl\Matchable $policy = null){
 			if($policy!==null){
 				if($policy instanceof Policy){
 					foreach($policy->getContains() as $p){

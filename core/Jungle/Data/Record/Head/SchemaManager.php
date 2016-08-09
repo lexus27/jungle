@@ -20,11 +20,11 @@ namespace Jungle\Data\Record\Head {
 	 */
 	class SchemaManager{
 
-		/** @var  Collection[] */
-		protected $collections = [];
-
 		/** @var  Schema[] */
 		protected $schemas = [];
+
+		/** @var  Schema */
+		protected $initializing_schema;
 
 		/**
 		 * @param $schema
@@ -61,7 +61,7 @@ namespace Jungle\Data\Record\Head {
 		}
 
 		protected function _throwSchemaInitError($schemaName){
-			throw new \LogicException('Required schema "'.$schemaName.'" not found!');
+			throw new SchemaManagerException('Required schema "'.$schemaName.'" not found!');
 		}
 
 
@@ -73,6 +73,9 @@ namespace Jungle\Data\Record\Head {
 		public function getSchemaNative($schemaName){
 			if($schemaName instanceof Schema){
 				return $schemaName;
+			}
+			if($this->initializing_schema && $this->initializing_schema->getName() === $schemaName){
+				return $this->initializing_schema;
 			}
 			foreach($this->schemas as $schema){
 				if($schema->getName() === $schemaName){
@@ -114,23 +117,61 @@ namespace Jungle\Data\Record\Head {
 		}
 
 		/**
-		 * @param $schemaName
+		 * @param Model $schemaName
 		 * @return Schema
 		 * @throws \Exception
 		 *
 		 * Вот именно здесь мы и ищем и создаем схему по её установленному и полученому определению
 		 *
 		 */
-		protected function initializeSchema($schemaName){
+		public function initializeSchema($schemaName){
 			if(!class_exists($schemaName)){
-				throw new \LogicException('Schema class "'.$schemaName.'" not found!');
+				throw new SchemaManagerException('Schema class "'.$schemaName.'" not found!');
 			}
-			/** @var Model $instance */
-			$instance = new $schemaName();
-			$schema = $instance->getSchema();
-			if(!$schema){
-				$this->_throwSchemaInitError($schemaName);
+			$reflection = new \ReflectionClass($schemaName);
+			if(!$reflection->isAbstract()){
+				/** @var Record $record */
+				$record = new $schemaName($this);
+				$schema = $record->getSchema();
+			}else{
+				$ancestorSchema = null;
+				$ancestorName = get_parent_class($schemaName);
+				if(Model::isRealModel($ancestorName)){
+					$ancestorSchema = $this->getSchema($ancestorName);
+				}
+				if($ancestorSchema){
+					$schema = $ancestorSchema->extend($schemaName);
+				}else{
+					$schema = new Record\Head\ModelSchema($schemaName);
+				}
+				$schema->setRecordClassname($schemaName);
+				$schema->setSchemaManager($this);
+				$schemaName::initialize($schema);
 			}
+			return $schema;
+		}
+
+		/**
+		 * @param Model $schemaName
+		 * @param Record $record
+		 * @return ModelSchema|static
+		 * @throws SchemaManagerException
+		 */
+		public function initializeFromConstructor($schemaName, Record $record){
+			$ancestorSchema = null;
+			$ancestorName = get_parent_class($schemaName);
+			if(Model::isRealModel($ancestorName)){
+				$ancestorSchema = $this->getSchema($ancestorName);
+			}
+			if($ancestorSchema){
+				$schema = $ancestorSchema->extend($schemaName);
+			}else{
+				$schema = new Record\Head\ModelSchema($schemaName);
+			}
+			$schema->setRecordClassname($schemaName);
+			$schema->setSchemaManager($this);
+			$schemaName::initialize($schema);
+			$schema->initialize($record);
 			return $schema;
 		}
 
@@ -140,7 +181,7 @@ namespace Jungle\Data\Record\Head {
 		public function getStatusRecordsLoadedCount(){
 			$c = 0;
 			foreach($this->schemas as $schema){
-				$c+=$schema->getCollection()->count();
+				$c+= $schema->getCollection()->count();
 			}
 			return $c;
 		}

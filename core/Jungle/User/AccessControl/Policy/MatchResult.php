@@ -7,6 +7,8 @@
  */
 namespace Jungle\User\AccessControl\Policy {
 
+	use Jungle\User\AccessControl\Matchable;
+
 	/**
 	 * Class MatchResult
 	 * @package Jungle\User\AccessControl\Policy

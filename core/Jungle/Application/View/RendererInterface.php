@@ -9,29 +9,71 @@
  */
 namespace Jungle\Application\View {
 	
-	use Jungle\Application\Dispatcher\Controller\ProcessInterface;
+	use Jungle\Application\Dispatcher\ProcessInterface;
+	use Jungle\Application\ViewInterface;
+	use Jungle\Util\CacheableInterface;
+	use Jungle\Util\INamedRead;
 
 	/**
 	 * Class RendererInterface
 	 * @package Jungle\Application
 	 */
-	interface RendererInterface{
+	interface RendererInterface extends CacheableInterface, ViewConfigurationInterface, INamedRead{
 
 		/**
-		 * @return mixed
+		 * @param ViewInterface $view
+		 * @return $this
+		 */
+		public function setView(ViewInterface $view);
+
+		/**
+		 * @return ViewInterface
+		 */
+		public function getView();
+
+		/**
+		 * @return string
 		 */
 		public function getType();
 
 		/**
-		 * @return mixed
+		 * @return string
+		 */
+		public function getMimeType();
+
+		/**
+		 * @return \mixed[]
+		 */
+		public function getVariables();
+
+		/**
+		 * @return \mixed[]
+		 */
+		public function getOptions();
+
+		/**
+		 * @return void
 		 */
 		public function initialize();
 
 		/**
-		 * @param ProcessInterface $process
+		 * @param \Jungle\Application\Dispatcher\ProcessInterface $process
+		 * @param ViewInterface $view
+		 * @param array $variables
+		 * @param array $options
 		 * @return string
 		 */
-		public function render(ProcessInterface $process);
+		public function render(ProcessInterface $process, ViewInterface $view, array $variables = [], array $options = []);
+
+		/**
+		 * @return mixed
+		 */
+		public function getBaseDirname();
+
+		/**
+		 * @return mixed
+		 */
+		public function getCacheDirname();
 
 	}
 }

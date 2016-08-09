@@ -64,7 +64,7 @@ namespace Jungle\Util\Smart\Value\Measure\CoefficientParser {
 				}
 
 				/**
-				 * TODO Operator maybe used from OBJECT PULL CONTAIN`S Jungle\Code\LogicConstruction\Operator o = oPull->get('+');
+				 * TODO Operator maybe used from OBJECT PULL CONTAIN`S Jungle\ExoCode\LogicConstruction\Operator o = oPull->get('+');
 				 */
 				switch($operatorDefinition){
 					case '+': return  $main + $second; break;

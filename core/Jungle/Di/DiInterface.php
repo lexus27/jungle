@@ -44,6 +44,18 @@ namespace Jungle\Di {
 		 */
 		public function getContainerNames();
 
+
+		/**
+		 * @return DiInterface
+		 */
+		public function getNext();
+
+		/**
+		 * @param DiInterface $di
+		 * @return mixed
+		 */
+		public function setNext(DiInterface $di);
+
 		/**
 		 * @param $existingServiceKey
 		 * @param null $definition
@@ -66,6 +78,8 @@ namespace Jungle\Di {
 		 * @return mixed
 		 */
 		public function getOverlapKey();
+
+
 
 		/**
 		 * @param $key
@@ -114,6 +128,10 @@ namespace Jungle\Di {
 		 */
 		public function getServiceContainer($name);
 
+		/**
+		 * @param $object
+		 * @return mixed
+		 */
 		public function getSharedServiceBy($object);
 
 

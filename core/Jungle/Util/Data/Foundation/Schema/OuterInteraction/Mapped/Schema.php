@@ -43,17 +43,10 @@ namespace Jungle\Util\Data\Foundation\Schema\OuterInteraction\Mapped {
 		}
 
 		protected function _initCache(){
-			$names_fill = $this->_names===null;
-			if($names_fill) $this->_names = [];
-
 			$original_names_fill = $this->original_names===null;
 			if($original_names_fill) $this->original_names = [];
-
-			if($names_fill || $original_names_fill){
-				foreach($this->fields as $field){
-					if($names_fill){
-						$this->_names[] = $field->getName();
-					}
+			if($original_names_fill){
+				foreach($this->getFields() as $field){
 					if($original_names_fill && $field instanceof Field){
 						$this->original_names[] = $field->getOriginalKey();
 					}

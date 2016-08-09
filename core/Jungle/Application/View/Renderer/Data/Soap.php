@@ -14,7 +14,10 @@ namespace Jungle\Application\View\Renderer\Data {
 	 * @package Jungle\Application\View\Renderer\Data
 	 */
 	class Soap extends Xml{
-		
+
+		/** @var string  */
+		protected $mime_type = 'application/soap+xml';
+
 	}
 }
 

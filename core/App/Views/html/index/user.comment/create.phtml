@@ -1,0 +1,11 @@
+<? $this->pagetitle = 'Комментарий | '. $this->subject->title . ' | ' . $this->subject->user->username?>
+<? if($comment = $this->comment): ?>
+	Комментарий успешно добавлен к записке <a href="<?= $this->process->getRouter()->generateLinkBy('user-note', $this->subject)?>"><?=$this->subject->title?></a>
+<? else: ?>
+	<form method="post" action="">
+		<p><label>Текст:<br/>
+				<textarea name="text"></textarea>
+			</label></p>
+		<p><input type="submit" value="Добавить комментарий"> | <a href="<?=$this->process->linkBy('user-note',$this->subject)?>">Отмена</a></p>
+	</form>
+<? endif ?>

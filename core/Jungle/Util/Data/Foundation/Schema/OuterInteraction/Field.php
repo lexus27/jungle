@@ -78,42 +78,6 @@ namespace Jungle\Util\Data\Foundation\Schema\OuterInteraction {
 		public function valueAccessExists($key){
 			return $this->name === $key;
 		}
-		
-		
-		/**
-		 * @param $native_value
-		 * @return mixed
-		 */
-		public function originate($native_value){
-			return $native_value;
-		}
-
-		/**
-		 * @param $originality_value
-		 * @return mixed
-		 */
-		public function evaluate($originality_value){
-			if($originality_value === null){
-				return $originality_value;
-			}
-			if($this->type){
-				settype($originality_value,$this->type);
-			}
-
-			return $originality_value;
-		}
-
-		/**
-		 * @param $native_value
-		 * @return bool
-		 */
-		public function verify($native_value){
-			if($native_value === null && $this->isDefaultNull()){
-				return true;
-			}
-			return gettype($native_value) !== $this->type;
-		}
-		
 
 	}
 

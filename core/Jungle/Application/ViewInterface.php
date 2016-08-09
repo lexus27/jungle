@@ -9,56 +9,91 @@
  */
 namespace Jungle\Application {
 	
-	use Jungle\Application\Dispatcher\Controller\ProcessInterface;
+	use Jungle\Application\Dispatcher\ProcessInterface;
+	use Jungle\Application\View\RendererInterface;
+	use Jungle\Application\View\ViewConfigurationInterface;
 
 	/**
 	 * Interface ViewInterface
 	 * @package Jungle\Application\View
 	 */
-	interface ViewInterface{
-//
-//		/**
-//		 * @param $name
-//		 * @param $value
-//		 * @return $this
-//		 */
-//		public function setVar($name, $value);
-//
-//		/**
-//		 * @param array $variables
-//		 * @param bool|false $merge
-//		 * @return $this
-//		 */
-//		public function setVars(array $variables = [ ], $merge = false);
-//
-//		public function setOption($name, $value);
-//
-//		/**
-//		 * @param $name
-//		 * @param null $default
-//		 * @return mixed
-//		 */
-//		public function getOption($name, $default = null);
-//
-//		/**
-//		 * @param array $options
-//		 * @param bool|false $merge
-//		 * @return mixed
-//		 */
-//		public function setOptions(array $options, $merge = false);
+	interface ViewInterface extends ViewConfigurationInterface{
 
 		/**
-		 * @param ProcessInterface $process
-		 * @return string renderer name
+		 * @param $alias
+		 * @param RendererInterface $renderer
+		 * @return $this
 		 */
-		public function match(ProcessInterface $process);
+		public function setRenderer($alias, RendererInterface $renderer);
 
 		/**
-		 * @param ProcessInterface $process
-		 * @param null $renderer_name
-		 * @return mixed
+		 * @param $alias
+		 * @return RendererInterface|null
 		 */
-		public function render(ProcessInterface $process, $renderer_name = null);
+		public function getRenderer($alias);
+
+		/**
+		 * @param $alias
+		 * @param \Jungle\Application\Dispatcher\ProcessInterface $process
+		 * @param array $variables
+		 * @param array $options
+		 * @return string
+		 */
+		public function render($alias, ProcessInterface $process, array $variables = [], array $options = []);
+
+		/**
+		 * @return RendererInterface
+		 */
+		public function getLastRenderer();
+
+		/**
+		 * @return string
+		 */
+		public function getLastRendererAlias();
+
+		/**
+		 * @return mixed[]
+		 */
+		public function getVariables();
+
+		/**
+		 * @return mixed[]
+		 */
+		public function getOptions();
+
+		/**
+		 * @param $dirname
+		 * @return $this
+		 */
+		public function setBaseDirname($dirname);
+
+		/**
+		 * @return string
+		 */
+		public function getBaseDirname();
+
+		/**
+		 * @param $dirname
+		 * @return $this
+		 */
+		public function setCacheDirname($dirname);
+
+		/**
+		 * @return string
+		 */
+		public function getCacheDirname();
+
+		/**
+		 * @return string[]
+		 */
+		public function getRendererAliases();
+
+		/**
+		 * @param RendererInterface $renderer
+		 * @return string
+		 */
+		public function getRendererName(RendererInterface $renderer);
+
 
 	}
 }

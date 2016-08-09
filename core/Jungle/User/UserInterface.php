@@ -18,12 +18,12 @@ namespace Jungle\User {
 		/**
 		 * @return mixed
 		 */
-		public function getUsername();
+		public function getId();
 
 		/**
 		 * @return mixed
 		 */
-		public function getPassword();
+		public function getUsername();
 
 	}
 }

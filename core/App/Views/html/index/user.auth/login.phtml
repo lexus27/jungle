@@ -1,0 +1,20 @@
+<?if($this->process->login):?>
+	<p>Добро пожаловать <i><?= $this->user->username ?></i>, на <a href="<?= $this->process->linkMain()?>">Секретные записки</a> </p>
+<? else: ?>
+	<form method="post" action="<?$this->process->linkBy('user-login')?>">
+
+		<p/>
+		<label>
+			Имя пользователя<br/>
+			<input type="text" name="login" value=""/>
+		</label>
+		<p/>
+		<label>
+			Пароль<br/>
+			<input type="password" name="password" value=""/>
+		</label>
+		<p/>
+		<input type="submit" value="Войти"/>
+
+	</form>
+<? endif; ?>

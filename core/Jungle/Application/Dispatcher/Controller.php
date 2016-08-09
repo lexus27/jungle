@@ -9,14 +9,13 @@
  */
 namespace Jungle\Application\Dispatcher {
 
-	use Jungle\Application\Dispatcher\Controller\ControllerInterface;
+	use Jungle\Di\Injectable;
 
 	/**
 	 * Class Controller
 	 * @package Jungle\Application
 	 */
-	abstract class Controller implements ControllerInterface{
+	abstract class Controller extends Injectable implements ControllerInterface{}
 
-	}
 }
 

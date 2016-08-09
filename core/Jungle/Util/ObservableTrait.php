@@ -69,7 +69,7 @@ trait ObservableTrait {
 	 * @return bool
 	 */
 	public function invokeEvent(/** Name, [args , ...] */){
-		$args = & func_get_args();
+		$args = func_get_args();
 		$try = true;
 		$eName = array_shift($args);
 		if(is_string($eName) && $eName){

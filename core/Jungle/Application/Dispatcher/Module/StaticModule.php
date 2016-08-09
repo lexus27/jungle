@@ -21,10 +21,10 @@ namespace Jungle\Application\Dispatcher\Module {
 		protected $reflection;
 
 		/** @var string  */
-		protected $contain_namespace; // App\Modules\{ModuleClassName}
+		protected $base_namespace; // App\Modules\{ModuleClassName}
 
 		/** @var string */
-		protected $contain_dirname;
+		protected $base_dirname;
 
 		/** @var string  */
 		protected $module_dirname;
@@ -33,7 +33,7 @@ namespace Jungle\Application\Dispatcher\Module {
 		protected $class_based = true;
 
 		/** @var  string  */
-		protected $controller_folder = 'Controller'; // App\Modules\{ModuleClassName}\{ControllerFolder}
+		protected $controller_folder = 'Controller'; // App\Modules\{ModuleName}\{ControllerFolder}
 
 		/** @var  string  */
 		protected $cache_folder = '_cache';
@@ -43,10 +43,10 @@ namespace Jungle\Application\Dispatcher\Module {
 		 */
 		public function __construct(){
 			$this->reflection = new \ReflectionObject($this);
-			$this->contain_namespace = $this->reflection->getNamespaceName();
-			$this->contain_dirname = dirname($this->reflection->getFileName());
+			$this->base_namespace = $this->reflection->getNamespaceName();
+			$this->base_dirname = dirname($this->reflection->getFileName());
 			$this->module_dirname = $this->reflection->getFileName() . DIRECTORY_SEPARATOR . basename(get_called_class());
-			$this->controller_namespace = $this->contain_namespace . '\\' . $this->controller_folder;
+			$this->controller_namespace = get_called_class() .'\\'. $this->controller_folder;
 		}
 
 		/**
@@ -59,8 +59,8 @@ namespace Jungle\Application\Dispatcher\Module {
 		/**
 		 * @return string
 		 */
-		public function getContainDirname(){
-			return $this->contain_dirname;
+		public function getBaseDirname(){
+			return $this->base_dirname;
 		}
 
 		/**
@@ -70,17 +70,7 @@ namespace Jungle\Application\Dispatcher\Module {
 			if(isset($this->cache_dirname)){
 				return $this->cache_dirname;
 			}
-			return $this->contain_dirname . DIRECTORY_SEPARATOR . $this->getName() . DIRECTORY_SEPARATOR . $this->cache_folder;
-		}
-
-		/**
-		 * @return \ReflectionObject
-		 */
-		protected function getReflection(){
-			if(!$this->reflection){
-				$this->reflection = new \ReflectionObject($this);
-			}
-			return $this->reflection;
+			return $this->base_dirname . DIRECTORY_SEPARATOR . $this->getName() . DIRECTORY_SEPARATOR . $this->cache_folder;
 		}
 
 	}

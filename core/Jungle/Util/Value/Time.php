@@ -185,7 +185,7 @@ namespace Jungle\Util\Value {
 		 */
 		public static function isReached($startCheckpoint, $delay, $time = null){
 			if($time===null) $time = microtime(true);
-			return ($startCheckpoint + $delay) >= $time;
+			return $delay===null?false:($startCheckpoint >= $time + $delay);
 		}
 
 		/**
@@ -198,7 +198,7 @@ namespace Jungle\Util\Value {
 		 */
 		public static function isOverdue($startCheckpoint, $delay, $time = null){
 			if($time===null) $time = microtime(true);
-			return ($startCheckpoint + $delay) > $time;
+			return $delay===null?false:($startCheckpoint > $time + $delay);
 		}
 
 		/**

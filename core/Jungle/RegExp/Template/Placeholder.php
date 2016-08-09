@@ -310,7 +310,7 @@ namespace Jungle\RegExp\Template {
 				return true;
 			}
 			if($this->custom_pattern){
-				return Pattern::validateValue($this->custom_pattern, $value,'S');
+				return Pattern::validateValue($this->custom_pattern, $value,'Su');
 			}else{
 				return $this->type->isValid($value, $this->type_arguments);
 			}

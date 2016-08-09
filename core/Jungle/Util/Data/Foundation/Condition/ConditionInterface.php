@@ -20,7 +20,7 @@ namespace Jungle\Util\Data\Foundation\Condition {
 		/**
 		 * @param \Jungle\Util\Data\Foundation\Record\PropertyRegistryInterface|mixed $data
 		 * @param null|ValueAccessAwareInterface|callable $access - if data is outer original data
-		 * @return mixed
+		 * @return bool
 		 */
 		public function __invoke($data, $access = null);
 

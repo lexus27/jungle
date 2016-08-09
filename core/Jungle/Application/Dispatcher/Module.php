@@ -11,11 +11,9 @@ namespace Jungle\Application\Dispatcher {
 
 	use ControllerInterface;
 	use Jungle\Application\Dispatcher;
-	use Jungle\Application\Dispatcher\Controller\ControllerManuallyInterface;
-	use Jungle\Application\Dispatcher\Controller\Process;
-	use Jungle\Application\Dispatcher\Controller\ProcessInitiatorInterface;
-	use Jungle\Application\Dispatcher\Controller\ProcessInterface;
 	use Jungle\Application\Dispatcher\Exception\Control;
+	use Jungle\Application\Dispatcher\Process;
+	use Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface;
 	use Jungle\Di\Injectable;
 	use Jungle\FileSystem;
 	use Jungle\Loader;
@@ -51,7 +49,10 @@ namespace Jungle\Application\Dispatcher {
 		/** @var  object[]|ControllerInterface[]|ControllerManuallyInterface[]  */
 		protected $controllers = [];
 
+		/** @var  array */
+		protected $default_metadata = [];
 
+		protected $metadata_cache = [];
 
 		/**
 		 * @param $name
@@ -69,6 +70,10 @@ namespace Jungle\Application\Dispatcher {
 			return $this->name;
 		}
 
+		/**
+		 * @param Dispatcher $dispatcher
+		 * @return void
+		 */
 		public function initialize(Dispatcher $dispatcher){
 			$this->dispatcher = $dispatcher;
 			$this->setDi($dispatcher->getDi());
@@ -79,6 +84,10 @@ namespace Jungle\Application\Dispatcher {
 		 */
 		public function getDispatcher(){
 			return $this->dispatcher;
+		}
+
+		public function getMemory(){
+
 		}
 
 		/**
@@ -155,6 +164,23 @@ namespace Jungle\Application\Dispatcher {
 		}
 
 		/**
+		 * @return array
+		 */
+		public function getDefaultMetadata(){
+			return $this->default_metadata;
+		}
+
+		/**
+		 * @param array $meta
+		 * @return $this
+		 */
+		public function setDefaultMetadata(array $meta){
+			$this->default_metadata = $meta;
+			return $this;
+		}
+
+
+		/**
 		 * @param $suffix
 		 * @return mixed
 		 */
@@ -177,23 +203,27 @@ namespace Jungle\Application\Dispatcher {
 		 * @param array|null $reference
 		 * @param array $data
 		 * @param array $options
-		 * @param ProcessInitiatorInterface|null $initiator
+		 * @param \Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface|null $initiator
 		 * @return mixed
 		 * @throws Control
 		 */
 		public function control($reference = null,array $data, array $options = null, ProcessInitiatorInterface $initiator = null){
-			$reference = Dispatcher::normalizeReference($reference,[
-				'module'        => $this->name,
-				'controller'    => $this->getDefaultController(),
-				'action'        => $this->getDefaultAction()
-			],true);
+			$reference = Reference::normalize(
+				$reference,
+				[
+					'module'     => $this->name,
+					'controller' => $this->getDefaultController(),
+					'action'     => $this->getDefaultAction()
+				],
+				true
+			);
 			list($controllerName, $actionName) = Massive::orderedKeys($reference, ['controller','action']);
 
 			$controllerQualified = $this->getQualifiedReferenceString($reference,false);
 			$referenceString = $this->appendQualifiedAction($controllerQualified,$reference);
 			$controller = $this->loadController($controllerName);
 
-			if($controller instanceof Dispatcher\Controller\ControllerManuallyInterface){
+			if($controller instanceof Dispatcher\ControllerManuallyInterface){
 
 				if(!$controller->has($actionName)){
 					throw new Control('Action not found: ' . $referenceString);
@@ -202,19 +232,15 @@ namespace Jungle\Application\Dispatcher {
 				$process = $this->factoryProcess($this->dispatcher, $controller, $data, $reference, $initiator);
 
 				$process->startOutputBuffering();
-
-				if($this->dispatcher->beforeControl($process)===false){
-					return $process->cancel();
-				}
 				if($this->beforeControl($process)===false){
 					return $process->cancel();
 				}
+				// do..
 				$result = $controller->call($actionName, $process);
 				if(!$process->isCompleted()){
 					$process->setResult($result,true);
 				}
 				$this->afterControl($process,$result);
-				$this->dispatcher->afterControl($process,$result);
 				$process->endOutputBuffering();
 			}else{
 
@@ -226,9 +252,6 @@ namespace Jungle\Application\Dispatcher {
 				$process = $this->factoryProcess($this->dispatcher, $controller, $data, $reference, $initiator);
 
 				$process->startOutputBuffering();
-				if($this->dispatcher->beforeControl($process)===false){
-					return $process->cancel();
-				}
 				if($this->beforeControl($process)===false){
 					return $process->cancel();
 				}
@@ -241,6 +264,7 @@ namespace Jungle\Application\Dispatcher {
 				if(method_exists($controller, $beforeConcreteAction) && ($controller->{$beforeConcreteAction}($process) === false)){
 					return $process->cancel();
 				}
+				// do..
 				$result = $controller->{$actionMethod}($process);
 				$process->setResult($result);
 				if(!$process->isCompleted()){
@@ -254,7 +278,6 @@ namespace Jungle\Application\Dispatcher {
 					$controller->afterControl($actionName, $result,$process);
 				}
 				$this->afterControl($process, $result);
-				$this->dispatcher->afterControl($process, $result);
 				$process->endOutputBuffering();
 			}
 			return $this->checkoutProcess($process, $options);
@@ -348,23 +371,6 @@ namespace Jungle\Application\Dispatcher {
 			}
 		}
 
-		/**
-		 * @param $controllerName
-		 * @param $actionName
-		 * @return bool
-		 */
-		public function hasControllerAction($controllerName, $actionName){
-			$controller = $this->loadController($controllerName);
-			if($controller){
-				if($controller instanceof Dispatcher\Controller\ControllerManuallyInterface){
-					return $controller->has($actionName);
-				}else{
-					return method_exists($controller, $this->prepareActionMethodName($actionName));
-				}
-			}else{
-				return false;
-			}
-		}
 
 
 		/**
@@ -395,6 +401,54 @@ namespace Jungle\Application\Dispatcher {
 		public function prepareActionMethodName($actionName){
 			return $actionName . $this->getActionSuffix();
 		}
+
+		/**
+		 * @param $controllerName
+		 * @param $actionName
+		 * @return array
+		 */
+		public function getMetadata($controllerName, $actionName){
+			$controllerName = $controllerName?:$this->default_controller;
+			$actionName = $actionName?:$this->default_action;
+			$cache_key = $controllerName.':'.$actionName;
+			if(!isset($this->metadata_cache[$cache_key])){
+				$controller = $this->loadController($controllerName);
+				$metadata = (array)$this->getDefaultMetadata();
+				if(method_exists($controller,'getDefaultMetadata')){
+					$metadata = array_replace($metadata, (array)$controller->getDefaultMetadata());
+				}
+				if($controller instanceof ControllerManuallyInterface){
+					$metadata = array_replace($metadata, (array)$controller->getActionMetadata($actionName));
+				}else{
+					$mName = $actionName.'Metadata';
+					if(method_exists($controller,$actionName.'Metadata')){
+						$metadata = array_replace($metadata, (array)$controller->$mName());
+					}
+				}
+				$this->metadata_cache[$cache_key] = $metadata;
+				return $metadata;
+			}
+			return $this->metadata_cache[$cache_key];
+		}
+
+
+		/**
+		 * @param $controllerName
+		 * @param $actionName
+		 * @return bool
+		 */
+		public function hasControl($controllerName, $actionName){
+			$controllerName = $controllerName?:$this->default_controller;
+			if(!($controller = $this->loadController($controllerName))){
+				return false;
+			}
+			$actionName = $actionName?:$this->default_action;
+			if($controller instanceof ControllerManuallyInterface){
+				return $controller->has($actionName);
+			}else{
+				return method_exists($controller,$this->prepareActionMethodName($actionName));
+			}
+		}
 		
 		/**
 		 * Анализ структуры модуля
@@ -404,55 +458,7 @@ namespace Jungle\Application\Dispatcher {
 		public function analyzeStructure(){
 			
 		}
-		
-		/**
-		 * @param $controllerName
-		 * @param $actionName
-		 * @return bool
-		 * @throws Control
-		 */
-		public function supportPublic($controllerName, $actionName){
-			$controllerName = $controllerName?:$this->getDefaultController();
-			$actionName = $actionName?:$this->getDefaultAction();
-			$controller = $this->loadController($controllerName);
-			if($controller instanceof ControllerManuallyInterface){
-				return $controller->supportPublic($actionName);
-			}
-			return true;
-		}
-		
-		/**
-		 * @param $controllerName
-		 * @param $actionName
-		 * @return bool
-		 * @throws Control
-		 */
-		public function supportHierarchy($controllerName, $actionName){
-			$controllerName = $controllerName?:$this->getDefaultController();
-			$actionName = $actionName?:$this->getDefaultAction();
-			$controller = $this->loadController($controllerName);
-			if($controller instanceof ControllerManuallyInterface){
-				return $controller->supportHierarchy($actionName);
-			}
-			return true;
-		}
 
-
-		/**
-		 * @param $controllerName
-		 * @param $actionName
-		 * @return bool
-		 */
-		public function supportFormat($controllerName, $actionName){
-			$controllerName = $controllerName?:$this->getDefaultController();
-			$actionName = $actionName?:$this->getDefaultAction();
-			$controller = $this->loadController($controllerName);
-			if($controller instanceof ControllerManuallyInterface){
-				return $controller->supportFormat($actionName);
-			}
-			return true;
-		}
-		
 		/**
 		 *
 		 */

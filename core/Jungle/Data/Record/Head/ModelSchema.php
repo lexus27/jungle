@@ -19,10 +19,12 @@ namespace Jungle\Data\Record\Head {
 	class ModelSchema extends Schema{
 
 		/** @var  Model[] */
-		protected $flyweight_class_records = [];
+		protected $flyweight_record = [];
 
 		/** @var  ModelSchema|null */
 		protected $ancestor;
+
+		protected $record_classname;
 
 		/**
 		 * ModelSchema constructor.
@@ -30,7 +32,7 @@ namespace Jungle\Data\Record\Head {
 		 */
 		public function __construct($name){
 			parent::__construct($name);
-			$this->base_class_name = $name;
+			$this->record_classname = $name;
 		}
 
 		/**
@@ -38,7 +40,7 @@ namespace Jungle\Data\Record\Head {
 		 * @return $this
 		 */
 		public function setModelClassName($className){
-			$this->base_class_name = $className;
+			$this->record_classname = $className;
 			return $this;
 		}
 
@@ -46,7 +48,7 @@ namespace Jungle\Data\Record\Head {
 		 * @return mixed
 		 */
 		public function getModelClassName(){
-			return $this->base_class_name;
+			return $this->record_classname;
 		}
 
 		/**
@@ -57,7 +59,7 @@ namespace Jungle\Data\Record\Head {
 			$source = $record->getSource();
 			$this->storage = $this->getSchemaManager()->getStorageService($storage);
 			$this->source = $source;
-			$this->setFlyweight($this->name,$record);
+			$this->setFlyweight($record);
 		}
 
 		/**

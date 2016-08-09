@@ -10,8 +10,7 @@
 namespace Jungle\Application\Dispatcher {
 
 	use Jungle\Application\Dispatcher;
-	use Jungle\Application\Dispatcher\Controller\ProcessInitiatorInterface;
-	use Jungle\Application\Dispatcher\Controller\ProcessInterface;
+	use Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface;
 
 	/**
 	 * Interface ModuleInterface
@@ -34,6 +33,13 @@ namespace Jungle\Application\Dispatcher {
 		 * @return string
 		 */
 		public function getName();
+
+		/**
+		 * @param $controllerName
+		 * @param $actionName
+		 * @return bool
+		 */
+		public function hasControl($controllerName, $actionName);
 
 		/**
 		 * @param array $properties
@@ -92,6 +98,24 @@ namespace Jungle\Application\Dispatcher {
 
 
 		/**
+		 * @return array
+		 */
+		public function getDefaultMetadata();
+
+		/**
+		 * @param array $metadata
+		 * @return $this
+		 */
+		public function setDefaultMetadata(array $metadata);
+
+		/**
+		 * @param $controllerName
+		 * @param $actionName
+		 * @return array
+		 */
+		public function getMetadata($controllerName, $actionName);
+
+		/**
 		 * @param $prefix
 		 * @return mixed
 		 */
@@ -106,7 +130,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @param array|null $reference
 		 * @param array $data
 		 * @param array $options
-		 * @param ProcessInitiatorInterface $initiator
+		 * @param \Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface $initiator
 		 * @return ProcessInterface
 		 */
 		public function control($reference = null,array $data, array $options = null, ProcessInitiatorInterface $initiator = null);
@@ -119,35 +143,16 @@ namespace Jungle\Application\Dispatcher {
 
 		/**
 		 * @param Dispatcher $dispatcher
-		 * @return mixed
+		 * @return void
 		 */
 		public function initialize(Dispatcher $dispatcher);
 
 		/**
-		 * @return mixed
+		 * @return Dispatcher
 		 */
 		public function getDispatcher();
 
-		/**
-		 * @param $controller
-		 * @param $action
-		 * @return mixed
-		 */
-		public function supportPublic($controller, $action);
-
-		/**
-		 * @param $controller
-		 * @param $action
-		 * @return bool
-		 */
-		public function supportHierarchy($controller, $action);
-
-		/**
-		 * @param $controller
-		 * @param $action
-		 * @return bool
-		 */
-		public function supportFormat($controller, $action);
+		public function getMemory();
 
 	}
 }

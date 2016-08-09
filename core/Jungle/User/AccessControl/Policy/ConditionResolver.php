@@ -7,8 +7,8 @@
  */
 namespace Jungle\User\AccessControl\Policy {
 
-	use Jungle\Code\LogicConstruction\Condition;
-	use Jungle\Code\LogicConstruction\Operator;
+	use Jungle\ExoCode\LogicConstruction\Condition;
+	use Jungle\ExoCode\LogicConstruction\Operator;
 	use Jungle\RegExp;
 	use Jungle\User\AccessControl\Context;
 	use Jungle\User\AccessControl\Exception;
@@ -58,8 +58,10 @@ namespace Jungle\User\AccessControl\Policy {
 		/** @var string  */
 		protected $escape_right     = ']';
 
+		/** @var string  */
 		protected $type_delimiter   = '::';
 
+		/** @var  array  */
 		protected $operators        = [];
 
 		/** @var  string */
@@ -476,7 +478,7 @@ namespace Jungle\User\AccessControl\Policy {
 				}
 
 				$currentPath.= $chunk . ($path?$this->path_delimiter:'');
-				if($current instanceof Context\ISubstitute){
+				if($current instanceof Context\SubstituteInterface){
 					$current = $current->getValue();
 				}
 				if(is_array($current)){
@@ -541,7 +543,7 @@ namespace Jungle\User\AccessControl\Policy {
 				}
 
 				$currentPath.= $chunk . ($path?$this->path_delimiter:'');
-				if($current instanceof Context\ISubstitute){
+				if($current instanceof Context\SubstituteInterface){
 					$current = $current->getValue();
 				}
 				if(is_array($current)){

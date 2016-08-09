@@ -16,7 +16,13 @@ namespace Jungle\Application\View\Renderer\Data {
 	 * @package Jungle\Application\View\Renderer\Data
 	 */
 	class PhpSerialized extends Data{
-		
+
+		/** @var string  */
+		protected $type = 'php-serialized';
+
+		/** @var null  */
+		protected $mime_type = null;
+
 		/**
 		 * @param $data
 		 * @return string

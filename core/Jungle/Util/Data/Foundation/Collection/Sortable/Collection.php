@@ -34,10 +34,10 @@ namespace Jungle\Util\Data\Foundation\Collection\Sortable {
 		}
 
 		/**
-		 * @param $sorter
+		 * @param array|SorterInterface|null $sorter
 		 * @return mixed
 		 */
-		public function setSorter(SorterInterface $sorter = null){
+		public function setSorter($sorter = null){
 			$this->sorter = $sorter;
 			return $this;
 		}

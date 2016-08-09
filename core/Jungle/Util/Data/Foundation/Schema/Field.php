@@ -30,6 +30,9 @@ namespace Jungle\Util\Data\Foundation\Schema {
 		/** @var  bool */
 		protected $nullable = false;
 
+		/** @var array  */
+		protected $options = [];
+
 		/**
 		 * Field constructor.
 		 * @param $name
@@ -56,6 +59,40 @@ namespace Jungle\Util\Data\Foundation\Schema {
 		 */
 		public function getSchema(){
 			return $this->schema;
+		}
+
+		/**
+		 * @param array $options
+		 * @param bool|false $merge
+		 * @return $this
+		 */
+		public function setOptions(array $options, $merge = false){
+			$this->options = $merge?array_replace($this->options,$options):$options;
+			return $this;
+		}
+
+		/**
+		 * @return array
+		 */
+		public function getOptions(){
+			return $this->options;
+		}
+
+		/**
+		 * @param $key
+		 * @param null $default
+		 * @return null
+		 */
+		public function getOption($key, $default = null){
+			return isset($this->options[$key])?$this->options[$key]:$default;
+		}
+
+		/**
+		 * @param $key
+		 * @return bool
+		 */
+		public function hasOption($key){
+			return isset($this->options[$key]);
 		}
 
 
@@ -108,6 +145,42 @@ namespace Jungle\Util\Data\Foundation\Schema {
 		public function isUnique(){
 			return $this->schema->isPrimaryField($this->name);
 		}
+
+
+		/**
+		 * @param $native_value
+		 * @return mixed
+		 */
+		public function originate($native_value){
+			return $native_value;
+		}
+
+		/**
+		 * @param $originality_value
+		 * @return mixed
+		 */
+		public function evaluate($originality_value){
+			if($originality_value === null){
+				return $originality_value;
+			}
+			if($this->type){
+				settype($originality_value,$this->type);
+			}
+			return $originality_value;
+		}
+
+		/**
+		 * @param $native_value
+		 * @return bool
+		 */
+		public function verify($native_value){
+			if($native_value === null && $this->isNullable()){
+				return true;
+			}
+			$type = gettype($native_value);
+			return $type === $this->type;
+		}
+
 
 	}
 }

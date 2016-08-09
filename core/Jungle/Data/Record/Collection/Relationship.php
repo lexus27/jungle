@@ -11,8 +11,10 @@ namespace Jungle\Data\Record\Collection {
 
 	use Jungle\Data\Record;
 	use Jungle\Data\Record\Collection;
+	use Jungle\Data\Record\Collection\Exception\Synchronize;
 	use Jungle\Data\Record\Head\Field\Relation;
 	use Jungle\Data\Record\Head\Schema;
+	use Jungle\Exception;
 	use Jungle\Util\Data\Foundation\Condition\Condition;
 	use Jungle\Util\Data\Foundation\Condition\ConditionComplex;
 	use Jungle\Util\Data\Foundation\Condition\ConditionInterface;
@@ -63,7 +65,7 @@ namespace Jungle\Data\Record\Collection {
 		protected $as_checkpoint = true;
 
 		/**
-		 * @throws Exception\Synchronize
+		 * @throws Synchronize
 		 */
 		public function synchronize(){
 			$this->dirty_capturing = false;
@@ -128,6 +130,25 @@ namespace Jungle\Data\Record\Collection {
 		 */
 		protected function _applyConditions(){
 			$fields = $this->holder_field->getFields();
+
+			if($this->holder_field->isDynamic()){
+				if($this->holder->getOperationMade() !== Record::OP_CREATE){
+					$condition = [];
+					foreach($this->holder_field->getReferencedFields() as $i => $name){
+						$condition[] = [ $name, '=', $this->holder->getProperty($fields[$i]) ];
+					}
+					$condition = array_merge($condition, (array) $this->holder_field->getReferencedCondition());
+				}else{
+					$condition = (array) $this->holder_field->getReferencedCondition();
+				}
+				$condition[] = [
+					$this->holder_field->getDynamicReferencedSchemafield(), '=', $this->holder->getSchema()->getName()
+				];
+				$this->setContainCondition($condition);
+				return;
+			}
+
+
 			if($this->holder_field->isThrough()){
 				if($this->holder->getOperationMade() !== Record::OP_CREATE){
 					$condition = [];
@@ -145,10 +166,12 @@ namespace Jungle\Data\Record\Collection {
 					}
 					$condition = array_merge($condition, (array) $this->holder_field->getReferencedCondition());
 				}else{
-					$condition = array_merge((array) $this->holder_field->getReferencedCondition());
+					$condition = $this->holder_field->getReferencedCondition();
 				}
 				$this->setContainCondition($condition);
 			}
+
+
 
 		}
 
@@ -276,10 +299,8 @@ namespace Jungle\Data\Record\Collection {
 		 */
 		protected function _afterItemAdd($record){
 			if(!$this->holder_field->isThrough()){
-				$fn = $this->_getSpecialRecordSetFunction();
-				foreach($this->holder_field->getOppositeRelations() as $field){
-					$fn($record,'_set_property_relation_applied_in_new', true);
-					$record->setProperty($field->getName(),$this->holder); // Выставлен OPPOSITE
+				foreach($this->holder_field->getOppositeRelations($record) as $field){
+					$record->setProperty($field->getName(),$this->holder,false,true); // Выставлен OPPOSITE
 				}
 			}else{
 				/**
@@ -289,7 +310,7 @@ namespace Jungle\Data\Record\Collection {
 				 *
 				 */
 				/** @var Relation $field */
-				foreach($this->holder_field->getOppositeRelations() as $field){
+				foreach($this->holder_field->getOppositeRelations($record) as $field){
 					$relationship = $record->getProperty($field->getName());
 					if(!in_array($this->holder,$relationship->items,true)){
 						$relationship->items[] = $this->holder;
@@ -329,15 +350,13 @@ namespace Jungle\Data\Record\Collection {
 						return $affected;
 					}
 				}else{
-					if($this->pending_operations_capturing){
-						$this->pending_operations[] = function() use($condition){
-							$extended = $this->getExtendedContainCondition($condition);
-							$iCondition = $this->getExtendedThroughCondition();
-							$iSchema = $this->schema->getSchemaManager()->getSchema($this->intermediate_schema);
-							$affected = $iSchema->storageRemoveThrough($iCondition?$iCondition->toStorageCondition():null, $this->schema,$extended?$extended->toStorageCondition():null,array_flip($this->intermediate_collation));
-							return $affected;
-						};
-					}
+					$this->addPendingOperation(function() use($condition){
+						$extended = $this->getExtendedContainCondition($condition);
+						$iCondition = $this->getExtendedThroughCondition();
+						$iSchema = $this->schema->getSchemaManager()->getSchema($this->intermediate_schema);
+						$affected = $iSchema->storageRemoveThrough($iCondition?$iCondition->toStorageCondition():null, $this->schema,$extended?$extended->toStorageCondition():null,array_flip($this->intermediate_collation));
+						return $affected;
+					});
 					$this->getCheckpoint()->_remove($condition);
 				}
 
@@ -356,15 +375,37 @@ namespace Jungle\Data\Record\Collection {
 				}elseif($level === self::SYNC_FULL){
 					$this->getRoot()->_remove($this->getExtendedContainCondition($condition));
 				}else{
-					if($this->pending_operations_capturing){
-						$this->pending_operations[] = function() use($condition){
-							$extended = $this->getExtendedContainCondition($condition);
-							$affected = $this->schema->storageRemove($extended->toStorageCondition());
-							return $affected;
-						};
-					}
+					$this->addPendingOperation(function() use($condition){
+						$extended = $this->getExtendedContainCondition($condition);
+						$affected = $this->schema->storageRemove($extended->toStorageCondition());
+						return $affected;
+					});
 					$this->getCheckpoint()->_remove($condition);
 				}
+			}
+			return $this;
+		}
+
+		/**
+		 * @param callable $operation
+		 * @return bool
+		 */
+		public function addPendingOperation(callable $operation){
+			if($this->pending_operations_capturing){
+				$this->pending_operations[] = $operation;
+				return true;
+			}
+			return false;
+		}
+
+		/**
+		 * @param callable $operation
+		 * @return $this
+		 */
+		public function removePendingOperation($operation){
+			$i = array_search($operation,$this->pending_operations, true);
+			if($i !== false){
+				array_splice($this->pending_operations,$i,1);
 			}
 			return $this;
 		}
@@ -394,7 +435,7 @@ namespace Jungle\Data\Record\Collection {
 			$removed = $this->dirty_removed;
 			parent::resetDirty();
 			if($this->isThrough() && ($added || $removed)){
-				$opposites = $this->holder_field->getOppositeRelations();
+				$opposites = $this->holder_field->getOppositeRelations($record);
 				foreach($added as $record){
 					foreach($opposites as $field){
 						$name = $field->getName();
@@ -427,14 +468,14 @@ namespace Jungle\Data\Record\Collection {
 		 */
 		protected function _afterItemRemove($record){
 			if(!$this->holder_field->isThrough()){
-				foreach($this->holder_field->getOppositeRelations() as $field){
+				foreach($this->holder_field->getOppositeRelations($record) as $field){
 					$record->setProperty($field->getName(),null); // Выставлен OPPOSITE
 				}
 			}else{
 				if($record->getOperationMade() !== Record::OP_CREATE){
 					unset($this->intermediate_registry[$record->getIdentifierValue()]);
 				}
-				foreach($this->holder_field->getOppositeRelations() as $field){
+				foreach($this->holder_field->getOppositeRelations($record) as $field){
 					$fieldName = $field->getName();
 					if($record->isInitializedProperty($fieldName)){
 						$relationship = $record->getProperty($fieldName);
@@ -480,6 +521,7 @@ namespace Jungle\Data\Record\Collection {
 								unset($item[$key]);
 							}
 						}
+						// FIXME already loaded intermediate record check
 						$iRecord = $iSchema->initializeRecord($iItem);
 						$iCollection->add($iRecord);
 
@@ -527,6 +569,8 @@ namespace Jungle\Data\Record\Collection {
 					throw new Exception('Wrong collection item type add');
 				}
 				$this->add($value);
+			}else{
+				throw new Exception('\ArrayAccess::offsetSet to Relationship, support only append(example: $relationship[] = $item;) without pass index');
 			}
 		}
 

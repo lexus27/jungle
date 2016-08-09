@@ -1,0 +1,6 @@
+<? if($this->user):?>
+	Пользователь "<?=$this->process->user->username?>" успешно удален
+<? else: ?>
+	Ошибка удаления пользователя "<?=$this->process->user->username?>"
+<? endif; ?>
+<p><a href="<?= $this->process->linkMain()?>">На главную!</a></p>

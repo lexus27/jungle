@@ -40,7 +40,7 @@ namespace Jungle\RegExp {
 	 * Class Type
 	 * @package Jungle\RegExp
 	 */
-	class Type{
+	class Type implements TypeInterface{
 
 		/** @var Manager */
 		protected $registry;

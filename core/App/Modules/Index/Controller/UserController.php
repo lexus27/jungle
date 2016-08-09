@@ -10,8 +10,9 @@
 namespace App\Modules\Index\Controller {
 	
 	use App\Model\User;
-	use Jungle\Application\Dispatcher\Controller\Process;
 	use Jungle\Application\Dispatcher\Controller\ProcessInterface;
+	use Jungle\Application\Dispatcher\Process;
+	use Jungle\User\AccessAuth\Auth;
 
 	/**
 	 * Class UserController
@@ -19,46 +20,95 @@ namespace App\Modules\Index\Controller {
 	 */
 	class UserController{
 
-		public function indexMeta(array $meta = []){
-			$meta['hint'] = [
-				'hinting' => [
-					'user:'.User::class
-				]
-			];
-			return $meta;
+		public function indexMetadata(){
+			return [
+				'dynamic'  => true,
+				'requires' => [
+					'user' => User::class
+				],
+			    'rules' => [
+				    'user' => [
+					    'is' => null,
+				        'forward' => '&not_found'
+				    ]
+			    ],
+			    'renderer_rules' => [
 
+			    ],
+			    'result' => [
+				    'default' => 'user',
+			    ]
+			];
 		}
 
 		/**
 		 * @param Process $process
+		 * @return User
 		 */
 		public function indexAction(Process $process){
-			echo '<h1>'.$process->getReferenceString().'</h1>';
-			echo '<p><a href="'.$process->getRouter()->generateLinkBy('root').'">Главная</a></p>';
-		}
-
-		/**
-		 * @param ProcessInterface $process
-		 * @return mixed
-		 */
-		public function infoActon(ProcessInterface $process){
 			return $process->user;
 		}
 
 		/**
 		 * @param Process $process
-		 * @param $p
-		 * @param $reference
+		 * @return array|null
 		 */
-		protected function renderLink(Process $process, $p , $reference, $name = null){
-			if($name){
-				$link = $process->getRouting()->getRoute()->getRouter()->generateLinkBy($name, $p , $reference);
-			}else{
-				$link = $process->getRouting()->getRoute()->getRouter()->generateLink($p , $reference);
+		public function createAction(Process $process){
+			if($process->username){
+				$user = new User();
+				$user->username = $process->username;
+				if($process->password !== $process->password_confirm){
+					throw new \LogicException('Password is invalid confirmed!');
+				}
+				$auth = Auth::getAccessAuth([$process->username,$process->password]);
+				$user->password = $auth->hash();
+				$user->save();
+				return [
+					'user' => $user
+				];
 			}
-
-			echo '<p><a href="'.$link.'">Перейти по ссылке: "http://'.$_SERVER['HTTP_HOST'] . $link.'"</a></p>';
+			return null;
 		}
+
+		/**
+		 * @param Process $process
+		 * @return mixed
+		 */
+		public function updateAction(Process $process){
+			/** @var User\Note $note */
+			$params = $process->getParams();
+			if(isset($params['username'])){
+				$user = $process->user;
+				return $user->assign($process->getParams(),['username'])->save();
+			}
+			return $process->user;
+		}
+
+		/**
+		 * @param Process $process
+		 * @return mixed
+		 */
+		public function deleteAction(Process $process){
+			return $process->user->remove();
+		}
+
+		/**
+		 * @param Process $process
+		 * @return User
+		 */
+		public function notesAction(Process $process){
+			return $process->user;
+		}
+
+		/**
+		 * @param Process $process
+		 * @return User\Note
+		 */
+		public function noteAction(Process $process){
+			return $process->note;
+		}
+
+
 	}
 }
 

@@ -8,6 +8,7 @@
 namespace Jungle\User\AccessControl\Policy {
 
 	use Jungle\User\AccessControl\Context;
+	use Jungle\User\AccessControl\Matchable;
 
 	/**
 	 * Class Expression
@@ -46,7 +47,10 @@ namespace Jungle\User\AccessControl\Policy {
 		 * @return mixed
 		 */
 		public function __invoke($result, Context $context, Matchable $policy){
-			return $this->call($result,$context,$policy);
+			if($this->fn){
+				return call_user_func($this->fn,$result,$context,$policy);
+			}
+			return null;
 		}
 
 	}

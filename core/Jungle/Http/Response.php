@@ -159,7 +159,7 @@ namespace Jungle\Http {
 		 * @return Cookie
 		 */
 		public function getCookie($key){
-			return $this->cookies[$key];
+			return isset($this->cookies[$key])?$this->cookies[$key]:null;
 		}
 
 		/**

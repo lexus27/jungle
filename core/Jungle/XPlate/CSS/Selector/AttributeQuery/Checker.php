@@ -8,8 +8,8 @@
 
 namespace Jungle\XPlate\CSS\Selector\AttributeQuery {
 
-	use Jungle\Code\LogicConstruction\Condition;
-	use Jungle\Code\LogicConstruction\Operator;
+	use Jungle\ExoCode\LogicConstruction\Condition;
+	use Jungle\ExoCode\LogicConstruction\Operator;
 
 	/**
 	 * Class Checker

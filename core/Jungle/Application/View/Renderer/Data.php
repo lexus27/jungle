@@ -9,8 +9,9 @@
  */
 namespace Jungle\Application\View\Renderer {
 	
-	use Jungle\Application\Dispatcher\Controller\ProcessInterface;
+	use Jungle\Application\Dispatcher\ProcessInterface;
 	use Jungle\Application\View\Renderer;
+	use Jungle\Application\ViewInterface;
 
 	/**
 	 * Class Data
@@ -23,19 +24,28 @@ namespace Jungle\Application\View\Renderer {
 
 		/**
 		 * @param ProcessInterface $process
-		 * @return mixed
+		 * @param ViewInterface $view
+		 * @param array $variables
+		 * @param array $options
+		 * @return string
 		 */
-		public function render(ProcessInterface $process){
-			$string = $this->convert($this->extractData($process));
-			return $string;
+		public function render(ProcessInterface $process, ViewInterface $view, array $variables = [], array $options = []){
+			return $this->convert($this->extractData($process));
 		}
 
 		/**
-		 * @param ProcessInterface $process
+		 * @param \Jungle\Application\Dispatcher\ProcessInterface $process
 		 * @return mixed
 		 */
 		public function extractData(ProcessInterface $process){
-			return $process->getResult();
+			$result = $process->getResult();
+			if(!is_array($result)){
+				return [
+					'object' => $result
+				];
+			}else{
+				return $result;
+			}
 		}
 
 		/**

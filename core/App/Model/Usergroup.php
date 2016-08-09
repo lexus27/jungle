@@ -9,6 +9,9 @@
  */
 namespace App\Model {
 	
+	use App\Model\Usergroup\Member;
+	use Jungle\Data\Record\Collection\Relationship;
+	use Jungle\Data\Record\Head\Schema;
 	use Jungle\Data\Record\Model;
 
 	/**
@@ -16,7 +19,32 @@ namespace App\Model {
 	 * @package App\Model
 	 */
 	class Usergroup extends Model{
-		
+
+		/** @var  int */
+		protected $id;
+
+		/** @var  string */
+		protected $name;
+
+		/** @var  Relationship|User[] */
+		protected $users;
+
+		/**
+		 * @param Schema $schema
+		 */
+		public static function initialize(Schema $schema){
+			$schema->field('id','int');
+			$schema->field('name','string');
+			$schema->hasManyToMany('users',Member::class,User::class,['id'],['group_id'],['user_id'],['id']);
+		}
+
+		/**
+		 * @return string
+		 */
+		public function getSource(){
+			return 'ex_usergroup';
+		}
+
 	}
 }
 

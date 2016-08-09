@@ -15,16 +15,6 @@ namespace App\Modules {
 	 * Class Index
 	 * @package App\Modules
 	 */
-	class Index extends Dispatcher\Module{
-
-		/**
-		 * @return string
-		 */
-		public function getControllerNamespace(){
-			return __NAMESPACE__ . '\\Index\\Controller';
-		}
-
-
-	}
+	class Index extends Dispatcher\Module\StaticModule{}
 }
 

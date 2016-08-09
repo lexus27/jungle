@@ -173,7 +173,7 @@ $reqSet->addRequest(new Request('/lamp/on','GET'));
 
 
 
-$router = new \Jungle\Application\Dispatcher\Router\HTTP\Router();
+$router = new \Jungle\Application\Adaptee\Http\Dispatcher\Router();
 
 
 $router->get('/lamp/{turn:bool(on,off)(,)}',[

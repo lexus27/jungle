@@ -11,8 +11,11 @@ namespace App\Model {
 
 	use App\Model\User\Note;
 	use App\Model\User\Profile;
+	use App\Model\Usergroup\Member;
 	use Jungle\Data\Record\Collection\Relationship;
+	use Jungle\Data\Record\Head\Schema;
 	use Jungle\Data\Record\Model;
+	use Jungle\User\UserInterface;
 
 	/**
 	 * Class User
@@ -25,7 +28,7 @@ namespace App\Model {
 	 * @property Note[]         $notes
 	 * @property Usergroup[]    $memberIn
 	 */
-	class User extends Model{
+	class User extends Model implements UserInterface{
 
 		/** @var  string */
 		protected $id;
@@ -35,6 +38,9 @@ namespace App\Model {
 
 		/** @var  string */
 		protected $password;
+
+		/** @var  string */
+		protected $salt;
 
 		/** @var  Profile */
 		protected $profile;
@@ -53,19 +59,42 @@ namespace App\Model {
 		}
 
 		/**
-		 * @Do-initialize-current-model-schema
+		 * @return bool
 		 */
-		public function initialize(){
-			$this->specifyField('id','integer');
-			$this->specifyField('username','string');
-			$this->specifyField('password','string','password_hash');
-			$this->specifyFieldVisibility('id',true,false);
+		public function getAutoInitializeProperties(){
+			return true;
+		}
 
-			$this->hasOne('profile',Profile::class,['id'],['id'],true);
-			$this->hasMany('notes',Note::class,['id'],['user_id'],true);
-			//$this->hasManyToMany('memberIn',Member::class,Usergroup::class,['id'],['user_id'],['group_id'],['id']);
+		/**
+		 * @param Schema $schema
+		 */
+		public static function initialize(Schema $schema){
+			$schema->field('id',[
+				'type' => 'integer',
+			    'readonly' => true,
+			]);
+			$schema->field('username');
+			$schema->field('password',[ 'original_key' => 'password_hash' ]);
+
+			$schema->hasOne('profile',Profile::class, ['id'], ['id']);
+			$schema->hasMany('notes',Note::class, ['id'], ['user_id']);
+
+			$schema->hasManyToMany('memberIn',Member::class,Usergroup::class,['id'],['user_id'],['group_id'],['id']);
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getId(){
+			return $this->id;
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getUsername(){
+			return $this->username;
 		}
 
 	}
 }
-

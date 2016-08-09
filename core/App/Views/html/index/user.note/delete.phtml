@@ -1,0 +1,7 @@
+<? if($this->note):?>
+	Записка "<?=$this->process->note->title?>" успешно удалена
+<? else: ?>
+	Ошибка удаления записки "<?=$this->process->note->title?>"
+<? endif; ?>
+<?$user = $this->process->note->user?>
+<p><a href="<?= $this->process->linkBy('user', $user)?>"><?=$user->username?></a></p>

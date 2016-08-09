@@ -18,9 +18,6 @@ namespace Jungle\Http {
 	 */
 	class Browser implements BrowserInterface{
 
-		/** @var bool */
-		protected $processed = false;
-
 		/** @var string */
 		protected $browser;
 

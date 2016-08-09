@@ -9,6 +9,8 @@
  */
 namespace App\Model\User {
 	
+	use App\Model\User;
+	use Jungle\Data\Record\Head\Schema;
 	use Jungle\Data\Record\Model;
 
 	/**
@@ -16,7 +18,44 @@ namespace App\Model\User {
 	 * @package App\Model\User
 	 */
 	class Configuration extends Model{
-		
+
+		/** @var  string */
+		protected $key;
+
+		/** @var  mixed */
+		protected $value;
+
+		/** @var  int */
+		protected $user_id;
+
+		/** @var  User */
+		protected $user;
+
+		/**
+		 * @param Schema $schema
+		 */
+		public static function initialize(Schema $schema){
+			$schema->field('key','string');
+			$schema->field('value',[
+				'type' => 'string',
+			    'nullable' => true
+			]);
+			$schema->field('user_id','int');
+
+			$schema->belongsTo('user',User::class,['user_id'],['id'],[
+				'delete_rule' => 'cascade',
+				'update_rule' => 'restrict',
+			]);
+
+		}
+
+		/**
+		 * @return string
+		 */
+		public function getSource(){
+			return 'ex_user';
+		}
+
 	}
 }
 

@@ -243,10 +243,15 @@ namespace Jungle\Data\Record {
 		
 		
 		/**
-		 * @param $sorter
+		 * @param array|SorterInterface|SortableSorterInterface|null $sorter
 		 * @return mixed
 		 */
-		public function setSorter(SortableSorterInterface $sorter = null){
+		public function setSorter($sorter = null){
+			if(is_array($sorter)){
+				$object = new Sorter();
+				$object->setSortFields($sorter);
+				$sorter = $object;
+			}
 			if($sorter!==null && !$sorter instanceof SorterInterface){
 				throw new \LogicException('Need ' . SorterInterface::class);
 			}
@@ -299,6 +304,23 @@ namespace Jungle\Data\Record {
 			}
 			return $this;
 		}
+
+		/**
+		 * @record-listener
+		 * @param Record $record
+		 */
+		public function itemCreated(Record $record){
+			$root = $this->getRoot();
+			$id = $record->getIdentifierValue();
+			if(!in_array($id,$root->root_present_identifiers,true)){
+				$root->root_present_identifiers[$id] = true;
+			}
+		}
+
+		/**
+		 * @param Record $record
+		 */
+		public function itemUpdated(Record $record){}
 
 		/**
 		 *
@@ -495,8 +517,6 @@ namespace Jungle\Data\Record {
 					}
 				}
 			}
-
-
 			return null;
 		}
 		
@@ -545,7 +565,7 @@ namespace Jungle\Data\Record {
 			$count = 0;
 			$a = [];
 			foreach($this->items as $item){
-				if($condition && call_user_func($condition,$item)){
+				if(!$condition || call_user_func($condition,$item)){
 					$elapsed++;
 					if(!$offset || $elapsed>=$offset){
 						$a[] = $item;
@@ -565,7 +585,7 @@ namespace Jungle\Data\Record {
 		 * @param null $offset
 		 * @return Record|null
 		 */
-		public function collectOne(ConditionInterface $condition = null, $offset = null){
+		public function collectOne($condition = null, $offset = null){
 			$a = $this->collect($condition,1,$offset);
 			return $a?$a[0]:null;
 		}
@@ -656,7 +676,7 @@ namespace Jungle\Data\Record {
 		 */
 		protected function _beforeItemAdd($record){
 			$schema = $record->getSchema();
-			if($schema !== $this->schema){
+			if(!$this->schema->isDerivativeFrom($schema)){
 				throw new \LogicException(
 					'Passed record schema "'.$schema->getName().
 					'" is not support, collection use "'.$this->schema->getName().'" schema!');
@@ -669,7 +689,7 @@ namespace Jungle\Data\Record {
 			// Проверка присутствия, для загруженых потомков добавляемых не деплоем
 			if(!$this->ancestor &&
 			   $record->getOperationMade() !== $record::OP_CREATE &&
-			   $root->saturation_mode !== self::SAT_DEPLOY
+			   ($root->saturation_mode !== self::SAT_DEPLOY  || count($this->items))
 			){
 				$recordId = $record->getIdentifierValue();
 				if(isset($root->root_present_identifiers[$recordId])){
@@ -714,8 +734,6 @@ namespace Jungle\Data\Record {
 			}
 		}
 
-
-
 		/**
 		 * @param $level
 		 * @return $this
@@ -731,8 +749,6 @@ namespace Jungle\Data\Record {
 		public function getSyncLevel(){
 			return $this->getRoot()->sync_level;
 		}
-
-
 
 		protected static $special_record_call_function = null;
 		protected static $special_record_get_function = null;
@@ -812,19 +828,15 @@ namespace Jungle\Data\Record {
 			if($level === self::SYNC_STORE){
 				$affected = $this->schema->storageUpdate($data, $this->getExtendedContainCondition($condition)->toStorageCondition());
 				if($affected){
-					$func = $this->_getSpecialRecordSetFunction();
 					foreach($this->getRoot()->collect($condition) as $item){
-						$func($item,'_set_property_dirty_applied',true);
-						$item->assign($data);
+						$item->assign($data,null,null,false,false, true);
 					}
 					return $affected;
 				}
 			}elseif($level === self::SYNC_FULL){
 				if($fullSyncIgnoreDirty){
-					$func = $this->_getSpecialRecordSetFunction();
 					foreach($this->getRoot()->collect($condition) as $item){
-						$func($item,'_set_property_dirty_applied',true);
-						$item->assign($data);
+						$item->assign($data,null,null,false,false, true);
 					}
 				}else{
 					foreach($this->getRoot()->collect($condition) as $item){
@@ -904,7 +916,7 @@ namespace Jungle\Data\Record {
 		public function removeItem(Record $record){
 			$level = $this->getSyncLevel();
 			if($level === self::SYNC_STORE){
-				if(!$record->remove()){
+				if(!$record->delete()){
 					return false;
 				}
 				if(!$this->getRoot()->_removeItem($record)){
@@ -1071,10 +1083,10 @@ namespace Jungle\Data\Record {
 			if($this->auto_deploy){
 				$condition = null; $limit = null; $offset = null; $orderBy = null;
 			}
-			if(!$this->deployed){
+			if(!$this->deployed && !count($this->items)){
 				$this->sorted = true;
 			}
-			$this->_deploy($this->_prepareDeployStorageCondition($condition), $limit, $offset, $orderBy);
+			$this->_deploy($condition, $limit, $offset, $orderBy);
 			$this->saturate(false);
 			$this->deployed = true;
 			return $this;
@@ -1127,7 +1139,7 @@ namespace Jungle\Data\Record {
 			if(!$orderBy && ($orderBy = $this->getSorter())){
 				$orderBy = $orderBy->toStorageSortFields($this->schema);
 			}
-			$shipment = $this->schema->storageLoad($condition,$limit?:$this->getLimit(), $this->getOffset() + $offset , $orderBy);
+			$shipment = $this->schema->storageLoad($this->_prepareDeployStorageCondition($condition),$limit?:$this->getLimit(), $this->getOffset() + $offset , $orderBy);
 			while(($item = $shipment->asAssoc()->fetch()) !== false){
 				$this->add($this->schema->initializeRecord($item));
 			}
@@ -1308,23 +1320,24 @@ namespace Jungle\Data\Record {
 		/**
 		 *
 		 */
-		protected function _onExtended(){
-
-		}
+		protected function _onExtended(){}
 		
-		protected function _onLimitChanged($old){
-			
-		}
+		protected function _onLimitChanged($old){}
 		
-		protected function _onOffsetChanged($old){
-			
-		}
+		protected function _onOffsetChanged($old){}
 
 		/**
 		 * @return string
 		 */
 		public function getInformationIdentifier(){
 			return $this->getSchema()->getName() . '[COLLECTION]';
+		}
+
+		/**
+		 * @return string
+		 */
+		public function __toString(){
+			return $this->getInformationIdentifier();
 		}
 
 		/**
@@ -1335,6 +1348,39 @@ namespace Jungle\Data\Record {
 			if($this->auto_sync){
 				$this->synchronize();
 			}
+		}
+
+		/**
+		 * @param null $condition
+		 * @param null $offset
+		 * @param null $limit
+		 * @return int
+		 */
+		public function count($condition = null, $offset = null, $limit = null){
+			$syncLevel = $this->getSyncLevel();
+			if($syncLevel === self::SYNC_LOCAL){
+				return $this->getCheckpoint()->_count($condition, $offset, $limit);
+			}elseif($syncLevel === self::SYNC_FULL){
+				return $this->getRoot()->_count($condition, $offset, $limit);
+			}else{
+				$schema = $this->getSchema();
+				$condition = $this->getExtendedContainCondition($condition);
+				$condition = $condition?$condition->toStorageCondition():[];
+				return $schema->storageCount($condition,$limit?:$this->getLimit(), $this->getOffset() + $offset);
+			}
+		}
+
+		/**
+		 * @param $condition
+		 * @param null $offset
+		 * @param $limit
+		 * @return int
+		 */
+		protected function _count($condition = null, $offset = null, $limit = null){
+			if($condition === null && $offset === null && $limit === null){
+				return count($this->items);
+			}
+			return count($this->collect($condition,$limit,$offset));
 		}
 
 		

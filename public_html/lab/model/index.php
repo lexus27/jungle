@@ -5488,7 +5488,7 @@ class Condition implements ConditionTargetInterface{
 	 * @return mixed
 	 */
 	public function __invoke($data, $access = null){
-		return \Jungle\CodeForm\LogicConstruction\Condition::collateRaw(
+		return \Jungle\ExoCode\LogicConstruction\Condition::collateRaw(
 			OuterValueAccess::handleAccessGet($access, $data, $this->field),
 			$this->operator,
 			$this->wanted

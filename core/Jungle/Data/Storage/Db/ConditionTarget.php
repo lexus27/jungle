@@ -41,5 +41,6 @@ namespace Jungle\Data\Storage\Db {
 		abstract public function mountIn(Dialect $dialect, Sql $servant);
 
 	}
+
 }
 

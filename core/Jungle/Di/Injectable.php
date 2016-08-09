@@ -11,13 +11,15 @@ namespace Jungle\Di {
 
 	use Jungle\Application;
 	use Jungle\Application\Dispatcher;
-	use Jungle\Application\Dispatcher\RouterInterface;
 	use Jungle\Application\RequestInterface as ApplicationRequestInterface;
 	use Jungle\Application\ResponseInterface as ApplicationResponseInterface;
+	use Jungle\Application\View\ViewStrategyInterface;
 	use Jungle\Application\ViewInterface;
 	use Jungle\Data\Record\Head\SchemaManager;
 	use Jungle\Loader;
 	use Jungle\Messenger;
+	use Jungle\User\Account;
+	use Jungle\Util\Specifications\Http\CookieManagerInterface;
 	use Jungle\Util\Specifications\Http\RequestInterface;
 	use Jungle\Util\Specifications\Http\ResponseInterface;
 	use Jungle\Util\Specifications\Http\ResponseSettableInterface;
@@ -28,12 +30,14 @@ namespace Jungle\Di {
 	 *
 	 * @property Application $application
 	 * @property Dispatcher $dispatcher
-	 * @property RouterInterface|\Jungle\Application\Adaptee\Http\Dispatcher\Router $router
+	 * @property \Jungle\Application\RouterInterface|\Jungle\Application\Strategy\Http\Router $router
 	 * @property ApplicationRequestInterface|RequestInterface $request
 	 * @property ApplicationResponseInterface|ResponseInterface|ResponseSettableInterface $response
 	 * @property $cache
 	 * @property $event
+	 *
 	 * @property ViewInterface $view
+	 * @property ViewStrategyInterface $view_strategy
 	 *
 	 * @property $filesystem
 	 * @property $database
@@ -41,15 +45,22 @@ namespace Jungle\Di {
 	 *
 	 * @property Loader $loader
 	 *
-	 * @property $user
+	 * @property Account $account
 	 * @property $access
 	 * @property $session
+	 * @property CookieManagerInterface $cookie
 	 * @property Messenger $messenger
 	 */
 	class Injectable implements InjectionAwareInterface{
 
 		/** @var  DiInterface */
 		protected $_dependency_injector;
+
+		/** @var bool  */
+		protected static $_dependency_injector_cacheable = false;
+
+		/** @var array  */
+		protected $_dependency_injector_cache = [];
 
 		/**
 		 * @return DiInterface
@@ -72,10 +83,19 @@ namespace Jungle\Di {
 		 * @return mixed
 		 */
 		public function __get($name){
-			if(!$this->_dependency_injector){
-				throw new \LogicException('DependencyInjector is not supplied in object');
+			if(static::$_dependency_injector_cacheable){
+				if(!array_key_exists($name,$this->_dependency_injector_cache)){
+					$result = $this->_dependency_injector->get($name);
+					$this->_dependency_injector_cache[$name] = $result;
+					return $result;
+				}
+				return $this->_dependency_injector_cache[$name];
+			}else{
+				if(!$this->_dependency_injector){
+					throw new \LogicException('DependencyInjector is not supplied in object');
+				}
+				return $this->_dependency_injector->get($name);
 			}
-			return $this->_dependency_injector->get($name);
 		}
 
 	}

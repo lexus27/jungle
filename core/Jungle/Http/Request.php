@@ -65,7 +65,7 @@ namespace Jungle\Http {
 		 *
 		 */
 		public function getUrl(){
-			return $_SERVER['HTTP_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+			return $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . urldecode($_SERVER['REQUEST_URI']);
 		}
 
 		/**
@@ -198,7 +198,7 @@ namespace Jungle\Http {
 		public function getUri(){
 			if(is_null($this->uri)){
 				$arr = explode('?',$_SERVER['REQUEST_URI']);
-				$this->uri = $arr[0];
+				$this->uri = urldecode($arr[0]);
 			}
 			return $this->uri;
 		}
@@ -209,7 +209,7 @@ namespace Jungle\Http {
 		public function getPath(){
 			if(is_null($this->uri)){
 				$arr = explode('?',$_SERVER['REQUEST_URI']);
-				$this->uri = $arr[0];
+				$this->uri = urldecode($arr[0]);
 			}
 			return $this->uri;
 		}
@@ -415,6 +415,10 @@ namespace Jungle\Http {
 		 */
 		public function getContentType(){
 			return $this->getHeader('Content-Type');
+		}
+
+		public function getJson(){
+			return json_encode();
 		}
 
 		/**

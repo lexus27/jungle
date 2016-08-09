@@ -19,6 +19,10 @@ namespace Jungle\Data\Storage\Db\ConditionTarget {
 	 */
 	class Clean extends ConditionTarget{
 
+		/**
+		 * Clean constructor.
+		 * @param $sql
+		 */
 		public function __construct($sql){
 			parent::__construct($sql);
 		}

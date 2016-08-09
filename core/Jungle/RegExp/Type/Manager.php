@@ -9,6 +9,7 @@
  */
 namespace Jungle\RegExp\Type {
 
+	use Jungle\Exception;
 	use Jungle\RegExp;
 	use Jungle\RegExp\Type;
 	use Jungle\Util\Value;
@@ -94,8 +95,21 @@ namespace Jungle\RegExp\Type {
 			$type->setRegistry($this);
 		}
 
-
-
+		/**
+		 * @param $value
+		 * @param $type
+		 * @param array $options
+		 * @return bool
+		 * @throws Exception
+		 */
+		public static function validate($value, $type, array $options = null){
+			$manager = static::getDefault();
+			$t = $manager->getType($type);
+			if($t){
+				return $t->isValid($value, $options);
+			}
+			throw new Exception('RegExp.Type "'.$type.'" not found in manager!');
+		}
 
 		/**
 		 * @return Manager
@@ -109,10 +123,16 @@ namespace Jungle\RegExp\Type {
 
 				$r->add('word')
 						->setVartype('string')
-						->setPattern('[[:alpha:]][\w\d\s]*');
+						->setPattern('\w[\w\d\s]*');
+				$r->add('keyword')
+					->setVartype('string')
+					->setPattern('\w[\w\-\s]*)');
+				$r->add('key')
+					->setVartype('string')
+					->setPattern('\w[\w\-\.\s]*');
 				$r->add('text')
 						->setVartype('string')
-						->setPattern('[[:alpha:]][\w\s,\.\;\-\=\"\'\(\)\^\:\?\!]*');
+						->setPattern('[[:alpha:]][\w\s,\.\;\-\=\"\'\(\)\^\:\?\!]*)');
 
 				/**
 				 * Date

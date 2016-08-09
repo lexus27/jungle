@@ -16,10 +16,10 @@ namespace Jungle\Util\Data\Foundation\Collection\Sortable {
 	interface SorterAwareInterface{
 
 		/**
-		 * @param $sorter
+		 * @param array|SorterInterface|null $sorter
 		 * @return mixed
 		 */
-		public function setSorter(SorterInterface $sorter = null);
+		public function setSorter($sorter = null);
 
 		/**
 		 * @return mixed

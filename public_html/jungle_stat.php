@@ -305,16 +305,6 @@ $classAnalyzer->setExtensions([
 	'php'
 ]);
 $classAnalyzer->setBaseDirectories([
-	__DIR__ . DIRECTORY_SEPARATOR . 'lab'
-]);
-echo '<pre>',print_r($classAnalyzer->analyze(), 1),'</pre>';
-
-$classAnalyzer->setBaseDirectories([
-	$loader->getNamespacePath('Jungle') . DIRECTORY_SEPARATOR . 'Data'
-]);
-echo '<pre>',print_r($classAnalyzer->analyze(), 1),'</pre>';
-
-$classAnalyzer->setBaseDirectories([
-	$loader->getNamespacePath('Jungle') . DIRECTORY_SEPARATOR . 'XPlate'
+	$loader->getNamespacePath('Jungle')
 ]);
 echo '<pre>',print_r($classAnalyzer->analyze(), 1),'</pre>';

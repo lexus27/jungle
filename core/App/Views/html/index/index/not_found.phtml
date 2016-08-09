@@ -1,0 +1,12 @@
+<? use Jungle\Util\Specifications\Http\BrowserInterface;
+
+$this->pagetitle = 'Не найдено';?><h2>404 Страницы не существует.</h2>
+<p>
+	Вы зашли с
+	<?
+	/** @var BrowserInterface $browser */
+	$browser = $this->services->request->getBrowser();
+		echo $browser->getName(),' ',$browser->getVersion();
+	?>, <?=$browser->getPlatform();?>
+
+</p>

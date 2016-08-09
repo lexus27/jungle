@@ -9,13 +9,22 @@
  */
 namespace App\Model\User {
 	
+	use App\Model\Comment;
 	use App\Model\User;
+	use Jungle\Data\Record\Collection\Relationship;
 	use Jungle\Data\Record\Head\Field\Relation;
+	use Jungle\Data\Record\Head\Schema;
 	use Jungle\Data\Record\Model;
 
 	/**
 	 * Class Note
 	 * @package App\Model\User
+	 *
+	 * @property $id
+	 * @property $user_id
+	 * @property $title
+	 * @property $text
+	 * @property $user
 	 */
 	class Note extends Model{
 
@@ -34,6 +43,8 @@ namespace App\Model\User {
 		/** @var  User */
 		protected $user;
 
+		/** @var  Comment[]|Relationship */
+		protected $comments;
 
 		/**
 		 * @return string
@@ -43,15 +54,30 @@ namespace App\Model\User {
 		}
 
 		/**
-		 *
+		 * @param Schema $schema
 		 */
-		public function initialize(){
-			$this->specifyField('id','integer');$this->specifyFieldVisibility('id',true,false);
-			$this->specifyField('user_id','integer');
-			$this->specifyField('title','string','header');
-			$this->specifyField('text','string','body');
+		public static function initialize(Schema $schema){
+			$schema->field('id',[
+				'type'          => 'integer',
+				'readonly'      => true
+			]);
+			$schema->field('user_id',[
+				'type'          => 'integer',
+				'readonly'      => true
+			]);
+			$schema->field('title',[
+				'original_key'  => 'header'
+			]);
+			$schema->field('text',[
+				'original_key'  => 'body'
+			]);
 
-			$this->belongsTo('user',User::class,Relation::ACTION_CASCADE,Relation::ACTION_CASCADE,false,['user_id'],['id'],false);
+			$schema->belongsTo('user',User::class,['user_id'],['id'],[
+				'delete_rule' => Relation::ACTION_CASCADE,
+				'update_rule' => Relation::ACTION_CASCADE,
+			]);
+
+			$schema->hasManyDynamic('comments',Comment::class,['id'],['subject_id'],'subject_schema',['subject']);
 		}
 
 	}

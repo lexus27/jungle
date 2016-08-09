@@ -9,7 +9,7 @@
  */
 namespace Jungle\Util\Data\Foundation\Condition {
 
-	use Jungle\Util\Data\Foundation\Record\Properties\PropertyRegistryInterface;
+	use Jungle\Util\Data\Foundation\Record\PropertyRegistryInterface;
 	use Jungle\Util\Data\Foundation\Schema\OuterInteraction\ValueAccessAwareInterface;
 
 	/**
@@ -27,7 +27,7 @@ namespace Jungle\Util\Data\Foundation\Condition {
 		/**
 		 * @param PropertyRegistryInterface|mixed $data
 		 * @param null|ValueAccessAwareInterface|callable $access - if data map is outer original data
-		 * @return mixed
+		 * @return bool
 		 */
 		public function __invoke($data, $access = null){
 			$operator = null;
@@ -36,9 +36,11 @@ namespace Jungle\Util\Data\Foundation\Condition {
 					$operator = isset($this->operators[$i])?$this->operators[$i]:'and';
 				}
 				if($operator === 'and' && isset($value)){
-					$value = $value && call_user_func($condition, $data, $access);
+					$value = ($value && call_user_func($condition, $data, $access));
 				}elseif($operator === 'or' && isset($value)){
-					$value = $value || call_user_func($condition, $data, $access);
+					$value = ($value || call_user_func($condition, $data, $access));
+				}elseif($operator === 'xor' && isset($value)){
+					$value = ($value xor call_user_func($condition, $data, $access));
 				}else{
 					$value = call_user_func($condition, $data, $access);
 				}

@@ -109,9 +109,6 @@ namespace Jungle\Data\Storage\Db\Result {
 
 
 		/**
-		 * Allows to executes the statement again. Some database systems don't support scrollable cursors,
-		 * So, as cursors are forward only, we need to execute the cursor again to fetch rows from the begining
-		 *
 		 * @return boolean
 		 */
 		public function execute(){
@@ -125,9 +122,6 @@ namespace Jungle\Data\Storage\Db\Result {
 		}
 
 		/**
-		 * Fetches an array/object of strings that corresponds to the fetched row, or FALSE if there are no more rows.
-		 * This method is affected by the active fetch flag set using Phalcon\Db\Result\Pdo::setFetchMode
-		 *
 		 * @param null $fetchMode
 		 * @return mixed
 		 */
@@ -136,9 +130,6 @@ namespace Jungle\Data\Storage\Db\Result {
 		}
 
 		/**
-		 * Returns an array of strings that corresponds to the fetched row, or FALSE if there are no more rows.
-		 * This method is affected by the active fetch flag set using Phalcon\Db\Result\Pdo::setFetchMode
-		 *
 		 * @return mixed
 		 */
 		public function fetchArray(){
@@ -146,9 +137,6 @@ namespace Jungle\Data\Storage\Db\Result {
 		}
 
 		/**
-		 * Returns an array of arrays containing all the records in the result
-		 * This method is affected by the active fetch flag set using Phalcon\Db\Result\Pdo::setFetchMode
-		 *
 		 * @param null $fetchMode
 		 * @return array
 		 */
@@ -175,8 +163,6 @@ namespace Jungle\Data\Storage\Db\Result {
 		}
 
 		/**
-		 * Changes the fetching mode affecting Phalcon\Db\Result\Pdo::fetch()
-		 *
 		 * @param int $fetchMode
 		 * @return bool
 		 */
@@ -186,8 +172,6 @@ namespace Jungle\Data\Storage\Db\Result {
 		}
 
 		/**
-		 * Gets the internal PDO result object
-		 *
 		 * @return \PDOStatement
 		 */
 		public function getInternalResult(){

@@ -208,10 +208,11 @@ namespace Jungle\RegExp {
 					return $placeholder->compile();
 				}
 			},$this->definition);
+			$modifiers = $this->getOption('global_modifiers');
 			if($this->getOption('soft')){
-				$this->regex = '@'.addcslashes($regex,'@').'@Sms'.$this->getOption('global_modifiers');
+				$this->regex = '@'.addcslashes($regex,'@').'@Sms'.$modifiers;
 			}else{
-				$this->regex = '@\A'.addcslashes($regex,'@').'\Z@Sms'.$this->getOption('global_modifiers');
+				$this->regex = '@\A'.addcslashes($regex,'@').'\Z@Sms'.$modifiers;
 			}
 		}
 

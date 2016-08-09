@@ -69,6 +69,17 @@ namespace Jungle\Util\Specifications\Http {
 		 */
 		public function getRedirectUrl();
 
+		/**
+		 * @param $code
+		 * @return mixed
+		 */
+		public function setCode($code);
+
+		/**
+		 * @return mixed
+		 */
+		public function getCode();
+
 	}
 }
 

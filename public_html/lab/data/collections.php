@@ -1399,7 +1399,7 @@ class DataMapCriteria implements DataMapCriteriaInterface{
 	 */
 	public function __invoke($item, DataMapCollection $collection){
 		$value = $collection->valueAccessGet($item,$this->field);
-		$condition = \Jungle\CodeForm\LogicConstruction\Condition::getCondition($value,$this->operator,$this->wanted_value);
+		$condition = \Jungle\ExoCode\LogicConstruction\Condition::getCondition($value,$this->operator,$this->wanted_value);
 		$execute =  $condition->execute();
 		return $execute;
 	}

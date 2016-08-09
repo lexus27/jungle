@@ -13,8 +13,7 @@ namespace Jungle\Data\Record {
 	 * Class Exception
 	 * @package Jungle\Data\Record
 	 */
-	class Exception extends \Jungle\Data\Exception{
-		
-	}
+	class Exception extends \Jungle\Data\Exception{}
+
 }
 

@@ -10,9 +10,10 @@
 namespace App\Modules\Index\Controller {
 	
 	use App\Model\User;
-	use Jungle\Application\Dispatcher\Controller\Process;
-	use Jungle\Application\View\Renderer\Template;
+	use Jungle\Application\Dispatcher\Process;
+	use Jungle\Application\View\Renderer\TemplateEngine;
 	use Jungle\Di\Injectable;
+	use Jungle\Util\Specifications\Http\ResponseInterface;
 
 
 	/**
@@ -22,70 +23,88 @@ namespace App\Modules\Index\Controller {
 	class IndexController extends Injectable{
 
 		/**
-		 * @param array $options
 		 * @return array
 		 */
-		public function getDefaultMeta(array $options = []){
-			return array_replace($options,[
+		public function getDefaultMetadata(){
+			return [ 'private' => false ];
+		}
+
+		public function initialize(){}
+
+
+		/**
+		 * @return array
+		 */
+		public function indexMetadata(){
+			return [
 				'private'       => false,
 				'hierarchy'     => true,
-				'independent'   => true
-			]);
-		}
-
-		/**
-		 *
-		 */
-		public function initialize(){
-
-		}
-
-
-		/**
-		 * @param array $options
-		 * @return array
-		 */
-		public function indexMeta(array $options = []){
-			return array_replace($options,[
-				'private'       => true,
-				'hierarchy'     => true,
 			    'native_render' => ['html'],
-			]);
-		}
-
-		public function not_foundAction(Process $process){
-
+			];
 		}
 
 		/**
 		 * @param Process $process
 		 */
 		public function indexAction(Process $process){
+			
+		}
 
-			echo '<h1>Hello, This is <i style="color: darkgreen;font-size: 48px;">Jungle Test Application!</i></h1>';
-			echo '<h1>'.$process->getReferenceString().'</h1>';
-			foreach(User::find() as $user){
-				echo '<p><a href="'.$this->router->generateLinkBy('user-info-short', $user).'">'.$user->username.'</a></p>';
+		public function not_foundAction(Process $process){
+			$this->response->setCode(404);
+		}
+
+		public function errorMetadata(){
+			return [
+				'hierarchy' => true,
+			];
+		}
+
+		/**
+		 * @param Process $process
+		 */
+		public function errorAction(Process $process){
+
+			/** @var \Exception|\ErrorException $exception */
+			$exception = $process->exception;
+			// Logging
+			$dirname = $this->application->getLogDirname();
+			$logFile = $dirname . '/crash-log.json';
+			if(file_exists($logFile) && ($content = file_get_contents($logFile))){
+				$content = json_decode($content,true);
+			}else{
+				$content = [];
 			}
 
-			/**
-			 * Specify HTTP
-			 */
-			//$this->response->setContentType('application/json');
-			//$this->response->setContent(json_encode($this->request->getQuery()));
-			//$this->response->setCookie('my_cookie',[1,2,3,5]);
+			$message = $exception->getMessage();
+			$filename = $exception->getFile();
+			$line = $exception->getLine();
+			$type = $exception instanceof \ErrorException?$exception->getSeverity():1;
 
+			$hash = md5(serialize([$type,$message,$filename,$line]));
+			if(isset($content[$hash])){
+				$content[$hash]['stack']++;
+			}else{
+				$stack = 1;
+				$date = date('Y-m-d');
+				$content[$hash] = [
+					'type'      => $type,
+					'message'   => $message,
+					'file'      => $filename,
+					'line'      => $line,
+					'stack'     => $stack,
+					'date'      => $date,
+					'time'      => time(),
+				];
+			}
+			$content = json_encode($content,JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT | JSON_BIGINT_AS_STRING);
+			file_put_contents($logFile, $content);
+			// Logging end
 
-			echo $process->call('user.auth:index')->getOutputBuffer();
-		}
-		
-		/**
-		 * @param $type
-		 * @param $result
-		 * @return bool
-		 */
-		public function indexRender($type, $result){
-			return false;
+			if( ($response = $this->response) instanceof ResponseInterface ){
+				$response->setCode(500);
+			}
+
 		}
 
 	}

@@ -9,21 +9,25 @@
  */
 namespace Jungle {
 	
-	use Jungle\Application\Adaptee\Cli\Dispatcher\Router as CLI_Router;
-	use Jungle\Application\Adaptee\Http\Dispatcher\Router as HTTP_Router;
 	use Jungle\Application\Dispatcher;
 	use Jungle\Application\RequestInterface;
 	use Jungle\Application\ResponseInterface;
+	use Jungle\Application\Strategy\Cli\Router as CLI_Router;
+	use Jungle\Application\Strategy\Http;
+	use Jungle\Application\Strategy\Http\Router as HTTP_Router;
+	use Jungle\Application\StrategyInterface;
 	use Jungle\Application\View;
+	use Jungle\Application\View\ViewStrategy;
 	use Jungle\Application\ViewInterface;
 	use Jungle\Di\DiInterface;
 	use Jungle\Di\Injectable;
+	use Jungle\Util\CacheableInterface;
 
 	/**
 	 * Class Application
 	 * @package Jungle
 	 */
-	abstract class Application extends Injectable{
+	abstract class Application extends Injectable implements CacheableInterface{
 
 		/** @var  bool */
 		protected $initialized;
@@ -31,7 +35,8 @@ namespace Jungle {
 		/** @var  Loader */
 		protected $loader;
 
-		protected $default_renderer = 'html';
+		/** @var bool */
+		protected $cacheable = true;
 
 		/**
 		 * Application constructor.
@@ -48,7 +53,7 @@ namespace Jungle {
 		 * @param RequestInterface $request
 		 * @return ResponseInterface
 		 * @throws Dispatcher\Exception
-		 * @throws Dispatcher\Router\Exception\NotFound
+		 * @throws \Jungle\Application\Dispatcher\Exception\NotCertainBehaviour
 		 */
 		public function handle(RequestInterface $request){
 			$this->initialize();
@@ -90,8 +95,9 @@ namespace Jungle {
 			$this->registerAutoload($loader);
 			$di->setShared('loader',$loader);
 			$di->setShared('application',$this);
-			$di->setShared('dispatcher',    $this->initializeDispatcher());
-			$di->setShared('view',          $this->initializeView());
+			$view = $this->initializeView();
+			$di->setShared('view',          $view);
+			$di->setShared('dispatcher',    $this->initializeDispatcher($view));
 			$this->registerDatabases($di->container('database')->useSelfOverlapping(true));
 			$this->registerServices($di);
 		}
@@ -106,26 +112,15 @@ namespace Jungle {
 		 * @param DiInterface $di
 		 * @return mixed
 		 */
-		protected function registerServices(DiInterface $di){
-			foreach($this->defineServices() as $alias => $definition){
-				$di->setShared($alias, $definition);
-			}
-		}
-
-		/**
-		 * @param array $services
-		 * @return array
-		 */
-		protected function defineServices(array $services = []){
-			return $services;
-		}
+		abstract protected function registerServices(DiInterface $di);
 
 		/**
 		 * Initialize and check directories for current application
 		 */
 		protected function initializeDirectories(){
 			$directories = [
-				$this->getCacheDirname()
+				$this->getCacheDirname(),
+			    $this->getLogDirname(),
 			];
 			foreach($directories as $path){
 				if(!is_dir($path)){
@@ -139,22 +134,29 @@ namespace Jungle {
 		 */
 		abstract protected function registerAutoload(Loader $loader);
 
-
 		/**
 		 * @return Dispatcher
 		 */
-		protected function initializeDispatcher(){
-			$dispatcher = new Dispatcher();
-			$this->initializeDispatcherSetting($dispatcher);
+		protected function createDispatcher(){
+			return new Dispatcher();
+		}
+
+		/**
+		 * @param ViewInterface $view
+		 * @return Dispatcher
+		 */
+		protected function initializeDispatcher(ViewInterface $view){
+			$dispatcher = $this->createDispatcher();
+			$this->initializeDispatcherSettings($dispatcher);
 			$this->initializeDispatcherModules($dispatcher);
-			$this->initializeDispatcherRouters($dispatcher);
+			$this->initializeDispatcherStrategies($dispatcher, $view);
 			return $dispatcher;
 		}
 
 		/**
 		 * @param Dispatcher $dispatcher
 		 */
-		protected function initializeDispatcherSetting(Dispatcher $dispatcher){}
+		protected function initializeDispatcherSettings(Dispatcher $dispatcher){}
 
 		/**
 		 * @param Dispatcher $dispatcher
@@ -163,136 +165,147 @@ namespace Jungle {
 
 		/**
 		 * Define in descendants methods on naming by pattern
-		 * @method: initialize{Http}Router()                            - main router initializator
-		 * @method: initialize{Http}Routes(RouterInterface $router)     - optional:
+		 * @method: createStrategy{Http}()
+		 * - main router initializator
+		 * @method: configureStrategy{Http}Services(StrategyInterface $strategy)
+		 * - optional:
+		 * @method: configureStrategy{Http}Router(StrategyInterface $strategy)
+		 * - optional:
+		 * @method: configureStrategy{Http}ViewStrategy(StrategyInterface $strategy)
+		 * - optional:
 		 * You can skip the router If initializer initializing the routes involved himself
 		 *
-		 * @param array $routers
+		 * @param array $strategies
 		 * @return array
 		 */
-		protected function getRoutersDefinition(array $routers = []){
-			$routers['http'] = HTTP_Router::class;
-			return $routers;
+		protected function getInitializeStrategies(array $strategies = [ ]){
+			$strategies[] = 'http';
+			return $strategies;
 		}
 
 		/**
-		 * @param Dispatcher $dispatcher
+		 * @return Http
 		 */
-		protected function initializeDispatcherRouters(Dispatcher $dispatcher){
-			foreach($this->getRoutersDefinition() as $alias => $className){
-				$factoryMethod = 'initialize'.ucfirst($alias).'Router';
-				if(method_exists($this,$factoryMethod)){
-					$routesMethod = 'initialize'.ucfirst($alias).'Routes';
-					$router = $this->{$factoryMethod}();
-					if(method_exists($this,$routesMethod)){
-						$this->{$routesMethod}($router);
+		protected function createHttpStrategy(){
+			return new Http();
+		}
+
+		/**
+		 * @return Http\Router
+		 */
+		protected function initializeHttpRouter(){
+			return new Http\Router();
+		}
+
+		/**
+		 * @param Http\Router $router
+		 */
+		protected function initializeHttpRoutes(Http\Router $router){}
+
+		/**
+		 * @param StrategyInterface $strategy
+		 * @param ViewInterface $view
+		 * @return ViewStrategy
+		 */
+		protected function initializeHttpViewStrategy(StrategyInterface $strategy, ViewInterface $view){
+			return new ViewStrategy();
+		}
+
+		/**
+		 * @return ViewStrategy\RendererRule
+		 */
+		protected function initializeHttpHtmlRendererRule(){
+			$rule = new ViewStrategy\RendererRule\HttpAcceptRendererRule('html');
+			return $rule;
+		}
+
+		/**
+		 * @return ViewStrategy\RendererRule\HttpAcceptRendererRule
+		 */
+		protected function initializeHttpJsonRendererRule(){
+			$rule = new ViewStrategy\RendererRule\HttpAcceptRendererRule('json');
+			return $rule;
+		}
+
+
+		/**
+		 * @param ViewInterface $view
+		 */
+		abstract protected function initializeViewRenderers(ViewInterface $view);
+
+
+		/**
+		 * @param Dispatcher $dispatcher
+		 * @param ViewInterface $view
+		 */
+		protected function initializeDispatcherStrategies(Dispatcher $dispatcher, ViewInterface $view){
+			foreach($this->getInitializeStrategies() as $strategyAlias){
+				/** @var StrategyInterface $strategy */
+				$mName = 'create'.$strategyAlias.'Strategy';
+				if(method_exists($this,$mName)){
+					$strategy = $this->{$mName}();
+					if($strategy){
+						$strategy->setParent($this->_dependency_injector);
+						$this->configureDispatcherStrategy($strategyAlias, $strategy, $view);
+						$dispatcher->setStrategy($strategyAlias, $strategy);
 					}
-					$dispatcher->addRouter($alias,$router);
 				}
 			}
 		}
 
 		/**
-		 * 
+		 * @param $strategyAlias
+		 * @param StrategyInterface $strategy
+		 * @param ViewInterface $view
 		 */
-		protected function initializeCliRouter(){
-			return new CLI_Router();
+		protected function configureDispatcherStrategy($strategyAlias,StrategyInterface $strategy, ViewInterface $view){
+			$mName = 'initialize'.$strategyAlias.'Services';
+			if(method_exists($this,$mName)){
+				$this->{$mName}($strategy);
+			}
+			$mName = 'initialize'.$strategyAlias.'Router';
+			if(method_exists($this,$mName)){
+				$router = $this->{$mName}($strategy);
+				if($router){
+					$mName = 'initialize'.$strategyAlias.'Routes';
+					if(method_exists($this,$mName)) $this->{$mName}($router);
+					$strategy->setShared('router', $router);
+				}
+			}
+			$mName = 'initialize'.$strategyAlias.'ViewStrategy';
+			if(method_exists($this,$mName)){
+				$view_strategy = $this->{$mName}($strategy, $view);
+				if($view_strategy instanceof View\ViewStrategyInterface){
+					foreach($view->getRendererAliases() as $name){
+						$mName = 'initialize'.$strategyAlias.strtr($name,['.'=>'_','-'=>'_']).'RendererRule';
+						if(method_exists($this,$mName)){
+							$rule = $this->{$mName}($strategy, $view);
+							if($rule){
+								$view_strategy->addRule($name, $rule);
+							}
+						}
+					}
+					$strategy->setShared('view_strategy', $view_strategy);
+				}
+			}
 		}
 
 		/**
-		 * @param CLI_Router $cli
+		 * @return View
 		 */
-		protected function initializeCliRoutes(CLI_Router $cli){}
-		
-		/**
-		 * @return HTTP_Router
-		 */
-		protected function initializeHttpRouter(){
-			return new HTTP_Router();
+		protected function createView(){
+			return new View();
 		}
-		
-		/**
-		 * @param HTTP_Router $router
-		 */
-		protected function initializeHttpRoutes(HTTP_Router $router){}
-		
+
 		/**
 		 * @return ViewInterface
 		 */
 		protected function initializeView(){
-			$matcher = new View\RendererMatcher($this->default_renderer);
-			$view = new View($matcher);
-			foreach($this->getViewRenderers() as $alias => $definition){
-				$renderer = $definition['renderer'];
-				$view->addRenderer($alias,$renderer);
-				$matcher->addRule($alias,$definition['rule'],isset($definition['priority'])?$definition['priority']:0);
-			}
-			$this->initializeViewRenderers($view,$matcher);
+			$view = $this->createView();
+			$view->setBaseDirname($this->getViewsDirname());
+			$view->setCacheDirname($this->getCacheDirname() . DIRECTORY_SEPARATOR . 'views');
+			$this->initializeViewRenderers($view);
 			return $view;
-		}
-
-		/**
-		 * @param array $renderers
-		 * @return array
-		 * ....
-		 * 'renderer_alias' => [
-		 *     'renderer' => RendererInterface,
-		 *     'rule'     => callable(ProcessInterface $process, ViewInterface $view),
-		 *     'priority' => int:default=0
-		 * ]
-		 * ...
-		 */
-		protected function getViewRenderers(array $renderers = []){
-			$renderers['html'] = [
-				'renderer' => new View\Renderer\Template\Twig(
-					$this->getRendererDirname('html'),
-					$this->getRendererCacheDirname('html','twig'),
-					'twig'
-				),
-				'rule' => function(){
-					return $this->request instanceof \Phalcon\Http\RequestInterface;
-				},
-				'priority' => 0
-			];
-			$renderers['json'] = [
-				'renderer' => new View\Renderer\Data\Json(),
-			    'rule' => function(){
-				    return $this->request instanceof \Phalcon\Http\RequestInterface && $this->request->isAjax();
-			    },
-			    'priority' => 1000
-			];
-			return $renderers;
-		}
-
-		/**
-		 * @param ViewInterface $view
-		 * @param View\RendererMatcherInterface $matcher
-		 */
-		protected function initializeViewRenderers(ViewInterface $view, View\RendererMatcherInterface $matcher){}
-
-		/**
-		 * @param $rendererAlias
-		 * @return string
-		 */
-		protected function getRendererDirname($rendererAlias){
-			$dirname = $this->getViewsDirname() . DIRECTORY_SEPARATOR . $rendererAlias;
-			if(!is_dir($dirname)){
-				mkdir($dirname,0555,true);
-			}
-			return $dirname;
-		}
-
-		/**
-		 * @param $rendererAlias
-		 * @param string $type
-		 * @return string
-		 */
-		protected function getRendererCacheDirname($rendererAlias, $type = 'unknown'){
-			$dirname = $this->getCacheDirname() . DIRECTORY_SEPARATOR . 'views' . DIRECTORY_SEPARATOR . $rendererAlias . DIRECTORY_SEPARATOR . $type;
-			if(!is_dir($dirname)){
-				mkdir($dirname,0555,true);
-			}
-			return $dirname;
 		}
 
 		/**
@@ -332,7 +345,44 @@ namespace Jungle {
 		/**
 		 * @return string
 		 */
+		abstract public function getLogDirname();
+
+		/**
+		 * @return string
+		 */
 		abstract public function getBaseDirname();
+
+		/**
+		 * @return $this
+		 */
+		public function cacheClear(){
+			FileSystem::removeContain($this->getCacheDirname());
+			return $this;
+		}
+
+		/**
+		 * @return $this
+		 */
+		public function cacheOn(){
+			$this->cacheable = true;
+			return $this;
+		}
+
+		/**
+		 * @return $this
+		 */
+		public function cacheOff(){
+			$this->cacheable = false;
+			return $this;
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function cacheIsEnabled(){
+			return $this->cacheable;
+		}
+
 
 	}
 }
