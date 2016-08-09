@@ -101,7 +101,7 @@ namespace App\Modules\Index\Controller {
 			file_put_contents($logFile, $content);
 			// Logging end
 
-			if( ($response = $this->response) instanceof ResponseInterface ){
+			if( isset($this->response) && ($response = $this->response) instanceof ResponseInterface ){
 				$response->setCode(500);
 			}
 

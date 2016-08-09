@@ -6,7 +6,7 @@ $u = $this->services->account->getUser();
 		<h2>Записки</h2>
 		<? foreach($notes as $note):?>
 			<div class="article">
-				<h3><img src="/test/favicon.jpg" height="16px" width="16px"> <a href="<?= $this->process->linkBy('user-note',$note)?>"><?=$note->title?></a></h3>
+				<h3><img src="assets/favicon.jpg" height="16px" width="16px"> <a href="<?= $this->process->linkBy('user-note',$note)?>"><?=$note->title?></a></h3>
 				<article><?=$note->text?></article>
 				<?if( $u && $u === $this->user):?>
 				<p style="font-size:8px;"><a href="<?=$this->process->linkBy('user-note-delete',$note);?>">Удалить</a></p>

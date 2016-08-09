@@ -233,6 +233,9 @@ namespace Jungle\Application {
 			$viewStrategy = $this->view_strategy;
 			if(is_null($alias)){
 				$alias = $viewStrategy->match($this->request, $process, $this);
+				if(!$alias){
+					throw new \LogicException('Not suitable view for request');
+				}
 			}
 			if(!isset($this->renderers[$alias])){
 				throw new \LogicException('Renderer with alias "'.$alias.'" not found');

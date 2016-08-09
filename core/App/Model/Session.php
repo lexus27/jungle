@@ -58,10 +58,8 @@ namespace App\Model {
 		public static function initialize(Schema $schema){
 			$schema->field('id');
 			$schema->field('user_id',[
-				'type'=>'int',
-				'nullable' => true,
-				'default' => null,
-				'readonly' => true
+				'type'      =>'int',
+				'nullable'  => true,
 			]);
 			$schema->field('data','serialized');
 			$schema->field('create_time','date');
