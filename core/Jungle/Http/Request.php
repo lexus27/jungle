@@ -49,7 +49,14 @@ namespace Jungle\Http {
 		/** @var  Response  */
 		protected $response;
 
+		/** @var   */
 		protected $uri;
+
+		/** @var null  */
+		protected $content_type = null;
+
+		/** @var  mixed */
+		protected $content = false;
 
 		/**
 		 * @return mixed
@@ -90,6 +97,7 @@ namespace Jungle\Http {
 			$this->server   = new Server();
 			$this->client   = new Client($this);
 			$this->response = new Response($this);
+			$this->content_type = isset($this->headers['Content-Type'])?$this->headers['Content-Type']:null;
 		}
 
 		protected function __clone(){}
@@ -309,7 +317,7 @@ namespace Jungle\Http {
 			if(isset($_REQUEST[$parameter])){
 				return $this->_handleValueFilter($_REQUEST[$parameter],$filter);
 			}
-			return $default;
+			return $this->getObjectParam($parameter,$filter,$default);
 		}
 
 		/**
@@ -317,8 +325,10 @@ namespace Jungle\Http {
 		 * @return bool
 		 */
 		public function hasParam($parameter = null){
-			if($parameter === null)return !empty($_REQUEST);
-			return isset($_REQUEST[$parameter]);
+			if($parameter === null){
+				return !empty($_REQUEST);
+			}
+			return isset($_REQUEST[$parameter]) || $this->hasObjectParam($parameter);
 		}
 
 		/**
@@ -382,11 +392,8 @@ namespace Jungle\Http {
 		 * @return bool
 		 */
 		public function isAjax(){
-			return strcasecmp($this->getHeader('Requested-With'),'XmlHttpRequest')===0;
+			return stripos($this->getHeader('Requested-With'),'XmlHttpRequest')!==false;
 		}
-
-
-
 
 		/**
 		 * @return string|null
@@ -407,39 +414,110 @@ namespace Jungle\Http {
 		 * @return mixed
 		 */
 		public function getContent(){
-			return file_get_contents('php://input');
+			if($this->content === false){
+				$content = file_get_contents('php://input');
+				$this->content = !is_string($content) ? null : $this->_handleContent($content);
+			}
+			return $this->content;
+		}
+
+		/**
+		 * @return bool
+		 */
+		public function hasObject(){
+			return is_array($this->content) || strpos($this->content_type,'json')!==false || strpos($this->content_type,'xml')!==false || strpos($this->content_type,'soap')!==false;
+		}
+
+		/**
+		 * @return array|mixed|null
+		 */
+		public function getObject(){
+			if(is_array($this->content)){
+				return $this->content;
+			}else{
+				$content = $this->getContent();
+				if(is_array($content)){
+					return $content;
+				}
+			}
+			return null;
+		}
+
+		/**
+		 * @param $key
+		 * @param null $filter
+		 * @param null $default
+		 * @return mixed|null
+		 */
+		public function getObjectParam($key, $filter = null, $default = null){
+			if(is_array($this->content)){
+				if(isset($this->content[$key])){
+					return $this->_handleValueFilter($this->content[$key], $filter);
+				}
+			}else{
+				$content = $this->getContent();
+				if(is_array($content) && isset($content[$key])){
+					return $this->_handleValueFilter($content[$key], $filter);
+				}
+			}
+			return $default;
+		}
+
+		/**
+		 * @param $key
+		 * @return bool
+		 */
+		public function hasObjectParam($key){
+			if(is_array($this->content)){
+				return isset($this->content[$key]);
+			}else{
+				return is_array(($content = $this->getContent())) && isset($content[$key]);
+			}
 		}
 
 		/**
 		 * @return string
 		 */
 		public function getContentType(){
-			return $this->getHeader('Content-Type');
+			return $this->content_type;
 		}
 
-		public function getJson(){
-			return json_encode();
+		/**
+		 * @param string $content
+		 * @return array|string|int|float|object|null
+		 */
+		protected function _handleContent($content){
+			if(strpos($this->content_type,'soap')!==false){
+				return [];
+			}
+			if(strpos($this->content_type,'xml')!==false){
+				return [];
+			}
+			if(strpos($this->content_type,'json')!==false){
+				return $content?json_decode($content,true):[];
+			}
+			return null;
 		}
 
 		/**
 		 * @return bool
 		 */
 		public function isSoap(){
-			return strpos($this->getContentType(),'soap')!==false;
+			return strpos($this->content_type,'soap')!==false;
 		}
 
 		/**
 		 * @return bool
 		 */
 		public function isJson(){
-			return strpos($this->getContentType(),'json')!==false;
+			return strpos($this->content_type,'json')!==false;
 		}
 
 		/**
 		 * @return bool
 		 */
 		public function isXml(){
-			return strpos($this->getContentType(),'xml')!==false;
+			return strpos($this->content_type,'xml')!==false;
 		}
 
 		/**
@@ -485,6 +563,7 @@ namespace Jungle\Http {
 				return filter_var($value, $filter);
 			}
 		}
+
 
 	}
 }

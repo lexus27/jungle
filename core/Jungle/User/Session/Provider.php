@@ -86,7 +86,7 @@ namespace Jungle\User\Session {
 			if(!($session = $this->storage->getSession($storeSignature))){
 				throw new NotFound($signature, null);
 			}
-			if(!$session->isPermanent() && Time::isOverdue($session->getModifyTime(), $this->lifetime)){
+			if(!$session->isPermanent() && Time::isOverdue($session->getModifyTime(), $this->getSessionLifetime())){
 				throw new Overdue($signature, $session);
 			}
 			return [$signature, $session];
@@ -120,6 +120,20 @@ namespace Jungle\User\Session {
 		}
 
 		/**
+		 * @return int
+		 */
+		public function getSessionLifetime(){
+			return $this->lifetime;
+		}
+
+		/**
+		 * @return int
+		 */
+		public function getRefreshLifetime(){
+			return $this->lifetime;
+		}
+
+		/**
 		 * @return SessionInterface
 		 */
 		protected function initializeSession(){
@@ -127,7 +141,7 @@ namespace Jungle\User\Session {
 			$session = $this->storage->factorySession();
 			$session->setSessionId($this->storeSignature($signature));
 			$session->setCreateTime(time());
-			$this->signature_inspector->setSignature($signature, $this->lifetime);
+			$this->signature_inspector->setSignature($signature, $this->getRefreshLifetime());
 			return $session;
 		}
 

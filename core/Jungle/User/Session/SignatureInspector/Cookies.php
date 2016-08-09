@@ -33,7 +33,20 @@ namespace Jungle\User\Session\SignatureInspector {
 		protected $uri;
 
 		/** @var   */
-		protected $lifetime;
+		protected $lifetime = NAN;
+
+		/**
+		 * @param null $default_lifetime
+		 * @return null
+		 */
+		public function getExpires($default_lifetime = null){
+			if($this->lifetime === NAN){
+				$l = $default_lifetime;
+			}else{
+				$l = $this->lifetime;
+			}
+			return $l?time() + $l:null;
+		}
 
 		/**
 		 * @return mixed
@@ -50,7 +63,7 @@ namespace Jungle\User\Session\SignatureInspector {
 		public function setSignature($signature, $lifetime = null){
 			$this->cookie->setCookie($this->cookie_name,
 				$signature,
-				$this->lifetime? time() + $this->lifetime : null,
+				$this->getExpires($lifetime),
 				$this->uri,
 				$this->https,
 				$this->http_only,

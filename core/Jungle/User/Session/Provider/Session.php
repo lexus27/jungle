@@ -23,22 +23,22 @@ namespace Jungle\User\Session\Provider {
 	class Session extends Provider{
 
 		/** @var   */
-		protected $signature_lifetime;
+		protected $refresh_lifetime;
 
 		/**
 		 * @param $time
 		 * @return $this
 		 */
-		public function setSignatureLifetime($time){
-			$this->signature_lifetime = $time;
+		public function setRefreshLifetime($time){
+			$this->refresh_lifetime = $time;
 			return $this;
 		}
 
 		/**
 		 * @return mixed
 		 */
-		public function getSignatureLifetime(){
-			return $this->signature_lifetime;
+		public function getRefreshLifetime(){
+			return $this->refresh_lifetime;
 		}
 
 		/**
@@ -54,7 +54,7 @@ namespace Jungle\User\Session\Provider {
 				$session = $exception->getSession();
 				$signature = $this->signature_inspector->generateSignature();
 				$session = $this->resetSession($session);
-				$this->signature_inspector->setSignature($signature, $this->signature_lifetime);
+				$this->signature_inspector->setSignature($signature, $this->refresh_lifetime);
 				return $session;
 			}
 		}
@@ -93,7 +93,7 @@ namespace Jungle\User\Session\Provider {
 		 * @return mixed
 		 */
 		public function onSuccess($signature, SessionInterface $session){
-			if(Time::isReached($session->getModifyTime(), $this->signature_lifetime)){
+			if(Time::isReached($session->getModifyTime(), $this->refresh_lifetime)){
 				$this->refreshSession($session);
 			}
 		}

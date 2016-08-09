@@ -19,7 +19,7 @@ namespace Jungle\User\Session\Provider {
 	 * Class Token
 	 * @package Jungle\User\Session\Provider
 	 */
-	abstract class Token extends Provider{
+	class Token extends Provider{
 
 		/**
 		 * @return SessionInterface
@@ -58,7 +58,11 @@ namespace Jungle\User\Session\Provider {
 		 * @throws NotSupplied
 		 */
 		public function catchNotSupplied(NotSupplied $exception, $readAccess = false){
-			throw $exception;
+			if($readAccess){
+				throw $exception;
+			}else{
+				return $this->initializeSession();
+			}
 		}
 
 		/**

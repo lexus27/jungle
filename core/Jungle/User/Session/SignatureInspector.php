@@ -17,6 +17,13 @@ namespace Jungle\User\Session {
 	 */
 	abstract class SignatureInspector extends Injectable implements SignatureInspectorInterface{
 
+		/**
+		 * @return string
+		 */
+		public function generateSignature(){
+			return uniqid('ssid_',true);
+		}
+
 	}
 
 }

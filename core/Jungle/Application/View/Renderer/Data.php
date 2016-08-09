@@ -30,22 +30,26 @@ namespace Jungle\Application\View\Renderer {
 		 * @return string
 		 */
 		public function render(ProcessInterface $process, ViewInterface $view, array $variables = [], array $options = []){
-			return $this->convert($this->extractData($process));
+			return $this->convert($this->extractData($process,$variables));
 		}
 
 		/**
 		 * @param \Jungle\Application\Dispatcher\ProcessInterface $process
+		 * @param array $variables
 		 * @return mixed
 		 */
-		public function extractData(ProcessInterface $process){
+		public function extractData(ProcessInterface $process,array $variables = []){
+			$o = [];
 			$result = $process->getResult();
 			if(!is_array($result)){
-				return [
-					'object' => $result
-				];
+				$o['object'] = $result;
 			}else{
-				return $result;
+				$o = $result;
 			}
+			if(isset($variables['global_data']) && is_array($variables['global_data'])){
+				return array_replace($variables['global_data'], $o);
+			}
+			return $o;
 		}
 
 		/**
