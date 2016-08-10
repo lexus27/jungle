@@ -18,7 +18,59 @@ namespace Jungle\User\Session\SignatureInspector {
 	class TokenInspector extends SignatureInspector{
 
 		/** @var  string */
-		protected $param_name;
+		protected $inspect_key;
+
+		/** @var  string|null  */
+		protected $inject_key;
+
+		/** @var  string|null  */
+		protected $inject_expires_key;
+
+		/**
+		 * TokenInspector constructor.
+		 * @param string $inspectKey
+		 * @param string|null $injectKey
+		 * @param string|null $injectExpiresKey
+		 */
+		public function __construct($inspectKey, $injectKey = null, $injectExpiresKey = null){
+			$this->inspect_key          = $inspectKey;
+			$this->inject_key           = $injectKey;
+			$this->inject_expires_key   = $injectExpiresKey;
+		}
+
+		/**
+		 * @param $key
+		 * @return $this
+		 */
+		public function setInjectKey($key){
+			$this->inject_key = $key;
+			return $this;
+		}
+
+		/**
+		 * @param $key
+		 * @return $this
+		 */
+		public function setInjectExpiresKey($key){
+			$this->inject_expires_key = $key;
+			return $this;
+		}
+
+		/**
+		 * @param $key
+		 * @return $this
+		 */
+		public function setInspectKey($key){
+			$this->inspect_key = $key;
+			return $this;
+		}
+
+		/**
+		 * @return bool
+		 */
+		public function hasSignal(){
+			// TODO: Implement hasSignal() method.
+		}
 
 		/**
 		 * @return mixed
@@ -26,7 +78,7 @@ namespace Jungle\User\Session\SignatureInspector {
 		public function getSignature(){
 			$request = $this->request;
 			if($request->isPost()){
-				return $request->getParam($this->param_name,null,null);
+				return $request->getParam($this->inspect_key,null,null);
 			}
 			return null;
 		}
@@ -37,14 +89,18 @@ namespace Jungle\User\Session\SignatureInspector {
 		 * @return $this
 		 */
 		public function setSignature($signature, $lifetime = null){
-			$view = $this->view;
-			$data = $view->getVar('global_data');
-			if(!is_array($data)){
-				$data = [];
+			if($this->inject_key){
+				$view = $this->view;
+				$data = $view->getVar('global_data');
+				if(!is_array($data)){
+					$data = [];
+				}
+				$data[$this->inject_key] = $signature;
+				if($this->inject_expires_key){
+					$data[$this->inject_expires_key] = $lifetime?time() + $lifetime:null;
+				}
+				$view->setVar('global_data', $data);
 			}
-			$data['accessToken']        = $signature;
-			$data['accessTokenExpires'] = time() + $lifetime;
-			$view->setVar('global_data', $data);
 			return $this;
 		}
 
@@ -54,6 +110,8 @@ namespace Jungle\User\Session\SignatureInspector {
 		public function generateSignature(){
 			return uniqid('tok',true);
 		}
+
+
 	}
 }
 

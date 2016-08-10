@@ -9,6 +9,8 @@
  */
 namespace Jungle\User {
 
+	use Jungle\Exception\ForbiddenException;
+
 	/**
 	 * Class SessionTrait
 	 * @package Jungle\User
@@ -75,10 +77,11 @@ namespace Jungle\User {
 		}
 
 		/**
-		 * @param $user
+		 * @param UserInterface $user
 		 * @return $this
+		 * @throws ForbiddenException
 		 */
-		abstract public function setUser(UserInterface $user);
+		abstract public function setUser(UserInterface $user = null);
 
 		/**
 		 * @return UserInterface|null
@@ -234,6 +237,7 @@ namespace Jungle\User {
 		public function getPermissions(){
 			return $this->permissions;
 		}
+
 	}
 }
 

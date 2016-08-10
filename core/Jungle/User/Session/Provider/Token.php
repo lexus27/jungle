@@ -18,6 +18,7 @@ namespace Jungle\User\Session\Provider {
 	/**
 	 * Class Token
 	 * @package Jungle\User\Session\Provider
+	 * TODO Forbid on logout[setUser(null)] from permanent session
 	 */
 	class Token extends Provider{
 
@@ -71,6 +72,7 @@ namespace Jungle\User\Session\Provider {
 		 * @return mixed
 		 */
 		public function onSuccess($signature, SessionInterface $session){}
+
 	}
 }
 

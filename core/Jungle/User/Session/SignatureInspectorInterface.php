@@ -28,6 +28,15 @@ namespace Jungle\User\Session {
 		 */
 		public function setSignature($signature, $lifetime = null);
 
+
+
+		/**
+		 * @return bool
+		 */
+		public function hasSignal();
+
+
+
 		/**
 		 * @return mixed
 		 */

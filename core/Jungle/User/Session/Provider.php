@@ -52,7 +52,7 @@ namespace Jungle\User\Session {
 		 * @return boolean
 		 */
 		public function hasSignal(){
-			return !!$this->signature_inspector->getSignature();
+			return $this->signature_inspector->hasSignal();
 		}
 
 		/**

@@ -73,6 +73,13 @@ namespace Jungle\User\Session\SignatureInspector {
 		}
 
 		/**
+		 * @return bool
+		 */
+		public function hasSignal(){
+			return !!$this->cookie->getCookie($this->cookie_name);
+		}
+
+		/**
 		 * @return mixed
 		 */
 		public function generateSignature(){

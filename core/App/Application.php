@@ -26,7 +26,9 @@ namespace App {
 	use Jungle\User\AccessControl\Manager;
 	use Jungle\User\Account;
 	use Jungle\User\Session\Provider\Session;
+	use Jungle\User\Session\Provider\Token;
 	use Jungle\User\Session\SignatureInspector\Cookies;
+	use Jungle\User\Session\SignatureInspector\TokenInspector;
 	use Jungle\User\SessionManager;
 	use Jungle\Util\Specifications\Http\RequestInterface;
 
@@ -89,11 +91,23 @@ namespace App {
 				$manager->setDi($this->_dependency_injector);
 				$manager->setStorage(new MyModels());
 
-				$provider = new Session();
-				$provider->setDi($this->_dependency_injector);
-				$provider->setSignatureInspector( (new Cookies())->setCookieName('JUNGLE_SESS') );
+				$cookieSession = new Session();
+				$cookieSession->setDi($this->_dependency_injector);
+				$cookieSession->setSignatureInspector( (new Cookies())->setCookieName('JUNGLE_SESS') );
 
-				$manager->setDefaultProvider($provider);
+				$tokenInspector = new TokenInspector('accessBy','setAccessToken','setAccessExpires');
+				$token = new Token();
+				$token->setDi($this->_dependency_injector);
+				$token->setSignatureInspector($tokenInspector);
+
+
+				$manager->setDefaultProvider($cookieSession);
+				$manager->setProviders([
+					$cookieSession,
+					$token,
+				]);
+
+
 				$manager->setLifetime(86000 * 2);
 
 				return $manager;

@@ -11,6 +11,7 @@ namespace App\Model {
 	
 	use Jungle\Data\Record\Head\Schema;
 	use Jungle\Data\Record\Model;
+	use Jungle\Exception\ForbiddenException;
 	use Jungle\User\SessionInterface;
 	use Jungle\User\SessionTrait;
 	use Jungle\User\UserInterface;
@@ -80,8 +81,16 @@ namespace App\Model {
 		/**
 		 * @param UserInterface $user
 		 * @return mixed
+		 * @throws ForbiddenException
+		 * @throws \Jungle\Data\Record\Exception
+		 * @throws \Jungle\Data\Record\Exception\Field\AccessViolation
+		 * @throws \Jungle\Data\Record\Exception\Field\ReadonlyViolation
+		 * @throws \Jungle\Data\Record\Exception\Field\UnexpectedValue
 		 */
 		public function setUser(UserInterface $user = null){
+			if($this->permanent){
+				throw new ForbiddenException('Can`t change User in permanent marked session record');
+			}
 			$this->setProperty('user',$user);
 			return $this;
 		}
