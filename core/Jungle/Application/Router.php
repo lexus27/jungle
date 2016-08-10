@@ -217,7 +217,6 @@ namespace Jungle\Application {
 				return $link;
 			}
 			throw new GenerateLink('Not Found suitable route for passed arguments!');
-
 		}
 
 		/**
