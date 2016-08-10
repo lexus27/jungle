@@ -295,6 +295,71 @@ namespace Jungle\Application\Router {
 		public function generateRequest($params, $reference, $preferred_request){}
 
 		/**
+		 * @param null $params
+		 * @param null $reference
+		 * @param array|null $specials
+		 * @return bool|string
+		 */
+		public function tryLink($params = null, $reference = null, array $specials = null){
+			$tpl = $this->_compilePattern();
+			$reference = Reference::normalize($reference, $this->default_reference);
+
+			$specials = (array)$specials;
+			$specials = $this->_importReference($reference, $specials);
+
+			if(!is_null($params) && !is_array($params) && $this->default_param_name){
+				$params = [
+					$this->default_param_name => $params
+				];
+			}
+
+			$params = (array)$params;
+			$params = $this->prepareRenderBindParams($params);
+			$template_params = $this->_compositeSpecials($specials, $params);
+			// validate supplied parameters by placeholders
+			$existing_placeholder_names = [];
+			$placeholders = $tpl->getPlaceholders();
+			if($placeholders){
+				foreach($placeholders as $placeholder){
+					$name = $placeholder->getName();
+					$existing_placeholder_names[] = $name;
+					if(!isset($template_params[$name])){
+						if(!$placeholder->isOptional()){
+							/** Если обязательного параметра нету в наборе представленных параметров */
+							return false;
+						}
+					}elseif(!$placeholder->getType()->isValid($template_params[$name])){
+						/** Если значение параметра, не ожидаемо */
+						return false;
+					}
+				}
+			}else{
+				/** Если в шаблоне не представленны Плейсхолдеры */
+				if($this->default_reference){
+					foreach($this->default_reference as $key => $value){
+						if($reference[$key] !== $value){
+							/** Если ссылка по умолчанию, не соответствует переданной ссылке */
+							return false;
+						}
+					}
+				}
+			}
+
+			// check supplier parameters support in placeholders
+			foreach($params as $key => $value){
+				if(!in_array($key, $existing_placeholder_names,true)){
+					return false;
+				}
+			}
+
+			try{
+				return $tpl->render($params);
+			}catch(Template\Exception $e){
+				return false;
+			}
+		}
+
+		/**
 		 * @param array $params
 		 * @param null $reference
 		 * @param array|null $specials
@@ -326,16 +391,20 @@ namespace Jungle\Application\Router {
 					$existing_placeholder_names[] = $name;
 					if(!isset($template_params[$name])){
 						if(!$placeholder->isOptional()){
+							/** Если обязательного параметра нету в наборе представленных параметров */
 							throw new GenerateLink('Error generate link: parameter required "'.$name.'"');
 						}
 					}elseif(!$placeholder->getType()->isValid($template_params[$name])){
+						/** Если значение параметра, не ожидаемо */
 						throw new GenerateLink('Error generate link: Invalid parameter type "' . $name . '"!');
 					}
 				}
 			}else{
+				/** Если в шаблоне не представленны Плейсхолдеры */
 				if($this->default_reference){
 					foreach($this->default_reference as $key => $value){
 						if($reference[$key] !== $value){
+							/** Если ссылка по умолчанию, не соответствует переданной ссылке */
 							throw new GenerateLink('Error generate link: default reference is not equal!');
 						}
 					}

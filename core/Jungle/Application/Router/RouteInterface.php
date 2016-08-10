@@ -80,6 +80,13 @@ namespace Jungle\Application\Router {
 		public function getDefaultParams();
 
 		/**
+		 * @param null $params
+		 * @param null $reference
+		 * @return mixed
+		 */
+		public function tryLink($params = null, $reference = null);
+
+		/**
 		 * @param array $params
 		 * @param array|mixed $reference
 		 * @return string

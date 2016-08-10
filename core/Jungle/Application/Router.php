@@ -212,9 +212,9 @@ namespace Jungle\Application {
 		 */
 		public function generateLink($params = null, $reference = null){
 			foreach($this->routes as $route){
-				try{
-					return $route->generateLink($params,$reference);
-				}catch(GenerateLink $e){}
+				$link = $route->tryLink($params,$reference);
+				if(!$link) continue;
+				return $link;
 			}
 			throw new GenerateLink('Not Found suitable route for passed arguments!');
 

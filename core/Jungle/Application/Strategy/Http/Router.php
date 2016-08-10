@@ -11,6 +11,7 @@ namespace Jungle\Application\Strategy\Http {
 
 	use Jungle\Application\Dispatcher;
 	use Jungle\Application\RequestInterface;
+	use Jungle\Application\Router\RouteInterface;
 	use Jungle\Application\Strategy\Http\Router\Route;
 	use Jungle\RegExp\Template;
 
@@ -59,10 +60,10 @@ namespace Jungle\Application\Strategy\Http {
 		}
 
 		/**
-		 * @param \Jungle\Application\Router\RouteInterface|Route $route
+		 * @param RouteInterface|Route $route
 		 * @param $options
 		 */
-		protected function buildRouteByOptions(\Jungle\Application\Router\RouteInterface $route, $options){
+		protected function buildRouteByOptions(RouteInterface $route, $options){
 			parent::buildRouteByOptions($route,$options);
 			$route->setPreferredMethod(null);
 		}
