@@ -81,14 +81,14 @@ namespace Jungle\Application {
 		 */
 		protected function getDefaultRouteOptions(){
 			return [
-				'main'          => false,
-				'reference'     => null,
-				'params'        => null,
-				'name'          => null,
-				'bindings'      => null,
-				'modify'        => true,
-				'converter'     => null,
-				'default'       => null,
+				'main'              => false,
+				'reference'         => null,
+				'params'            => null,
+				'name'              => null,
+				'bindings'          => null,
+				'modify'            => true,
+				'converter'         => null,
+				'default'           => null,
 			];
 		}
 
@@ -100,7 +100,11 @@ namespace Jungle\Application {
 			if($options['main']){
 				$this->main_route = $route;
 			}
-			$route->setName($options['name']);
+			if($options['name']){
+				$route->setName($options['name']);
+			}elseif(is_string($options['reference'])){
+				$route->setName($options['reference']);
+			}
 			$route->setDefaultParam($options['default']);
 			$route->setDefaultReference(Reference::normalize($options['reference']));
 			$route->setDefaultParams((array)$options['params']);
