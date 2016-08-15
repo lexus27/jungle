@@ -133,6 +133,30 @@ namespace Jungle\Util\Specifications\Http {
 		public function getPost($key = null);
 
 		/**
+		 * @return bool
+		 */
+		public function hasObject();
+
+		/**
+		 * @return array|mixed|null
+		 */
+		public function getObject();
+
+		/**
+		 * @param $key
+		 * @param null $filter
+		 * @param null $default
+		 * @return mixed|null
+		 */
+		public function getObjectParam($key, $filter = null, $default = null);
+
+		/**
+		 * @param $key
+		 * @return bool
+		 */
+		public function hasObjectParam($key);
+
+		/**
 		 * @param $key
 		 * @return mixed
 		 */
