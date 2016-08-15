@@ -1,0 +1,12 @@
+# Created by .ignore support plugin (hsz.mobi)
+.gitignore
+XPlate
+Media
+Lexicon
+Cache
+_Date.php
+AssetsManager.php
+Config.php
+Lexicon.php
+Media.php
+PublicDirectory.php
