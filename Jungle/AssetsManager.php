@@ -20,7 +20,18 @@ namespace Jungle {
 		protected $top_scripts = [];
 		
 		protected $bottom_scripts = [];
-		
+
+
+		/**
+		 * @param $asset
+		 */
+		public function get($asset){
+
+		}
+
+
+
+
 		/**
 		 * @return string
 		 */
@@ -92,6 +103,58 @@ namespace Jungle {
 		public function drawBottomScripts(){
 			
 		}
+
+
+		protected $base_dirname;
+
+		protected $base_relative;
+
+		/**
+		 * @param $absolute_path
+		 * @return string|bool
+		 */
+		public function relative($absolute_path){
+			if(strpos($absolute_path,$this->base_dirname) === 0){
+				return substr($absolute_path, strlen($this->base_dirname));
+			}else{
+				return false;
+			}
+		}
+
+		/**
+		 * Захват означает, перемещение или создание ярлыка для структуры
+		 * находящейся по абсолютному пути и не находящимся в базовой публичной директории
+		 * @param $absolute_path
+		 * @return bool|string
+		 */
+		public function capture($absolute_path){
+			$relative = $this->relative($absolute_path);
+			if($relative === false){
+				/**
+				 * Как мы из абсолютного пути , получим относительный:
+				 * С какой точки отрезать абсолютный путь чтобы получить относительный?
+				 * Какое имя файла будет в таком случае?
+				 * В какую относительную директорию положить полученый файл или папку?
+				 */
+
+				/**
+				 * Захешировать абсолютный путь по каким либо правилам
+				 *      Захешировать dirname, оставив базовое имя "ноды"
+				 * Знать где отрезать абсолютный путь для получения относительного пути
+				 *
+				 */
+			}
+			return $relative;
+		}
+
+		/**
+		 * @param $relative_path
+		 * @return string
+		 */
+		public function absolute($relative_path){
+			return $this->base_dirname . DIRECTORY_SEPARATOR . ltrim($relative_path,'\/');
+		}
+
 		
 	}
 }

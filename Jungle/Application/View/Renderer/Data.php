@@ -21,7 +21,6 @@ namespace Jungle\Application\View\Renderer {
 
 		protected function _doInitialize(){}
 
-
 		/**
 		 * @param ProcessInterface $process
 		 * @param ViewInterface $view

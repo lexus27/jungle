@@ -313,6 +313,7 @@ namespace Jungle\Application {
 		 */
 		public function handleException(\Exception $e, $return = true){
 			if(ob_get_level()) ob_end_clean();
+
 			if($this->last_process){
 				$response = $this->forward($this->error_reference,[
 					'exception' => $e
@@ -324,10 +325,12 @@ namespace Jungle\Application {
 			}else{
 				throw new \Jungle\Application\Exception('Initiator is not recognized!');
 			}
+
 			if(!$return){
 				$response->send();
 				exit();
 			}
+
 			return $response;
 		}
 
@@ -375,7 +378,6 @@ namespace Jungle\Application {
 								$this->_afterDispatch($request,$routing,$process);
 								return $response;
 							}
-
 						}catch(Exception\ContinueRoute $e){
 							$routing->reset();
 							continue;

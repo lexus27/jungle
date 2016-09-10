@@ -103,7 +103,7 @@ namespace Jungle\Application {
 
 		/**
 		 * @param $key
-		 * @param $values
+		 * @param $value
 		 */
 		public function __set($key, $value){
 			$this->variables[$key] = $value;

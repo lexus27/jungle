@@ -86,6 +86,9 @@ namespace Jungle\Application\Dispatcher {
 			return $this->dispatcher;
 		}
 
+		/**
+		 *
+		 */
 		public function getMemory(){
 
 		}
@@ -208,15 +211,11 @@ namespace Jungle\Application\Dispatcher {
 		 * @throws Control
 		 */
 		public function control($reference = null,array $data, array $options = null, ProcessInitiatorInterface $initiator = null){
-			$reference = Reference::normalize(
-				$reference,
-				[
+			$reference = Reference::normalize($reference, [
 					'module'     => $this->name,
 					'controller' => $this->getDefaultController(),
 					'action'     => $this->getDefaultAction()
-				],
-				true
-			);
+			], true);
 			list($controllerName, $actionName) = Massive::orderedKeys($reference, ['controller','action']);
 
 			$controllerQualified = $this->getQualifiedReferenceString($reference,false);
@@ -327,7 +326,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @return string
 		 */
 		protected function appendQualifiedAction($qualified, $reference){
-			return $qualified. ($reference['action']?':'.$reference['action']:'');
+			return $qualified.($reference['action']?':'.$reference['action']:'');
 		}
 
 
@@ -540,9 +539,19 @@ namespace Jungle\Application\Dispatcher {
 		 * @param $params
 		 * @param $reference
 		 * @param $initiator
-		 * @return Process
+		 * @return \Jungle\Application\Dispatcher\Process
+		 * @throws Exception
 		 */
 		protected function factoryProcess($dispatcher, $controller, $params, $reference, $initiator){
+			if(method_exists($controller, 'factoryProcess')){
+				$process = call_user_func([$controller, 'factoryProcess'],$dispatcher, $this, $params, $reference, $initiator);
+				if($process){
+					if(!$process instanceof ProcessInterface){
+						throw new Exception('Controller '.get_class($controller) . '::factoryProcess return value is not instanceof "'.ProcessInterface::class.'"');
+					}
+					return $process;
+				}
+			}
 			return new Process($dispatcher, $controller, $params, $reference, $this, $initiator);
 		}
 

@@ -371,6 +371,8 @@ namespace Jungle\Application\Dispatcher {
 
 			$this->getModule();
 
+			$this->getRouting()->getRequest();
+
 
 		}
 

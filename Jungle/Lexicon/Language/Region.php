@@ -8,9 +8,15 @@
  * Time: 21:31
  */
 namespace Jungle\Lexicon\Language {
-	
+	/**
+	 * Class Region
+	 * @package Jungle\Lexicon\Language
+	 */
 	class Region{
-		
+
+		/** @var   */
+		protected $code;
+
 	}
 }
 

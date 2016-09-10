@@ -271,6 +271,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @param $originPath
 		 * @param Adapter $destination
 		 * @param $destinationPath
+		 * @return bool|void
 		 */
 		public function transfer(
 				Adapter $origin,        $originPath,
@@ -278,20 +279,21 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		){
 			if($origin instanceof Local && $destination instanceof Local){
 				// Local TO Local transfer
-				$this->transferLocalToLocal($origin,$originPath,$destination,$destinationPath);
+				return $this->transferLocalToLocal($origin,$originPath,$destination,$destinationPath);
 			}
 			if($origin instanceof Local && $destination instanceof Remote){
 				// Local TO Remote transfer
-				$this->transferLocalToRemote($origin,$originPath,$destination,$destinationPath);
+				return $this->transferLocalToRemote($origin,$originPath,$destination,$destinationPath);
 			}
 			if($origin instanceof Remote && $destination instanceof Local){
 				// Remote TO Local transfer
-				$this->transferRemoteToLocal($origin,$originPath,$destination,$destinationPath);
+				return $this->transferRemoteToLocal($origin,$originPath,$destination,$destinationPath);
 			}
 			if($origin instanceof Remote && $destination instanceof Remote){
 				// Remote TO Remote transfer
-				$this->transferRemoteToRemote($origin,$originPath,$destination,$destinationPath);
+				return $this->transferRemoteToRemote($origin,$originPath,$destination,$destinationPath);
 			}
+			return false;
 		}
 
 		/**

@@ -14,9 +14,7 @@ namespace Jungle\Messenger {
 	 */
 	abstract class Contact implements IContact{
 
-		/**
-		 * @var
-		 */
+		/** @var  string */
 		protected $address;
 
 		/**

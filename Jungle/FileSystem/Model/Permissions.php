@@ -15,8 +15,6 @@ namespace Jungle\FileSystem\Model {
 	 */
 	class Permissions implements PermissionsInterface{
 
-
-
 		/**
 		 * @var callable
 		 */

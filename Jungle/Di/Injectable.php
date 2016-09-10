@@ -19,6 +19,7 @@ namespace Jungle\Di {
 	use Jungle\Loader;
 	use Jungle\Messenger;
 	use Jungle\User\Account;
+	use Jungle\User\SessionManager;
 	use Jungle\Util\Specifications\Http\CookieManagerInterface;
 	use Jungle\Util\Specifications\Http\RequestInterface;
 	use Jungle\Util\Specifications\Http\ResponseInterface;
@@ -47,7 +48,7 @@ namespace Jungle\Di {
 	 *
 	 * @property Account $account
 	 * @property $access
-	 * @property $session
+	 * @property SessionManager $session
 	 * @property CookieManagerInterface $cookie
 	 * @property Messenger $messenger
 	 */

@@ -16,7 +16,7 @@ namespace Jungle\Lexicon {
 	class Language{
 
 		/** @var  string */
-		protected $name;
+		protected $name = 'Russian';
 
 		/** @var  string */
 		protected $code = 'ru';
