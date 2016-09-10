@@ -11,10 +11,10 @@ namespace Jungle\Di {
 
 
 	/**
-	 * Interface ChainsInterface
+	 * Interface ChainHolderManagerInterface
 	 * @package Jungle\Di
 	 */
-	interface ChainsInterface{
+	interface ChainHolderManagerInterface{
 
 		/**
 		 * @param $alias
@@ -37,7 +37,6 @@ namespace Jungle\Di {
 		 */
 		public function changeInjection($holderAlias, DiInterface $di);
 
-
 		/**
 		 * @param $holderAlias
 		 * @return mixed
@@ -49,9 +48,6 @@ namespace Jungle\Di {
 		 * @return DiInterface|null
 		 */
 		public function getInjection($holderAlias);
-
-
-
 
 
 	}

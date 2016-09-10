@@ -22,6 +22,7 @@ namespace Jungle\Application {
 	use Jungle\Application\Router;
 	use Jungle\Application\Router\RoutingInterface;
 	use Jungle\Application\View;
+	use Jungle\Di\Chains;
 	use Jungle\Di\Injectable;
 	use Jungle\Di\InjectionAwareInterface;
 	use Jungle\FileSystem;
@@ -609,6 +610,21 @@ namespace Jungle\Application {
 		 */
 		protected function _onDispatchStarted(RequestInterface $request){
 			if($this->_dependency_injector){
+
+				/** @var Chains $diChains */
+				$diChains = null;
+				$diChains->defineHolder('strategy', 5);
+				$diChains->changeInjection('strategy',$this->strategy);
+
+				$this->strategy->setShared('strategy', $this->strategy);
+				$this->strategy->setShared('request', $request);
+				$this->strategy->setShared('response', $request->getResponse());
+
+
+
+
+
+
 				$this->_dependency_injector->setShared('request',$request);
 				$this->_dependency_injector->setShared('response',$request->getResponse());
 				$this->_dependency_injector->setShared('strategy',$this->strategy);
@@ -623,9 +639,9 @@ namespace Jungle\Application {
 		 */
 		protected function _onDispatchContinue(){
 			if($this->_dependency_injector){
-				$this->_dependency_injector->remove('request');
-				$this->_dependency_injector->remove('response');
-				$this->_dependency_injector->remove('strategy');
+				/** @var Chains $diChains */
+				$diChains = null;
+				$diChains->restoreInjection('strategy');
 			}
 			$this->strategy = null;
 			$this->dispatching = false;

@@ -19,6 +19,18 @@ namespace Jungle\Di {
 	interface DiInterface extends RegistryInterface, RegistryRemovableInterface, \ArrayAccess{
 
 		/**
+		 * @return array
+		 */
+		public function getServiceNames();
+
+		/**
+		 * @return array
+		 */
+		public function getContainerNames();
+
+
+
+		/**
 		 * @return DiInterface
 		 */
 		public function getRoot();
@@ -34,15 +46,6 @@ namespace Jungle\Di {
 		 */
 		public function getParent();
 
-		/**
-		 * @return array
-		 */
-		public function getServiceNames();
-
-		/**
-		 * @return array
-		 */
-		public function getContainerNames();
 
 
 		/**
@@ -55,6 +58,9 @@ namespace Jungle\Di {
 		 * @return mixed
 		 */
 		public function setNext(DiInterface $di);
+
+
+
 
 		/**
 		 * @param $existingServiceKey

@@ -149,7 +149,7 @@ namespace Jungle {
 			$dispatcher = $this->createDispatcher();
 			$this->initializeDispatcherSettings($dispatcher);
 			$this->initializeDispatcherModules($dispatcher);
-			$this->initializeDispatcherStrategies($dispatcher, $view);
+			$this->initializeDispatcherStrategies($dispatcher, $view); // TODO Нужны только чекеры, а они у нас статичные в классе, поэтому как и с модулями
 			return $dispatcher;
 		}
 
