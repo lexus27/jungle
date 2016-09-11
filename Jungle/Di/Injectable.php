@@ -54,30 +54,13 @@ namespace Jungle\Di {
 	 */
 	abstract class Injectable implements InjectionAwareInterface{
 
-		/** @var  DiInterface */
-		protected $_dependency_injection;
+		use InjectionAwareTrait;
 
 		/** @var bool  */
 		protected static $_dependency_injection_cacheable = false;
 
 		/** @var array  */
 		protected $_dependency_injection_cache = [];
-
-		/**
-		 * @return DiInterface
-		 */
-		public function getDi(){
-			return $this->_dependency_injection;
-		}
-
-		/**
-		 * @param DiInterface $di
-		 * @return $this
-		 */
-		public function setDi(DiInterface $di){
-			$this->_dependency_injection = $di;
-			return $this;
-		}
 
 		/**
 		 * @param $name

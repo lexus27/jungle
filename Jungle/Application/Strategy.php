@@ -18,7 +18,7 @@ namespace Jungle\Application {
 	abstract class Strategy extends Di implements StrategyInterface{
 
 		/** @var  string */
-		protected $type;
+		protected $name;
 
 		/** @var  callable|null */
 		protected $complete_callback;
@@ -35,10 +35,19 @@ namespace Jungle\Application {
 		}
 
 		/**
+		 * @param $name
+		 * @return $this
+		 */
+		public function setName($name){
+			$this->name = $name;
+			return $this;
+		}
+
+		/**
 		 * @return string
 		 */
-		public function getType(){
-			return $this->type;
+		public function getName(){
+			return $this->name;
 		}
 
 		/**

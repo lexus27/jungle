@@ -18,6 +18,15 @@ namespace Jungle\Di\HolderChains {
 	 */
 	interface HolderManagerInterface{
 
+
+		/**
+		 * @param $alias
+		 * @param DiInterface $di
+		 * @param null $priority
+		 * @return mixed
+		 */
+		public function insertHolder($alias, DiInterface $di, $priority = null);
+
 		/**
 		 * @param $alias
 		 * @param $priority
@@ -28,9 +37,10 @@ namespace Jungle\Di\HolderChains {
 
 		/**
 		 * @param $holderAlias
+		 * @param object|null $instance
 		 * @return $this
 		 */
-		public function restoreInjection($holderAlias);
+		public function restoreInjection($holderAlias, $instance = null);
 
 		/**
 		 * @param $holderAlias

@@ -26,6 +26,11 @@ namespace Jungle\Di {
 		 */
 		public function setDi(DiInterface $di);
 
+		/**
+		 * @return DiInterface|DiNestingOverlappingInterface|DiSettingInterface
+		 */
+		public function getAttachedDi();
+
 	}
 }
 

@@ -23,15 +23,16 @@ namespace Jungle\Application\Strategy {
 	 * Class Http
 	 * @package Jungle\Application\Strategy
 	 */
-	class Http extends Strategy{
+	abstract class Http extends Strategy{
 
-		protected $type = 'http';
+		/** @var string  */
+		protected $name = 'http';
 
 		/**
 		 * @param RequestInterface $request
 		 * @return bool
 		 */
-		public function check(RequestInterface $request){
+		public static function check(RequestInterface $request){
 			return $request instanceof HTTP_RequestInterface;
 		}
 

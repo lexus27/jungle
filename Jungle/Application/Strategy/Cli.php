@@ -18,16 +18,16 @@ namespace Jungle\Application\Strategy {
 	 * Class Cli
 	 * @package Jungle\Application\Strategy
 	 */
-	class Cli extends Strategy{
+	abstract class Cli extends Strategy{
 
 		/** @var string */
-		protected $type = 'cli';
+		protected $name = 'cli';
 
 		/**
 		 * @param RequestInterface $request
 		 * @return bool
 		 */
-		public function check(RequestInterface $request){
+		public static function check(RequestInterface $request){
 			return $request instanceof CLI_Request;
 		}
 
@@ -39,6 +39,13 @@ namespace Jungle\Application\Strategy {
 		}
 
 
+		/**
+		 * @param $type
+		 * @return mixed
+		 */
+		public function setName($type){
+			// TODO: Implement setName() method.
+		}
 	}
 }
 

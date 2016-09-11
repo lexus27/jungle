@@ -33,15 +33,24 @@ namespace Jungle\Application {
 	 */
 	class Dispatcher extends Injectable implements DispatcherInterface{
 
+
+		/** @var  StrategyInterface */
+		protected $current_strategy;
+
 		/** @var  StrategyInterface[] */
 		protected $strategies = [];
 
-		/** @var  StrategyInterface */
-		protected $strategy;
+		/** @var  array[]  */
+		protected $strategies_definitions = [];
+
+		/** @var array|null  */
+		protected $strategies_order;
 
 		/** @var  ModuleInterface[]|array[]  */
 		protected $modules = [];
 
+
+		/** @var array  */
 		protected $error_reference = [
 			'module'        => 'index',
 			'controller'    => 'index',
@@ -74,6 +83,25 @@ namespace Jungle\Application {
 
 		/** @var  RoutingInterface */
 		protected $last_routing;
+
+		/**
+		 * Dispatcher constructor.
+		 */
+		public function __construct(){
+			register_shutdown_function(function(){
+				if($this->dispatching){
+					$error = error_get_last();
+					if(isset($error) && ($error['type'] & (E_ERROR | E_PARSE | E_COMPILE_ERROR | E_CORE_ERROR))){
+						$this->handleFatalError($error['type'], $error['message'], $error['file'], $error['line']);
+					}else{
+						ob_end_flush();
+					}
+				}
+			});
+		}
+
+
+
 
 		/**
 		 * @param $name
@@ -190,6 +218,131 @@ namespace Jungle\Application {
 		}
 
 		/**
+		 * @param StrategyInterface|string $alias
+		 * @param StrategyInterface|string $strategy
+		 * @param float $priority
+		 * @return $this
+		 * @internal param $alias
+		 */
+		public function setStrategy($alias, $strategy, $priority = 0.0){
+			if(is_string($strategy)){
+				$this->strategies[$alias] = null;
+				$this->strategies_definitions[$alias] = [
+					'class'     => $strategy,
+					'priority'  => floatval($priority)
+				];
+				$this->strategies_order = null;
+			}elseif($strategy instanceof StrategyInterface){
+				$this->strategies[$alias] = null;
+				$this->strategies_definitions[$alias] = [
+					'class'    => get_class($strategy),
+					'priority' => floatval($priority)
+				];
+				$this->strategies_order = null;
+			}
+			return $this;
+		}
+
+		/**
+		 * @param $alias
+		 * @param $priority
+		 * @return $this
+		 */
+		public function setStrategyPriority($alias, $priority){
+			if(!isset($this->strategies_definitions[$alias])){
+				throw new \LogicException('Strategy "'.$alias.'" not defined!');
+			}
+			$this->strategies_definitions[$alias]['priority'] = floatval($priority);
+			return $this;
+		}
+
+
+		/**
+		 * @param array $strategies
+		 */
+		public function setStrategies(array $strategies){
+			$this->strategies = [];
+			$this->strategies_definitions = [];
+			$this->strategies_order = [];
+			$i = 0;
+			foreach($strategies as $alias => $strategy){
+				$this->strategies_order[] = $alias;
+				if(is_array($strategy)){
+					$this->strategies[$alias] = null;
+					$this->strategies_definitions[$alias] = array_replace($strategy,['priority' => $i]);
+				}elseif(is_string($strategy)){
+					$this->strategies[$alias] = null;
+					$this->strategies_definitions[$alias] = [
+						'class'     => $strategy,
+						'priority'  => floatval($i)
+					];
+				}elseif($strategy instanceof StrategyInterface){
+					$this->strategies[$alias] = null;
+					$this->strategies_definitions[$alias] = [
+						'class'    => get_class($strategy),
+						'priority' => floatval($i)
+					];
+				}
+				$i = $i + 5;
+			}
+		}
+
+		/**
+		 * @param $alias
+		 * @return StrategyInterface
+		 * @throws Exception
+		 */
+		public function getStrategy($alias){
+			if(!isset($this->strategies_definitions[$alias])){
+				throw new \LogicException('Strategy "'.$alias.'" not defined!');
+			}
+			if(!isset($this->strategies[$alias])){
+				$strategy = $this->_loadStrategy($alias, $this->strategies_definitions[$alias]);
+				$this->strategies[$alias] = $strategy;
+			}
+			return $this->strategies[$alias];
+		}
+
+		/**
+		 * @return StrategyInterface
+		 */
+		public function getCurrentStrategy(){
+			return $this->current_strategy;
+		}
+
+		/**
+		 * @param RequestInterface $request
+		 * @return StrategyInterface|null
+		 */
+		public function matchStrategy(RequestInterface $request){
+			if($this->strategies_order === null){
+				$this->strategies_order = array_keys($this->strategies_definitions);
+				usort($this->strategies_order, function($a, $b){
+					$a = $this->strategies_definitions[$a]['priority'];
+					$b = $this->strategies_definitions[$b]['priority'];
+					if($a == $b){
+						return 0;
+					}
+					return $a > $b?1:-1;
+				});
+			}
+			foreach($this->strategies_order as $name){
+				$definition = $this->strategies_definitions[$name];
+				/** @var StrategyInterface $className */
+				$className = $definition['class'];
+				$strategy = $this->strategies[$name];
+				if($className::check($request)){
+					if(!$strategy){
+						$this->strategies[$name] = $strategy = $this->_loadStrategy($name, $definition);
+					}
+					return $strategy;
+				}
+			}
+			return null;
+		}
+
+
+		/**
 		 * @param $reference
 		 * @return bool
 		 * @throws Exception
@@ -207,6 +360,9 @@ namespace Jungle\Application {
 			}
 			return $module->hasControl($reference['controller'], $reference['action'] );
 		}
+
+
+
 
 		/**
 		 * @param $reference
@@ -226,59 +382,9 @@ namespace Jungle\Application {
 			return $module->getMetadata($reference['controller'], $reference['action'] );
 		}
 
-		/**
-		 * @param $alias
-		 * @param StrategyInterface $strategy
-		 * @return $this
-		 */
-		public function setStrategy($alias, StrategyInterface $strategy){
-			$this->strategies[$alias] = $strategy;
-			return $this;
-		}
 
-		/**
-		 * @param $alias
-		 * @return StrategyInterface|null
-		 */
-		public function findStrategy($alias){
-			return isset($this->strategies[$alias])?$this->strategies[$alias]:null;
-		}
 
-		/**
-		 * @return StrategyInterface
-		 */
-		public function getStrategy(){
-			return $this->strategy;
-		}
 
-		/**
-		 * @param RequestInterface $request
-		 * @return StrategyInterface|null
-		 */
-		public function matchStrategyBy(RequestInterface $request){
-			foreach($this->strategies as $name => $strategy){
-				if($strategy->check($request)){
-					return $strategy;
-				}
-			}
-			return null;
-		}
-
-		/**
-		 * Dispatcher constructor.
-		 */
-		public function __construct(){
-			register_shutdown_function(function(){
-				if($this->dispatching){
-					$error = error_get_last();
-					if(isset($error) && ($error['type'] & (E_ERROR | E_PARSE | E_COMPILE_ERROR | E_CORE_ERROR))){
-						$this->handleFatalError($error['type'], $error['message'], $error['file'], $error['line']);
-					}else{
-						ob_end_flush();
-					}
-				}
-			});
-		}
 
 		/**
 		 * @param $num
@@ -355,7 +461,7 @@ namespace Jungle\Application {
 				throw new \LogicException('dispatch already run!');
 			}
 			try{
-				$strategy = $this->matchStrategyBy($request);
+				$strategy = $this->matchStrategy($request);
 				if(!$strategy){
 					throw new Exception('Not have matched Strategy for current request!');
 				}
@@ -450,10 +556,17 @@ namespace Jungle\Application {
 				throw new Control('Module "'.$moduleName.'" not found!');
 			}
 			$this->_beforeControl($reference, $module, $initiator);
-			$process = $module->control($reference,(array) $data, $options, $initiator);
-			$output = $this->checkoutProcess($process, $options);
-			$this->_afterControl($output,$process);
-			return $output;
+			$this->_dependency_injection->insertHolder('module', $module, 10);
+			try{
+				$process = $module->control($reference,(array) $data, $options, $initiator);
+				$output = $this->checkoutProcess($process, $options);
+				$this->_afterControl($output,$process);
+				return $output;
+			}finally{
+				$this->_dependency_injection->restoreInjection('module', $module);
+			}
+
+
 		}
 
 		/**
@@ -468,7 +581,7 @@ namespace Jungle\Application {
 				$rendered = $view->render(null,$process);
 				$response->setContent($rendered);
 			}
-			$this->strategy->complete($response, $view);
+			$this->current_strategy->complete($response, $view);
 			return $response;
 		}
 
@@ -482,8 +595,8 @@ namespace Jungle\Application {
 			if(is_array($options)){
 				if(isset($options['render']) && $options['render']){
 					/** @var ViewInterface $view */
-					$view = $this->_dependency_injection->getShared('view');
-					$alias = null;
+					$view   = $this->_dependency_injection->getShared('view');
+					$alias  = null;
 					$render_variables  = [];
 					$render_options    = [];
 					if(is_array($options['render'])){
@@ -590,6 +703,31 @@ namespace Jungle\Application {
 			}
 		}
 
+
+
+		/**
+		 * @param $alias
+		 * @param array $definition
+		 * @return StrategyInterface
+		 * @throws Exception
+		 */
+		protected function _loadStrategy($alias,array $definition){
+			if(!isset($definition['class'])){
+				throw new Exception('Strategy load error: "' . $alias . '" not defined class in definition');
+			}
+			$className = $definition['class'];
+			if(class_exists($className)){
+				$strategy = new $className();
+				if(!$strategy instanceof StrategyInterface){
+					throw new Exception('Module instance is not '.StrategyInterface::class);
+				}
+				$strategy->setName($alias);
+				return $strategy;
+			}else{
+				throw new Exception('Strategy load error: "' . $alias . '" not found strategy class "' . $className . '"');
+			}
+		}
+
 		protected function _beforeDispatch(RequestInterface $request){
 
 		}
@@ -602,7 +740,7 @@ namespace Jungle\Application {
 		 * @param StrategyInterface $strategy
 		 */
 		protected function _onStrategyRecognized(StrategyInterface $strategy){
-			$this->strategy = $strategy;
+			$this->current_strategy = $strategy;
 		}
 
 		/**
@@ -611,13 +749,8 @@ namespace Jungle\Application {
 		protected function _onDispatchStarted(RequestInterface $request){
 			if($this->_dependency_injection){
 				/** @var HolderChains $diChains */
-				$diChains = null;
-				$diChains->defineHolder('strategy', 5);
-				$diChains->changeInjection('strategy',$this->strategy);
-
-				$this->strategy->setShared('strategy', $this->strategy);
-				$this->strategy->setShared('request', $request);
-				$this->strategy->setShared('response', $request->getResponse());
+				$diChains = $this->_dependency_injection;
+				$diChains->defineHolder('strategy', 5)->changeInjection('strategy',$this->current_strategy);
 			}
 			$this->dispatching = true;
 			$this->last_request = $request;
@@ -629,13 +762,13 @@ namespace Jungle\Application {
 		protected function _onDispatchContinue(){
 			if($this->_dependency_injection){
 				/** @var HolderChains $diChains */
-				$diChains = null;
+				$diChains = $this->_dependency_injection;
 				$diChains->restoreInjection('strategy');
 			}
-			$this->strategy = null;
-			$this->dispatching = false;
-			$this->last_request = null;
-			$this->last_process = null;
+			$this->current_strategy = null;
+			$this->dispatching      = false;
+			$this->last_request     = null;
+			$this->last_process     = null;
 		}
 
 
@@ -677,8 +810,8 @@ namespace Jungle\Application {
 			if(isset($meta['strategy']) && $meta['strategy']){
 				$strategy = $meta['strategy'];
 				if(!is_array($strategy)) $strategy = [$strategy];
-				$current = $this->strategy->getType();
-				if(!in_array($this->strategy->getType(), $strategy, true)){
+				$current = $this->current_strategy->getName();
+				if(!in_array($this->current_strategy->getName(), $strategy, true)){
 
 					if($initiator instanceof RoutingInterface){
 						// if external request call (out of routing)

@@ -11,12 +11,13 @@ namespace Jungle\Application\Dispatcher {
 
 	use Jungle\Application\Dispatcher;
 	use Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface;
+	use Jungle\Di\DiInterface;
 
 	/**
 	 * Interface ModuleInterface
 	 * @package Jungle\Application\Dispatcher
 	 */
-	interface ModuleInterface{
+	interface ModuleInterface extends DiInterface{
 
 		/**
 		 * @param $name
@@ -152,6 +153,9 @@ namespace Jungle\Application\Dispatcher {
 		 */
 		public function getDispatcher();
 
+		/**
+		 * @return mixed
+		 */
 		public function getMemory();
 
 	}

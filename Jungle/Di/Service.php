@@ -15,8 +15,10 @@ namespace Jungle\Di {
 	 */
 	class Service implements ServiceInterface{
 
+		const DI_NONE = 0;
 		const DI_OFFSET_FIRST = -1;
 		const DI_OFFSET_LAST = 1;
+
 
 		/** @var  string */
 		protected $name;
@@ -85,11 +87,12 @@ namespace Jungle\Di {
 				$arguments = call_user_func($this->arguments_fn, $this->arguments, $externalArguments, $di, $this->arguments_di_pos);
 			}else{
 				$arguments = array_replace($this->arguments, $externalArguments);
-				if($this->arguments_di_pos === self::DI_OFFSET_LAST){
-					$arguments[] = $di;
-				}
-				if($this->arguments_di_pos === self::DI_OFFSET_FIRST){
-					array_unshift($arguments,$di);
+				if($this->arguments_di_pos !== self::DI_NONE){
+					if($this->arguments_di_pos === self::DI_OFFSET_LAST){
+						$arguments[] = $di;
+					}elseif($this->arguments_di_pos === self::DI_OFFSET_FIRST){
+						array_unshift($arguments,$di);
+					}
 				}
 			}
 			return $arguments;
@@ -133,9 +136,7 @@ namespace Jungle\Di {
 				throw new \Exception('Service "'.$this->name.'" is not valid service definition!');
 			}
 			if($object instanceof InjectionAwareInterface){
-				$object->setDi(
-					$di->getRoot()
-				);
+				$object->setDi($di);
 			}
 			return $object;
 		}

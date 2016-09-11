@@ -8,8 +8,6 @@
 namespace Jungle {
 
 	use Jungle\Di\DiInterface;
-	use Jungle\Di\DiLocatorInterface;
-	use Jungle\Di\DiNestingInterface;
 	use Jungle\Di\DiNestingOverlappingInterface;
 	use Jungle\Di\DiNestingOverlappingTrait;
 	use Jungle\Di\DiNestingTrait;
@@ -21,7 +19,7 @@ namespace Jungle {
 	 * Class Di
 	 * @package Jungle
 	 */
-	class Di implements DiSettingInterface, DiLocatorInterface, DiNestingInterface, DiNestingOverlappingInterface{
+	class Di implements DiSettingInterface, DiInterface, DiNestingOverlappingInterface{
 
 		use DiNestingTrait;
 		use DiNestingOverlappingTrait;
@@ -172,7 +170,7 @@ namespace Jungle {
 							$srv = $container->services[$name];
 							if($srv instanceof ServiceInterface){
 								return $srv->resolve($container,$parameters);
-							}elseif($srv instanceof DiInterface){
+							}elseif($srv instanceof DiNestingOverlappingInterface){
 								if($srv->isSelfOverlapping()){
 									return $srv->get(null,$parameters);
 								}
@@ -207,7 +205,7 @@ namespace Jungle {
 					$container_name = array_shift($service_key);$c--;
 					$container = $container->getServiceContainer($container_name);
 				}else{
-					$name = array_shift($service_key);$c--;
+					$name = array_shift($service_key);
 					if(!isset($container->shared_instances[$name])){
 						if(isset($container->services[$name])){
 							$srv = $container->services[$name];
@@ -486,7 +484,7 @@ namespace Jungle {
 				$srv = $this->services[$name];
 				if($srv instanceof ServiceInterface){
 					return $srv->resolve($this,null);
-				}elseif($srv instanceof DiInterface){
+				}elseif($srv instanceof DiNestingOverlappingInterface){
 					if($srv->isSelfOverlapping()){
 						return $srv->get(null,null);
 					}
@@ -564,7 +562,7 @@ namespace Jungle {
 				$srv = $this->services[$name];
 				if($srv instanceof ServiceInterface){
 					return $srv->resolve($this,null);
-				}elseif($srv instanceof DiInterface){
+				}elseif($srv instanceof DiNestingOverlappingInterface){
 					if($srv->isSelfOverlapping()){
 						return $srv->get(null,null);
 					}

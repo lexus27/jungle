@@ -14,7 +14,9 @@ namespace Jungle\Application\Dispatcher {
 	use Jungle\Application\Dispatcher\Exception\Control;
 	use Jungle\Application\Dispatcher\Process;
 	use Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface;
-	use Jungle\Di\Injectable;
+	use Jungle\Di;
+	use Jungle\Di\InjectionAwareInterface;
+	use Jungle\Di\InjectionAwareTrait;
 	use Jungle\FileSystem;
 	use Jungle\Loader;
 	use Jungle\Util\Value\Massive;
@@ -23,7 +25,9 @@ namespace Jungle\Application\Dispatcher {
 	 * Class Module
 	 * @package Jungle\Application\Dispatcher
 	 */
-	abstract class Module extends Injectable implements ModuleInterface{
+	abstract class Module extends Di implements InjectionAwareInterface, ModuleInterface{
+
+		use InjectionAwareTrait;
 
 		/** @var  string */
 		protected $name;

@@ -34,23 +34,17 @@ namespace Jungle\Application {
 
 		/**
 		 * @param $alias
-		 * @param StrategyInterface $strategy
+		 * @param StrategyInterface|string $strategy
+		 * @param float $priority
 		 * @return $this
 		 */
-		public function setStrategy($alias, StrategyInterface $strategy);
-
-		/**
-		 * @param $alias
-		 * @return StrategyInterface|null
-		 */
-		public function findStrategy($alias);
-
+		public function setStrategy($alias, $strategy, $priority = 0.0);
 
 		/**
 		 * @param RequestInterface $request
 		 * @return StrategyInterface|null
 		 */
-		public function matchStrategyBy(RequestInterface $request);
+		public function matchStrategy(RequestInterface $request);
 	}
 }
 

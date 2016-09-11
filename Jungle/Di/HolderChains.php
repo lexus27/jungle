@@ -18,8 +18,7 @@ namespace Jungle\Di {
 	 */
 	class HolderChains implements
 		HolderManagerInterface,
-		DiLocatorInterface,
-		DiNestingInterface,
+		DiInterface,
 		DiNestingOverlappingInterface,
 		\ArrayAccess{
 
@@ -38,26 +37,75 @@ namespace Jungle\Di {
 		/** @var bool  */
 		protected $holders_sorted = false;
 
+
+		/**
+		 * @param $alias
+		 * @param DiInterface $di
+		 * @param null $priority
+		 * @return $this
+		 * @throws Exception
+		 */
+		public function insertHolder($alias, DiInterface $di, $priority = null){
+
+			if(isset($this->holders[$alias])){
+				if($priority !== null && $this->holders[$alias] !== ($priority = floatval($priority))){
+					$this->holders[$alias] = $priority;
+					$this->holders_sorted = false;
+				}
+			}else{
+				if($priority !== null){
+					$this->holders[$alias] = $priority;
+					$this->holders_sorted = false;
+				}
+			}
+			$priority = floatval($priority);
+			if(
+				( isset($this->holders[$alias]) && $priority !== null && $this->holders[$alias] != $priority) ||
+			    (!isset($this->holders[$alias]) && $priority !== null)
+			){
+				$this->holders_sorted = false;
+			}else{
+				throw new Exception('Priority not pass');
+			}
+			$this->holders[$alias] = $priority;
+
+
+			if($this->dependency_injections[$alias]){
+				$previous = $this->dependency_injections[$alias];
+				$this->holders_history[$alias][] = $previous;
+			}
+			$di->setParent($this);
+			$this->dependency_injections[$alias] = $di;
+
+		}
+
 		/**
 		 * @param $alias
 		 * @param $priority
 		 * @return $this
 		 */
 		public function defineHolder($alias, $priority = 0.0){
-			$this->holders[$alias] = floatval($priority);
-			$this->holders_sorted = false;
+			if(!isset($this->holders[$alias]) || $this->holders[$alias] !== ($priority = floatval($priority))){
+				$this->holders[$alias] = $priority;
+				$this->holders_sorted = false;
+			}
 			return $this;
 		}
 
 		/**
 		 * @param $holderAlias
+		 * @param object|null $instance
 		 * @return $this
 		 * @throws Exception
 		 */
-		public function restoreInjection($holderAlias){
+		public function restoreInjection($holderAlias, $instance = null){
 			if(array_key_exists($holderAlias, $this->holders_history)){
+				if($instance!==null && $this->dependency_injections[$holderAlias] !== $instance){
+					return $this;
+				}
 				if(!empty($this->holders_history[$holderAlias])){
-					$this->dependency_injections[$holderAlias] = array_pop($this->holders_history[$holderAlias]);
+					$this->dependency_injections[$holderAlias] = $injection = array_pop($this->holders_history[$holderAlias]);
+					$injection->setParent($this);
 				}else{
 					$this->dependency_injections[$holderAlias] = null;
 				}
@@ -297,7 +345,7 @@ namespace Jungle\Di {
 			}
 			return $services;
 		}
-		
+
 	}
 }
 
