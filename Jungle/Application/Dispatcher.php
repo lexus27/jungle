@@ -22,7 +22,7 @@ namespace Jungle\Application {
 	use Jungle\Application\Router;
 	use Jungle\Application\Router\RoutingInterface;
 	use Jungle\Application\View;
-	use Jungle\Di\Chains;
+	use Jungle\Di\HolderChains;
 	use Jungle\Di\Injectable;
 	use Jungle\Di\InjectionAwareInterface;
 	use Jungle\FileSystem;
@@ -463,7 +463,7 @@ namespace Jungle\Application {
 		public function prepareResponse(ProcessInterface $process){
 			$response = $this->last_request->getResponse();
 			/** @var ViewInterface $view */
-			$view = $this->_dependency_injector->getShared('view');
+			$view = $this->_dependency_injection->getShared('view');
 			if($response->getContent() === null){
 				$rendered = $view->render(null,$process);
 				$response->setContent($rendered);
@@ -482,7 +482,7 @@ namespace Jungle\Application {
 			if(is_array($options)){
 				if(isset($options['render']) && $options['render']){
 					/** @var ViewInterface $view */
-					$view = $this->_dependency_injector->getShared('view');
+					$view = $this->_dependency_injection->getShared('view');
 					$alias = null;
 					$render_variables  = [];
 					$render_options    = [];
@@ -609,9 +609,8 @@ namespace Jungle\Application {
 		 * @param RequestInterface $request
 		 */
 		protected function _onDispatchStarted(RequestInterface $request){
-			if($this->_dependency_injector){
-
-				/** @var Chains $diChains */
+			if($this->_dependency_injection){
+				/** @var HolderChains $diChains */
 				$diChains = null;
 				$diChains->defineHolder('strategy', 5);
 				$diChains->changeInjection('strategy',$this->strategy);
@@ -619,16 +618,6 @@ namespace Jungle\Application {
 				$this->strategy->setShared('strategy', $this->strategy);
 				$this->strategy->setShared('request', $request);
 				$this->strategy->setShared('response', $request->getResponse());
-
-
-
-
-
-
-				$this->_dependency_injector->setShared('request',$request);
-				$this->_dependency_injector->setShared('response',$request->getResponse());
-				$this->_dependency_injector->setShared('strategy',$this->strategy);
-				$this->_dependency_injector->setNext($this->strategy);
 			}
 			$this->dispatching = true;
 			$this->last_request = $request;
@@ -638,8 +627,8 @@ namespace Jungle\Application {
 		 *
 		 */
 		protected function _onDispatchContinue(){
-			if($this->_dependency_injector){
-				/** @var Chains $diChains */
+			if($this->_dependency_injection){
+				/** @var HolderChains $diChains */
 				$diChains = null;
 				$diChains->restoreInjection('strategy');
 			}
@@ -669,9 +658,12 @@ namespace Jungle\Application {
 			if($initiator){
 
 				$meta = $module->getMetadata($reference['controller'], $reference['action']);
+
+				// check hmvc support
 				if($initiator instanceof ProcessInterface && (!isset($meta['hierarchy']) || !$meta['hierarchy'])){
 					throw new Control("{$module->getName()}:{$reference['controller']}:{$reference['action']} not support hierarchy calling!");
 				}
+				// check private
 				if($initiator instanceof RoutingInterface && (
 					   (isset($meta['private']) && $meta['private']) ||
 				       (!$module->hasControl($reference['controller'], $reference['action']) && $initiator->getRoute()->isDynamic())
@@ -680,14 +672,19 @@ namespace Jungle\Application {
 					throw new Exception\ContinueRoute();
 				}
 			}
+
+			// check support request strategy
 			if(isset($meta['strategy']) && $meta['strategy']){
 				$strategy = $meta['strategy'];
 				if(!is_array($strategy)) $strategy = [$strategy];
 				$current = $this->strategy->getType();
 				if(!in_array($this->strategy->getType(), $strategy, true)){
+
 					if($initiator instanceof RoutingInterface){
+						// if external request call (out of routing)
 						throw new Exception\ContinueRoute();
 					}else{
+						// if hmvc call
 						throw new Control("{$module->getName()}:{$reference['controller']}:{$reference['action']} not support \"{$current}\" application strategy!");
 					}
 				}

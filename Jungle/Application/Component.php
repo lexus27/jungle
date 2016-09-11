@@ -9,33 +9,14 @@
  */
 namespace Jungle\Application {
 	
-	use Jungle\Di\DiInterface;
-	use Jungle\Di\InjectionAwareInterface;
+	use Jungle\Di\Injectable;
 
 	/**
 	 * Class Component
 	 * @package Jungle\Application
+	 * Класс компонент(Сервис), которым пользуются вызвав Di->getShared($serviceKey) Di->get($serviceKey)
+	 * Пример: Контроллер не является компонентом т.к он не присваивается как сервис Di контейнеру
 	 */
-	abstract class Component implements InjectionAwareInterface{
-
-		/** @var DiInterface */
-		protected $_di;
-
-		/**
-		 * @return DiInterface
-		 */
-		public function getDi(){
-			return $this->_di;
-		}
-
-		/**
-		 * @param DiInterface $di
-		 * @return $this
-		 */
-		public function setDi(DiInterface $di){
-			$this->_di = $di;
-			return $this;
-		}
-	}
+	abstract class Component extends Injectable{}
 }
 

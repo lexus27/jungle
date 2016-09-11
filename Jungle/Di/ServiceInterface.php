@@ -23,22 +23,54 @@ namespace Jungle\Di {
 		 */
 		public function __construct($name, $definition, $shared);
 
+		/**
+		 * @return mixed
+		 */
 		public function getName();
 
+		/**
+		 * @param $name
+		 * @return mixed
+		 */
 		public function setName($name);
 
+		/**
+		 * @param $definition
+		 * @return mixed
+		 */
 		public function setDefinition($definition);
 
+		/**
+		 * @return mixed
+		 */
 		public function getDefinition();
 
+		/**
+		 * @param bool|true $shared
+		 * @return mixed
+		 */
 		public function setShared($shared = true);
 
+		/**
+		 * @return mixed
+		 */
 		public function isShared();
 
+		/**
+		 * @return mixed
+		 */
 		public function getSharedInstance();
 
+		/**
+		 * @return mixed
+		 */
 		public function reset();
 
+		/**
+		 * @param DiInterface $di
+		 * @param array|null $parameters
+		 * @return mixed
+		 */
 		public function resolve(DiInterface $di, array $parameters = null);
 
 	}

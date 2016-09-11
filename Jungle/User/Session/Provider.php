@@ -36,7 +36,7 @@ namespace Jungle\User\Session {
 		 * @return $this
 		 */
 		public function setSignatureInspector(SignatureInspectorInterface $inspector){
-			if($inspector instanceof Injectable)$inspector->setDi($this->_dependency_injector);
+			if($inspector instanceof Injectable)$inspector->setDi($this->_dependency_injection);
 			$this->signature_inspector = $inspector;
 			return $this;
 		}

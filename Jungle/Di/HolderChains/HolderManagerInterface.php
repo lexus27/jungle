@@ -7,14 +7,16 @@
  * Date: 10.09.2016
  * Time: 17:29
  */
-namespace Jungle\Di {
+namespace Jungle\Di\HolderChains {
+
+	use Jungle\Di\DiInterface;
 
 
 	/**
-	 * Interface ChainHolderManagerInterface
+	 * Interface HolderManagerInterface
 	 * @package Jungle\Di
 	 */
-	interface ChainHolderManagerInterface{
+	interface HolderManagerInterface{
 
 		/**
 		 * @param $alias

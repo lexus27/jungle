@@ -52,22 +52,22 @@ namespace Jungle\Di {
 	 * @property CookieManagerInterface $cookie
 	 * @property Messenger $messenger
 	 */
-	class Injectable implements InjectionAwareInterface{
+	abstract class Injectable implements InjectionAwareInterface{
 
 		/** @var  DiInterface */
-		protected $_dependency_injector;
+		protected $_dependency_injection;
 
 		/** @var bool  */
-		protected static $_dependency_injector_cacheable = false;
+		protected static $_dependency_injection_cacheable = false;
 
 		/** @var array  */
-		protected $_dependency_injector_cache = [];
+		protected $_dependency_injection_cache = [];
 
 		/**
 		 * @return DiInterface
 		 */
 		public function getDi(){
-			return $this->_dependency_injector;
+			return $this->_dependency_injection;
 		}
 
 		/**
@@ -75,7 +75,7 @@ namespace Jungle\Di {
 		 * @return $this
 		 */
 		public function setDi(DiInterface $di){
-			$this->_dependency_injector = $di;
+			$this->_dependency_injection = $di;
 			return $this;
 		}
 
@@ -84,18 +84,18 @@ namespace Jungle\Di {
 		 * @return mixed
 		 */
 		public function __get($name){
-			if(static::$_dependency_injector_cacheable){
-				if(!array_key_exists($name,$this->_dependency_injector_cache)){
-					$result = $this->_dependency_injector->get($name);
-					$this->_dependency_injector_cache[$name] = $result;
+			if(static::$_dependency_injection_cacheable){
+				if(!array_key_exists($name,$this->_dependency_injection_cache)){
+					$result = $this->_dependency_injection->get($name);
+					$this->_dependency_injection_cache[$name] = $result;
 					return $result;
 				}
-				return $this->_dependency_injector_cache[$name];
+				return $this->_dependency_injection_cache[$name];
 			}else{
-				if(!$this->_dependency_injector){
+				if(!$this->_dependency_injection){
 					throw new \LogicException('DependencyInjector is not supplied in object');
 				}
-				return $this->_dependency_injector->get($name);
+				return $this->_dependency_injection->get($name);
 			}
 		}
 

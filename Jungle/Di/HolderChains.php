@@ -9,13 +9,14 @@
  */
 namespace Jungle\Di {
 
+	use Jungle\Di\HolderChains\HolderManagerInterface;
 	use Jungle\Exception;
 
 	/**
-	 * Class Chains
+	 * Class HolderChains
 	 * @package Jungle\Di
 	 */
-	class Chains implements ChainHolderManagerInterface, DiInterface{
+	class HolderChains implements HolderManagerInterface, DiInterface{
 
 
 		/** @var  DiInterface[]  */

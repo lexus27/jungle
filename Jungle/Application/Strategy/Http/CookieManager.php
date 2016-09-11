@@ -52,15 +52,15 @@ namespace Jungle\Application\Strategy\Http {
 		public function __construct(CookieManager $parent = null){
 			$this->parent = $parent;
 			if($parent){
-				if(!$parent->_di){
+				if(!$parent->_dependency_injection){
 					throw new \LogicException('Dependency Injection not defined in supplied parent!');
 				}
-				$this->_di = $parent->_di;
+				$this->_dependency_injection = $parent->_dependency_injection;
 			}
 		}
 
 		public function setDi(DiInterface $di){
-			$this->_di = $di;
+			$this->_dependency_injection = $di;
 			$this->request = null;
 			$this->response = null;
 		}
@@ -128,7 +128,7 @@ namespace Jungle\Application\Strategy\Http {
 			if($this->parent){
 				return $this->parent->getHost();
 			}
-			return $this->_di->getShared('request')->getServer()->getHost();
+			return $this->_dependency_injection->getShared('request')->getServer()->getHost();
 		}
 
 		/**
@@ -253,7 +253,7 @@ namespace Jungle\Application\Strategy\Http {
 			if($this->request){
 				return $this->request;
 			}
-			return $this->request = $this->_di->getShared('request');
+			return $this->request = $this->_dependency_injection->getShared('request');
 		}
 
 
@@ -264,7 +264,7 @@ namespace Jungle\Application\Strategy\Http {
 			if($this->response){
 				return $this->response;
 			}
-			return $this->response = $this->_di->getShared('response');
+			return $this->response = $this->_dependency_injection->getShared('response');
 		}
 
 		/**

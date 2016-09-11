@@ -75,7 +75,7 @@ namespace Jungle {
 		protected function initialize(){
 			if(!$this->initialized){
 				$this->initialized = true;
-				$this->setup($this->_dependency_injector);
+				$this->setup($this->_dependency_injection);
 			}
 		}
 
@@ -245,7 +245,7 @@ namespace Jungle {
 				if(method_exists($this,$mName)){
 					$strategy = $this->{$mName}();
 					if($strategy){
-						$strategy->setParent($this->_dependency_injector);
+						$strategy->setParent($this->_dependency_injection);
 						$this->configureDispatcherStrategy($strategyAlias, $strategy, $view);
 						$dispatcher->setStrategy($strategyAlias, $strategy);
 					}
