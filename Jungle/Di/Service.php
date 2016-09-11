@@ -15,6 +15,9 @@ namespace Jungle\Di {
 	 */
 	class Service implements ServiceInterface{
 
+		const DI_OFFSET_FIRST = -1;
+		const DI_OFFSET_LAST = 1;
+
 		/** @var  string */
 		protected $name;
 
@@ -22,7 +25,13 @@ namespace Jungle\Di {
 		protected $definition;
 
 		/** @var array  */
-		protected $parameters = [];
+		protected $arguments = [];
+
+		/** @var int  Service::DI_OFFSET_LAST | Service::DI_OFFSET_FIRST */
+		protected $arguments_di_pos = self::DI_OFFSET_LAST;
+
+		/** @var  callable */
+		protected $arguments_fn;
 
 		/** @var  bool */
 		protected $shared = false;
@@ -51,38 +60,58 @@ namespace Jungle\Di {
 
 		/**
 		 * @param DiInterface $di
-		 * @param array|null $parameters
+		 * @param array|null $arguments
 		 * @return mixed
 		 */
-		public function resolve(DiInterface $di, array $parameters = null){
+		public function resolve(DiInterface $di, array $arguments = null){
 			if($this->shared){
 				if(!$this->shared_instance){
-					$this->shared_instance = $this->_build($di,$this->parameters);
+					$this->shared_instance = $this->_build($di,$this->arguments);
 				}
 				return $this->shared_instance;
 			}else{
-				return $this->_build($di,$parameters);
+				return $this->_build($di,$arguments);
 			}
 		}
 
 		/**
+		 * @param array $externalArguments
+		 * @param $di
+		 * @return array
+		 */
+		protected function _prepareArguments($externalArguments, $di){
+			$externalArguments = (array) $externalArguments;
+			if($this->arguments_fn){
+				$arguments = call_user_func($this->arguments_fn, $this->arguments, $externalArguments, $di, $this->arguments_di_pos);
+			}else{
+				$arguments = array_replace($this->arguments, $externalArguments);
+				if($this->arguments_di_pos === self::DI_OFFSET_LAST){
+					$arguments[] = $di;
+				}
+				if($this->arguments_di_pos === self::DI_OFFSET_FIRST){
+					array_unshift($arguments,$di);
+				}
+			}
+			return $arguments;
+		}
+
+		/**
 		 * @param DiInterface $di
-		 * @param array|null $parameters
+		 * @param array|null $arguments
 		 * @return mixed
 		 * @throws \Exception
 		 */
-		protected function _build(DiInterface $di, array $parameters = null){
-			if(is_callable($this->definition)){
-				$parameters = (array)$parameters;
-				array_unshift($parameters,$di);
-				$object = call_user_func_array($this->definition,$parameters);
+		protected function _build(DiInterface $di, array $arguments = null){
+			if(is_object($this->definition)){
+				$object = $this->definition;
+			}elseif(is_callable($this->definition)){
+				$object = call_user_func_array($this->definition,$this->_prepareArguments($arguments, $di));
 			}elseif(is_array($this->definition)){
 				$definition = array_replace([
 				    'class' => null,
-				    'parameters' => $parameters,
 				    'staticFactory' => null,
 				],$this->definition);
-				$parameters = $definition['parameters'];
+
 				$class = $definition['class'];
 				if(!$class){
 					throw new \Exception('Service "'.$this->name.'" definition className not supplied!');
@@ -90,18 +119,23 @@ namespace Jungle\Di {
 				if(!class_exists($class)){
 					throw new \Exception('Service "'.$this->name.'" class "'.$class.'" not found!');
 				}
+
+				$arguments = isset($this->definition['arguments']) && is_array($this->definition['arguments'])?
+					array_replace($this->definition['arguments'],$arguments) : $arguments ;
+				$arguments = $this->_prepareArguments($arguments, $di);
+
 				if($definition['staticFactory']){
-					$object = call_user_func_array([$class,$definition['staticFactory']],$parameters);
+					$object = call_user_func_array([$class,$definition['staticFactory']],$arguments);
 				}else{
-					$object = new $class(...$parameters);
+					$object = new $class(...$arguments);
 				}
-			}elseif(is_object($this->definition)){
-				$object = $this->definition;
 			}else{
 				throw new \Exception('Service "'.$this->name.'" is not valid service definition!');
 			}
 			if($object instanceof InjectionAwareInterface){
-				$object->setDi($di->getRoot());
+				$object->setDi(
+					$di->getRoot()
+				);
 			}
 			return $object;
 		}
@@ -111,8 +145,8 @@ namespace Jungle\Di {
 		 * @param $value
 		 * @return $this
 		 */
-		public function setParameter($position, $value){
-			$this->parameters[$position] = $value;
+		public function setArgument($position, $value){
+			$this->arguments[$position] = $value;
 			return $this;
 		}
 
@@ -120,15 +154,24 @@ namespace Jungle\Di {
 		 * @param $position
 		 * @return null
 		 */
-		public function getParameter($position){
-			return isset($this->parameters[$position])?$this->parameters[$position]:null;
+		public function getArgument($position){
+			return isset($this->arguments[$position])?$this->arguments[$position]:null;
 		}
 
 		/**
 		 * @return array
 		 */
-		public function getParameters(){
-			return $this->parameters;
+		public function getArguments(){
+			return $this->arguments;
+		}
+
+		/**
+		 * @param callable|null $argumentsFn
+		 * @return $this
+		 */
+		public function setArgumentsFn(callable $argumentsFn = null){
+			$this->arguments_fn = $argumentsFn;
+			return $this;
 		}
 
 		/**

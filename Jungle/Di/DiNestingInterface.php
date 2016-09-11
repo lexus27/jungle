@@ -15,7 +15,6 @@ namespace Jungle\Di {
 	 */
 	interface DiNestingInterface{
 
-
 		/**
 		 * @param DiLocatorInterface|DiNestingInterface|DiSettingInterface $parent
 		 * @return mixed
@@ -23,39 +22,14 @@ namespace Jungle\Di {
 		public function setParent($parent);
 
 		/**
-		 * @return DiLocatorInterface|DiNestingInterface|DiSettingInterface
+		 * @return DiInterface | DiLocatorInterface|DiNestingInterface|DiSettingInterface
 		 */
 		public function getParent();
 
 		/**
-		 * @return DiLocatorInterface|DiNestingInterface|DiSettingInterface
+		 * @return DiInterface | DiLocatorInterface|DiNestingInterface|DiSettingInterface
 		 */
 		public function getRoot();
-
-
-		/**
-		 * @param $existingServiceKey
-		 * @param null $definition
-		 * @return $this
-		 */
-		public function setOverlapFrom($existingServiceKey, $definition = null);
-		
-		/**
-		 * @param bool|false|string $overlap
-		 * @return $this
-		 */
-		public function useSelfOverlapping($overlap = false);
-		
-		/**
-		 * @return bool
-		 */
-		public function isSelfOverlapping();
-		
-		/**
-		 * @return string
-		 */
-		public function getOverlapKey();
-
 
 	}
 }

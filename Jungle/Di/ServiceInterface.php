@@ -68,10 +68,10 @@ namespace Jungle\Di {
 
 		/**
 		 * @param DiInterface $di
-		 * @param array|null $parameters
+		 * @param array|null $arguments
 		 * @return mixed
 		 */
-		public function resolve(DiInterface $di, array $parameters = null);
+		public function resolve(DiInterface $di, array $arguments = null);
 
 	}
 }

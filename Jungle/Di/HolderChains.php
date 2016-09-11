@@ -16,8 +16,15 @@ namespace Jungle\Di {
 	 * Class HolderChains
 	 * @package Jungle\Di
 	 */
-	class HolderChains implements HolderManagerInterface, DiInterface{
+	class HolderChains implements
+		HolderManagerInterface,
+		DiLocatorInterface,
+		DiNestingInterface,
+		DiNestingOverlappingInterface,
+		\ArrayAccess{
 
+		use DiNestingOverlappingTrait;
+		use DiNestingTrait;
 
 		/** @var  DiInterface[]  */
 		protected $dependency_injections = [];
@@ -30,9 +37,6 @@ namespace Jungle\Di {
 
 		/** @var bool  */
 		protected $holders_sorted = false;
-
-		/** @var  DiInterface */
-		protected $parent;
 
 		/**
 		 * @param $alias
@@ -74,6 +78,7 @@ namespace Jungle\Di {
 					$previous = $this->dependency_injections[$holderAlias];
 					$this->holders_history[$holderAlias][] = $previous;
 				}
+				$di->setParent($this);
 				$this->dependency_injections[$holderAlias] = $di;
 			}else{
 				//error
@@ -196,18 +201,9 @@ namespace Jungle\Di {
 		}
 
 
-
 		/**
-		 * Whether a offset exists
-		 * @link http://php.net/manual/en/arrayaccess.offsetexists.php
-		 * @param mixed $offset <p>
-		 * An offset to check for.
-		 * </p>
-		 * @return boolean true on success or false on failure.
-		 * </p>
-		 * <p>
-		 * The return value will be casted to boolean if non-boolean was returned.
-		 * @since 5.0.0
+		 * @param mixed $offset
+		 * @return bool
 		 */
 		public function offsetExists($offset){
 			if(!$this->holders_sorted) $this->_sortHolders();
@@ -221,13 +217,8 @@ namespace Jungle\Di {
 		}
 
 		/**
-		 * Offset to retrieve
-		 * @link http://php.net/manual/en/arrayaccess.offsetget.php
-		 * @param mixed $offset <p>
-		 * The offset to retrieve.
-		 * </p>
-		 * @return mixed Can return all value types.
-		 * @since 5.0.0
+		 * @param mixed $offset
+		 * @return mixed|null
 		 */
 		public function offsetGet($offset){
 			if(!$this->holders_sorted) $this->_sortHolders();
@@ -237,6 +228,19 @@ namespace Jungle\Di {
 			}
 			return null;
 		}
+
+
+		/**
+		 * @param mixed $offset
+		 * @param mixed $value
+		 */
+		public function offsetSet($offset, $value){}
+
+		/**
+		 * @param mixed $offset
+		 */
+		public function offsetUnset($offset){}
+
 
 
 
@@ -293,148 +297,7 @@ namespace Jungle\Di {
 			}
 			return $services;
 		}
-
-
-
-
-
-
-		/**
-		 * @param $name
-		 * @return $this
-		 */
-		public function removeService($name){}
-
-		/**
-		 * @param $name
-		 * @return $this
-		 */
-		public function removeContainer($name){}
-
-		/**
-		 * @param $name
-		 * @return mixed
-		 */
-		public function remove($name){}
-
-		/**
-		 * @param $name
-		 * @return ServiceInterface
-		 */
-		public function resetService($name){}
-
-		/**
-		 * @param $key
-		 * @param $definition
-		 * @param bool|false $shared
-		 * @return mixed
-		 */
-		public function set($key, $definition, $shared = false){}
-
-		/**
-		 * @param $serviceKey
-		 * @param $definition
-		 * @return mixed
-		 */
-		public function setShared($serviceKey, $definition){}
-		/**
-		 * @param $name
-		 * @return DiInterface
-		 */
-		public function container($name){}
-
-		/**
-		 * @param $name
-		 * @param DiInterface $di
-		 * @return mixed
-		 */
-		public function setServiceContainer($name, DiInterface $di){}
-
-
-		/**
-		 * @param $existingServiceKey
-		 * @param null $definition
-		 * @return $this
-		 */
-		public function setOverlapFrom($existingServiceKey, $definition = null){}
-
-		/**
-		 * @param bool|false|string $overlap
-		 * @return $this
-		 */
-		public function useSelfOverlapping($overlap = false){}
-
-		/**
-		 * @return bool
-		 */
-		public function isSelfOverlapping(){}
-
-		/**
-		 * @return mixed
-		 */
-		public function getOverlapKey(){}
-
-
-		/**
-		 * Offset to set
-		 * @link http://php.net/manual/en/arrayaccess.offsetset.php
-		 * @param mixed $offset <p>
-		 * The offset to assign the value to.
-		 * </p>
-		 * @param mixed $value <p>
-		 * The value to set.
-		 * </p>
-		 * @return void
-		 * @since 5.0.0
-		 */
-		public function offsetSet($offset, $value){}
-
-		/**
-		 * Offset to unset
-		 * @link http://php.net/manual/en/arrayaccess.offsetunset.php
-		 * @param mixed $offset <p>
-		 * The offset to unset.
-		 * </p>
-		 * @return void
-		 * @since 5.0.0
-		 */
-		public function offsetUnset($offset){}
-
-		/**
-		 * @return DiInterface
-		 */
-		public function getRoot(){
-			if(!$this->parent){
-				return $this;
-			}
-			return $this->parent->getRoot();
-		}
-
-		/**
-		 * @param DiInterface $parent
-		 * @return mixed
-		 */
-		public function setParent(DiInterface $parent){
-			$this->parent = $parent;
-		}
-
-		/**
-		 * @return mixed
-		 */
-		public function getParent(){
-			return $this->parent;
-		}
-
-		/**
-		 * @return DiInterface
-		 */
-		public function getNext(){}
-
-		/**
-		 * @param DiInterface $di
-		 * @return mixed
-		 */
-		public function setNext(DiInterface $di){}
+		
 	}
 }
 

@@ -8,6 +8,12 @@
 namespace Jungle {
 
 	use Jungle\Di\DiInterface;
+	use Jungle\Di\DiLocatorInterface;
+	use Jungle\Di\DiNestingInterface;
+	use Jungle\Di\DiNestingOverlappingInterface;
+	use Jungle\Di\DiNestingOverlappingTrait;
+	use Jungle\Di\DiNestingTrait;
+	use Jungle\Di\DiSettingInterface;
 	use Jungle\Di\Service;
 	use Jungle\Di\ServiceInterface;
 
@@ -15,10 +21,13 @@ namespace Jungle {
 	 * Class Di
 	 * @package Jungle
 	 */
-	class Di implements DiInterface{
+	class Di implements DiSettingInterface, DiLocatorInterface, DiNestingInterface, DiNestingOverlappingInterface{
 
-		/** @var  DiInterface|null */
-		protected $parent;
+		use DiNestingTrait;
+		use DiNestingOverlappingTrait;
+
+		/** @var Di  */
+		protected static $latest_created;
 
 		/** @var  ServiceInterface[]|DiInterface[]  */
 		protected $services = [];
@@ -26,33 +35,6 @@ namespace Jungle {
 		/** @var  mixed[]  */
 		protected $shared_instances = [];
 
-		/** @var bool  */
-		protected $overlapping_mode = false;
-
-		/** @var  string|null */
-		protected $overlap_service_key;
-
-		/** @var  Di|null */
-		protected $next;
-
-
-		protected static $latest_created;
-
-		/**
-		 * @param DiInterface $di
-		 * @return $this
-		 */
-		public function setNext(DiInterface $di){
-			$this->next = $di;
-			return $this;
-		}
-
-		/**
-		 * @return Di|null
-		 */
-		public function getNext(){
-			return $this->next;
-		}
 
 
 		/**
@@ -77,138 +59,100 @@ namespace Jungle {
 			return self::$latest_created;
 		}
 
-		/**
-		 * @param $existingServiceKey
-		 * @param null $definition
-		 * @return mixed
-		 */
-		public function setOverlapFrom($existingServiceKey, $definition = null){
-			if(!$this->overlapping_mode){
-				$this->overlapping_mode = true;
-			}
-			$this->overlap_service_key = $existingServiceKey;
-			if($definition){
-				$this->setShared($existingServiceKey,$definition);
-			}
-			return $this;
-		}
 
-		/**
-		 * @param bool|false|false $overlap
-		 * @return mixed
-		 */
-		public function useSelfOverlapping($overlap = false){
-			$this->overlapping_mode = $overlap;
-			return $this;
-		}
-
-		/**
-		 * @return mixed
-		 */
-		public function isSelfOverlapping(){
-			return $this->overlap_service_key;
-		}
-
-		/**
-		 * @return null|string
-		 */
-		public function getOverlapKey(){
-			return $this->overlap_service_key;
-		}
 
 
 
 		/**
+		 * @param $service_key
+		 * @param $service_definition
+		 * @param bool $shared
 		 * @return $this
 		 */
-		public function getRoot(){
-			if(!$this->parent){
-				return $this;
+		public function set($service_key, $service_definition, $shared = false){
+			if(isset($this->services[$service_key])){
+				$service = $this->services[$service_key];
+				if($service instanceof ServiceInterface){
+					$service->reset();
+					$service->setDefinition($service_definition);
+					$service->setShared($shared);
+					$service->setName($service_key);
+				}
+			}else{
+				$this->services[$service_key] = new Service($service_key,$service_definition,$shared);
 			}
-			return $this->parent->getRoot();
-		}
-
-
-		/**
-		 * @param mixed $offset
-		 * @return mixed
-		 */
-		public function offsetExists($offset){
-			return isset($this->services[$offset]);
+			return $this;
 		}
 
 		/**
-		 * @param mixed $offset
-		 * @return mixed
+		 * @param $service_key
+		 * @param $service_definition
+		 * @return $this
 		 */
-		public function offsetGet($offset){
-			return $this->get($offset);
-		}
-
-		/**
-		 * @param mixed $offset
-		 * @param mixed $value
-		 * @return mixed
-		 */
-		public function offsetSet($offset, $value){
-			if($offset){
-				$this->set($offset,$value);
+		public function setShared($service_key, $service_definition){
+			if(isset($this->services[$service_key])){
+				$service = $this->services[$service_key];
+				if($service instanceof ServiceInterface){
+					$service->reset();
+					$service->setDefinition($service_definition);
+					$service->setShared(true);
+					$service->setName($service_key);
+				}
+			}else{
+				$this->services[$service_key] = new Service($service_key,$service_definition,true);
 			}
+			return $this;
 		}
 
 		/**
-		 * @param mixed $offset
-		 * @return mixed
+		 * @param $container_name
+		 * @param DiInterface $di
+		 * @return $this
 		 */
-		public function offsetUnset($offset){
-			$this->removeService($offset);
+		public function setServiceContainer($container_name, DiInterface $di){
+			$this->services[$container_name] = $di;
+			$di->setParent($this);
+			return $this;
 		}
+
 
 
 		/**
 		 * @param $name
-		 * @param $value
+		 * @return DiInterface
 		 */
-		public function __set($name, $value){
-			$this->set($name,$value);
+		public function container($name){
+			$di = new Di($this);
+			$this->setServiceContainer($name,$di);
+			return $di;
 		}
 
-		/**
-		 * @param $name
-		 * @return mixed
-		 * @throws \Exception
-		 */
-		public function __get($name){
-			return $this->get($name);
-		}
+
+
+
+
+
+
+
+
 
 		/**
-		 * @param $name
+		 * @param $key
 		 * @return bool
 		 */
-		public function __isset($name){
-			return isset($this->services[$name]);
-		}
-
-		/**
-		 * @param $name
-		 */
-		public function __unset($name){
-			$this->remove($name);
+		public function has($key){
+			return isset($this->services[$key]);
 		}
 
 
 		/**
 		 * @param $service_key
 		 * @param array $parameters
-		 * @param bool $previousChain
+		 * @param bool $throwException
 		 * @return mixed
 		 * @throws \Exception
 		 */
-		public function get($service_key, array $parameters = null, $previousChain = false){
-			if($this->next && ($s = $this->next->get($service_key, $parameters, true))){
-				return $s;
-			}
+		public function get($service_key, array $parameters = null, $throwException = true){
 			if($service_key === null && $this->overlapping_mode){
 				return $this->get($this->overlap_service_key,$parameters);
 			}else{
@@ -235,46 +179,163 @@ namespace Jungle {
 								return $srv;
 							}
 						}else{
-							if(!$previousChain)throw new \Exception('Service "'.$fullName.'" not exists!');
+							if($throwException)throw new \Exception('Service "' . $fullName . '" not exists!');
 						}
 					}
 				}
-				if(!$previousChain)throw new \Exception('Service "'.$fullName.'" not exists!');
+				if($throwException)throw new \Exception('Service "' . $fullName . '" not exists!');
 			}
+			return null;
+		}
+
+
+		/**
+		 * @param $service_key
+		 * @param bool $throwException
+		 * @return mixed
+		 * @throws \Exception
+		 */
+		public function getShared($service_key, $throwException = true){
+			$fullName = $service_key;
+			if(!is_array($service_key)){
+				$service_key = explode('.',$service_key);
+			}
+			$c = count($service_key);
+			$container = $this;
+			while($c){
+				if($c > 1){
+					$container_name = array_shift($service_key);$c--;
+					$container = $container->getServiceContainer($container_name);
+				}else{
+					$name = array_shift($service_key);$c--;
+					if(!isset($container->shared_instances[$name])){
+						if(isset($container->services[$name])){
+							$srv = $container->services[$name];
+							if($srv instanceof ServiceInterface){
+								if($srv->isShared()){
+									return $srv->resolve($container);
+								}else{
+									return $container->shared_instances[$name] = $srv->resolve($container);
+								}
+							}else{
+								return $srv;
+							}
+						}else{
+							if($throwException)throw new \Exception('Service "' . $fullName . '" not exists!');
+							return null;
+						}
+					}
+					return $container->shared_instances[$name];
+				}
+			}
+			if($throwException)throw new \Exception('Service "' . $fullName . '" not exists!');
 			return null;
 		}
 
 		/**
 		 * @param $service_key
-		 * @param $service_definition
-		 * @param bool $shared
-		 * @return $this
+		 * @param bool $throwException
+		 * @return ServiceInterface
+		 * @throws \Exception
 		 */
-		public function set($service_key, $service_definition, $shared = false){
-			if(isset($this->services[$service_key])){
-				$service = $this->services[$service_key];
-				if($service instanceof ServiceInterface){
-					$service->reset();
-					$service->setDefinition($service_definition);
-					$service->setShared($shared);
-					$service->setName($service_key);
-				}
-			}else{
-				$this->services[$service_key] = new Service($service_key,$service_definition,$shared);
+		public function getService($service_key, $throwException = true){
+			$fullName = $service_key;
+			if(!is_array($service_key)){
+				$service_key = explode('.',$service_key);
 			}
-			return $this;
+			$c = count($service_key);
+			$container = $this;
+			while($c){
+				if($c > 1){
+					$container_name = array_shift($service_key);$c--;
+					$container = $container->getServiceContainer($container_name);
+				}else{
+					$name = array_shift($service_key);$c--;
+					if(isset($container->services[$name])){
+						$srv = $container->services[$name];
+						if($srv instanceof ServiceInterface){
+							return $srv;
+						}
+					}elseif($throwException){
+						throw new \Exception('Service "' . $fullName . '" not exists!');
+					}
+				}
+			}
+			if($throwException){
+				throw new \Exception('Service "' . $fullName . '" not exists!');
+			}
+			return null;
+		}
+
+
+		/**
+		 * @param $container_name
+		 * @param bool $throwException
+		 * @return DiInterface
+		 * @throws \Exception
+		 */
+		public function getServiceContainer($container_name, $throwException = true){
+			if(isset($this->services[$container_name])){
+				if(!$this->services[$container_name] instanceof DiInterface){
+					if($throwException)throw new \Exception('Service container "' . $container_name . '" is not DiInterface');
+					return null;
+				}
+				return $this->services[$container_name];
+			}else{
+				if($throwException)throw new \Exception('Service container "' . $container_name . '" not found');
+				return null;
+			}
 		}
 
 		/**
-		 * @param $key
-		 * @return bool
+		 * @param $object
+		 * @return ServiceInterface
 		 */
-		public function has($key){
-			if($this->next && ($s = $this->next->has($key))){
-				return true;
+		public function getSharedServiceBy($object){
+			foreach($this->services as $service){
+				if($service->isShared() && $service->resolve($this) === $object){
+					return $service;
+				}
 			}
-			return isset($this->services[$key]);
+			return null;
 		}
+
+		/**
+		 * @return Di\DiInterface[]|Di\ServiceInterface[]
+		 */
+		public function getServices(){
+			return $this->services;
+		}
+
+
+
+		/**
+		 * @return array
+		 */
+		public function getServiceNames(){
+			$names = [];
+			foreach($this->services as $name => $srv){
+				if($srv instanceof ServiceInterface){
+					$names[] = $name;
+				}
+			}
+			return $names;
+		}
+
+		/**
+		 * @return array
+		 */
+		public function getContainerNames(){
+			$names = [ ];
+			foreach($this->services as $name => $srv){
+				if($srv instanceof DiInterface){
+					$names[] = $name;
+				}
+			}
+			return $names;
+		}
+
+
 
 		/**
 		 * @param $key
@@ -332,71 +393,6 @@ namespace Jungle {
 			return $this;
 		}
 
-		/**
-		 * @param $key
-		 * @return $this
-		 * @throws \Exception
-		 */
-		public function resetService($key){
-			if(!is_array($key)){
-				$key = explode('.',$key);
-			}
-			$c = count($key);
-			$container = $this;
-			while($c){
-				if($c > 1){
-					$container_name = array_shift($key);$c--;
-					$container = $container->getServiceContainer($container_name);
-				}else{
-					$name = array_shift($key);$c--;
-					if(isset($container->services[$name])){
-						$s = $container->services[$name];
-						if($s instanceof ServiceInterface){
-							$s->reset();
-							unset($container->shared_instances[$name]);
-							return $s;
-						}
-					}
-				}
-			}
-			return null;
-		}
-
-		/**
-		 * @param $service_key
-		 * @param bool $previousChain
-		 * @return ServiceInterface
-		 * @throws \Exception
-		 */
-		public function getService($service_key, $previousChain = false){
-			if($this->next && ($s = $this->next->getService($service_key, true))){
-				return $s;
-			}
-			$fullName = $service_key;
-			if(!is_array($service_key)){
-				$service_key = explode('.',$service_key);
-			}
-			$c = count($service_key);
-			$container = $this;
-			while($c){
-				if($c > 1){
-					$container_name = array_shift($service_key);$c--;
-					$container = $container->getServiceContainer($container_name);
-				}else{
-					$name = array_shift($service_key);$c--;
-					if(isset($container->services[$name])){
-						$srv = $container->services[$name];
-						if($srv instanceof ServiceInterface){
-							return $srv;
-						}
-					}else{
-						if(!$previousChain)throw new \Exception('Service "'.$fullName.'" not exists!');
-					}
-				}
-			}
-			if(!$previousChain)throw new \Exception('Service "'.$fullName.'" not exists!');
-			return null;
-		}
 
 
 		/**
@@ -428,195 +424,181 @@ namespace Jungle {
 			return $this;
 		}
 
-		/**
-		 * @param $service_key
-		 * @param $service_definition
-		 * @return $this
-		 */
-		public function setShared($service_key, $service_definition){
-			return $this->set($service_key,$service_definition,true);
-		}
 
 		/**
-		 * @param $service_key
-		 * @param bool $previousChain
-		 * @return mixed
+		 * @param $key
+		 * @return $this
 		 * @throws \Exception
 		 */
-		public function getShared($service_key, $previousChain = false){
-			if($this->next && ($s = $this->next->getShared($service_key,true))){
-				return $s;
+		public function resetService($key){
+			if(!is_array($key)){
+				$key = explode('.',$key);
 			}
-			$fullName = $service_key;
-			if(!is_array($service_key)){
-				$service_key = explode('.',$service_key);
-			}
-			$c = count($service_key);
+			$c = count($key);
 			$container = $this;
 			while($c){
 				if($c > 1){
-					$container_name = array_shift($service_key);$c--;
+					$container_name = array_shift($key);$c--;
 					$container = $container->getServiceContainer($container_name);
 				}else{
-					$name = array_shift($service_key);$c--;
-					if(!isset($container->shared_instances[$name])){
-						if(isset($container->services[$name])){
-							$srv = $container->services[$name];
-							if($srv instanceof ServiceInterface){
-								if($srv->isShared()){
-									return $srv->resolve($container);
-								}else{
-									return $container->shared_instances[$name] = $srv->resolve($container);
-								}
-							}else{
-								return $srv;
-							}
-						}else{
-							if(!$previousChain)throw new \Exception('Service "'.$fullName.'" not exists!');
-							return null;
+					$name = array_shift($key);$c--;
+					if(isset($container->services[$name])){
+						$s = $container->services[$name];
+						if($s instanceof ServiceInterface){
+							$s->reset();
+							unset($container->shared_instances[$name]);
+							return $s;
 						}
 					}
-					return $container->shared_instances[$name];
 				}
 			}
-			if(!$previousChain)throw new \Exception('Service "'.$fullName.'" not exists!');
 			return null;
 		}
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 		/**
-		 * @param $container_name
-		 * @param DiInterface $di
-		 * @return $this
+		 * @param mixed $offset
+		 * @return mixed
 		 */
-		public function setServiceContainer($container_name, DiInterface $di){
-			$this->services[$container_name] = $di;
-			$di->setParent($this);
+		public function offsetExists($offset){
+			return isset($this->services[$offset]);
+		}
+
+		/**
+		 * @param mixed $name
+		 * @return mixed
+		 * @throws \Exception
+		 */
+		public function offsetGet($name){
+			if(isset($this->services[$name])){
+				$srv = $this->services[$name];
+				if($srv instanceof ServiceInterface){
+					return $srv->resolve($this,null);
+				}elseif($srv instanceof DiInterface){
+					if($srv->isSelfOverlapping()){
+						return $srv->get(null,null);
+					}
+					return $srv;
+				}
+			}else{
+				throw new \Exception('Service "' . $name . '" not exists!');
+			}
+			return null;
+		}
+
+
+		/**
+		 * @param mixed $service_key
+		 * @param mixed $service_definition
+		 * @return mixed
+		 */
+		public function offsetSet($service_key, $service_definition){
+			if($service_key){
+				$shared = true;
+				if(isset($this->services[$service_key])){
+					$service = $this->services[$service_key];
+					if($service instanceof ServiceInterface){
+						$service->reset();
+						$service->setDefinition($service_definition);
+						$service->setShared($shared);
+						$service->setName($service_key);
+					}
+				}else{
+					$this->services[$service_key] = new Service($service_key,$service_definition,$shared);
+				}
+			}
+		}
+
+		/**
+		 * @param mixed $name
+		 * @return mixed
+		 */
+		public function offsetUnset($name){
+			if($this->overlapping_mode && $this->overlap_service_key === $name){
+				throw new \LogicException('Service "'.$name.'" used as overlap for container!');
+			}
+			unset($this->services[$name]);
+			unset($this->shared_instances[$name]);
 			return $this;
 		}
 
+
 		/**
-		 * @param $container_name
-		 * @param bool $previousChain
-		 * @return DiInterface
-		 * @throws \Exception
+		 * @param $service_key
+		 * @param $service_definition
 		 */
-		public function getServiceContainer($container_name, $previousChain = false){
-			if($this->next && ($s = $this->next->getServiceContainer($container_name, true))){
-				return $s;
-			}
-			if(isset($this->services[$container_name])){
-				if(!$this->services[$container_name] instanceof DiInterface){
-					if(!$previousChain)throw new \Exception('Service container "'.$container_name.'" is not DiInterface');
-					return null;
+		public function __set($service_key, $service_definition){
+			$shared = true;
+			if(isset($this->services[$service_key])){
+				$service = $this->services[$service_key];
+				if($service instanceof ServiceInterface){
+					$service->reset();
+					$service->setDefinition($service_definition);
+					$service->setShared($shared);
+					$service->setName($service_key);
 				}
-				return $this->services[$container_name];
 			}else{
-				if(!$previousChain)throw new \Exception('Service container "'.$container_name.'" not found');
-				return null;
+				$this->services[$service_key] = new Service($service_key,$service_definition,$shared);
 			}
 		}
-
-		/**
-		 * @param $object
-		 * @return ServiceInterface
-		 */
-		public function getSharedServiceBy($object){
-			if($this->next && ($s = $this->next->getSharedServiceBy($object))){
-				return $s;
-			}
-			foreach($this->services as $service){
-				if($service->isShared() && $service->resolve($this) === $object){
-					return $service;
-				}
-			}
-			return null;
-		}
-
-		/**
-		 * @return Di\DiInterface[]|Di\ServiceInterface[]
-		 */
-		public function getServices(){
-			if($this->next){
-				$services = $this->next->getServices();
-				return array_replace($this->services, $services);
-			}
-			return $this->services;
-		}
-
 
 		/**
 		 * @param $name
-		 * @return DiInterface
+		 * @return mixed
+		 * @throws \Exception
 		 */
-		public function container($name){
-			$di = new Di($this);
-			$this->setServiceContainer($name,$di);
-			return $di;
-		}
-
-		/**
-		 * @return array
-		 */
-		public function getServiceNames(){
-			if($this->next){
-				$names = $this->next->getServiceNames();
-				foreach($this->services as $name => $srv){
-					if($srv instanceof ServiceInterface){
-						$names[] = $name;
+		public function __get($name){
+			if(isset($this->services[$name])){
+				$srv = $this->services[$name];
+				if($srv instanceof ServiceInterface){
+					return $srv->resolve($this,null);
+				}elseif($srv instanceof DiInterface){
+					if($srv->isSelfOverlapping()){
+						return $srv->get(null,null);
 					}
+					return $srv;
 				}
-				return array_unique($names);
 			}else{
-				$names = [];
-				foreach($this->services as $name => $srv){
-					if($srv instanceof ServiceInterface){
-						$names[] = $name;
-					}
-				}
-				return $names;
+				throw new \Exception('Service "' . $name . '" not exists!');
 			}
+			return null;
 		}
 
 		/**
-		 * @return array
+		 * @param $name
+		 * @return bool
 		 */
-		public function getContainerNames(){
-			if($this->next){
-				$names = $this->next->getContainerNames();
-				foreach($this->services as $name => $srv){
-					if($srv instanceof DiInterface){
-						$names[] = $name;
-					}
-				}
-				return array_unique($names);
-			}else{
-				$names = [ ];
-				foreach($this->services as $name => $srv){
-					if($srv instanceof DiInterface){
-						$names[] = $name;
-					}
-				}
-				return $names;
-			}
+		public function __isset($name){
+			return isset($this->services[$name]);
 		}
 
 		/**
-		 * @param DiInterface $parent
+		 * @param $name
 		 * @return $this
 		 */
-		public function setParent(DiInterface $parent){
-			if($this->parent !== $parent){
-				$this->parent = $parent;
+		public function __unset($name){
+			if($this->overlapping_mode && $this->overlap_service_key === $name){
+				throw new \LogicException('Service "'.$name.'" used as overlap for container!');
 			}
+			unset($this->services[$name]);
+			unset($this->shared_instances[$name]);
 			return $this;
 		}
 
-		/**
-		 * @return $this
-		 */
-		public function getParent(){
-			return $this->parent;
-		}
+
+
 	}
 
 }
