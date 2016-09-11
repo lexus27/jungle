@@ -12,10 +12,11 @@ namespace Jungle\Di {
 	/**
 	 * Interface DiInterface
 	 * @package Jungle\Di
+	 *
+	 * Объединяющий интерфейс обобщения
+	 *
 	 */
 	interface DiInterface extends DiLocatorInterface, DiNestingInterface, \ArrayAccess{}
-
-
 
 }
 
