@@ -555,14 +555,14 @@ namespace Jungle\Application {
 				throw new Control('Module "'.$moduleName.'" not found!');
 			}
 			$this->_beforeControl($reference, $module, $initiator);
-			$this->_dependency_injection->insertHolder('module', $module, 10);
+			$this->getDi()->insertHolder('module', $module, 10);
 			try{
 				$process = $module->control($reference,(array) $data, $options, $initiator);
 				$output = $this->checkoutProcess($process, $options);
 				$this->_afterControl($output,$process);
 				return $output;
 			}finally{
-				$this->_dependency_injection->restoreInjection('module', $module);
+				$this->getDi()->restoreInjection('module', $module);
 			}
 		}
 
@@ -573,7 +573,7 @@ namespace Jungle\Application {
 		public function prepareResponse(ProcessInterface $process){
 			$response = $this->last_request->getResponse();
 			/** @var ViewInterface $view */
-			$view = $this->_dependency_injection->getShared('view');
+			$view = $this->getDi()->getShared('view');
 			if($response->getContent() === null){
 				$rendered = $view->render(null,$process);
 				$response->setContent($rendered);
@@ -592,7 +592,7 @@ namespace Jungle\Application {
 			if(is_array($options)){
 				if(isset($options['render']) && $options['render']){
 					/** @var ViewInterface $view */
-					$view   = $this->_dependency_injection->getShared('view');
+					$view   = $this->getDi()->getShared('view');
 					$alias  = null;
 					$render_variables  = [];
 					$render_options    = [];
@@ -751,6 +751,10 @@ namespace Jungle\Application {
 			$diChains = $this->getDi();
 			$diChains->insertHolder('strategy',$this->current_strategy, 5);
 
+			$default = $diChains->getInjection('default');
+			$default->setShared('request',$request);
+			$default->setShared('response',$request->getResponse());
+
 			$this->dispatching = true;
 			$this->last_request = $request;
 		}
@@ -762,6 +766,10 @@ namespace Jungle\Application {
 
 			$diChains = $this->getDi();
 			$diChains->restoreInjection('strategy');
+
+			$default = $diChains->getInjection('default');
+			$default->removeService('request');
+			$default->removeService('response');
 
 			$this->current_strategy = null;
 			$this->dispatching      = false;

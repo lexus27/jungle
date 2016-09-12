@@ -60,7 +60,9 @@ namespace Jungle {
 			$di->setShared('loader',$loader);
 			$di->setShared('application',$this);
 			$di->setShared('view',  ($view = $this->initializeView()) );
-			$di->setShared('dispatcher', ($this->dispatcher = $this->initializeDispatcher($view)) );
+			$this->dispatcher = $this->initializeDispatcher($view);
+			$this->dispatcher->setDi($di);
+			$di->setShared('dispatcher', $this->dispatcher );
 			$this->registerDatabases($di->container('database')->useSelfOverlapping(true));
 			$this->registerServices($di);
 

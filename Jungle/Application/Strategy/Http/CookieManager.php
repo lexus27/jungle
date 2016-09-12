@@ -128,7 +128,7 @@ namespace Jungle\Application\Strategy\Http {
 			if($this->parent){
 				return $this->parent->getHost();
 			}
-			return $this->_dependency_injection->getShared('request')->getServer()->getHost();
+			return $this->getDi()->getShared('request')->getServer()->getHost();
 		}
 
 		/**
@@ -253,7 +253,7 @@ namespace Jungle\Application\Strategy\Http {
 			if($this->request){
 				return $this->request;
 			}
-			return $this->request = $this->_dependency_injection->getShared('request');
+			return $this->request = $this->getDi()->getShared('request');
 		}
 
 
@@ -264,7 +264,7 @@ namespace Jungle\Application\Strategy\Http {
 			if($this->response){
 				return $this->response;
 			}
-			return $this->response = $this->_dependency_injection->getShared('response');
+			return $this->response = $this->getDi()->getShared('response');
 		}
 
 		/**

@@ -105,7 +105,7 @@ namespace Jungle\Di {
 		 * @throws \Exception
 		 */
 		protected function _build(DiInterface $di, array $arguments = null){
-			if(is_object($this->definition)){
+			if(is_object($this->definition) && !$this->definition instanceof \Closure){
 				$object = $this->definition;
 			}elseif(is_callable($this->definition)){
 				$object = call_user_func_array($this->definition,$this->_prepareArguments($arguments, $di));

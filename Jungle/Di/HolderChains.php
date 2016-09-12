@@ -20,8 +20,7 @@ namespace Jungle\Di {
 	class HolderChains implements
 		HolderManagerInterface,
 		DiInterface,
-		DiNestingOverlappingInterface,
-		\ArrayAccess{
+		DiNestingOverlappingInterface{
 
 		use DiNestingOverlappingTrait;
 		use DiNestingTrait;
@@ -47,30 +46,22 @@ namespace Jungle\Di {
 		 * @throws Exception
 		 */
 		public function insertHolder($alias, DiInterface $di, $priority = null){
+			if($priority!==null) $priority = floatval($priority);
 
-			if(isset($this->holders[$alias])){
-				if($priority !== null && $this->holders[$alias] !== ($priority = floatval($priority))){
-					$this->holders[$alias] = $priority;
-					$this->holders_sorted = false;
-				}
-			}else{
-				if($priority !== null){
-					$this->holders[$alias] = $priority;
-					$this->holders_sorted = false;
-				}
-			}
-			$priority = floatval($priority);
 			if(
 				( isset($this->holders[$alias]) && $priority !== null && $this->holders[$alias] != $priority) ||
 			    (!isset($this->holders[$alias]) && $priority !== null)
 			){
 				$this->holders_sorted = false;
-			}else{
+			}elseif($priority === null){
 				throw new Exception('Priority not pass');
 			}
 			$this->holders[$alias] = $priority;
 
 
+			if(!isset($this->dependency_injections[$alias])){
+				$this->dependency_injections[$alias] = null;
+			}
 			if($this->dependency_injections[$alias]){
 				$previous = $this->dependency_injections[$alias];
 				$this->holders_history[$alias][] = $previous;
@@ -78,6 +69,9 @@ namespace Jungle\Di {
 			$di->setParent($this);
 			$this->dependency_injections[$alias] = $di;
 
+			if(!isset($this->holders_history[$alias])){
+				$this->holders_history[$alias] = [];
+			}
 		}
 
 		/**
@@ -88,7 +82,11 @@ namespace Jungle\Di {
 		public function defineHolder($alias, $priority = 0.0){
 			if(!isset($this->holders[$alias]) || $this->holders[$alias] !== ($priority = floatval($priority))){
 				$this->holders[$alias] = $priority;
+				$this->dependency_injections[$alias] = null;
 				$this->holders_sorted = false;
+				if(!isset($this->holders_history[$alias])){
+					$this->holders_history[$alias] = [];
+				}
 			}
 			return $this;
 		}
@@ -182,7 +180,7 @@ namespace Jungle\Di {
 		 */
 		public function getService($name){
 			if(!$this->holders_sorted) $this->_sortHolders();
-			foreach($this->holders as $key){
+			foreach($this->holders as $key => $priority){
 				if(!($di = $this->dependency_injections[$key]) || !$di->has($name)) continue;
 				return $di->getService($name);
 			}
@@ -198,7 +196,7 @@ namespace Jungle\Di {
 		public function getServiceNames(){
 			if(!$this->holders_sorted) $this->_sortHolders();
 			$names = [];
-			foreach($this->holders as $key){
+			foreach($this->holders as $key => $priority){
 				if(!($di = $this->dependency_injections[$key])) continue;
 				$names = array_replace($names, array_fill_keys($di->getServiceNames(),null));
 			}
@@ -211,7 +209,7 @@ namespace Jungle\Di {
 		public function getContainerNames(){
 			if(!$this->holders_sorted) $this->_sortHolders();
 			$names = [];
-			foreach($this->holders as $key){
+			foreach($this->holders as $key => $priority){
 				if(!($di = $this->dependency_injections[$key])) continue;
 				$names = array_replace($names, array_fill_keys($di->getContainerNames(),null));
 			}
@@ -222,27 +220,55 @@ namespace Jungle\Di {
 		/**
 		 * @param $name
 		 * @param array|null $parameters
+		 * @param bool $throwException
 		 * @return mixed
+		 * @throws mixed
 		 */
-		public function get($name, array $parameters = null){
+		public function get($name, array $parameters = null, $throwException = true){
 			if(!$this->holders_sorted) $this->_sortHolders();
-			foreach($this->holders as $key){
-				if(!($di = $this->dependency_injections[$key]) || !$di->has($name)) continue;
-				return $di->get($name, $parameters);
+			$lastError = null;
+			foreach($this->holders as $key => $priority){
+				if(!($di = $this->dependency_injections[$key])) continue;
+				try{
+					$object = $di->get($name, $parameters);
+					return $object;
+				}catch(\Exception $lastError){}
 			}
+			if($throwException && $lastError instanceof \Exception)throw $lastError;
+			return null;
+		}
+
+		/**
+		 * @param $name
+		 * @return mixed|null
+		 * @throws null
+		 */
+		public function __get($name){
+			$parameters = null;
+			$throwException = true;
+			if(!$this->holders_sorted) $this->_sortHolders();
+			$lastError = null;
+			foreach($this->holders as $key => $priority){
+				if(!($di = $this->dependency_injections[$key])) continue;
+				try{
+					$object = $di->get($name, $parameters);
+					return $object;
+				}catch(\Exception $lastError){}
+			}
+			if($throwException && $lastError instanceof \Exception)throw $lastError;
 			return null;
 		}
 
 
 		/**
-		 * @param $key
+		 * @param $name
 		 * @return bool
 		 */
-		public function has($key){
+		public function has($name){
 			if(!$this->holders_sorted) $this->_sortHolders();
-			foreach($this->holders as $key){
+			foreach($this->holders as $key => $priority){
 				if(!($di = $this->dependency_injections[$key])) continue;
-				if($di->has($key)){
+				if($di->has($name)){
 					return true;
 				}
 			}
@@ -256,7 +282,7 @@ namespace Jungle\Di {
 		 */
 		public function offsetExists($offset){
 			if(!$this->holders_sorted) $this->_sortHolders();
-			foreach($this->holders as $key){
+			foreach($this->holders as $key => $priority){
 				if(!($di = $this->dependency_injections[$key])) continue;
 				if($di->has($key)){
 					return true;
@@ -268,13 +294,19 @@ namespace Jungle\Di {
 		/**
 		 * @param mixed $offset
 		 * @return mixed|null
+		 * @throws mixed
 		 */
 		public function offsetGet($offset){
 			if(!$this->holders_sorted) $this->_sortHolders();
-			foreach($this->holders as $key){
-				if(!($di = $this->dependency_injections[$key]) || !$di->has($offset)) continue;
-				return $di->get($offset);
+			$lastError = null;
+			foreach($this->holders as $key => $priority){
+				if(!($di = $this->dependency_injections[$key])) continue;
+				try{
+					$object = $di->offsetGet($offset);
+					return $object;
+				}catch(\Exception $lastError){}
 			}
+			if($lastError instanceof \Exception)throw $lastError;
 			return null;
 		}
 
@@ -291,19 +323,23 @@ namespace Jungle\Di {
 		public function offsetUnset($offset){}
 
 
-
-
-
 		/**
 		 * @param $serviceKey
+		 * @param bool $throwException
 		 * @return mixed
+		 * @throws null
 		 */
-		public function getShared($serviceKey){
+		public function getShared($serviceKey, $throwException = true){
 			if(!$this->holders_sorted) $this->_sortHolders();
-			foreach($this->holders as $key){
-				if(!($di = $this->dependency_injections[$key]) || !$di->has($serviceKey)) continue;
-				return $di->getShared($serviceKey);
+			$lastError = null;
+			foreach($this->holders as $key => $priority){
+				if(!($di = $this->dependency_injections[$key])) continue;
+				try{
+					$object = $di->offsetGet($serviceKey);
+					return $object;
+				}catch(\Exception $lastError){}
 			}
+			if($throwException && $lastError instanceof \Exception)throw $lastError;
 			return null;
 		}
 
@@ -314,7 +350,7 @@ namespace Jungle\Di {
 		 */
 		public function getServiceContainer($name){
 			if(!$this->holders_sorted) $this->_sortHolders();
-			foreach($this->holders as $key){
+			foreach($this->holders as $key => $priority){
 				if(!($di = $this->dependency_injections[$key]) || !($srvCt = $di->getServiceContainer($name))) continue;
 				return $srvCt;
 			}
@@ -327,7 +363,7 @@ namespace Jungle\Di {
 		 */
 		public function getSharedServiceBy($object){
 			if(!$this->holders_sorted) $this->_sortHolders();
-			foreach($this->holders as $key){
+			foreach($this->holders as $key => $priority){
 				if(!($di = $this->dependency_injections[$key]) || !($service = $di->getSharedServiceBy($object))) continue;
 				return $service;
 			}
@@ -340,7 +376,7 @@ namespace Jungle\Di {
 		public function getServices(){
 			if(!$this->holders_sorted) $this->_sortHolders();
 			$services = [];
-			foreach($this->holders as $key){
+			foreach($this->holders as $key => $priority){
 				if(!($di = $this->dependency_injections[$key])) continue;
 				$services = array_replace($services, $di->getServices());
 			}

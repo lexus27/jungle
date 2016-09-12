@@ -16,7 +16,9 @@ namespace Jungle\Di {
 	 * Объединяющий интерфейс обобщения
 	 *
 	 */
-	interface DiInterface extends DiLocatorInterface, DiNestingInterface, \ArrayAccess{}
+	interface DiInterface extends DiLocatorInterface, DiNestingInterface, \ArrayAccess{
+
+	}
 
 }
 
