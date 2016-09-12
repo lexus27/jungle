@@ -78,7 +78,7 @@ namespace Jungle\Di {
 				if(!$this->_dependency_injection){
 					throw new \LogicException('DependencyInjector is not supplied in object');
 				}
-				return $this->_dependency_injection->get($name);
+				return $this->getDi()->get($name);
 			}
 		}
 
