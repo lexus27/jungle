@@ -222,7 +222,6 @@ namespace Jungle\Application {
 		 * @param StrategyInterface|string $strategy
 		 * @param float $priority
 		 * @return $this
-		 * @internal param $alias
 		 */
 		public function setStrategy($alias, $strategy, $priority = 0.0){
 			if(is_string($strategy)){
@@ -565,8 +564,6 @@ namespace Jungle\Application {
 			}finally{
 				$this->_dependency_injection->restoreInjection('module', $module);
 			}
-
-
 		}
 
 		/**
@@ -741,17 +738,19 @@ namespace Jungle\Application {
 		 */
 		protected function _onStrategyRecognized(StrategyInterface $strategy){
 			$this->current_strategy = $strategy;
+
+			$strategy->registerServices();
+
 		}
 
 		/**
 		 * @param RequestInterface $request
 		 */
 		protected function _onDispatchStarted(RequestInterface $request){
-			if($this->_dependency_injection){
-				/** @var HolderChains $diChains */
-				$diChains = $this->_dependency_injection;
-				$diChains->defineHolder('strategy', 5)->changeInjection('strategy',$this->current_strategy);
-			}
+
+			$diChains = $this->getDi();
+			$diChains->insertHolder('strategy',$this->current_strategy, 5);
+
 			$this->dispatching = true;
 			$this->last_request = $request;
 		}
@@ -760,11 +759,10 @@ namespace Jungle\Application {
 		 *
 		 */
 		protected function _onDispatchContinue(){
-			if($this->_dependency_injection){
-				/** @var HolderChains $diChains */
-				$diChains = $this->_dependency_injection;
-				$diChains->restoreInjection('strategy');
-			}
+
+			$diChains = $this->getDi();
+			$diChains->restoreInjection('strategy');
+
 			$this->current_strategy = null;
 			$this->dispatching      = false;
 			$this->last_request     = null;

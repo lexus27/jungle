@@ -27,6 +27,9 @@ namespace Jungle\Application {
 		/** @var  string  */
 		protected $modules_dirname;
 
+		/** @var  string */
+		protected $strategies_dirname;
+
 		/** @var  string  */
 		protected $views_dirname;
 
@@ -53,6 +56,9 @@ namespace Jungle\Application {
 		/** @var  string  */
 		protected $modules_folder   = 'Modules';
 
+		/** @var string  */
+		protected $strategies_folder= 'Strategies';
+
 		/** @var  string  */
 		protected $models_folder    = 'Models';
 
@@ -68,11 +74,12 @@ namespace Jungle\Application {
 			$this->class_path = $classPath = $this->reflection->getFileName();
 			$this->base_dirname = dirname($this->class_path);
 			$prefix = $this->base_dirname . DIRECTORY_SEPARATOR;
-			$this->views_dirname    = $prefix . $this->views_folder;
-			$this->modules_dirname  = $prefix . $this->modules_folder;
-			$this->cache_dirname    = $prefix . $this->cache_folder;
-			$this->log_dirname      = $prefix . $this->log_folder;
-			$this->models_dirname   = $prefix . $this->models_folder;
+			$this->views_dirname        = $prefix . $this->views_folder;
+			$this->modules_dirname      = $prefix . $this->modules_folder;
+			$this->strategies_dirname   = $prefix . $this->strategies_folder;
+			$this->cache_dirname        = $prefix . $this->cache_folder;
+			$this->log_dirname          = $prefix . $this->log_folder;
+			$this->models_dirname       = $prefix . $this->models_folder;
 			parent::__construct($loader);
 		}
 
@@ -90,6 +97,22 @@ namespace Jungle\Application {
 				}
 			}
 			$dispatcher->registerModules($modules);
+		}
+
+
+		/**
+		 * @param Dispatcher $dispatcher
+		 * @param ViewInterface $view
+		 */
+		protected function initializeDispatcherStrategies(Dispatcher $dispatcher, ViewInterface $view){
+			$strategies = [];
+			$loader = $this->loader;
+			$classes = $loader->scanClasses($this->strategies_dirname, $loader->getNamespaceByPathname($this->strategies_dirname), 1);
+			foreach($classes as $class => $path){
+				$strategyName = strtolower(basename($class));
+				$strategies[$strategyName] = $class;
+			}
+			$dispatcher->setStrategies($strategies);
 		}
 
 

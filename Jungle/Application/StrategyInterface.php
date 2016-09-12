@@ -36,9 +36,9 @@ namespace Jungle\Application {
 		public function complete(ResponseInterface $response, ViewInterface $view);
 
 		/**
-		 * @param DiInterface $root
+		 * @return void
 		 */
-		public function registerServices(DiInterface $root);
+		public function registerServices();
 
 		/**
 		 * @param RequestInterface $request

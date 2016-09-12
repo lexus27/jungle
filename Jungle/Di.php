@@ -117,7 +117,7 @@ namespace Jungle {
 
 		/**
 		 * @param $name
-		 * @return DiInterface
+		 * @return Di
 		 */
 		public function container($name){
 			$di = new Di($this);

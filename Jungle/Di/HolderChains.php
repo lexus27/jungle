@@ -9,6 +9,7 @@
  */
 namespace Jungle\Di {
 
+	use Jungle\Di;
 	use Jungle\Di\HolderChains\HolderManagerInterface;
 	use Jungle\Exception;
 
@@ -150,7 +151,7 @@ namespace Jungle\Di {
 
 		/**
 		 * @param $holderAlias
-		 * @return DiInterface|null
+		 * @return Di|DiInterface|null
 		 */
 		public function getInjection($holderAlias){
 			return isset($this->dependency_injections[$holderAlias])?$this->dependency_injections[$holderAlias]:null;
