@@ -11,6 +11,7 @@ namespace Jungle\Application {
 	
 	use Jungle\Application\Dispatcher\ProcessInterface;
 	use Jungle\Application\View\RendererInterface;
+	use Jungle\Application\View\ViewStrategy\Exception\NotFoundSuitable;
 	use Jungle\Di\Injectable;
 
 	/**
@@ -228,17 +229,18 @@ namespace Jungle\Application {
 		 * @param array $variables
 		 * @param array|null $options
 		 * @return string
+		 * @throws Exception
 		 */
 		public function render($alias, ProcessInterface $process, array $variables = [], array $options = []){
 			$viewStrategy = $this->view_strategy;
 			if(is_null($alias)){
 				$alias = $viewStrategy->match($this->request, $process, $this);
 				if(!$alias){
-					throw new \LogicException('Not suitable view for request');
+					throw new NotFoundSuitable('Not suitable view for request');
 				}
 			}
 			if(!isset($this->renderers[$alias])){
-				throw new \LogicException('Renderer with alias "'.$alias.'" not found');
+				throw new Exception('Renderer with alias "'.$alias.'" not found');
 			}
 
 			$renderer = $this->renderers[$alias];

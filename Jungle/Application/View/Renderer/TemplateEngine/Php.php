@@ -9,6 +9,7 @@
  */
 namespace Jungle\Application\View\Renderer\TemplateEngine {
 	
+	use Jungle\Application\View\Exception;
 	use Jungle\Application\View\Renderer\TemplateEngine;
 
 	/**
@@ -99,10 +100,11 @@ namespace Jungle\Application\View\Renderer\TemplateEngine {
 
 		/**
 		 * @param $path
+		 * @throws Exception
 		 */
 		protected function _validatePath($path){
 			if(strpos($path,"\0")!==false || strpos($path,"..")!==false){
-				throw new \LogicException('Path is not valid');
+				throw new Exception('Path is not valid');
 			}
 		}
 
