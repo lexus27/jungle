@@ -64,11 +64,13 @@ namespace Jungle\Application\Strategy\Http {
 
 		/**
 		 * @param DiInterface $di
+		 * @return $this
 		 */
 		public function setDi(DiInterface $di){
 			$this->_dependency_injection = $di;
 			$this->request = null;
 			$this->response = null;
+			return $this;
 		}
 
 		/**
