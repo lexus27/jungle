@@ -26,8 +26,11 @@ namespace Jungle\Application\Strategy\Http {
 		/** @var  CookieManager */
 		protected $parent;
 
+
+		/** @var  RequestInterface */
 		protected $request;
 
+		/** @var  ResponseInterface */
 		protected $response;
 
 		/** @var  int */
@@ -59,6 +62,9 @@ namespace Jungle\Application\Strategy\Http {
 			}
 		}
 
+		/**
+		 * @param DiInterface $di
+		 */
 		public function setDi(DiInterface $di){
 			$this->_dependency_injection = $di;
 			$this->request = null;
