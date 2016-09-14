@@ -214,12 +214,14 @@ namespace Jungle\Application\Dispatcher {
 		 * @return mixed
 		 * @throws Control
 		 */
-		public function control($reference = null,array $data, array $options = null, ProcessInitiatorInterface $initiator = null){
-			$reference = Reference::normalize($reference, [
-					'module'     => $this->name,
-					'controller' => $this->getDefaultController(),
-					'action'     => $this->getDefaultAction()
-			], true);
+		public function control(array $reference = null,array $data, array $options = null, ProcessInitiatorInterface $initiator = null){
+
+			$reference = array_replace([
+				'module'     => $this->name,
+				'controller' => $this->getDefaultController(),
+				'action'     => $this->getDefaultAction()
+			],(array)$reference);
+
 			list($controllerName, $actionName) = Massive::orderedKeys($reference, ['controller','action']);
 
 			$controllerQualified = $this->getQualifiedReferenceString($reference,false);

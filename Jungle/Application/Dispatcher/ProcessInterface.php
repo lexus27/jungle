@@ -232,6 +232,44 @@ namespace Jungle\Application\Dispatcher {
 		 * @return mixed
 		 */
 		public function getOutputBuffer();
+
+
+
+		/**
+		 * @param array $options
+		 * @param bool|false $merge
+		 * @return $this
+		 */
+		public function setOptions(array $options = [], $merge = false);
+
+
+		/**
+		 * @return array
+		 */
+		public function getOptions();
+
+
+		/**
+		 * @param $key
+		 * @param $value
+		 * @return $this
+		 */
+		public function setOption($key, $value);
+
+		/**
+		 * @param $key
+		 * @param null|mixed $default
+		 * @return mixed
+		 */
+		public function getOption($key, $default = null);
+
+		/**
+		 * @param $key
+		 * @return bool
+		 */
+		public function hasOption($key);
+
+
 	}
 }
 

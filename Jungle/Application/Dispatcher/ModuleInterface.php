@@ -134,7 +134,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @param \Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface $initiator
 		 * @return ProcessInterface
 		 */
-		public function control($reference = null,array $data, array $options = null, ProcessInitiatorInterface $initiator = null);
+		public function control(array $reference = null,array $data, array $options = null, ProcessInitiatorInterface $initiator = null);
 
 		/**
 		 * @return mixed

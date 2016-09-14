@@ -233,12 +233,10 @@ namespace Jungle\Application {
 		 */
 		public function render($alias, ProcessInterface $process, array $variables = [], array $options = []){
 			$viewStrategy = $this->view_strategy;
-			if(is_null($alias)){
-				$alias = $viewStrategy->match($this->request, $process, $this);
-				if(!$alias){
-					throw new NotFoundSuitable('Not suitable view for request');
-				}
+			if(is_null($alias) && !($alias = $viewStrategy->match($this->request, $process, $this))){
+				throw new NotFoundSuitable('Not found suitable view for request');
 			}
+
 			if(!isset($this->renderers[$alias])){
 				throw new Exception('Renderer with alias "'.$alias.'" not found');
 			}

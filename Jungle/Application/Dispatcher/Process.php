@@ -46,6 +46,11 @@ namespace Jungle\Application\Dispatcher {
 		/** @var  bool */
 		protected $canceled = false;
 
+		/**  TODO impl.
+		 * @var bool
+		 */
+		protected $failure = false;
+
 		/** @var  mixed */
 		protected $result = null;
 
@@ -54,6 +59,10 @@ namespace Jungle\Application\Dispatcher {
 
 		/** @var  string|null */
 		protected $output_buffer;
+
+		/** @var array  */
+		protected $options = [];
+
 
 		/** @var bool  */
 		//protected $realization = false;
@@ -502,6 +511,55 @@ namespace Jungle\Application\Dispatcher {
 		public function hasErrors(){
 			// TODO: Implement hasErrors() method.
 		}
+
+
+
+
+		/**
+		 * @param array $options
+		 * @param bool|false|false $merge
+		 * @return mixed
+		 */
+		public function setOptions(array $options = [ ], $merge = false){
+			$this->options = $merge?array_replace_recursive($this->options, $options):$options;
+			return $this;
+		}
+
+		/**
+		 * @return array
+		 */
+		public function getOptions(){
+			return $this->options;
+		}
+
+		/**
+		 * @param $key
+		 * @param $value
+		 * @return $this
+		 */
+		public function setOption($key, $value){
+			$this->options[$key] = $value;
+			return $this;
+		}
+
+		/**
+		 * @param $key
+		 * @param $default
+		 * @return mixed
+		 */
+		public function getOption($key, $default = null){
+			return isset($this->options[$key])?$this->options[$key]: $default;
+		}
+
+		/**
+		 * @param $key
+		 * @return bool
+		 */
+		public function hasOption($key){
+			return isset($this->options[$key]);
+		}
+
+
 	}
 }
 

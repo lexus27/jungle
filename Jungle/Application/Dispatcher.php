@@ -383,6 +383,223 @@ namespace Jungle\Application {
 
 
 
+		/**
+		 * Диспетчеризация непосредственно изначального запроса.
+		 * Происходит старт обертки HMVC в которой Контроль может вызываться рекурсивно для разных действий
+		 * в последствии генерируется итоговый "Ответ" на переданный "Запрос"
+		 *
+		 * В диспетчеризации учавствуют:
+		 * Маршрутизаторы! происходит выбор предпочитаемого запросу - маршрутизатора с индивидуальным набором маршрутов.
+		 * Целевой "Контроль"
+		 * Формирование Ответа.
+		 *
+		 * @param RequestInterface $request
+		 * @return ResponseInterface
+		 * @throws \Exception
+		 *
+		 */
+		public function dispatch(RequestInterface $request){
+			if($this->dispatching){
+				throw new Exception('dispatch already run!');
+			}
+			try{
+				$strategy = $this->matchStrategy($request);
+				if(!$strategy){
+					throw new Exception('Not have matched Strategy for current request!');
+				}
+				$this->onStrategyRecognized($strategy);
+				if($this->beforeDispatch($request) !== false){
+					$this->onDispatchStarted($request);
+					/**
+					 * @var RoutingInterface $routing
+					 * @var RouterInterface $router
+					 */
+					$router = $strategy->getShared('router');
+					$matching = $router->getMatchGenerator($request);
+					foreach($matching as $routing){
+						try{
+							$this->last_routing = $routing;
+							if($routing->isUnknown()){
+								throw new NotCertainBehaviour('Defined router, no have "not_found" route');
+							}else{
+								$process = $this->control($routing->getReference(), (array) $routing->getParams(), null, $routing);
+								$response = $this->prepareResponse($process);
+								$this->afterDispatch($request,$routing,$process);
+								return $response;
+							}
+						}catch(Exception\ContinueRoute $e){
+							$routing->reset();
+							continue;
+						}
+					}
+				}
+				throw new NotCertainBehaviour('Defined router, no have "not_found" route');
+			}catch(\Exception $e){
+				return $this->handleException($e);
+			}finally{
+				$this->onDispatchContinue();
+			}
+		}
+
+		/**
+		 *
+		 * Метод производит "Контроль" - это непосредственный вызов модулем-контроллером-действием.
+		 * Происходит вызов действия и после этого в зависимости от настроек вывода контроля
+		 * - генерируется возвращаемое значение, оно может быть разное для HTTP / Cli специфики,
+		 * также для разных типов клиентского HTTP запроса в том числе.
+		 * JSON, HTML, XML и так далее
+		 *
+		 * @param $reference
+		 * @param $data
+		 * @param $options
+		 * @param null|\Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface|ProcessInterface|Router\Routing $initiator
+		 * @return Process|mixed
+		 * @throws Control
+		 */
+		public function control($reference, $data = null, $options = null, ProcessInitiatorInterface $initiator = null){
+			$reference = Reference::normalize($reference,[ 'module' => $this->default_module ]);
+
+			if(!($module = $this->getModule( ($moduleName = $reference['module']) ))){
+				throw new Control('Module "'.$moduleName.'" not found!');
+			}
+
+			$this->getDi()->insertHolder('module', $module, 10);
+			$this->beforeControl($reference, $module, $initiator);
+			try{
+				$process = $module->control($reference,(array) $data, $options, $initiator);
+				$output = $this->checkoutProcess($process, $options);
+				$this->afterControl($output,$process);
+				return $output;
+			}finally{
+				$this->getDi()->restoreInjection('module', $module);
+			}
+		}
+
+		/**
+		 * @param ProcessInterface $process
+		 * @return ResponseInterface
+		 */
+		public function prepareResponse(ProcessInterface $process){
+			$response = $this->last_request->getResponse();
+			/** @var ViewInterface $view */
+			$view = $this->getDi()->getShared('view');
+			if($response->getContent() === null){
+				$rendered = $view->render(null,$process);
+				$response->setContent($rendered);
+			}
+			$this->current_strategy->complete($response, $view);
+			return $response;
+		}
+
+		/**
+		 * @param ProcessInterface $process
+		 * @param array|null $options
+		 * @return ProcessInterface|mixed
+		 */
+		public function checkoutProcess(ProcessInterface $process,array $options = null){
+			$this->last_process = $process;
+			if(is_array($options)){
+				if(isset($options['render']) && $options['render']){
+					/** @var ViewInterface $view */
+					$view   = $this->getDi()->getShared('view');
+					$alias  = null;
+					$render_variables  = [];
+					$render_options    = [];
+					if(is_array($options['render'])){
+						$alias              = $options['render']['alias'];
+						$render_variables   = (array)$options['render']['variables'];
+						$render_options     = (array)$options['render']['options'];
+					}elseif(is_string($options['render'])){
+						$alias = $options['render'];
+					}
+					return $view->render($alias,$process,$render_variables, $render_options);
+				}
+				if(isset($options['result']) && $options['result']){
+					return $process->getResult();
+				}
+				if(isset($options['buffer']) && $options['buffer']){
+					return $process->getOutputBuffer();
+				}
+			}
+			return $process;
+		}
+
+		/**
+		 * @param $controller
+		 */
+		public function prepareControllerBeforeInitialize($controller){
+			if($controller instanceof InjectionAwareInterface){
+				$controller->setDi($this->getDi());
+			}
+		}
+
+
+		/**
+		 *
+		 * Подмена целевого действия контроллера
+		 *
+		 * @param $reference
+		 * @param $params
+		 * @param ProcessInitiatorInterface|null $initiator
+		 * @return ResponseInterface
+		 * @throws Control
+		 */
+		public function forward($reference, $params, ProcessInitiatorInterface $initiator = null){
+			try{
+				$process = $this->control($reference, $params, null, $initiator);
+				throw new Exception\Forwarded($process);
+			}catch (Exception\Forwarded $forward){
+				$process = $forward->getProcess();
+				return $this->prepareResponse($process);
+			}
+		}
+
+		/**
+		 * Специфично для HTTP
+		 *
+		 * @param $reference
+		 * @param $permanent
+		 */
+		public function redirect($reference, $permanent = false){
+
+		}
+
+
+
+		/**
+		 * @param $suffix
+		 * @return $this
+		 */
+		public function setActionSuffix($suffix){
+			$this->action_suffix = $suffix;
+			return $this;
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getActionSuffix(){
+			return $this->action_suffix;
+		}
+
+		/**
+		 * @param $suffix
+		 * @return $this
+		 */
+		public function setControllerSuffix($suffix){
+			$this->controller_suffix = $suffix;
+			return $this;
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getControllerSuffix(){
+			return $this->controller_suffix;
+		}
+
+
+
 
 
 		/**
@@ -440,238 +657,133 @@ namespace Jungle\Application {
 			return $response;
 		}
 
+
+
 		/**
-		 * Диспетчеризация непосредственно изначального запроса.
-		 * Происходит старт обертки HMVC в которой Контроль может вызываться рекурсивно для разных действий
-		 * в последствии генерируется итоговый "Ответ" на переданный "Запрос"
-		 *
-		 * В диспетчеризации учавствуют:
-		 * Маршрутизаторы! происходит выбор предпочитаемого запросу - маршрутизатора с индивидуальным набором маршрутов.
-		 * Целевой "Контроль"
-		 * Формирование Ответа.
-		 *
 		 * @param RequestInterface $request
-		 * @return ResponseInterface
-		 * @throws \Exception
-		 *
 		 */
-		public function dispatch(RequestInterface $request){
-			if($this->dispatching){
-				throw new \LogicException('dispatch already run!');
-			}
-			try{
-				$strategy = $this->matchStrategy($request);
-				if(!$strategy){
-					throw new Exception('Not have matched Strategy for current request!');
-				}
-				$this->_onStrategyRecognized($strategy);
-				if($this->_beforeDispatch($request) !== false){
-					$this->_onDispatchStarted($request);
-					/**
-					 * @var RoutingInterface $routing
-					 * @var RouterInterface $router
-					 */
-					$router = $strategy->getShared('router');
-					$matching = $router->getMatchGenerator($request);
-					foreach($matching as $routing){
-						try{
-							$this->last_routing = $routing;
-							if($routing->isUnknown()){
-								throw new NotCertainBehaviour('Defined router, no have "not_found" route');
-							}else{
-								$process = $this->control($routing->getReference(), (array) $routing->getParams(), null, $routing);
-								$response = $this->prepareResponse($process);
-								$this->_afterDispatch($request,$routing,$process);
-								return $response;
-							}
-						}catch(Exception\ContinueRoute $e){
-							$routing->reset();
-							continue;
-						}
-					}
-				}
-				throw new NotCertainBehaviour('Defined router, no have "not_found" route');
-			}catch(\Exception $e){
-				return $this->handleException($e);
-			}finally{
-				$this->_onDispatchContinue();
-			}
-		}
-
-		/**
-		 *
-		 * Подмена целевого действия контроллера
-		 *
-		 * @param $reference
-		 * @param $params
-		 * @param ProcessInitiatorInterface|null $initiator
-		 * @return ResponseInterface
-		 * @throws Control
-		 */
-		public function forward($reference, $params, ProcessInitiatorInterface $initiator = null){
-			try{
-				$process = $this->control($reference, $params, null, $initiator);
-				throw new Exception\Forwarded($process);
-			}catch (Exception\Forwarded $forward){
-				$process = $forward->getProcess();
-				return $this->prepareResponse($process);
-			}
-		}
-
-		/**
-		 * Специфично для HTTP
-		 *
-		 * @param $reference
-		 * @param $permanent
-		 */
-		public function redirect($reference, $permanent = false){
+		protected function beforeDispatch(RequestInterface $request){
 
 		}
 
 		/**
+		 * @param RequestInterface $request
+		 * @param RoutingInterface $routing
+		 * @param ProcessInterface $result
+		 */
+		protected function afterDispatch(RequestInterface $request, Router\RoutingInterface $routing, ProcessInterface $result){
+
+		}
+
+		/**
+		 * @param StrategyInterface $strategy
+		 */
+		protected function onStrategyRecognized(StrategyInterface $strategy){
+			$this->current_strategy = $strategy;
+
+			$strategy->registerServices();
+
+		}
+
+		/**
+		 * @param RequestInterface $request
+		 */
+		protected function onDispatchStarted(RequestInterface $request){
+
+			$diChains = $this->getDi();
+			$diChains->insertHolder('strategy',$this->current_strategy, 5);
+
+			$default = $diChains->getInjection('default');
+			$default->setShared('request',$request);
+			$default->setShared('response',$request->getResponse());
+
+			$this->dispatching = true;
+			$this->last_request = $request;
+		}
+
+		/**
 		 *
-		 * Метод производит "Контроль" - это непосредственный вызов модулем-контроллером-действием.
-		 * Происходит вызов действия и после этого в зависимости от настроек вывода контроля
-		 * - генерируется возвращаемое значение, оно может быть разное для HTTP / Cli специфики,
-		 * также для разных типов клиентского HTTP запроса в том числе.
-		 * JSON, HTML, XML и так далее
-		 *
+		 */
+		protected function onDispatchContinue(){
+
+			$diChains = $this->getDi();
+			$diChains->restoreInjection('strategy');
+
+			$default = $diChains->getInjection('default');
+			$default->removeService('request');
+			$default->removeService('response');
+
+			$this->current_strategy = null;
+			$this->dispatching      = false;
+			$this->last_request     = null;
+			$this->last_process     = null;
+		}
+
+
+
+		/**
 		 * @param $reference
-		 * @param $data
-		 * @param $options
+		 * @param ModuleInterface $module
 		 * @param null|\Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface|ProcessInterface|Router\Routing $initiator
-		 * @return Process|mixed
 		 * @throws Control
+		 * @throws Exception\ContinueRoute
 		 */
-		public function control($reference, $data = null, $options = null, ProcessInitiatorInterface $initiator = null){
-			$reference = Reference::normalize(
-				$reference,[
-					'module' => $this->default_module
-				]
-			);
-			$moduleName = $reference['module'];
-			$module = $this->getModule($moduleName);
-			if(!$module){
-				throw new Control('Module "'.$moduleName.'" not found!');
-			}
-			$this->_beforeControl($reference, $module, $initiator);
-			$this->getDi()->insertHolder('module', $module, 10);
-			try{
-				$process = $module->control($reference,(array) $data, $options, $initiator);
-				$output = $this->checkoutProcess($process, $options);
-				$this->_afterControl($output,$process);
-				return $output;
-			}finally{
-				$this->getDi()->restoreInjection('module', $module);
-			}
-		}
+		protected function beforeControl($reference, ModuleInterface $module, ProcessInitiatorInterface $initiator = null){
 
-		/**
-		 * @param ProcessInterface $process
-		 * @return ResponseInterface
-		 */
-		public function prepareResponse(ProcessInterface $process){
-			$response = $this->last_request->getResponse();
-			/** @var ViewInterface $view */
-			$view = $this->getDi()->getShared('view');
-			if($response->getContent() === null){
-				$rendered = $view->render(null,$process);
-				$response->setContent($rendered);
-			}
-			$this->current_strategy->complete($response, $view);
-			return $response;
-		}
+			/**
+			 * В данном методе происходит пре-контроль
+			 * : Проверка, может ли контроллер быть запущен из другого контроллера
+			 * : Проверка, Можно ли запускать контроллер публично, если нет, то пропустить текущий маршрут
+			 * : Проверка, поддерживает ли контроль текущую стратегию
+			 * : Проверка, если Маршрут имеет динамичные ссылки и в системе нету такого действия - то пропустить маршрут
+			 */
+			if($initiator){
 
-		/**
-		 * @param ProcessInterface $process
-		 * @param array|null $options
-		 * @return ProcessInterface|mixed
-		 */
-		public function checkoutProcess(ProcessInterface $process,array $options = null){
-			$this->last_process = $process;
-			if(is_array($options)){
-				if(isset($options['render']) && $options['render']){
-					/** @var ViewInterface $view */
-					$view   = $this->getDi()->getShared('view');
-					$alias  = null;
-					$render_variables  = [];
-					$render_options    = [];
-					if(is_array($options['render'])){
-						$alias              = $options['render']['alias'];
-						$render_variables   = (array)$options['render']['variables'];
-						$render_options     = (array)$options['render']['options'];
-					}elseif(is_string($options['render'])){
-						$alias = $options['render'];
+				$meta = $module->getMetadata($reference['controller'], $reference['action']);
+
+				// check hmvc support
+				if($initiator instanceof ProcessInterface && (!isset($meta['hierarchy']) || !$meta['hierarchy'])){
+					throw new Control("{$module->getName()}:{$reference['controller']}:{$reference['action']} not support hierarchy calling!");
+				}
+				// check private
+				if($initiator instanceof RoutingInterface && (
+						(isset($meta['private']) && $meta['private']) ||
+						(!$module->hasControl($reference['controller'], $reference['action']) && $initiator->getRoute()->isDynamic())
+					)
+				){
+					throw new Exception\ContinueRoute();
+				}
+			}
+
+			// check support request strategy
+			if(isset($meta['strategy']) && $meta['strategy']){
+				$strategy = $meta['strategy'];
+				if(!is_array($strategy)) $strategy = [$strategy];
+				$current = $this->current_strategy->getName();
+				if(!in_array($this->current_strategy->getName(), $strategy, true)){
+
+					if($initiator instanceof RoutingInterface){
+						// if external request call (out of routing)
+						throw new Exception\ContinueRoute();
+					}else{
+						// if hmvc call
+						throw new Control("{$module->getName()}:{$reference['controller']}:{$reference['action']} not support \"{$current}\" application strategy!");
 					}
-					return $view->render($alias,$process,$render_variables, $render_options);
-				}
-				if(isset($options['result']) && $options['result']){
-					return $process->getResult();
-				}
-				if(isset($options['buffer']) && $options['buffer']){
-					return $process->getOutputBuffer();
 				}
 			}
-			return $process;
+
+		}
+
+		/**
+		 * @param $output
+		 * @param ProcessInterface $process
+		 */
+		protected function afterControl($output,ProcessInterface $process){
+
 		}
 
 
 
-		/**
-		 * @param $controller
-		 */
-		public function prepareControllerBeforeInitialize($controller){
-			if($controller instanceof InjectionAwareInterface){
-				$controller->setDi($this->getDi());
-			}
-		}
-
-
-
-		/**
-		 * @param $process
-		 * @return bool|void
-		 */
-		public function beforeControl(ProcessInterface $process){ }
-
-		/**
-		 * @param $process
-		 * @param $result
-		 */
-		public function afterControl(ProcessInterface $process, $result){ }
-
-
-		/**
-		 * @param $suffix
-		 * @return $this
-		 */
-		public function setActionSuffix($suffix){
-			$this->action_suffix = $suffix;
-			return $this;
-		}
-
-		/**
-		 * @return mixed
-		 */
-		public function getActionSuffix(){
-			return $this->action_suffix;
-		}
-
-		/**
-		 * @param $suffix
-		 * @return $this
-		 */
-		public function setControllerSuffix($suffix){
-			$this->controller_suffix = $suffix;
-			return $this;
-		}
-
-		/**
-		 * @return mixed
-		 */
-		public function getControllerSuffix(){
-			return $this->controller_suffix;
-		}
 
 
 
@@ -724,121 +836,6 @@ namespace Jungle\Application {
 				throw new Exception('Strategy load error: "' . $alias . '" not found strategy class "' . $className . '"');
 			}
 		}
-
-		protected function _beforeDispatch(RequestInterface $request){
-
-		}
-
-		protected function _afterDispatch(RequestInterface $request, Router\RoutingInterface $routing, ProcessInterface $result){
-
-		}
-
-		/**
-		 * @param StrategyInterface $strategy
-		 */
-		protected function _onStrategyRecognized(StrategyInterface $strategy){
-			$this->current_strategy = $strategy;
-
-			$strategy->registerServices();
-
-		}
-
-		/**
-		 * @param RequestInterface $request
-		 */
-		protected function _onDispatchStarted(RequestInterface $request){
-
-			$diChains = $this->getDi();
-			$diChains->insertHolder('strategy',$this->current_strategy, 5);
-
-			$default = $diChains->getInjection('default');
-			$default->setShared('request',$request);
-			$default->setShared('response',$request->getResponse());
-
-			$this->dispatching = true;
-			$this->last_request = $request;
-		}
-
-		/**
-		 *
-		 */
-		protected function _onDispatchContinue(){
-
-			$diChains = $this->getDi();
-			$diChains->restoreInjection('strategy');
-
-			$default = $diChains->getInjection('default');
-			$default->removeService('request');
-			$default->removeService('response');
-
-			$this->current_strategy = null;
-			$this->dispatching      = false;
-			$this->last_request     = null;
-			$this->last_process     = null;
-		}
-
-
-		/**
-		 * @param $reference
-		 * @param ModuleInterface $module
-		 * @param null|\Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface|ProcessInterface|Router\Routing $initiator
-		 * @throws Control
-		 * @throws Exception\ContinueRoute
-		 */
-		protected function _beforeControl($reference, ModuleInterface $module, ProcessInitiatorInterface $initiator = null){
-
-			/**
-			 * В данном методе происходит пре-контроль
-			 * : Проверка, может ли контроллер быть запущен из другого контроллера
-			 * : Проверка, Можно ли запускать контроллер публично, если нет, то пропустить текущий маршрут
-			 * : Проверка, поддерживает ли контроль текущую стратегию
-			 * : Проверка, если Маршрут имеет динамичные ссылки и в системе нету такого действия - то пропустить маршрут
-			 */
-			if($initiator){
-
-				$meta = $module->getMetadata($reference['controller'], $reference['action']);
-
-				// check hmvc support
-				if($initiator instanceof ProcessInterface && (!isset($meta['hierarchy']) || !$meta['hierarchy'])){
-					throw new Control("{$module->getName()}:{$reference['controller']}:{$reference['action']} not support hierarchy calling!");
-				}
-				// check private
-				if($initiator instanceof RoutingInterface && (
-					   (isset($meta['private']) && $meta['private']) ||
-				       (!$module->hasControl($reference['controller'], $reference['action']) && $initiator->getRoute()->isDynamic())
-				   )
-				){
-					throw new Exception\ContinueRoute();
-				}
-			}
-
-			// check support request strategy
-			if(isset($meta['strategy']) && $meta['strategy']){
-				$strategy = $meta['strategy'];
-				if(!is_array($strategy)) $strategy = [$strategy];
-				$current = $this->current_strategy->getName();
-				if(!in_array($this->current_strategy->getName(), $strategy, true)){
-
-					if($initiator instanceof RoutingInterface){
-						// if external request call (out of routing)
-						throw new Exception\ContinueRoute();
-					}else{
-						// if hmvc call
-						throw new Control("{$module->getName()}:{$reference['controller']}:{$reference['action']} not support \"{$current}\" application strategy!");
-					}
-				}
-			}
-
-		}
-
-		/**
-		 * @param $output
-		 * @param ProcessInterface $process
-		 */
-		protected function _afterControl($output,ProcessInterface $process){
-
-		}
-
 
 	}
 }
