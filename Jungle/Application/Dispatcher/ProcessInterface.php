@@ -56,6 +56,11 @@ namespace Jungle\Application\Dispatcher {
 		public function isExternal();
 
 		/**
+		 * @return array
+		 */
+		public function getMeta();
+
+		/**
 		 * @return RoutingInterface
 		 */
 		public function getRouting();

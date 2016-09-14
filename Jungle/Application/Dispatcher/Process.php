@@ -187,6 +187,16 @@ namespace Jungle\Application\Dispatcher {
 			return $this->params;
 		}
 
+
+		/**
+		 * @return array
+		 */
+		public function getMeta(){
+			$reference = $this->reference;
+			return $this->module->getMetadata($reference['controller'],$reference['action']);
+		}
+
+
 		/**
 		 * HMVC-Architecture
 		 * @return mixed
@@ -370,19 +380,6 @@ namespace Jungle\Application\Dispatcher {
 		 */
 		public function linkBy($routeName, $params = null, $reference = null){
 			return $this->getRouter()->generateLinkBy($routeName, $params, $reference);
-		}
-
-		/**
-		 *
-		 */
-		public function getActionMeta(){
-			$reference = $this->reference;
-
-			$this->getModule();
-
-			$this->getRouting()->getRequest();
-
-
 		}
 
 		/**
