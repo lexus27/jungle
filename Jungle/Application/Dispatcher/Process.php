@@ -92,22 +92,6 @@ namespace Jungle\Application\Dispatcher {
 			$this->params 				= $params;
 			$this->reference 			= $reference;
 		}
-//
-//		/**
-//		 * @return mixed
-//		 */
-//		public function isRealize(){
-//			return $this->realization;
-//		}
-//
-//		/**
-//		 * @param bool|true $enabled
-//		 * @return $this
-//		 */
-//		public function setRealization($enabled = true){
-//			$this->realization = $enabled;
-//			return $this;
-//		}
 
 
 		/**

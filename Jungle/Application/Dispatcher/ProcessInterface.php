@@ -21,11 +21,6 @@ namespace Jungle\Application\Dispatcher {
 		/**
 		 * @return bool
 		 */
-		//public function isRealize();
-
-		/**
-		 * @return bool
-		 */
 		public function hasErrors();
 
 
