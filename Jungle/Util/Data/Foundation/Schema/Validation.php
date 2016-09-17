@@ -17,7 +17,7 @@ namespace Jungle\Util\Data\Foundation\Schema {
 	 * Class Validation
 	 * @package Jungle\Util\Data\Foundation\Schema
 	 */
-	class Validation{
+	class Validation implements ValidatorInterface{
 
 		/** @var  ValidatorInterface[] */
 		protected $validators = [];
@@ -59,6 +59,13 @@ namespace Jungle\Util\Data\Foundation\Schema {
 		 */
 		public function getMessages(){
 			return $this->last_validated_messages;
+		}
+
+		/**
+		 * @return PropertyRegistryInterface
+		 */
+		public function getObject(){
+			return $this->last_validated_object;
 		}
 
 
