@@ -7,7 +7,7 @@
  * Date: 26.07.2016
  * Time: 1:03
  */
-namespace Jungle\Util\Data\Foundation\Schema {
+namespace Jungle\Util\Data\Foundation\Schema\Validation {
 	
 	use Jungle\Util\Data\Foundation\Record\PropertyRegistryInterface;
 
@@ -19,7 +19,7 @@ namespace Jungle\Util\Data\Foundation\Schema {
 
 		/**
 		 * @param PropertyRegistryInterface $object
-		 * @return mixed
+		 * @return bool
 		 */
 		public function validate(PropertyRegistryInterface $object);
 
