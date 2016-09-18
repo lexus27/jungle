@@ -15,6 +15,7 @@ namespace Jungle\Data\Record\Head {
 	use Jungle\Data\Record\Head\Field;
 	use Jungle\Data\Record\Head\Field\Relation;
 	use Jungle\Util\Data\Foundation\Schema\OuterInteraction\Mapped\Schema as MappedSchema;
+	use Jungle\Util\Data\Foundation\Schema\Validation;
 	use Jungle\Util\Data\Foundation\ShipmentInterface;
 	use Jungle\Util\Data\Foundation\Storage;
 	use Jungle\Util\Data\Foundation\Storage\StorageInterface;
@@ -43,6 +44,9 @@ namespace Jungle\Data\Record\Head {
 
 		/** @var  Field[] */
 		protected $fields = [];
+
+		/** @var  Validation|null|bool */
+		protected $validation;
 
 		/** @var  SchemaManager */
 		protected $schema_manager;
@@ -135,6 +139,39 @@ namespace Jungle\Data\Record\Head {
 		 */
 		public function getName(){
 			return $this->name;
+		}
+
+		/**
+		 * @param Validation $validation
+		 * @return $this
+		 */
+		public function setValidation(Validation $validation = null){
+			$this->validation = $validation;
+			return $this;
+		}
+
+		/**
+		 * @return $this
+		 */
+		public function disableValidation(){
+			$this->validation = false;
+			return $this;
+		}
+
+		/**
+		 * @return Validation|null
+		 */
+		public function getValidation(){
+			if($this->validation){
+				return $this->validation;
+			}elseif($this->validation === null && $this->ancestor){
+				if($this->ancestor->validation === false && $this->ancestor->ancestor){
+					return $this->ancestor->ancestor->getValidation();
+				}
+				return $this->ancestor->getValidation();
+			}else{
+				return null;
+			}
 		}
 
 		/**

@@ -173,12 +173,26 @@ namespace Jungle\Util\Data\Foundation\Schema {
 		 * @param $native_value
 		 * @return bool
 		 */
-		public function verify($native_value){
+		public function validate($native_value){
 			if($native_value === null && $this->isNullable()){
 				return true;
 			}
 			$type = gettype($native_value);
 			return $type === $this->type;
+		}
+
+		/**
+		 * @param $value
+		 * @return mixed
+		 */
+		public function stabilize($value){
+			if($value === null && $this->isNullable()){
+				return $value;
+			}
+			if($this->type){
+				settype($value,$this->type);
+			}
+			return $value;
 		}
 
 

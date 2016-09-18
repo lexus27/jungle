@@ -20,7 +20,7 @@ namespace Jungle\Util\Data\Foundation\Schema {
 		 * @param array $options
 		 * @return bool
 		 */
-		public function verify($evaluated_value,array $options = null);
+		public function validate($evaluated_value,array $options = null);
 
 		/**
 		 * @param $passed_evaluated_value

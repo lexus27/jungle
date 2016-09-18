@@ -87,7 +87,7 @@ namespace Jungle\Data\Storage {
 		}
 
 		public function rollback(){
-			// TODO: Implement rollback() method.
+			// TODO: Implement getRollbackData() method.
 		}
 	}
 }

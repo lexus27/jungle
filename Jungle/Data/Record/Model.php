@@ -227,6 +227,7 @@ namespace Jungle\Data\Record {
 		public function reset($fieldName = null){
 			if($fieldName === null){
 				$this->_initialized_properties = [];
+				$this->_afterReset();
 			}else{
 				unset($this->_initialized_properties[$fieldName]);
 			}
@@ -240,6 +241,7 @@ namespace Jungle\Data\Record {
 			if($fieldName === null){
 				$this->_processed = [];
 				$this->_initialized_properties = [];
+				$this->_afterResetAll();
 			}else{
 				unset($this->_processed[$fieldName]);
 				unset($this->_initialized_properties[$fieldName]);

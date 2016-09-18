@@ -35,7 +35,7 @@ namespace Jungle\Util\Data\Foundation\Schema\ValueType {
 		 * @return bool
 		 * @throws ValueTypeException
 		 */
-		public function verify($evaluated_value, array $options = null){
+		public function validate($evaluated_value, array $options = null){
 			if(($t = gettype($evaluated_value)) !== $this->vartype){
 				throw new ValueTypeException('Verification failed, value passed type: "'.$t.'", a must be "'.$this->vartype.'"');
 			}

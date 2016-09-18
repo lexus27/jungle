@@ -13,7 +13,7 @@ namespace Jungle\Data\Record {
 	 * Class TransientState
 	 * @package Jungle\Data\Record
 	 */
-	abstract class TransientState{
+	class TransientState{
 
 		/** @var  TransientState */
 		protected $previous;
@@ -24,15 +24,37 @@ namespace Jungle\Data\Record {
 		/** @var bool */
 		protected $fixed = false;
 
+		/** @var  string|null */
+		protected $tag;
+
+
+		/**
+		 * @param array $data
+		 * @param null $tag
+		 * @param TransientState|null $previous
+		 * @return TransientState|null
+		 */
+		public static function checkout(array $data, $tag = null, TransientState $previous = null){
+			if($previous){
+				$data = array_diff_assoc($data, $previous->getForwardData());
+			}
+			if($data){
+				return new TransientState($data, $tag, $previous);
+			}else{
+				return $previous;
+			}
+		}
 
 		/**
 		 * State constructor.
-		 * @param $data
+		 * @param array $data
+		 * @param null $tag
 		 * @param TransientState|null $previous
 		 */
-		public function __construct(array $data, TransientState $previous = null){
-			$this->data = $data;
+		protected function __construct(array $data, $tag = null, TransientState $previous = null){
+			$this->data     = $data;
 			$this->previous = $previous;
+			$this->tag      = $tag;
 		}
 
 		/**
@@ -65,25 +87,72 @@ namespace Jungle\Data\Record {
 			return $this;
 		}
 
+
 		/**
-		 * @param array $instant Last fixed data
+		 * @param array $defaultFull Last fixed data
 		 * @return array
 		 */
-		public function getData(array $instant = null){
+		public function getForwardData(array $defaultFull = null){
 			if($this->previous && !$this->previous->isFixed()){
-				$data = $this->previous->getData();
+				$data = $this->previous->isFixed()?[]:$this->previous->getForwardData();
 			}else{
 				return $this->data;
 			}
 			$data = array_replace($data, $this->data);
-			if(is_array($instant)){
-				foreach($instant as $property => $instantValue){
+			if(is_array($defaultFull)){
+				foreach($defaultFull as $property => $instantValue){
 					if(!array_key_exists($property, $data)){
 						$data[$property] = $instantValue;
 					}
 				}
 			}
 			return $data;
+		}
+
+		/**
+		 * @return array
+		 */
+		public function getRollbackData(){
+			$data = [];
+			foreach($this->data as $key => $value){
+				$data[$key] = $this->getPrevParam($key);
+			}
+			return $data;
+		}
+
+
+		/**
+		 * @param $key
+		 * @return mixed
+		 */
+		protected function getPrevParam($key){
+			if($this->previous){
+				if(array_key_exists($key, $this->previous->data)){
+					return $this->previous->data[$key];
+				}else{
+					return $this->previous->getPrevParam($key);
+				}
+			}else{
+				return null;
+			}
+		}
+
+		/**
+		 * @return bool
+		 */
+		public function clean(){
+			if($this->previous){
+				if($this->previous->fixed){
+					$this->previous = null;
+				}else{
+					$this->previous->clean();
+				}
+				return true;
+			}elseif($this->fixed){
+				return false;
+			}else{
+				return true;
+			}
 		}
 
 	}

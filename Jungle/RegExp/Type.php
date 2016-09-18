@@ -369,7 +369,7 @@ namespace Jungle\RegExp {
 		 * @param array $arguments
 		 * @return bool
 		 */
-		public function isValid($value, array $arguments = null){
+		public function validate($value, array $arguments = null){
 			$pattern = $this->getPattern($arguments);
 			return Pattern::validateValue($pattern, $value,'S');
 		}

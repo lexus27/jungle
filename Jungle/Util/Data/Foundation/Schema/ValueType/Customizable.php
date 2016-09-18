@@ -58,7 +58,7 @@ namespace Jungle\Util\Data\Foundation\Schema\ValueType {
 		 * @param array $options
 		 * @return bool
 		 */
-		public function verify($evaluated_value, array $options = null){
+		public function validate($evaluated_value, array $options = null){
 			return !$this->verify_function?
 				$evaluated_value
 				:call_user_func($this->verify_function, $evaluated_value, array_replace($this->default_options,(array)$options));

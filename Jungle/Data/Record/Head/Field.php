@@ -95,11 +95,11 @@ namespace Jungle\Data\Record\Head {
 		 * @param $native_value
 		 * @return bool
 		 */
-		public function verify($native_value){
+		public function validate($native_value){
 			if($native_value === null && $this->isNullable()){
 				return true;
 			}
-			return $this->type->verify($native_value,$this->type_params);
+			return $this->type->validate($native_value,$this->type_params);
 		}
 
 		/**

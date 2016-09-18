@@ -39,7 +39,7 @@ namespace Jungle\Util\Data\Foundation\Schema\ValueType {
 		 * @return bool
 		 * @throws ValueTypeException
 		 */
-		public function verify($evaluated_value, array $options = null){
+		public function validate($evaluated_value, array $options = null){
 			if(!preg_match($this->pattern, $evaluated_value)){
 				throw new ValueTypeException('is not compatible "'.$this->getName().'" type');
 			}

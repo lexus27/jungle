@@ -19,7 +19,7 @@ namespace Jungle\Util\Data\Foundation\Schema\Validation {
 
 		/**
 		 * @param PropertyRegistryInterface $object
-		 * @return bool
+		 * @return false|MessageInterface
 		 */
 		public function validate(PropertyRegistryInterface $object);
 
