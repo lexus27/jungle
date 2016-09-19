@@ -42,15 +42,16 @@ namespace Jungle\Util\Data\Foundation\Validation {
 
 		/**
 		 * Rule constructor.
+		 * @param array $default_params
 		 */
-		public function __construct(){
+		public function __construct(array $default_params = []){
 			$default = [];
 			foreach(get_object_vars($this) as $name){
 				if(!in_array($name,static::$_not_parameters_properties, true)){
 					$default[$name] = $this->{$name};
 				}
 			}
-			$this->default_params = $default;
+			$this->default_params = array_replace($default, $default_params);
 		}
 
 		/**

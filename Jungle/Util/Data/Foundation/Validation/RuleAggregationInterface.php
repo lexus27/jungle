@@ -9,6 +9,8 @@
  */
 namespace Jungle\Util\Data\Foundation\Validation {
 
+	use Jungle\Util\Data\Foundation\Validation\Message\RuleMessageInterface;
+
 	/**
 	 * Interface RuleAggregationInterface
 	 * @package Jungle\Util\Data\Foundation\Validation
@@ -40,9 +42,9 @@ namespace Jungle\Util\Data\Foundation\Validation {
 		public function getLastValue();
 
 		/**
-		 * @return Rule[]
+		 * @return RuleMessageInterface[]
 		 */
-		public function getLastRules();
+		public function getLastMessages();
 
 
 	}

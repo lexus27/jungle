@@ -10,6 +10,7 @@
 namespace Jungle\Util\Data\Foundation\Schema\ValueType {
 	
 	use Jungle\Util\Data\Foundation\Schema\ValueType;
+	use Jungle\Util\Data\Foundation\Schema\ValueTypeException;
 
 	/**
 	 * Class JsonSerialized
@@ -27,9 +28,13 @@ namespace Jungle\Util\Data\Foundation\Schema\ValueType {
 		 * @param $evaluated_value
 		 * @param array $options
 		 * @return bool
+		 * @throws ValueTypeException
 		 */
 		public function validate($evaluated_value, array $options = null){
-			return is_array($evaluated_value) || $evaluated_value instanceof \JsonSerializable || $evaluated_value instanceof \stdClass;
+			if(is_array($evaluated_value) || $evaluated_value instanceof \JsonSerializable || $evaluated_value instanceof \stdClass){
+				throw new ValueTypeException('Not Supported Value');
+			}
+			return $this->check($evaluated_value);
 		}
 
 		/**

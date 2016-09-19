@@ -19,9 +19,6 @@ namespace Jungle\Util\Data\Foundation\Schema\ValueType {
 	class Customizable extends ValueType{
 
 		/** @var  callable */
-		protected $verify_function;
-
-		/** @var  callable */
 		protected $evaluate_function;
 
 		/** @var  callable */
@@ -34,34 +31,23 @@ namespace Jungle\Util\Data\Foundation\Schema\ValueType {
 		 * Customizable constructor.
 		 * @param $aliases
 		 * @param $vartype
-		 * @param callable $verifyFunction
+		 * @param array $rules
 		 * @param callable $evaluateFunction
 		 * @param callable $originateFunction
 		 * @param callable $stabilizeFunction
 		 */
 		public function __construct($aliases, $vartype,
-			callable $verifyFunction,
+			array $rules,
 			callable $evaluateFunction,
 			callable $originateFunction,
 			callable $stabilizeFunction = null
 		){
 			$this->setAlias($aliases);
 			$this->vartype = $vartype;
-			$this->verify_function = $verifyFunction;
-			$this->evaluate_function = $evaluateFunction;
-			$this->originate_function = $originateFunction;
-			$this->stabilize_function = $stabilizeFunction;
-		}
-
-		/**
-		 * @param $evaluated_value
-		 * @param array $options
-		 * @return bool
-		 */
-		public function validate($evaluated_value, array $options = null){
-			return !$this->verify_function?
-				$evaluated_value
-				:call_user_func($this->verify_function, $evaluated_value, array_replace($this->default_options,(array)$options));
+			$this->rules                = $rules;
+			$this->evaluate_function    = $evaluateFunction;
+			$this->originate_function   = $originateFunction;
+			$this->stabilize_function   = $stabilizeFunction;
 		}
 
 		/**
@@ -72,7 +58,7 @@ namespace Jungle\Util\Data\Foundation\Schema\ValueType {
 		public function evaluate($raw_value, array $options = null){
 			return !$this->evaluate_function?
 				$raw_value:
-				call_user_func($this->evaluate_function, $raw_value, array_replace($this->default_options,(array)$options));
+				call_user_func($this->evaluate_function, $raw_value, array_replace($this->converter_options,(array)$options));
 		}
 
 		/**
@@ -83,7 +69,7 @@ namespace Jungle\Util\Data\Foundation\Schema\ValueType {
 		public function originate($evaluated_value, array $options = null){
 			return !$this->originate_function?
 				$evaluated_value:
-				call_user_func($this->originate_function, $evaluated_value, array_replace($this->default_options,(array)$options));
+				call_user_func($this->originate_function, $evaluated_value, array_replace($this->converter_options,(array)$options));
 		}
 
 		/**
@@ -94,7 +80,7 @@ namespace Jungle\Util\Data\Foundation\Schema\ValueType {
 		public function stabilize($passed_evaluated_value, array $options = null){
 			return !$this->stabilize_function?
 				$passed_evaluated_value:
-				call_user_func($this->stabilize_function, $passed_evaluated_value, array_replace($this->default_options,(array)$options));
+				call_user_func($this->stabilize_function, $passed_evaluated_value, array_replace($this->converter_options,(array)$options));
 		}
 	}
 }

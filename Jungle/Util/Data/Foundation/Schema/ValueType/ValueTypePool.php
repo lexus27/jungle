@@ -11,6 +11,8 @@ namespace Jungle\Util\Data\Foundation\Schema\ValueType {
 	
 	use Jungle\Util\Data\Foundation\Schema\ValueType;
 	use Jungle\Util\Data\Foundation\Schema\ValueTypeInterface;
+	use Jungle\Util\Data\Foundation\Validation\Rule\RegExp;
+	use Jungle\Util\Data\Foundation\Validation\Rule\Vartype;
 
 	/**
 	 * Class Manager
@@ -21,50 +23,56 @@ namespace Jungle\Util\Data\Foundation\Schema\ValueType {
 		/** @var  ValueType[] */
 		protected $types = [];
 
+
 		/**
 		 * @param $alias
-		 * @param $vartype
-		 * @param callable $verifyFunction
-		 * @param callable $evaluateFunction
-		 * @param callable $originateFunction
-		 * @param callable $stabilizeFunction
-		 * @param array $customizableOptions
+		 * @param array|ValueTypeInterface $definition
+		 * @return Customizable|ValueTypeInterface
 		 */
-		public function add($alias, $vartype,
-			callable $verifyFunction,
-			callable $evaluateFunction,
-			callable $originateFunction,
-			callable $stabilizeFunction = null,
-			array $customizableOptions = []
-		){
-			$this->types[] = new Customizable($alias, $vartype,
-				$verifyFunction,
-				$evaluateFunction,
-				$originateFunction,
-				$stabilizeFunction,
-				$customizableOptions
-			);
+		public function type($alias, $definition){
+			if($definition instanceof ValueTypeInterface){
+				return $this->types[] = $definition;
+			}elseif(is_array($definition)){
+
+				$definition = array_replace([
+					'rules'         => null,
+					'vartype'       => 'mixed',
+					'vartype_check' => false,
+					'evaluate'      => null,
+					'originate'     => null,
+					'stabilize'     => null,
+
+					'options'       => null
+
+				],$definition);
+				$definition['rules'] = (array)$definition['rules'];
+				if($definition['vartype_check']){
+					array_unshift($definition['rules'], new Vartype([
+						'vartypes' => $definition['vartype']
+					]));
+				}
+
+				return $this->types[] = new Customizable($alias, $definition['vartype'],
+					$definition['rules'],
+					$definition['evaluate'],
+					$definition['originate'],
+					$definition['stabilize'],
+					$definition['options']
+				);
+
+			}
+			return null;
 		}
 
 		/**
 		 * @param $alias
 		 * @param $vartype
-		 * @return $this
+		 * @return Customizable
 		 */
 		public function vartype($alias, $vartype){
-			$this->types[] = new VartypeChecker($alias, $vartype);
-			return $this;
-		}
-
-		/**
-		 * @param $alias
-		 * @param $pattern
-		 * @param null $vartype
-		 * @return $this
-		 */
-		public function pattern($alias, $pattern, $vartype = null){
-			$this->types[] = new Pattern($alias, $pattern, $vartype);
-			return $this;
+			return $this->types[] = new \Jungle\Util\Data\Foundation\Schema\ValueType\Vartype($alias, $vartype, [
+				new Vartype([ 'vartypes' => $vartype ])
+			]);
 		}
 
 		/**
@@ -97,29 +105,37 @@ namespace Jungle\Util\Data\Foundation\Schema\ValueType {
 		 * ValueTypePool constructor.
 		 */
 		public function __construct(){
+
 			$this->vartype(['string'],'string');
 			$this->vartype(['int','integer','long'],'integer');
-			$this->vartype(['int','integer','long'],'integer');
+			$this->vartype(['float','double'],'double');
+
 			$this->addType(new Serialized());
-			$this->add(['bool','boolean'],'integer',
-				function($v){return is_bool($v);},
-				function($v){boolval($v);},
-				function($v){return intval($v);},
-				function($v){boolval($v);}
-			);
-			$this->add(['date'],'integer',
-				function($v){return is_int($v);},
-				function($v){return strtotime($v);},
-				function($value){
+			$this->type(['bool','boolean'],[
+				'vartype'       => 'boolean',
+				'evaluate'      => ($bv = function($v){return boolval($v);}),
+				'originate'     => function($v){return intval($v);},
+				'stabilize'     => $bv
+			]);
+
+			$this->type(['date'],[
+				'vartype'       => 'integer',
+				'evaluate'      => ($bv = function($v){return strtotime($v);}),
+				'originate'     => function($value){
 					if(is_int($value)) return date('Y-m-d H:i:s', $value);
 					else return $value;
-
-				},function($value){
+				},
+				'stabilize'     => function($value){
 					if(is_string($value)) return strtotime($value);
 					return $value;
-				});
-			$this->vartype(['float','double'],'double');
-			$this->pattern(['email'],'@[[:alpha:]][\w\-\_]*@[[:alpha:]]\w*\.[[:alpha:]]\w*@S');
+				}
+			]);
+
+			$this->type(['email'],[
+				'rules' => [
+					new RegExp([ 'pattern' => '@[[:alpha:]][\w\-\_]*@[[:alpha:]]\w*\.[[:alpha:]]\w*@S' ])
+				]
+			]);
 		}
 
 		/** @var  ValueTypePool */

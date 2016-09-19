@@ -15,8 +15,13 @@ namespace Jungle\Util\Data\Foundation\Validation\Message {
 	 */
 	trait AggregationMessageTrait{
 
+		use MessageTrait;
+
 		/** @var  MessageInterface[]  */
 		protected $messages = [];
+
+		/** @var  array */
+		protected $info = [];
 
 		/**
 		 * AggregationMessageTrait constructor.
@@ -33,6 +38,22 @@ namespace Jungle\Util\Data\Foundation\Validation\Message {
 		 */
 		public function getMessages(){
 			return $this->messages;
+		}
+
+		/**
+		 * @param array $info
+		 * @return $this
+		 */
+		public function setInfo(array $info){
+			$this->info = $info;
+			return $this;
+		}
+
+		/**
+		 * @return array
+		 */
+		public function getInfo(){
+			return $this->info;
 		}
 	}
 }

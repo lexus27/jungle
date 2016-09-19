@@ -13,12 +13,23 @@ namespace Jungle\Util\Data\Foundation\Validation\Message {
 	 * Interface AggregationMessageInterface
 	 * @package Jungle\Util\Data\Foundation\Validation\Message
 	 */
-	interface AggregationMessageInterface{
+	interface AggregationMessageInterface extends MessageInterface{
 
 		/**
 		 * @return MessageInterface[]
 		 */
 		public function getMessages();
+
+		/**
+		 * @return array
+		 */
+		public function getInfo();
+
+		/**
+		 * @param array $info
+		 * @return $this
+		 */
+		public function setInfo(array $info);
 
 	}
 }

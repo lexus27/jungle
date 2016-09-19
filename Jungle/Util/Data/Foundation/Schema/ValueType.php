@@ -9,11 +9,17 @@
  */
 namespace Jungle\Util\Data\Foundation\Schema {
 
+	use Jungle\Util\Data\Foundation\Validation\RuleAggregationInterface;
+	use Jungle\Util\Data\Foundation\Validation\RuleAggregationTrait;
+
 	/**
 	 * Class ValueType
 	 * @package Jungle\Util\Data\Foundation\Schema
 	 */
-	abstract class ValueType implements ValueTypeInterface{
+	abstract class ValueType implements ValueTypeInterface, RuleAggregationInterface{
+
+
+		use RuleAggregationTrait;
 
 		/** @var  string */
 		protected $name;
@@ -25,23 +31,42 @@ namespace Jungle\Util\Data\Foundation\Schema {
 		protected $vartype;
 
 		/** @var array  */
-		protected $default_options = [];
+		protected $converter_options = [];
 
-		public function __construct(){
-			if($this->aliases){
-				$name = $this->name;
-				$aliases = $this->aliases;
-				$this->aliases = null;
-				$this->name = null;
-				$this->setAlias($aliases);
-				if($name){
-					$this->name = $name;
+
+		/**
+		 * ValueType constructor.
+		 * @param null $aliases
+		 * @param $vartype
+		 */
+		public function __construct($aliases = null, $vartype = null,array $rules = null){
+
+			if($aliases){
+				if($this->aliases){
+					$name = $this->name;
+					$aliases = $this->aliases;
+					$this->aliases = null;
+					$this->name = null;
+					$this->setAlias($aliases);
+					if($name){
+						$this->name = $name;
+					}
+				}elseif($this->name){
+					$name = $this->name;
+					$this->name = null;
+					$this->setName($name);
 				}
-			}elseif($this->name){
-				$name = $this->name;
-				$this->name = null;
-				$this->setName($name);
 			}
+
+			if($vartype){
+				$this->vartype = $vartype;
+			}
+
+			if($rules){
+				$this->rules = $rules;
+			}
+
+
 		}
 
 		/**
@@ -78,19 +103,19 @@ namespace Jungle\Util\Data\Foundation\Schema {
 		}
 
 		/**
-		 * @param array $default_options
+		 * @param array $converter_options
 		 * @return $this
 		 */
-		public function setDefaultOptions(array $default_options = []){
-			$this->default_options = $default_options;
+		public function setConverterOptions(array $converter_options = []){
+			$this->converter_options = $converter_options;
 			return $this;
 		}
 
 		/**
 		 * @return array
 		 */
-		public function getDefaultOptions(){
-			return $this->default_options;
+		public function getConverterOptions(){
+			return $this->converter_options;
 		}
 
 		/**
@@ -143,6 +168,15 @@ namespace Jungle\Util\Data\Foundation\Schema {
 		 */
 		public function stabilize($passed_evaluated_value,array $options = null){
 			return $passed_evaluated_value;
+		}
+
+		/**
+		 * @param $value
+		 * @param array $options
+		 * @return bool
+		 */
+		public function validate($value,array $options = null){
+			return $this->check($value);
 		}
 
 	}
