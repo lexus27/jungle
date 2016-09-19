@@ -10,10 +10,10 @@
 namespace Jungle\Util\Data\Foundation\Validation\Message {
 
 	/**
-	 * Interface AggregationInterface
+	 * Interface AggregationMessageInterface
 	 * @package Jungle\Util\Data\Foundation\Validation\Message
 	 */
-	interface AggregationInterface{
+	interface AggregationMessageInterface{
 
 		/**
 		 * @return MessageInterface[]

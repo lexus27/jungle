@@ -12,16 +12,15 @@ namespace Jungle\Util\Data\Foundation\Validation\Message {
 	use Jungle\Util\Data\Foundation\Validation\Message;
 
 	/**
-	 * Class Aggregation
+	 * Class AggregationMessage
 	 * @package Jungle\Util\Data\Foundation\Validation\Message
 	 */
-	class Aggregation extends Message implements AggregationInterface{
+	class AggregationMessage extends Message implements AggregationMessageInterface{
 
-		/** @var  MessageInterface[]  */
-		protected $messages = [];
+		use AggregationMessageTrait;
 
 		/**
-		 * Aggregation constructor.
+		 * AggregationMessage constructor.
 		 * @param $type
 		 * @param $messages
 		 */
@@ -30,12 +29,6 @@ namespace Jungle\Util\Data\Foundation\Validation\Message {
 			$this->messages = $messages;
 		}
 
-		/**
-		 * @return MessageInterface[]
-		 */
-		public function getMessages(){
-			return $this->messages;
-		}
 	}
 }
 
