@@ -17,6 +17,9 @@ namespace Jungle\Util\Data\Foundation\Validation\Message {
 
 		use MessageTrait;
 
+		/** @var string  */
+		protected $type = 'Aggregation';
+
 		/** @var  MessageInterface[]  */
 		protected $messages = [];
 
@@ -25,11 +28,9 @@ namespace Jungle\Util\Data\Foundation\Validation\Message {
 
 		/**
 		 * AggregationMessageTrait constructor.
-		 * @param $type
 		 * @param $messages
 		 */
-		public function __construct($type, $messages){
-			$this->type = $type;
+		public function __construct($messages){
 			$this->messages = $messages;
 		}
 

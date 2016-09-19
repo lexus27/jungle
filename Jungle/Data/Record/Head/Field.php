@@ -14,6 +14,7 @@ namespace Jungle\Data\Record\Head {
 	use Jungle\Util\Data\Foundation\Schema\OuterInteraction\Mapped\Field as MappedField;
 	use Jungle\Util\Data\Foundation\Schema\ValueType;
 	use Jungle\Util\Data\Foundation\Schema\ValueType\ValueTypePool;
+	use Jungle\Util\Data\Foundation\Validation\Message\AggregationMessageException;
 
 	/**
 	 * Class Field
@@ -94,12 +95,17 @@ namespace Jungle\Data\Record\Head {
 		/**
 		 * @param $native_value
 		 * @return bool
+		 * @throws AggregationMessageException
 		 */
 		public function validate($native_value){
 			if($native_value === null && $this->isNullable()){
 				return true;
 			}
-			return $this->type->validate($native_value,$this->type_params);
+			if(!$this->type->validate($native_value,$this->type_params)){
+				$messages = $this->type->getLastMessages();
+				throw new Record\Exception\Field\FieldAggregationMessageException($this, $messages);
+			}
+			return true;
 		}
 
 		/**

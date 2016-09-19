@@ -21,11 +21,9 @@ namespace Jungle\Util\Data\Foundation\Validation\Message {
 
 		/**
 		 * AggregationMessage constructor.
-		 * @param $type
 		 * @param $messages
 		 */
-		public function __construct($type, $messages){
-			$this->type = $type;
+		public function __construct($messages){
 			$this->messages = $messages;
 		}
 

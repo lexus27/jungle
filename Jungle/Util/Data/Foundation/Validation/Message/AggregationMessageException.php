@@ -21,13 +21,11 @@ namespace Jungle\Util\Data\Foundation\Validation\Message {
 
 		/**
 		 * AggregationMessageException constructor.
-		 * @param string $type
-		 * @param int $messages
+		 * @param MessageInterface[] $messages
 		 * @param array $info
 		 * @param string $systemMessage
 		 */
-		public function __construct($type, $messages, array $info = [], $systemMessage = ''){
-			$this->type = $type;
+		public function __construct(array $messages, array $info = [], $systemMessage = ''){
 			$this->messages = $messages;
 			$this->info = $info;
 			parent::__construct($systemMessage);
