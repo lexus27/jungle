@@ -310,7 +310,7 @@ namespace Jungle\Data {
 
 
 				$value = $field->stabilize($value);
-				if(!$this->validation_delayed && !$dirtyApplied && $field->validate($value) === false){
+				if(!$this->validation_collector && !$dirtyApplied && $field->validate($value) === false){
 					throw new UnexpectedValue('Verification aborted!');
 				}
 
