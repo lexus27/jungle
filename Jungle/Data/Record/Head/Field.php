@@ -95,7 +95,7 @@ namespace Jungle\Data\Record\Head {
 		/**
 		 * @param $native_value
 		 * @return bool
-		 * @throws AggregationMessageException
+		 * @throws Record\Exception\Field\FieldValidatorMessage
 		 */
 
 		public function validate($native_value){
@@ -104,7 +104,7 @@ namespace Jungle\Data\Record\Head {
 			}
 			if(!$this->type->validate($native_value,$this->type_params)){
 				$messages = $this->type->getLastMessages();
-				throw new Record\Exception\Field\FieldAggregationMessageException($this, $messages);
+				throw new Record\Exception\Field\FieldValidatorMessage($this, $messages,$this->type_params, 'Invalid value for field "'.$this->name.'"');
 			}
 			return true;
 		}

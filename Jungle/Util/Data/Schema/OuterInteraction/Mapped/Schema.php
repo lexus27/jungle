@@ -62,6 +62,19 @@ namespace Jungle\Util\Data\Schema\OuterInteraction\Mapped {
 			return $this->getPrimaryField()->getOriginalKey();
 		}
 
+		/**
+		 * @param $key
+		 * @return \Jungle\Data\Record\Head\Field|null
+		 */
+		public function getFieldByOriginalKey($key){
+			foreach($this->getFields() as $field){
+				if($field->getOriginalKey() === $key){
+					return $field;
+				}
+			}
+			return null;
+		}
+
 	}
 
 }

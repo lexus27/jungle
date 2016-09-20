@@ -11,30 +11,27 @@ namespace Jungle\Data\Record\Exception\Field {
 
 	use Jungle\Data\Record\Head\Field;
 	use Jungle\Util\Data\Validation\Message\AggregationMessageException;
-	use Jungle\Util\Data\Validation\MessageInterface;
+	use Jungle\Util\Data\Validation\Message\ValidatorMessage;
 
 	/**
-	 * Class FieldAggregationMessageException
+	 * Class FieldValidatorMessage
 	 * @package Jungle\Data\Record\Head\Field
 	 */
-	class FieldAggregationMessageException extends AggregationMessageException{
+	class FieldValidatorMessage extends ValidatorMessage{
 
 		/** @var  Field */
 		protected $field;
 
-		/** @var string  */
-		protected $type = 'FieldAggregation';
-
 		/**
-		 * FieldAggregationMessageException constructor.
+		 * FieldValidatorMessage constructor.
 		 * @param Field $field
 		 * @param \Jungle\Util\Data\Validation\MessageInterface[] $messages
-		 * @param array $info
+		 * @param array $params
 		 * @param string $systemMessage
 		 */
-		public function __construct(Field $field, array $messages,array $info = [], $systemMessage = ''){
+		public function __construct(Field $field, array $messages,array $params = [], $systemMessage = ''){
 			$this->field = $field;
-			parent::__construct($messages, $info, $systemMessage);
+			parent::__construct('FieldValidator', $field->getName(),$params, $messages, $systemMessage);
 		}
 
 		/**

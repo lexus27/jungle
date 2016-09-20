@@ -61,9 +61,11 @@ namespace Jungle\Util\Data\Validation\Message {
 
 		/**
 		 * @param array $messages
+		 * @return $this
 		 */
 		public function setMessages(array $messages){
 			$this->messages = $messages;
+			return $this;
 		}
 
 		/**
@@ -73,6 +75,17 @@ namespace Jungle\Util\Data\Validation\Message {
 		public function appendMessages(array $messages){
 			if($this->container){
 				$this->messages = array_merge($this->messages, $messages);
+			}
+			return $this;
+		}
+
+		/**
+		 * @param array $messages
+		 * @return $this
+		 */
+		public function prependMessages(array $messages){
+			if($this->container){
+				$this->messages = array_merge($messages, $this->messages);
 			}
 			return $this;
 		}

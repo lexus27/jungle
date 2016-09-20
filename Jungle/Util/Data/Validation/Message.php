@@ -26,7 +26,7 @@ namespace Jungle\Util\Data\Validation {
 		 * @param string $systemMessage
 		 */
 		public function __construct($type, $systemMessage = 'Unexpected Data'){
-			$this->type = $type;
+			$this->type = $type!==null?$type:$this->type;
 			parent::__construct($systemMessage);
 		}
 

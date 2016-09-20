@@ -30,9 +30,10 @@ namespace Jungle\Data\Record {
 
 		/**
 		 * Model constructor.
+		 * @param null $validationCollector
 		 */
-		public function __construct(){
-			parent::__construct();
+		public function __construct($validationCollector = null){
+			parent::__construct($validationCollector);
 			//  Здесь мы проверяем инициализованая ли модель. по статическому менеджеру схем
 			//  Если нет то инициализуем её в регистре, совместно с получением самой схемы
 			//  Для формирования схемы требуются

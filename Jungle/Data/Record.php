@@ -20,10 +20,16 @@ namespace Jungle\Data {
 	use Jungle\Data\Record\Head\Field\Virtual;
 	use Jungle\Data\Record\Head\Schema;
 	use Jungle\Data\Record\TransientState;
+	use Jungle\Data\Storage\Exception\DuplicateEntry;
+	use Jungle\Data\Storage\Exception\Operation;
 	use Jungle\Util\Data\Record\PropertyRegistryInterface;
 	use Jungle\Util\Data\Record\PropertyRegistryTransientInterface;
 	use Jungle\Util\Data\Schema\OuterInteraction\SchemaAwareInterface;
 	use Jungle\Util\Data\Storage;
+	use Jungle\Util\Data\Validation\Message\RuleMessage;
+	use Jungle\Util\Data\Validation\Message\ValidationCollector;
+	use Jungle\Util\Data\Validation\Message\ValidatorMessage;
+	use Jungle\Util\Data\Validation\MessageCollector;
 	
 	/**
 	 * Class Record
@@ -94,10 +100,8 @@ namespace Jungle\Data {
 		/** @var  array */
 		protected $_processed = [];
 
-
-
-		/** @var bool  */
-		protected $delayed_validation = false;
+		/** @var  ValidationCollector|null */
+		protected $validation_collector;
 
 		/** @var  TransientState|null */
 		protected $transient_state;
@@ -105,9 +109,17 @@ namespace Jungle\Data {
 
 		/**
 		 * Record constructor.
+		 * @param null $validationCollector
 		 */
-		public function __construct(){
+		public function __construct($validationCollector = null){
 			$this->_internalIdentifier = ++self::$instantiatedRecordsCount;
+			if($validationCollector !== null){
+				if($validationCollector instanceof ValidationCollector){
+					$this->setValidationCollector($validationCollector);
+				}elseif($validationCollector === true){
+					$this->setValidationCollector();
+				}
+			}
 		}
 
 
@@ -270,14 +282,6 @@ namespace Jungle\Data {
 			return $this;
 		}
 
-
-		/**
-		 *
-		 */
-		public function startDelayedValidation(){
-			$this->stateCapture();
-		}
-		
 		/**
 		 * @param $key
 		 * @param $value
@@ -306,7 +310,7 @@ namespace Jungle\Data {
 
 
 				$value = $field->stabilize($value);
-				if(!$this->delayed_validation && !$dirtyApplied && $field->validate($value) === false){
+				if(!$this->validation_delayed && !$dirtyApplied && $field->validate($value) === false){
 					throw new UnexpectedValue('Verification aborted!');
 				}
 
@@ -757,50 +761,54 @@ namespace Jungle\Data {
 		 * @throws Exception
 		 */
 		public function save(){
-			if($this->_operation_processing){
-				if($this->_operation_made === self::OP_DELETE){
-					throw new Exception('Current operation execute is not allow saving record!');
-				}
-				return true;
-			}
-			switch($this->_operation_made){
-				case self::OP_CREATE:
-					if($this->beforeSave() !== false && $this->beforeCreate() !== false){
-						$this->_operation_processing = true;
-						if($this->_doCreate()){
-							$this->_operation_made = self::OP_UPDATE;
-							$this->_operation_processing = false;
-							$this->_schema->getCollection()->itemCreated($this);
-							$this->onCreate();
-							$this->onSave();
-							return true;
-						}
+			try{
+				if($this->_operation_processing){
+					if($this->_operation_made === self::OP_DELETE){
+						throw new Exception('Current operation execute is not allow saving record!');
 					}
-					break;
-
-				case self::OP_UPDATE:
-					$changed = $this->getChangedProperties();
-					if(!$changed){
-						return true;
-					}
-
-					if($this->beforeSave() !== false && $this->beforeUpdate($changed) !== false){
-						$this->_operation_processing = true;
-						if($this->_doUpdate($this->getChangedProperties())){
-							$this->_operation_made = self::OP_UPDATE;
-							$this->_operation_processing = false;
-							$this->_schema->getCollection()->itemUpdated($this);
-							$this->onUpdate();
-							$this->onSave();
-							return true;
-						}
-					}
-					break;
-				case self::OP_DELETE:
 					return true;
-					break;
+				}
+				switch($this->_operation_made){
+					case self::OP_CREATE:
+						if($this->beforeSave() !== false && $this->beforeCreate() !== false){
+							$this->_operation_processing = true;
+							if($this->_doCreate()){
+								$this->_operation_made = self::OP_UPDATE;
+								$this->_operation_processing = false;
+								$this->_schema->getCollection()->itemCreated($this);
+								$this->onCreate();
+								$this->onSave();
+								return true;
+							}
+						}
+						break;
+
+					case self::OP_UPDATE:
+						$changed = $this->getChangedProperties();
+						if(!$changed){
+							return true;
+						}
+
+						if($this->beforeSave() !== false && $this->beforeUpdate($changed) !== false){
+							$this->_operation_processing = true;
+							if($this->_doUpdate($this->getChangedProperties())){
+								$this->_operation_made = self::OP_UPDATE;
+								$this->_operation_processing = false;
+								$this->_schema->getCollection()->itemUpdated($this);
+								$this->onUpdate();
+								$this->onSave();
+								return true;
+							}
+						}
+						break;
+					case self::OP_DELETE:
+						return true;
+						break;
+				}
+				return false;
+			}finally{
+				$this->validation_collector = null;
 			}
-			return false;
 		}
 
 		/**
@@ -809,24 +817,29 @@ namespace Jungle\Data {
 		 * @throws \Exception
 		 */
 		public function delete(){
-			if($this->_operation_processing){
-				if($this->_operation_made !== self::OP_DELETE){
-					throw new Exception('Current operation execute is not allow delete!');
+			try{
+				if($this->_operation_processing){
+					if($this->_operation_made !== self::OP_DELETE){
+						throw new Exception('Current operation execute is not allow delete!');
+					}
+					return true;
 				}
+				if($this->_operation_made === self::OP_UPDATE && ($this->beforeRemove() !== false)){
+					$this->_operation_processing = true;
+					$this->_operation_made = self::OP_DELETE;
+					if(!$this->_doDelete()){
+						return false;
+					}else{
+						$this->_schema->getCollection()->removeItem($this);
+						$this->_operation_processing = false;
+					}
+				}
+
 				return true;
-			}
-			if($this->_operation_made === self::OP_UPDATE && ($this->beforeRemove() !== false)){
-				$this->_operation_processing = true;
-				$this->_operation_made = self::OP_DELETE;
-				if(!$this->_doRemove()){
-					return false;
-				}else{
-					$this->_schema->getCollection()->removeItem($this);
-					$this->_operation_processing = false;
-				}
+			}finally{
+				$this->validation_collector = null;
 			}
 
-			return true;
 		}
 
 
@@ -1025,31 +1038,26 @@ namespace Jungle\Data {
 			return $this;
 		}
 
-		/**
-		 * @param bool $throw
-		 * @throws AccessViolation
-		 * @throws Exception
-		 * @throws ReadonlyViolation
-		 * @throws UnexpectedValue
-		 */
-		public function validate($throw = false){
-			if($this->delayed_validation){
-				$this->delayed_validation = false;
-				if($this->stateCapture()){
-					$data = $this->transient_state->getData();
-					$this->stateShift();
-					$fields_errors = [];
-					foreach($data as $k=>$v){
-						try{
-							$this->setProperty($k,$v);
-						}catch(Exception\Field\FieldAggregationMessageException $message){
-							$fields_errors[] = $message;
-						}
-					}
-				}
-			}else{
 
+
+		/**
+		 * @param ValidationCollector $collector
+		 * @return ValidationCollector
+		 */
+		public function setValidationCollector(ValidationCollector $collector = null){
+			if(!$collector){
+				$collector = new ValidationCollector();
 			}
+			$this->stateCapture();
+			$this->validation_collector = $collector;
+			return $collector->setObject($this);
+		}
+
+		/**
+		 * @return ValidationCollector
+		 */
+		public function getValidationCollector(){
+			return $this->validation_collector;
 		}
 
 
@@ -1060,30 +1068,106 @@ namespace Jungle\Data {
 		 * @throws UnexpectedValue
 		 */
 		protected function _preValidate(){
-			if($this->delayed_validation){
-				$this->delayed_validation = false;
+			if($this->validation_collector){
 				if($this->stateCapture()){
 					$data = $this->transient_state->getData();
 					$this->stateShift();
-					$fields_errors = [];
+					$messages = [];
 					foreach($data as $k=>$v){
 						try{
 							$this->setProperty($k,$v);
-						}catch(Exception\Field\FieldAggregationMessageException $message){
-							$fields_errors[] = $message;
+						}catch(ValidatorMessage $message){
+							$messages[] = $message;
 						}
+					}
+					if($messages){
+						$this->validation_collector->appendMessages($messages);
+						return false;
 					}
 				}
 			}
+			return true;
 		}
 
 		/**
 		 * TODO
-		 * @param $preValidateResult
+		 * @return bool
+		 * @throws ValidationCollector
 		 */
-		protected function _validate($preValidateResult){
+		protected function _validate(){
+			$validation = $this->_schema->getValidation();
+			$messages = $validation->validate($this);
+			if($messages){
+				if($this->validation_collector){
+					$this->validation_collector->appendMessages($messages);
+					return false;
+				}else{
+					throw new ValidationCollector($this, $messages);
+				}
+			}
+			return true;
+		}
 
 
+		/**
+		 * @return true|ValidationCollector
+		 * @throws ValidationCollector
+		 */
+		public function validate(){
+			try{
+				if($this->validation_collector){
+					if($this->stateCapture()){
+						$data = $this->transient_state->getData();
+						$this->stateShift();
+						$messages = [];
+						foreach($data as $k=>$v){
+							try{
+								$this->setProperty($k,$v);
+							}catch(ValidatorMessage $message){
+								$messages[] = $message;
+							}
+						}
+						if($messages){
+							//return
+							$this->validation_collector->appendMessages($messages);
+							//return false;
+						}
+					}
+				}
+
+				$validation = $this->_schema->getValidation();
+				$messages = $validation->validate($this);
+				if($messages){
+					if($this->validation_collector){
+						return $this->validation_collector->appendMessages($messages);
+						//return false;
+					}else{
+						throw new ValidationCollector($this, $messages);
+					}
+				}
+				return true;
+			}finally{
+				$this->validation_collector = null;
+			}
+		}
+
+		/**
+		 * @param Operation $operation
+		 * @param bool $delete
+		 * @return bool
+		 * @throws Operation
+		 */
+		protected function _handleStorageOperationException(Operation $operation, $delete = false){
+			if($this->validation_collector){
+				// TODO improve idea
+				if($operation instanceof DuplicateEntry){
+					$this->validation_collector->appendMessages([
+						new Exception\Field\FieldValidatorMessage($this->_schema->getField($operation->getFieldName()),[ new RuleMessage('Unique',null) ])
+					]);
+					return false;
+				}
+			}
+			throw $operation;
 		}
 
 
@@ -1115,8 +1199,9 @@ namespace Jungle\Data {
 				}
 			}
 
-
-			$this->_preValidate();
+			if($this->_preValidate()!==true){
+				return false;
+			}
 
 			try{
 				self::$properties_changes_restrict_level++;
@@ -1134,14 +1219,23 @@ namespace Jungle\Data {
 					$data = $this->_schema->valueAccessSet($data, $name, $value);
 				}
 
-				if(!$this->_validate()) return false;
-
-				if(!$this->_schema->storageCreate($data, $this->getSource())){
-					if($relationFields){
-						$store->rollback();
-					}
+				if($this->_validate()!==true){
 					return false;
 				}
+
+				try{
+					if(!$this->_schema->storageCreate($data, $this->getSource())){
+						if($relationFields){
+							$store->rollback();
+						}
+						return false;
+					}
+				}catch(Operation $e){
+					if($this->_handleStorageOperationException($e) === false){
+						return false;
+					}
+				}
+
 				$this->_afterStorageCreate($data, $pkField->getName(), $store->lastCreatedIdentifier(),$pkField);
 				if($relationFields){
 					foreach($relationFields as $field){
@@ -1226,15 +1320,22 @@ namespace Jungle\Data {
 						}
 					}
 					if($data){
-						if(!$this->_validate()){
+						if($this->_validate()!==true){
 							return false;
 						}
-						if(!$this->_schema->storageUpdateById($data, $idValue)){
-							if($relationFields){
-								$store->rollback();
+						try{
+							if(!$this->_schema->storageUpdateById($data, $idValue)){
+								if($relationFields){
+									$store->rollback();
+								}
+								return false;
 							}
-							return false;
+						}catch(Operation $e){
+							if($this->_handleStorageOperationException($e) === false){
+								return false;
+							}
 						}
+
 						$this->_afterStorageUpdate($original, $pkName,$idValue, $changed);
 					}
 				}else{
@@ -1244,15 +1345,22 @@ namespace Jungle\Data {
 						$data = $this->_schema->valueAccessSet($data, $name, $this->_getFrontProperty($name));
 					}
 					if($data){
-						if(!$this->_validate()){
+						if($this->_validate()!==true){
 							return false;
 						}
-						if(!$this->_schema->storageUpdateById($data, $idValue)){
-							if($relationFields){
-								$store->rollback();
+						try{
+							if(!$this->_schema->storageUpdateById($data, $idValue)){
+								if($relationFields){
+									$store->rollback();
+								}
+								return false;
 							}
-							return false;
+						}catch(Operation $e){
+							if($this->_handleStorageOperationException($e) === false){
+								return false;
+							}
 						}
+
 						$this->_afterStorageUpdate($data, $pkName,$idValue, $changed);
 					}
 				}
@@ -1281,7 +1389,7 @@ namespace Jungle\Data {
 		 * @return bool
 		 * @throws \Exception
 		 */
-		protected function _doRemove(){
+		protected function _doDelete(){
 			/**
 			 * @var Field[] $fields
 			 * @var Relation[] $relationFields
@@ -1306,12 +1414,20 @@ namespace Jungle\Data {
 				$pkField = $this->_schema->getPrimaryField();
 				$pkName = $pkField->getName();
 				$pkValue = $this->getProperty($pkName);
-				if(!$this->_schema->storageRemove([[$pkName,'=',$pkValue]])){
-					if($relationFields){
-						$store->rollback();
+
+				try{
+					if(!$this->_schema->storageRemove([[$pkName,'=',$pkValue]])){
+						if($relationFields){
+							$store->rollback();
+						}
+						return false;
 					}
-					return false;
+				}catch(Operation $e){
+					if($this->_handleStorageOperationException($e,true) === false){
+						return false;
+					}
 				}
+
 				$this->_afterStorageRemove();
 				if($relationFields){
 					foreach($relationFields as $name => $field){
@@ -1419,7 +1535,7 @@ namespace Jungle\Data {
 		}
 
 		/**
-		 * @see Record::_doRemove
+		 * @see Record::_doDelete
 		 */
 		protected function _onRemoveCommit(){
 			$collection = $this->_schema->getCollection();
