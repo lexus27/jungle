@@ -87,6 +87,13 @@ namespace Jungle\Data\Record {
 			return $this;
 		}
 
+		/**
+		 * @return array
+		 */
+		public function getData(){
+			return $this->data;
+		}
+
 
 		/**
 		 * @param array $defaultFull Last fixed data

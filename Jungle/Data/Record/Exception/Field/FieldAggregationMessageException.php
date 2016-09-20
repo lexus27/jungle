@@ -10,8 +10,8 @@
 namespace Jungle\Data\Record\Exception\Field {
 
 	use Jungle\Data\Record\Head\Field;
-	use Jungle\Util\Data\Foundation\Validation\Message\AggregationMessageException;
-	use Jungle\Util\Data\Foundation\Validation\Message\MessageInterface;
+	use Jungle\Util\Data\Validation\Message\AggregationMessageException;
+	use Jungle\Util\Data\Validation\MessageInterface;
 
 	/**
 	 * Class FieldAggregationMessageException
@@ -28,7 +28,7 @@ namespace Jungle\Data\Record\Exception\Field {
 		/**
 		 * FieldAggregationMessageException constructor.
 		 * @param Field $field
-		 * @param MessageInterface[] $messages
+		 * @param \Jungle\Util\Data\Validation\MessageInterface[] $messages
 		 * @param array $info
 		 * @param string $systemMessage
 		 */

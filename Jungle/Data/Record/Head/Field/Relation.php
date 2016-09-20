@@ -13,7 +13,7 @@ namespace Jungle\Data\Record\Head\Field {
 	use Jungle\Data\Record\Collection\Relationship;
 	use Jungle\Data\Record\Head\Field;
 	use Jungle\Exception;
-	use Jungle\Util\Data\Foundation\Schema\OuterInteraction\SchemaAwareInterface;
+	use Jungle\Util\Data\Schema\OuterInteraction\SchemaAwareInterface;
 
 	/**
 	 * Class Relation

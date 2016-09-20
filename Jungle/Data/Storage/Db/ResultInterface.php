@@ -8,7 +8,7 @@
 namespace Jungle\Data\Storage\Db {
 
 	use Jungle\Data\Storage\Db\Adapter;
-	use Jungle\Util\Data\Foundation\ShipmentOriginalInterface;
+	use Jungle\Util\Data\ShipmentOriginalInterface;
 
 	/**
 	 * Interface ResultInterface

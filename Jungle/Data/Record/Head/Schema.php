@@ -14,11 +14,11 @@ namespace Jungle\Data\Record\Head {
 	use Jungle\Data\Record\DataMap;
 	use Jungle\Data\Record\Head\Field;
 	use Jungle\Data\Record\Head\Field\Relation;
-	use Jungle\Util\Data\Foundation\Schema\OuterInteraction\Mapped\Schema as MappedSchema;
-	use Jungle\Util\Data\Foundation\Schema\Validation;
-	use Jungle\Util\Data\Foundation\ShipmentInterface;
-	use Jungle\Util\Data\Foundation\Storage;
-	use Jungle\Util\Data\Foundation\Storage\StorageInterface;
+	use Jungle\Util\Data\Schema\OuterInteraction\Mapped\Schema as MappedSchema;
+	use Jungle\Util\Data\Schema\Validation;
+	use Jungle\Util\Data\ShipmentInterface;
+	use Jungle\Util\Data\Storage;
+	use Jungle\Util\Data\Storage\StorageInterface;
 	
 	/**
 	 * Class Schema

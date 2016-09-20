@@ -10,15 +10,15 @@
 namespace Jungle\Data\Record\Collection {
 
 	use Jungle\Data\Record\Head\Schema;
-	use Jungle\Util\Data\Foundation\Schema\OuterInteraction\ValueAccessAwareInterface;
-	use Jungle\Util\Data\Foundation\Schema\OuterInteraction\ValueAccessor;
+	use Jungle\Util\Data\Schema\OuterInteraction\ValueAccessAwareInterface;
+	use Jungle\Util\Data\Schema\OuterInteraction\ValueAccessor;
 	use Jungle\Util\Value\Cmp as UtilCmp;
 
 	/**
 	 * Class Sorter
 	 * @package Jungle\Data\Record
 	 */
-	class Sorter extends \Jungle\Util\Data\Foundation\Collection\Sortable\Sorter implements SorterInterface{
+	class Sorter extends \Jungle\Util\Data\Collection\Sortable\Sorter implements SorterInterface{
 
 		/** @var  array */
 		protected $sort_fields;

@@ -10,8 +10,8 @@
 namespace Jungle\Data\Record\Head {
 	
 	use Jungle\Data\Record;
-	use Jungle\Util\Data\Foundation\ShipmentInterface;
-	use Jungle\Util\Data\Foundation\ShipmentOriginalInterface;
+	use Jungle\Util\Data\ShipmentInterface;
+	use Jungle\Util\Data\ShipmentOriginalInterface;
 
 	/**
 	 * Class RecordShipment

@@ -15,7 +15,7 @@ namespace Jungle\Data\Storage\Db {
 	use Jungle\Data\Storage\Db\Structure\Column\TypePool;
 	use Jungle\Data\Storage\Db\Structure\Database;
 	use Jungle\Data\Storage\Db\Structure\Table;
-	use Jungle\Util\Data\Foundation\Storage;
+	use Jungle\Util\Data\Storage;
 
 	/**
 	 * Class Adapter

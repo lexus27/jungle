@@ -9,8 +9,8 @@
  */
 namespace Jungle\Data\Storage {
 	
-	use Jungle\Util\Data\Foundation\ShipmentInterface;
-	use Jungle\Util\Data\Foundation\Storage\StorageInterface;
+	use Jungle\Util\Data\ShipmentInterface;
+	use Jungle\Util\Data\Storage\StorageInterface;
 
 	class FileSystem implements StorageInterface{
 

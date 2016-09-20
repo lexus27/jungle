@@ -10,11 +10,11 @@
 namespace Jungle\Data\Record\Head {
 
 	use Jungle\Data\Record;
-	use Jungle\Util\Data\Foundation\Schema\FieldVisibilityControlInterface;
-	use Jungle\Util\Data\Foundation\Schema\OuterInteraction\Mapped\Field as MappedField;
-	use Jungle\Util\Data\Foundation\Schema\ValueType;
-	use Jungle\Util\Data\Foundation\Schema\ValueType\ValueTypePool;
-	use Jungle\Util\Data\Foundation\Validation\Message\AggregationMessageException;
+	use Jungle\Util\Data\Schema\FieldVisibilityControlInterface;
+	use Jungle\Util\Data\Schema\OuterInteraction\Mapped\Field as MappedField;
+	use Jungle\Util\Data\Schema\ValueType;
+	use Jungle\Util\Data\Schema\ValueType\ValueTypePool;
+	use Jungle\Util\Data\Validation\Message\AggregationMessageException;
 
 	/**
 	 * Class Field
@@ -97,6 +97,7 @@ namespace Jungle\Data\Record\Head {
 		 * @return bool
 		 * @throws AggregationMessageException
 		 */
+
 		public function validate($native_value){
 			if($native_value === null && $this->isNullable()){
 				return true;

@@ -9,7 +9,7 @@
  */
 namespace Jungle\Di {
 
-	use Jungle\Util\Data\Foundation\Registry\RegistryReadInterface;
+	use Jungle\Util\Data\Registry\RegistryReadInterface;
 
 	/**
 	 * Interface DiLocatorInterface
