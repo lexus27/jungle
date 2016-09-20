@@ -16,7 +16,7 @@ namespace Jungle\Data\Storage\Db\Adapter {
 	 * @package Jungle\Data\Storage\Db\Adapter
 	 *
 	 */
-	class Pdo extends Adapter {
+	abstract class Pdo extends Adapter {
 
 		/**
 		 * @var \PDO
