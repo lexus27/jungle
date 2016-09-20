@@ -26,6 +26,7 @@ namespace Jungle\Data {
 	use Jungle\Util\Data\Record\PropertyRegistryTransientInterface;
 	use Jungle\Util\Data\Schema\OuterInteraction\SchemaAwareInterface;
 	use Jungle\Util\Data\Storage;
+	use Jungle\Util\Data\Validation;
 	use Jungle\Util\Data\Validation\Message\RuleMessage;
 	use Jungle\Util\Data\Validation\Message\ValidationCollector;
 	use Jungle\Util\Data\Validation\Message\ValidatorMessage;
@@ -890,7 +891,7 @@ namespace Jungle\Data {
 		}
 
 		/**
-		 * @return \Jungle\Util\Data\Schema\Validation|null
+		 * @return Validation|null
 		 */
 		public function getValidation(){
 			return $this->_schema->getValidation();
@@ -1096,13 +1097,15 @@ namespace Jungle\Data {
 		 */
 		protected function _validate(){
 			$validation = $this->_schema->getValidation();
-			$messages = $validation->validate($this);
-			if($messages){
-				if($this->validation_collector){
-					$this->validation_collector->appendMessages($messages);
-					return false;
-				}else{
-					throw new ValidationCollector($this, $messages);
+			if($validation){
+				$messages = $validation->validate($this);
+				if($messages){
+					if($this->validation_collector){
+						$this->validation_collector->appendMessages($messages);
+						return false;
+					}else{
+						throw new ValidationCollector($this, $messages);
+					}
 				}
 			}
 			return true;

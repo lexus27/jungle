@@ -72,8 +72,8 @@ namespace Jungle\Util\Data\Validation {
 		 */
 		public function expertize($value,array $parameters = []){
 			$parameters = $parameters?array_intersect_key(array_replace($this->default_params, $parameters),$this->default_params):$this->default_params;
-			foreach($parameters as $name => $value){
-				$this->{$name} = $value;
+			foreach($parameters as $name => $val){
+				$this->{$name} = $val;
 			}
 			$result = $this->_expertize($value);
 			if($result !== true){

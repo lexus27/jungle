@@ -28,7 +28,7 @@ namespace Jungle\Util\Data\Validation\Rule {
 		 * @return bool
 		 */
 		protected function _expertize($value){
-			return in_array(gettype($value),$this->vartypes, true);
+			return !$this->vartypes || in_array(gettype($value),is_array($this->vartypes)?$this->vartypes:[$this->vartypes], true);
 		}
 	}
 }
