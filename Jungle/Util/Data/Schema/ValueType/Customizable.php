@@ -38,8 +38,8 @@ namespace Jungle\Util\Data\Schema\ValueType {
 		 */
 		public function __construct($aliases, $vartype,
 			array $rules,
-			callable $evaluateFunction,
-			callable $originateFunction,
+			callable $evaluateFunction = null,
+			callable $originateFunction = null,
 			callable $stabilizeFunction = null
 		){
 			$this->setAlias($aliases);
