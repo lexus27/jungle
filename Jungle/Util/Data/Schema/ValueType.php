@@ -41,7 +41,7 @@ namespace Jungle\Util\Data\Schema {
 		 */
 		public function __construct($aliases = null, $vartype = null,array $rules = null){
 
-			if($aliases){
+			if(!$aliases){
 				if($this->aliases){
 					$name = $this->name;
 					$aliases = $this->aliases;
@@ -56,6 +56,8 @@ namespace Jungle\Util\Data\Schema {
 					$this->name = null;
 					$this->setName($name);
 				}
+			}else{
+				$this->setAlias($aliases);
 			}
 
 			if($vartype){
