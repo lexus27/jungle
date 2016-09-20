@@ -46,9 +46,9 @@ namespace Jungle\Util\Data\Validation {
 		 */
 		public function __construct(array $default_params = []){
 			$default = [];
-			foreach(get_object_vars($this) as $name){
+			foreach(get_object_vars($this) as $name => $value){
 				if(!in_array($name,static::$_not_parameters_properties, true)){
-					$default[$name] = $this->{$name};
+					$default[$name] = $value;
 				}
 			}
 			$this->default_params = array_replace($default, $default_params);
