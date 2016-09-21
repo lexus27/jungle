@@ -63,10 +63,6 @@ namespace Jungle\Application\Dispatcher {
 		/** @var array  */
 		protected $options = [];
 
-
-		/** @var bool  */
-		//protected $realization = false;
-
 		/**
 		 * Process constructor.
 		 * @param Dispatcher $dispatcher

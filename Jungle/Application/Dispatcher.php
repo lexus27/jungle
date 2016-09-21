@@ -463,9 +463,9 @@ namespace Jungle\Application {
 				throw new Control('Module "'.$moduleName.'" not found!');
 			}
 
-			$this->getDi()->insertHolder('module', $module, 10);
-			$this->beforeControl($reference, $module, $initiator);
 			try{
+				$this->getDi()->insertHolder('module', $module, 10);
+				$this->beforeControl($reference, $module, $initiator);
 				$process = $module->control($reference,(array) $data, $options, $initiator);
 				$output = $this->checkoutProcess($process, $options);
 				$this->afterControl($output,$process);
