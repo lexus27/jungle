@@ -30,7 +30,6 @@ namespace Jungle\Data {
 	use Jungle\Util\Data\Validation\Message\RuleMessage;
 	use Jungle\Util\Data\Validation\Message\ValidationCollector;
 	use Jungle\Util\Data\Validation\Message\ValidatorMessage;
-	use Jungle\Util\Data\Validation\MessageCollector;
 	
 	/**
 	 * Class Record
