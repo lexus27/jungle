@@ -113,6 +113,12 @@ namespace Jungle\Data {
 		 */
 		public function __construct($validationCollector = null){
 			$this->_internalIdentifier = ++self::$instantiatedRecordsCount;
+		}
+
+		/**
+		 * @param null $validationCollector
+		 */
+		protected function _initValidationCollector($validationCollector = null){
 			if($validationCollector !== null){
 				if($validationCollector instanceof ValidationCollector){
 					$this->setValidationCollector($validationCollector);
@@ -121,7 +127,6 @@ namespace Jungle\Data {
 				}
 			}
 		}
-
 
 
 		/**

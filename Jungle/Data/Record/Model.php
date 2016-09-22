@@ -61,6 +61,7 @@ namespace Jungle\Data\Record {
 			}else{
 				$this->_schema = $schema;
 			}
+			$this->_initValidationCollector($validationCollector);
 			$this->onConstruct();
 			$this->onRecordReady();
 		}
