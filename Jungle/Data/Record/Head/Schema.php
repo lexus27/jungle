@@ -999,6 +999,7 @@ namespace Jungle\Data\Record\Head {
 					throw new \Exception('Bad Exception for handle',0,$exception);
 				}
 			}
+			throw $exception;
 		}
 
 

@@ -13,7 +13,7 @@ namespace Jungle\Data\Storage\Exception {
 	 * Class AlreadyExists
 	 * @package Jungle\Data\Storage\Exception
 	 */
-	class DuplicateEntry extends FieldValueException{
+	class DuplicateEntry extends IndexViolation{
 
 	}
 }

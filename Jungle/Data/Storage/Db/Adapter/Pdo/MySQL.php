@@ -43,8 +43,8 @@ namespace Jungle\Data\Storage\Db\Adapter\Pdo {
 				switch($code){
 
 					case 1062://Duplicate entry
-						if(preg_match('Duplicate entry \'(\w+)\' for key (\w+)',$message, $m)){
-							throw new DuplicateEntry($m[1],$m[2],$message, $code, $e);
+						if(preg_match('@Duplicate entry \'(.+)\' for key \'(.+)\'@smi',$message, $m)){
+							throw new DuplicateEntry($m[2], $m[1],$message, $code, $e);
 						}else{
 							throw new \Exception('Invalid parse message "'.$message.'" from PDO Exception for code '.$code.' (Operation: "'.$type.'")',$code, $e);
 						}

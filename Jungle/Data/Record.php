@@ -1169,7 +1169,7 @@ namespace Jungle\Data {
 				// TODO improve idea
 				if($operation instanceof DuplicateEntry){
 					$this->validation_collector->appendMessages([
-						new Exception\Field\FieldValidatorMessage($this->_schema->getField($operation->getFieldName()),[ new RuleMessage('Unique',null) ])
+						new ValidatorMessage(null, null, [], [ new RuleMessage('Unique',null) ],$operation->getMessage())
 					]);
 					return false;
 				}
