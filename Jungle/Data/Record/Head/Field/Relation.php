@@ -13,7 +13,7 @@ namespace Jungle\Data\Record\Head\Field {
 	use Jungle\Data\Record\Collection\Relationship;
 	use Jungle\Data\Record\Head\Field;
 	use Jungle\Exception;
-	use Jungle\Util\Data\Foundation\Schema\OuterInteraction\SchemaAwareInterface;
+	use Jungle\Util\Data\Schema\OuterInteraction\SchemaAwareInterface;
 
 	/**
 	 * Class Relation
@@ -923,7 +923,7 @@ namespace Jungle\Data\Record\Head\Field {
 		 * @return bool
 		 * @throws Record\Exception\Field
 		 */
-		public function verify($native_value){
+		public function validate($native_value){
 			if(!$this->type){
 				throw new Record\Exception\Field("Relation Field {$this->name} is not configured, please setup one of relation type[belongsTo,hasOne,hasMany,hasOneTrough,hasManyTrough], At the stage of factory!");
 			}

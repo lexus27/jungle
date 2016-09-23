@@ -9,6 +9,8 @@
  */
 namespace Jungle\Application\View {
 
+	use Jungle\Application\Component;
+	use Jungle\Application\Dispatcher\ProcessInterface;
 	use Jungle\Application\ViewInterface;
 	use Jungle\FileSystem;
 
@@ -16,7 +18,7 @@ namespace Jungle\Application\View {
 	 * Class Renderer
 	 * @package Jungle\Application\View
 	 */
-	abstract class Renderer implements RendererInterface{
+	abstract class Renderer extends Component implements RendererInterface{
 
 		/** @var  string */
 		protected $name;
@@ -38,6 +40,9 @@ namespace Jungle\Application\View {
 
 		/** @var  bool */
 		protected $initialized = false;
+
+		/** @var  ProcessInterface */
+		protected $process;
 
 		/**
 		 * @param ViewInterface $view

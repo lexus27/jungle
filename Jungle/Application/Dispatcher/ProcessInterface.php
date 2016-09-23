@@ -21,11 +21,6 @@ namespace Jungle\Application\Dispatcher {
 		/**
 		 * @return bool
 		 */
-		//public function isRealize();
-
-		/**
-		 * @return bool
-		 */
 		public function hasErrors();
 
 
@@ -54,6 +49,11 @@ namespace Jungle\Application\Dispatcher {
 		 * @return bool
 		 */
 		public function isExternal();
+
+		/**
+		 * @return array
+		 */
+		public function getMeta();
 
 		/**
 		 * @return RoutingInterface
@@ -89,6 +89,26 @@ namespace Jungle\Application\Dispatcher {
 		 * @return array
 		 */
 		public function getParams();
+
+		/**
+		 * @param $key
+		 * @param null $default
+		 * @return mixed
+		 */
+		public function getParam($key, $default = null);
+
+		/**
+		 * @param $key
+		 * @return mixed
+		 */
+		public function hasParam($key);
+
+		/**
+		 * @param $key
+		 * @param $value
+		 * @return mixed
+		 */
+		public function setParam($key, $value);
 
 		/**
 		 * @param $reference
@@ -232,6 +252,72 @@ namespace Jungle\Application\Dispatcher {
 		 * @return mixed
 		 */
 		public function getOutputBuffer();
+
+
+
+		/**
+		 * @param array $options
+		 * @param bool|false $merge
+		 * @return $this
+		 */
+		public function setOptions(array $options = [], $merge = false);
+
+
+		/**
+		 * @return array
+		 */
+		public function getOptions();
+
+
+		/**
+		 * @param $key
+		 * @param $value
+		 * @return $this
+		 */
+		public function setOption($key, $value);
+
+		/**
+		 * @param $key
+		 * @param null|mixed $default
+		 * @return mixed
+		 */
+		public function getOption($key, $default = null);
+
+		/**
+		 * @param $key
+		 * @return bool
+		 */
+		public function hasOption($key);
+
+		/**
+		 * @return bool
+		 */
+		public function hasTasks();
+
+		/**
+		 * @param $key
+		 * @return mixed
+		 */
+		public function getTask($key);
+
+		/**
+		 * @param $key
+		 * @param $task
+		 * @return mixed
+		 */
+		public function setTask($key, $task);
+
+		/**
+		 * @param bool|true $rendering
+		 * @return $this
+		 */
+		public function setRendering($rendering = true);
+
+		/**
+		 * @return bool
+		 */
+		public function isRendering();
+
 	}
 }
 

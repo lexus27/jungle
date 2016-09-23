@@ -10,10 +10,11 @@
 namespace Jungle\Data\Record\Head {
 
 	use Jungle\Data\Record;
-	use Jungle\Util\Data\Foundation\Schema\FieldVisibilityControlInterface;
-	use Jungle\Util\Data\Foundation\Schema\OuterInteraction\Mapped\Field as MappedField;
-	use Jungle\Util\Data\Foundation\Schema\ValueType;
-	use Jungle\Util\Data\Foundation\Schema\ValueType\ValueTypePool;
+	use Jungle\Util\Data\Schema\FieldVisibilityControlInterface;
+	use Jungle\Util\Data\Schema\OuterInteraction\Mapped\Field as MappedField;
+	use Jungle\Util\Data\Schema\ValueType;
+	use Jungle\Util\Data\Schema\ValueType\ValueTypePool;
+	use Jungle\Util\Data\Validation\Message\AggregationMessageException;
 
 	/**
 	 * Class Field
@@ -94,12 +95,18 @@ namespace Jungle\Data\Record\Head {
 		/**
 		 * @param $native_value
 		 * @return bool
+		 * @throws Record\Exception\Field\FieldValidatorMessage
 		 */
-		public function verify($native_value){
+
+		public function validate($native_value){
 			if($native_value === null && $this->isNullable()){
 				return true;
 			}
-			return $this->type->verify($native_value,$this->type_params);
+			if(!$this->type->validate($native_value,$this->type_params)){
+				$messages = $this->type->getLastMessages();
+				throw new Record\Exception\Field\FieldValidatorMessage($this, $messages,$this->type_params, 'Invalid value for field "'.$this->name.'"');
+			}
+			return true;
 		}
 
 		/**

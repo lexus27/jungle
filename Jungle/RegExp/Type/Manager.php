@@ -106,7 +106,7 @@ namespace Jungle\RegExp\Type {
 			$manager = static::getDefault();
 			$t = $manager->getType($type);
 			if($t){
-				return $t->isValid($value, $options);
+				return $t->validate($value, $options);
 			}
 			throw new Exception('RegExp.Type "'.$type.'" not found in manager!');
 		}

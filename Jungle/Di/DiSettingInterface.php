@@ -9,8 +9,8 @@
  */
 namespace Jungle\Di {
 
-	use Jungle\Util\Data\Foundation\Registry\RegistryRemovableInterface;
-	use Jungle\Util\Data\Foundation\Registry\RegistryWriteInterface;
+	use Jungle\Util\Data\Registry\RegistryRemovableInterface;
+	use Jungle\Util\Data\Registry\RegistryWriteInterface;
 
 
 	/**

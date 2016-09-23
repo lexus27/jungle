@@ -13,15 +13,15 @@ namespace Jungle\Data\Record {
 	use Jungle\Data\Record\Collection\Sorter;
 	use Jungle\Data\Record\Collection\SorterInterface;
 	use Jungle\Data\Record\Head\Schema;
-	use Jungle\Util\Data\Foundation\Collection\ExtendableInterface;
-	use Jungle\Util\Data\Foundation\Collection\ExtendableTrait;
-	use Jungle\Util\Data\Foundation\Collection\Sortable\SorterInterface as SortableSorterInterface;
-	use Jungle\Util\Data\Foundation\Condition\Condition;
-	use Jungle\Util\Data\Foundation\Condition\ConditionBlock;
-	use Jungle\Util\Data\Foundation\Condition\ConditionComplex;
-	use Jungle\Util\Data\Foundation\Condition\ConditionInterface;
-	use Jungle\Util\Data\Foundation\Registry\RegistryReadInterface;
-	use Jungle\Util\Data\Foundation\Schema\OuterInteraction\SchemaAwareInterface;
+	use Jungle\Util\Data\Collection\ExtendableInterface;
+	use Jungle\Util\Data\Collection\ExtendableTrait;
+	use Jungle\Util\Data\Collection\Sortable\SorterInterface as SortableSorterInterface;
+	use Jungle\Util\Data\Condition\Condition;
+	use Jungle\Util\Data\Condition\ConditionBlock;
+	use Jungle\Util\Data\Condition\ConditionComplex;
+	use Jungle\Util\Data\Condition\ConditionInterface;
+	use Jungle\Util\Data\Registry\RegistryReadInterface;
+	use Jungle\Util\Data\Schema\OuterInteraction\SchemaAwareInterface;
 	
 	/**
 	 * Class DataMapCollection
@@ -30,7 +30,7 @@ namespace Jungle\Data\Record {
 	 * @property Collection|null $ancestor
 	 */
 	class Collection extends
-		\Jungle\Util\Data\Foundation\Collection\Enumeration\Collection
+		\Jungle\Util\Data\Collection\Enumeration\Collection
 		implements CollectionInterface,
 		ExtendableInterface,
 		RegistryReadInterface,

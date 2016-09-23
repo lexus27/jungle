@@ -328,7 +328,7 @@ namespace Jungle\Application\Router {
 							/** Если обязательного параметра нету в наборе представленных параметров */
 							return false;
 						}
-					}elseif(!$placeholder->getType()->isValid($template_params[$name])){
+					}elseif(!$placeholder->getType()->validate($template_params[$name])){
 						/** Если значение параметра, не ожидаемо */
 						return false;
 					}
@@ -394,7 +394,7 @@ namespace Jungle\Application\Router {
 							/** Если обязательного параметра нету в наборе представленных параметров */
 							throw new GenerateLink('Error generate link: parameter required "'.$name.'"');
 						}
-					}elseif(!$placeholder->getType()->isValid($template_params[$name])){
+					}elseif(!$placeholder->getType()->validate($template_params[$name])){
 						/** Если значение параметра, не ожидаемо */
 						throw new GenerateLink('Error generate link: Invalid parameter type "' . $name . '"!');
 					}

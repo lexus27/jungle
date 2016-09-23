@@ -11,7 +11,9 @@ namespace Jungle\Application {
 	
 	use Jungle\Application\Dispatcher\ProcessInterface;
 	use Jungle\Application\View\RendererInterface;
+	use Jungle\Application\View\ViewStrategy\Exception\NotFoundSuitable;
 	use Jungle\Di\Injectable;
+	use Jungle\Di\InjectionAwareInterface;
 
 	/**
 	 *
@@ -181,6 +183,9 @@ namespace Jungle\Application {
 		public function setRenderer($alias, View\RendererInterface $renderer){
 			$this->renderers[$alias] = $renderer;
 			$renderer->setView($this);
+			if($renderer instanceof InjectionAwareInterface){
+				$renderer->setDi($this->_dependency_injection);
+			}
 			return $this;
 		}
 
@@ -228,23 +233,23 @@ namespace Jungle\Application {
 		 * @param array $variables
 		 * @param array|null $options
 		 * @return string
+		 * @throws Exception
 		 */
 		public function render($alias, ProcessInterface $process, array $variables = [], array $options = []){
 			$viewStrategy = $this->view_strategy;
-			if(is_null($alias)){
-				$alias = $viewStrategy->match($this->request, $process, $this);
-				if(!$alias){
-					throw new \LogicException('Not suitable view for request');
-				}
+			if(is_null($alias) && !($alias = $viewStrategy->match($this->request, $process, $this))){
+				throw new NotFoundSuitable('Not found suitable view for request');
 			}
+
 			if(!isset($this->renderers[$alias])){
-				throw new \LogicException('Renderer with alias "'.$alias.'" not found');
+				throw new Exception('Renderer with alias "'.$alias.'" not found');
 			}
 
 			$renderer = $this->renderers[$alias];
 			$renderer->initialize();
 			$this->last_renderer = $renderer;
 			$this->last_renderer_alias = $alias;
+			$process->setRendering(true);
 			$rendered = $viewStrategy->preRender($alias, $renderer, $process, $this);
 			$rendered.= $viewStrategy->render($alias, $this, $renderer, $process,
 				array_replace($this->variables,$variables),
