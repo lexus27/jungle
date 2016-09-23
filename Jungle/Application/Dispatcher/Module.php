@@ -14,11 +14,15 @@ namespace Jungle\Application\Dispatcher {
 	use Jungle\Application\Dispatcher\Exception\Control;
 	use Jungle\Application\Dispatcher\Process;
 	use Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface;
+	use Jungle\Application\Notification\Responsible\AuthenticationMissed;
+	use Jungle\Application\Notification\Responsible\NeedIntroduce;
 	use Jungle\Di;
 	use Jungle\Di\InjectionAwareInterface;
 	use Jungle\Di\InjectionAwareTrait;
 	use Jungle\FileSystem;
 	use Jungle\Loader;
+	use Jungle\Util\Data\Validation\Message\ValidationCollector;
+	use Jungle\Util\Data\Validation\Message\ValidatorMessage;
 	use Jungle\Util\Value\Massive;
 
 	/**
@@ -210,10 +214,22 @@ namespace Jungle\Application\Dispatcher {
 		 * @param \Exception $e
 		 * @param \Jungle\Application\Dispatcher\Process $process
 		 * @param $result
+		 * @return bool
 		 * @throws \Exception
 		 */
 		protected function interceptException(\Exception $e, Process $process, $result){
-			throw $e;
+			if($e instanceof ValidatorMessage || $e instanceof ValidationCollector){
+				$process->setTask('validation', $e);
+			}
+			if($e instanceof AuthenticationMissed){
+				$process->setTask('authentication', $e);
+			}
+			if($e instanceof NeedIntroduce){
+				$process->setTask('introduce', $e);
+			}
+
+			if(!$process->hasTasks()) throw $e;
+			else return true;
 		}
 
 		/**
@@ -250,7 +266,11 @@ namespace Jungle\Application\Dispatcher {
 				try{
 					$process->startOutputBuffering();
 					if($this->beforeControl($process)===false){
-						return $process->cancel();
+						$process->cancel();
+						goto checkout;
+					}
+					if($process->isCanceled()){
+						goto checkout;
 					}
 					$result = $controller->call($actionName, $process);
 					$process->setResult($result,true);
@@ -276,17 +296,24 @@ namespace Jungle\Application\Dispatcher {
 					$process->startOutputBuffering();
 
 					if($this->beforeControl($process)===false){
-						return $process->cancel();
+						$process->cancel();
 					}
 					if(method_exists($controller, 'beforeControl')){
 						if($controller->beforeControl($actionName, $process)===false){
-							return $process->cancel();
+							$process->cancel();
+							goto checkout;
 						}
 					}
 					$beforeConcreteAction = $actionName.'BeforeControl';
 					if(method_exists($controller, $beforeConcreteAction) && ($controller->{$beforeConcreteAction}($process) === false)){
-						return $process->cancel();
+						$process->cancel();
+						goto checkout;
 					}
+
+					if($process->isCanceled()){
+						goto checkout;
+					}
+
 					$result = $controller->{$actionMethod}($process);
 					$process->setResult($result,true);
 
@@ -318,6 +345,7 @@ namespace Jungle\Application\Dispatcher {
 				}
 
 			}
+			checkout:
 			return $this->checkoutProcess($process, $options);
 		}
 

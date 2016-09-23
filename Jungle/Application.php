@@ -59,7 +59,7 @@ namespace Jungle {
 			$this->registerAutoload($loader);
 			$di->setShared('loader',$loader);
 			$di->setShared('application',$this);
-			$di->setShared('view',  ($view = $this->initializeView()) );
+			$di->setShared('view',  ($view = $this->initializeView($di)) );
 			$this->dispatcher = $this->initializeDispatcher($view);
 			$this->dispatcher->setDi($di);
 			$di->setShared('dispatcher', $this->dispatcher );
@@ -176,10 +176,12 @@ namespace Jungle {
 		abstract protected function initializeViewRenderers(ViewInterface $view);
 
 		/**
+		 * @param $di
 		 * @return ViewInterface
 		 */
-		protected function initializeView(){
+		protected function initializeView($di){
 			$view = $this->createView();
+			$view->setDi($di);
 			$view->setBaseDirname($this->getViewsDirname());
 			$view->setCacheDirname($this->getCacheDirname() . DIRECTORY_SEPARATOR . 'views');
 			$this->initializeViewRenderers($view);

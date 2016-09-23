@@ -64,7 +64,7 @@ namespace Jungle\Application\View\Renderer\TemplateEngine {
 					$this->error_reporting = error_reporting();
 					error_reporting(E_ALL & ~(E_NOTICE | E_DEPRECATED | E_STRICT | E_WARNING));
 				}
-
+				$process = $this->process;
 				extract($variables);
 				unset($variables);
 

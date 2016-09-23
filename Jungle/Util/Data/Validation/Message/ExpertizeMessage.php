@@ -23,12 +23,12 @@ namespace Jungle\Util\Data\Validation\Message {
 		/**
 		 * RuleMessage constructor.
 		 * @param string $type
-		 * @param string $params
+		 * @param array $params
 		 * @param string $systemMessage
 		 */
-		public function __construct($type, $params, $systemMessage = 'Unexpected Data'){
+		public function __construct($type,array $params = null, $systemMessage = 'Unexpected Data'){
 			parent::__construct($type, $systemMessage);
-			$this->params = $params;
+			$this->params = $params?$params:[];
 		}
 
 		/**

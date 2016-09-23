@@ -38,6 +38,7 @@ namespace Jungle\Util\Data\Schema {
 		 * ValueType constructor.
 		 * @param null $aliases
 		 * @param $vartype
+		 * @param array $rules
 		 */
 		public function __construct($aliases = null, $vartype = null,array $rules = null){
 

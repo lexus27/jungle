@@ -91,6 +91,26 @@ namespace Jungle\Application\Dispatcher {
 		public function getParams();
 
 		/**
+		 * @param $key
+		 * @param null $default
+		 * @return mixed
+		 */
+		public function getParam($key, $default = null);
+
+		/**
+		 * @param $key
+		 * @return mixed
+		 */
+		public function hasParam($key);
+
+		/**
+		 * @param $key
+		 * @param $value
+		 * @return mixed
+		 */
+		public function setParam($key, $value);
+
+		/**
 		 * @param $reference
 		 * @param $data
 		 * @return mixed
@@ -269,6 +289,34 @@ namespace Jungle\Application\Dispatcher {
 		 */
 		public function hasOption($key);
 
+		/**
+		 * @return bool
+		 */
+		public function hasTasks();
+
+		/**
+		 * @param $key
+		 * @return mixed
+		 */
+		public function getTask($key);
+
+		/**
+		 * @param $key
+		 * @param $task
+		 * @return mixed
+		 */
+		public function setTask($key, $task);
+
+		/**
+		 * @param bool|true $rendering
+		 * @return $this
+		 */
+		public function setRendering($rendering = true);
+
+		/**
+		 * @return bool
+		 */
+		public function isRendering();
 
 	}
 }

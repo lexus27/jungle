@@ -35,7 +35,7 @@ namespace Jungle\Util\Data\Validation\Message {
 		 * @param array $messages
 		 * @param string $systemMessage
 		 */
-		public function __construct($type, $field_name,array $params, array $messages = null, $systemMessage = ''){
+		public function __construct($type, $field_name,array $params = null, array $messages = null, $systemMessage = ''){
 			$this->field_name   = $field_name;
 			if($messages!==null){
 				$this->container = true;

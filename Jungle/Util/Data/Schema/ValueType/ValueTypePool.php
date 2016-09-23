@@ -107,6 +107,7 @@ namespace Jungle\Util\Data\Schema\ValueType {
 		public function __construct(){
 
 			$this->vartype(['string'],'string');
+
 			$this->vartype(['int','integer','long'],'integer');
 			$this->vartype(['float','double'],'double');
 
@@ -133,7 +134,12 @@ namespace Jungle\Util\Data\Schema\ValueType {
 
 			$this->type(['email'],[
 				'rules' => [
-					new RegExp([ 'pattern' => '@[[:alpha:]][\w\-\_]*@[[:alpha:]]\w*\.[[:alpha:]]\w*@S' ])
+					new RegExp([ 'pattern' => '@^[[:alpha:]][\w\-\_]*@[[:alpha:]]\w*\.[[:alpha:]]\w*$@S' ])
+				]
+			]);
+			$this->type(['words'],[
+				'rules' => [
+					new RegExp([ 'pattern' => '@^[[:alpha:]]*[\w\-\_\d\s]*$@S' ])
 				]
 			]);
 		}

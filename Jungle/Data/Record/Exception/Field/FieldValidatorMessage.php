@@ -29,7 +29,7 @@ namespace Jungle\Data\Record\Exception\Field {
 		 * @param array $params
 		 * @param string $systemMessage
 		 */
-		public function __construct(Field $field, array $messages,array $params = [], $systemMessage = ''){
+		public function __construct(Field $field, array $messages,array $params = null, $systemMessage = ''){
 			$this->field = $field;
 			parent::__construct('FieldValidator', $field->getName(),$params, $messages, $systemMessage);
 		}

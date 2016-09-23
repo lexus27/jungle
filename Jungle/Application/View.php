@@ -13,6 +13,7 @@ namespace Jungle\Application {
 	use Jungle\Application\View\RendererInterface;
 	use Jungle\Application\View\ViewStrategy\Exception\NotFoundSuitable;
 	use Jungle\Di\Injectable;
+	use Jungle\Di\InjectionAwareInterface;
 
 	/**
 	 *
@@ -182,6 +183,9 @@ namespace Jungle\Application {
 		public function setRenderer($alias, View\RendererInterface $renderer){
 			$this->renderers[$alias] = $renderer;
 			$renderer->setView($this);
+			if($renderer instanceof InjectionAwareInterface){
+				$renderer->setDi($this->_dependency_injection);
+			}
 			return $this;
 		}
 
@@ -245,6 +249,7 @@ namespace Jungle\Application {
 			$renderer->initialize();
 			$this->last_renderer = $renderer;
 			$this->last_renderer_alias = $alias;
+			$process->setRendering(true);
 			$rendered = $viewStrategy->preRender($alias, $renderer, $process, $this);
 			$rendered.= $viewStrategy->render($alias, $this, $renderer, $process,
 				array_replace($this->variables,$variables),

@@ -11,6 +11,7 @@ namespace Jungle\Application\Dispatcher {
 	
 	use Jungle\Application\Dispatcher;
 	use Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface;
+	use Jungle\Application\Notification\Responsible\NeedIntroduce;
 	use Jungle\Application\Router\RoutingInterface;
 
 	/**
@@ -18,6 +19,14 @@ namespace Jungle\Application\Dispatcher {
 	 * @package Jungle\Application\Dispatcher\Controller
 	 */
 	class Process implements ProcessInterface, ProcessInitiatorInterface{
+
+		const STATUS_SUCCESS    = 'success';
+		const STATUS_CANCELED   = 'canceled';
+		const STATUS_DETAINED   = 'detained';
+		const STATUS_FAILURE    = 'failure';
+
+
+
 
 		/** @var  Dispatcher */
 		protected $dispatcher;
@@ -40,6 +49,11 @@ namespace Jungle\Application\Dispatcher {
 		/** @var  array */
 		protected $params = [];
 
+
+		/** @var string  */
+		protected $status = 'success';
+
+
 		/** @var  bool */
 		protected $completed = false;
 
@@ -51,6 +65,11 @@ namespace Jungle\Application\Dispatcher {
 		 */
 		protected $failure = false;
 
+
+
+		protected $rendering = false;
+
+
 		/** @var  mixed */
 		protected $result = null;
 
@@ -60,8 +79,11 @@ namespace Jungle\Application\Dispatcher {
 		/** @var  string|null */
 		protected $output_buffer;
 
-		/** @var array  */
+		/** @var  array  */
 		protected $options = [];
+
+		/** @var  array  */
+		protected $tasks = [];
 
 		/**
 		 * Process constructor.
@@ -89,6 +111,21 @@ namespace Jungle\Application\Dispatcher {
 			$this->reference 			= $reference;
 		}
 
+		/**
+		 * @param bool|true $rendering
+		 * @return $this
+		 */
+		public function setRendering($rendering = true){
+			$this->rendering = $rendering;
+			return $this;
+		}
+
+		/**
+		 * @return bool
+		 */
+		public function isRendering(){
+			return $this->rendering;
+		}
 
 		/**
 		 * @return ProcessInterface|null
@@ -161,10 +198,46 @@ namespace Jungle\Application\Dispatcher {
 		}
 
 		/**
+		 * @param array $required
+		 * @param bool $onlyRequired
 		 * @return array
+		 * @throws NeedIntroduce
 		 */
-		public function getParams(){
+		public function getParams(array $required = null, $onlyRequired = false){
+			if($required!==null && !$this->rendering && $required !== array_intersect($required, array_keys($this->params))){
+				throw new NeedIntroduce();
+			}
+			if($required!==null && $onlyRequired){
+				return array_intersect_key(array_flip($required), $this->params);
+			}
 			return $this->params;
+		}
+
+		/**
+		 * @param $key
+		 * @param null $default
+		 * @return mixed
+		 */
+		public function getParam($key, $default = null){
+			return array_key_exists($key, $this->params)?$this->params[$key]:$default;
+		}
+
+		/**
+		 * @param $key
+		 * @return mixed
+		 */
+		public function hasParam($key){
+			return array_key_exists($key, $this->params);
+		}
+
+		/**
+		 * @param $key
+		 * @param $value
+		 * @return mixed
+		 */
+		public function setParam($key, $value){
+			$this->params[$key] = $value;
+			return $this;
 		}
 
 
@@ -374,9 +447,17 @@ namespace Jungle\Application\Dispatcher {
 		/**
 		 * @param $key
 		 * @return mixed
+		 * @throws NeedIntroduce
 		 */
 		public function __get($key){
-			return isset($this->params[$key])?$this->params[$key]:null;
+			if(array_key_exists($key, $this->params)){
+				return $this->params[$key];
+			}else{
+				if(!$this->rendering){
+					throw new NeedIntroduce('Required param "'.$key.'"');
+				}
+				return null;
+			}
 		}
 
 		/**
@@ -384,7 +465,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @return mixed
 		 */
 		public function __isset($key){
-			return isset($this->params[$key]);
+			return array_key_exists($key, $this->params);
 		}
 
 		/**
@@ -534,6 +615,34 @@ namespace Jungle\Application\Dispatcher {
 		 */
 		public function hasOption($key){
 			return isset($this->options[$key]);
+		}
+
+
+
+		/**
+		 * @param $type
+		 * @param $data
+		 * @return $this
+		 */
+		public function setTask($type, $data){
+			$this->tasks[$type] = $data;
+			$this->canceled = true;
+			return $this;
+		}
+
+		/**
+		 * @param $type
+		 * @return null|mixed
+		 */
+		public function getTask($type){
+			return isset($this->tasks[$type])?$this->tasks[$type]:null;
+		}
+
+		/**
+		 * @return bool
+		 */
+		public function hasTasks(){
+			return !empty($this->tasks);
 		}
 
 
