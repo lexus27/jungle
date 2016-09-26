@@ -56,8 +56,11 @@ namespace Jungle\User\AccessControl {
 		/** @var  Expression */
 		protected $advice;
 
+		/** @var  Expression|callable|null */
+		protected $requirements;
+
 		/** @var bool */
-		protected $effect = self::DENY;
+		protected $effect = null;
 
 
 
@@ -157,6 +160,22 @@ namespace Jungle\User\AccessControl {
 		 */
 		public function getAdvice(){
 			return $this->advice;
+		}
+
+		/**
+		 * @param callable $requirements
+		 * @return $this
+		 */
+		public function setRequirements(callable $requirements){
+			$this->requirements = $requirements;
+			return $this;
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getRequirements(){
+			return $this->requirements;
 		}
 
 		/**

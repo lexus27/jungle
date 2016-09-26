@@ -16,10 +16,14 @@ namespace Jungle\User\AccessControl\Policy {
 	 */
 	abstract class Combiner{
 
+		/** @var bool */
 		protected static $default_compliant = false;
 
 		/** @var  string|bool Result effect if compliant is true */
 		protected $effect;
+
+		/** @var  Policy */
+		protected $matchable_container;
 
 		/** @var  bool */
 		protected $compliant = false;
@@ -36,15 +40,17 @@ namespace Jungle\User\AccessControl\Policy {
 
 		/**
 		 * @param $effect
+		 * @param Policy $matchableContainer
 		 * @return $this
 		 */
-		public function begin($effect){
-			$this->effect           = $effect;
-			$this->results          = [];
-			$this->result           = null;
-			$this->stop             = false;
-			$this->compliant        = static::$default_compliant;
-			return $this;
+		public function begin($effect, Policy $matchableContainer = null){
+			/**
+			 * Fix: collector must be always unique
+			 */
+			$collector = clone $this;
+			$collector->effect = $effect;
+			$collector->matchable_container = $matchableContainer;
+			return $collector;
 		}
 
 		/**
@@ -206,9 +212,12 @@ namespace Jungle\User\AccessControl\Policy {
 					'effect_same_only'          => new Policy\Combiner\EffectSameOnly(),
 					'effect_same_soft'          => new Policy\Combiner\EffectSameSoft(),
 					'first_applicable_delegate' => new Policy\Combiner\FirstApplicableDelegate(),
+					'EffectSameIfNotApplicable' => new Policy\Combiner\EffectSameIfNotApplicable(),
+					'deny_not_present'          => new Policy\Combiner\DenyNotPresent(),
+					'permitted_only'            => new Policy\Combiner\PermittedOnly(),
+					'permitted_soft'            => new Policy\Combiner\PermittedSoft(),
 				];$initialized = true;
 			}
-			$base_key = strtolower($base_key);
 			if(isset(self::$base_combiners[$base_key])){
 				return self::$base_combiners[$base_key];
 			}else{

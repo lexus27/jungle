@@ -8,7 +8,9 @@
 namespace Jungle\User\AccessControl\Policy {
 
 	use Jungle\User\AccessControl\Context;
+	use Jungle\User\AccessControl\Manager;
 	use Jungle\User\AccessControl\Matchable;
+	use Jungle\User\AccessControl\Policy;
 
 	/**
 	 * Class Rule
@@ -84,9 +86,10 @@ namespace Jungle\User\AccessControl\Policy {
 		/**
 		 * Произвести проверку данного правила в контексте $context
 		 * @param Context $context
+		 * @param Policy $parent
 		 * @return mixed result
 		 */
-		public function match(Context $context){
+		public function match(Context $context, Policy $parent = null){
 			$result = new MatchResult($this);
 			try{
 				if($this->target && !$this->target->isApplicable($context)){
@@ -94,14 +97,21 @@ namespace Jungle\User\AccessControl\Policy {
 					$this->invokeEvent('match',$this,$result,true);
 					return $result;
 				}
+				$effect = $this->getEffect();
+				if($parent){
+					$effect = $effect===null?$parent->getEffect():$effect;
+				}
+				if($effect===null){
+					$effect = $context->getManager()->getBasedEffect();
+				}
 				if($this->condition){
 					if($context->getManager()->requireConditionResolver()->check($this->condition,$context)){
-						$result->setResult($this->getEffect());
+						$result->setResult($effect);
 					}else{
 						$result->setResult(self::NOT_APPLICABLE);
 					}
 				}else{
-					$result->setResult($this->getEffect());
+					$result->setResult($effect);
 				}
 			}catch(\Exception $e){
 				$result->setIndeterminate($e->getMessage());

@@ -10,6 +10,7 @@ namespace Jungle\User\AccessControl {
 	use Jungle\User\AccessControl\Policy\Combiner;
 	use Jungle\User\AccessControl\Policy\MatchResult;
 	use Jungle\User\AccessControl\Policy\PolicyGroup;
+	use Jungle\User\AccessControl\Policy\Rule;
 	use Jungle\User\AccessControl\Policy\Target;
 
 	/**
@@ -92,6 +93,9 @@ namespace Jungle\User\AccessControl {
 		 * @return bool
 		 */
 		public function getEffect(){
+			if($this->parent && $this->effect === null){
+				return $this->parent->getEffect();
+			}
 			return $this->effect;
 		}
 
@@ -123,6 +127,7 @@ namespace Jungle\User\AccessControl {
 				$this->invokeEvent('match',$this,$context,$result,true);
 				return $result;
 			}
+			$result->setTargetCompliant(true);
 			$effect = $this->getEffect();
 			if($effect===null){
 				$effect = $manager->getBasedEffect();
@@ -130,9 +135,13 @@ namespace Jungle\User\AccessControl {
 			$contains = $this->getContains();
 			if($contains){
 				try{
-					$combiner = $manager->requireCombiner($this->getCombiner())->begin($effect);
+					$combiner = $manager->requireCombiner($this->getCombiner())->begin($effect, $this);
 					foreach($contains as $contain){
-						$containResult = $contain->match($context);
+						if($contain instanceof Rule){
+							$containResult = $contain->match($context, $this);
+						}else{
+							$containResult = $contain->match($context);
+						}
 						$result->addChild($containResult);
 						if($combiner->check($containResult)===false){
 							$containResult->setStopped(true);

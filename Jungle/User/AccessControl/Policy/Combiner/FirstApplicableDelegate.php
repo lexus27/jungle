@@ -22,6 +22,8 @@ namespace Jungle\User\AccessControl\Policy\Combiner {
 			$this->earlyMatched(true,$this->result->getResult());
 		}
 
+
+
 	}
 }
 

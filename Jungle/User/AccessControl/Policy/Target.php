@@ -147,17 +147,21 @@ namespace Jungle\User\AccessControl\Policy {
 			if(!$this->all_of_conditions && !$this->any_of_conditions){
 				return true;
 			}
+			$result = true;
 			foreach($this->all_of_conditions as $condition){
 				if(!$context->getManager()->requireConditionResolver()->check($condition,$context)){
-					return false;
+					$result = false;
 				}
 			}
-			foreach($this->any_of_conditions as $condition){
-				if($context->getManager()->requireConditionResolver()->check($condition,$context)){
-					return true;
+			if($result === true && $this->any_of_conditions){
+				foreach($this->any_of_conditions as $condition){
+					if($context->getManager()->requireConditionResolver()->check($condition,$context)){
+						return true;
+					}
 				}
+				return false;
 			}
-			return false;
+			return $result;
 		}
 
 	}

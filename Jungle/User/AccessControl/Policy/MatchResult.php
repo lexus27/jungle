@@ -21,6 +21,9 @@ namespace Jungle\User\AccessControl\Policy {
 		/** @var  bool|string */
 		protected $result;
 
+		/** @var bool  */
+		protected $target_compliant = false;
+
 		/** @var   */
 		protected $indeterminate_message;
 
@@ -42,6 +45,22 @@ namespace Jungle\User\AccessControl\Policy {
 		public function __construct(Matchable $matchable = null, $result = null){
 			if($result!==null)$this->result = $result;
 			if($matchable) $this->matchable = $matchable;
+		}
+
+		/**
+		 * @param $compliant
+		 * @return $this
+		 */
+		public function setTargetCompliant($compliant){
+			$this->target_compliant = $compliant;
+			return $this;
+		}
+
+		/**
+		 * @return bool
+		 */
+		public function isTargetCompliant(){
+			return $this->target_compliant;
 		}
 
 		/**
@@ -170,6 +189,13 @@ namespace Jungle\User\AccessControl\Policy {
 		 * @return mixed
 		 */
 		public function getAdvice(){
+			return $this->matchable->getAdvice();
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getRequirements(){
 			return $this->matchable->getAdvice();
 		}
 

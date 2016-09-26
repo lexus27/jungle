@@ -18,8 +18,6 @@ namespace Jungle\User\AccessControl {
 	use Jungle\User\AccessControl\Policy\MatchResult;
 	use Jungle\User\AccessControl\Policy\Rule;
 	use Jungle\Util\ObservableTrait;
-	use Jungle\Util\Value\Massive;
-	use Jungle\Util\Value\String;
 
 	/**
 	 * Class Pool
@@ -76,7 +74,7 @@ namespace Jungle\User\AccessControl {
 		 *
 		 * @var bool
 		 */
-		protected $based_effect = \Jungle\User\AccessControl\Matchable::PERMIT;
+		protected $based_effect = Matchable::PERMIT;
 
 		/**
 		 * Строгость базового эффекта если равен true
@@ -265,7 +263,7 @@ namespace Jungle\User\AccessControl {
 
 
 		/**
-		 * Метод для вычисления изходя из текущих настроек контекста.
+		 * Метод для вычисления иcходя из текущих настроек контекста.
 		 * @param $action
 		 * @param null|string|array|object $object Объект над которым производится действие, если $useObjectPredicates===true то должна использовать строка имени класса объекта
 		 * @param bool $useObjectPredicates TODO implement
@@ -289,17 +287,20 @@ namespace Jungle\User\AccessControl {
 		public function contextFrom($action, $object, $otherUser = null, $otherScope = null){
 
 			if(is_string($object)){
-				if(($object = trim($object)) && String::isCovered($object,'[',']')){
-					$object = String::trimSides($object,'[',']');
+
+				if(($object = trim($object)) && substr($object,0,1)==='[' && substr($object,-1)===']'){
+					$object = rtrim($object,']');
+					$object = ltrim($object,'[');
+
 					$object = explode(',',$object);
 					if($object){
-						$object = Massive::universalMap(function(& $value, & $key){
-							list($key,$value) = explode(':',$value);
-							$key = trim($key);
-							$value = trim($value);
-						},$object,true);
+						$_o = [];
+						foreach($object as $pair){
+							$pair = explode(':',$pair);
+							$_o[trim($pair[0])] = trim($pair[1]);
+						}
+						$object = ObjectAccessor::release($_o);
 					}
-					$object = ObjectAccessor::release($object);
 				}else{
 					throw new \LogicException('Object definition is invalid! "'.$object.'"');
 				}
@@ -332,6 +333,12 @@ namespace Jungle\User\AccessControl {
 				}
 			}
 			if(in_array($effect,[Rule::NOT_APPLICABLE,Rule::INDETERMINATE],true)){
+
+				$results = $combiner->getResults();
+				foreach($results as $result){
+					$this->invoke($effect,$result,$context);
+				}
+
 				$effect = $this->getBasedEffect();
 				if($this->based_effect_strict){
 					$effect = !$effect;
@@ -395,16 +402,25 @@ namespace Jungle\User\AccessControl {
 						call_user_func($advice,$result,$context);
 					}catch(\Exception $e){}
 				}
+			}elseif($result->isTargetCompliant()){
+
+				$requirements = $m->getRequirements();
+				if($requirements){
+					try{
+						call_user_func($requirements,$result,$context);
+					}catch(\Exception $e){}
+				}
+
 			}
 		}
 
 
 		/**
 		 * @param array $listeners
-		 * @param \Jungle\User\AccessControl\Matchable $policy
+		 * @param Matchable $policy
 		 * @param bool $internal
 		 */
-		public function propagateListeners(array $listeners, \Jungle\User\AccessControl\Matchable $policy = null,$internal = false){
+		public function propagateListeners(array $listeners, Matchable $policy = null,$internal = false){
 			if($listeners){
 				if(!$internal && $this->_listeners_propagation){
 					$this->stopPropagateListeners();
@@ -433,9 +449,9 @@ namespace Jungle\User\AccessControl {
 
 
 		/**
-		 * @param \Jungle\User\AccessControl\Matchable|null $policy
+		 * @param Matchable|null $policy
 		 */
-		protected function delegateEvents(\Jungle\User\AccessControl\Matchable $policy = null){
+		protected function delegateEvents(Matchable $policy = null){
 			if($policy!==null){
 				if($policy instanceof Policy){
 					foreach($policy->getContains() as $p){
@@ -452,9 +468,9 @@ namespace Jungle\User\AccessControl {
 
 		/**
 		 * @param array $listeners
-		 * @param \Jungle\User\AccessControl\Matchable|null $policy
+		 * @param Matchable|null $policy
 		 */
-		public function stopPropagateListeners(array $listeners = null, \Jungle\User\AccessControl\Matchable $policy = null){
+		public function stopPropagateListeners(array $listeners = null, Matchable $policy = null){
 			if($policy!==null){
 				if($policy instanceof Policy){
 					foreach($policy->getContains() as $p){
