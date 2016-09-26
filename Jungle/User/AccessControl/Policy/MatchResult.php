@@ -88,6 +88,10 @@ namespace Jungle\User\AccessControl\Policy {
 			return $this;
 		}
 
+		/**
+		 * @param $message
+		 * @param bool|false $obligation
+		 */
 		public function setIndeterminate($message,$obligation = false){
 			$this->result = Matchable::INDETERMINATE;
 			$this->indeterminate_message = $message;

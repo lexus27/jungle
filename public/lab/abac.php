@@ -162,6 +162,7 @@ $policyAdapter->fromArray([
 
 ]);*/
 
+echo preg_match('/Перед/ui','перед').'<br/>'.'<br/>'.'<br/>';
 $policyAdapter->fromArray([
 
 	'policies' => [[

@@ -31,9 +31,6 @@ namespace Jungle\User\AccessControl\Policy\Combiner {
 			return $this->isCompliant()?$this->effect:$this->matchable_container->getEffect();
 		}
 
-
-
-
 	}
 }
 

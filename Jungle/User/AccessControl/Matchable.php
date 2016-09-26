@@ -28,7 +28,7 @@ namespace Jungle\User\AccessControl {
 	 *
 	 *
 	 */
-	abstract class Matchable extends Observable{
+	abstract class Matchable extends Observable implements MatchableInterface{
 
 
 		/** Разрешено */

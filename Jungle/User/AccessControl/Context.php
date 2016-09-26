@@ -16,9 +16,7 @@ namespace Jungle\User\AccessControl {
 		/** @var  Manager */
 		protected $manager;
 
-		/**
-		 * @var array
-		 */
+		/** @var array */
 		protected $properties = [];
 
 		/**
