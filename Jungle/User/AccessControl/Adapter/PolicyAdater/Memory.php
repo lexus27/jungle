@@ -7,89 +7,18 @@
  */
 namespace Jungle\User\AccessControl\Adapter\PolicyAdater {
 
-	use Jungle\User\AccessControl\Adapter\PolicyAdapter;
-	use Jungle\User\AccessControl\Policy;
-	use Jungle\User\AccessControl\Policy\Rule;
-	use Jungle\Util\Value\String;
+	use Jungle\User\AccessControl\Matchable;
+	use Jungle\User\AccessControl\Matchable\Aggregator;
+	use Jungle\User\AccessControl\Matchable\Aggregator\Policy;
+	use Jungle\User\AccessControl\Matchable\Aggregator\PolicyGroup;
+	use Jungle\User\AccessControl\Matchable\Rule;
+	use Jungle\User\AccessControl\Matchable\Target;
 
 	/**
 	 * Class Memory
 	 * @package Jungle\User\AccessControl\Adapter\PolicyAdater
 	 */
-	class Memory extends PolicyAdapter{
-
-		/**
-		 * @var Policy[]
-		 */
-		protected $policies = [];
-
-		/**
-		 * @var Rule[]
-		 */
-		protected $rules = [];
-
-		/**
-		 * @param Rule $rule
-		 * @return $this
-		 */
-		public function addRule(Rule $rule){
-			if(!in_array($rule,$this->rules,true)){
-				$this->rules[] = $rule;
-			}
-		}
-
-		/**
-		 * @param $name
-		 * @return Rule
-		 */
-		public function getRule($name){
-			$name = trim(String::camelCase($name,false,'_'));
-			foreach($this->rules as $rule){
-				if(trim(String::camelCase($rule->getName(),false,'_')) === $name){
-					return $rule;
-				}
-			}
-			return null;
-		}
-
-		/**
-		 * @return Rule[]
-		 */
-		public function getRules(){
-			return $this->rules;
-		}
-
-		/**
-		 * @param Policy $policy
-		 * @return $this
-		 */
-		public function addPolicy(Policy $policy){
-			if(!in_array($policy,$this->policies,true)){
-				$this->policies[] = $policy;
-			}
-			return $this;
-		}
-
-		/**
-		 * @param $name
-		 * @return Policy
-		 */
-		public function getPolicy($name){
-			$name = trim(String::camelCase($name,false,'_'));
-			foreach($this->policies as $policy){
-				if(trim(String::camelCase($policy->getName(),false,'_')) === $name){
-					return $policy;
-				}
-			}
-			return null;
-		}
-
-		/**
-		 * @return Policy[]
-		 */
-		public function getPolicies(){
-			return $this->policies;
-		}
+	class Memory extends Aggregator\PolicyGroup{
 
 		/**
 		 * @var array|null
@@ -99,19 +28,19 @@ namespace Jungle\User\AccessControl\Adapter\PolicyAdater {
 		/**
 		 * @param array $definition
 		 */
-		public function fromArray(array $definition){
+		public function build(array $definition){
 			$this->_building_scope = [
-				'rules' => [],
-				'targets' => [],
+				'rules'     => [],
+				'targets'   => [],
 			];
 			if(isset($definition['rules'])){
 				foreach($definition['rules'] as $rule){
-					$this->addRule($this->_requireRule($rule));
+					$this->_requireRule($rule);
 				}
 			}
 			if(isset($definition['policies'])){
 				foreach($definition['policies'] as $policy){
-					$this->addPolicy($this->_requirePolicy($policy));
+					$this->addChild($this->_requirePolicy($policy));
 				}
 			}
 			$this->_building_scope = null;
@@ -121,12 +50,12 @@ namespace Jungle\User\AccessControl\Adapter\PolicyAdater {
 
 		/**
 		 * @param array $definition
-		 * @return Policy\Target
+		 * @return Target
 		 */
 		protected function _requireTarget(array $definition){
 			if(is_array($definition)){
 				$name = null;
-				$target = new Policy\Target();
+				$target = new Target();
 				if(isset($definition['name'])){
 					$name = $definition['name'];
 				}
@@ -158,7 +87,7 @@ namespace Jungle\User\AccessControl\Adapter\PolicyAdater {
 					$rule->setName($definition['name']);
 				}
 				if(isset($definition['effect'])){
-					$rule->setEffect($definition['effect']);
+					$rule->setEffect(Matchable::friendlyEffect($definition['effect']));
 				}
 				if(isset($definition['condition'])){
 					$rule->setCondition($definition['condition']);
@@ -174,7 +103,7 @@ namespace Jungle\User\AccessControl\Adapter\PolicyAdater {
 
 		/**
 		 * @param $def
-		 * @return Policy\PolicyElement|Policy\PolicyGroup
+		 * @return Policy|PolicyGroup
 		 * @throws \Exception
 		 */
 		protected function _requirePolicy($def){
@@ -192,7 +121,7 @@ namespace Jungle\User\AccessControl\Adapter\PolicyAdater {
 
 		/**
 		 * @param array $definition
-		 * @return Policy\PolicyElement
+		 * @return Policy
 		 * @throws \Exception
 		 */
 		protected function _requirePolicyElement($definition){
@@ -211,17 +140,17 @@ namespace Jungle\User\AccessControl\Adapter\PolicyAdater {
 					'requirements'  => null
 				],$definition);
 
-				$policy = new Policy\PolicyElement($definition['name']);
+				$policy = new Policy($definition['name']);
 				if($definition['target']){
 					$policy->setTarget($this->_requireTarget($definition['target']));
 				}
 				if($definition['rules']){
 					foreach($definition['rules'] as $_rule){
-						$policy->addRule($this->_requireRule($_rule));
+						$policy->addChild($this->_requireRule($_rule));
 					}
 				}
 				if(isset($definition['effect'])){
-					$policy->setEffect($definition['effect']);
+					$policy->setEffect(Matchable::friendlyEffect($definition['effect']));
 				}
 				if(isset($definition['combiner'])){
 					$policy->setCombiner($definition['combiner']);
@@ -234,7 +163,7 @@ namespace Jungle\User\AccessControl\Adapter\PolicyAdater {
 					$policy->setAdvice($definition['advice']);
 				}
 				if(isset($definition['requirements'])){
-					$policy->setRequirements($definition['requirements']);
+					$policy->setRequirement($definition['requirements']);
 				}
 				return $policy;
 			}
@@ -244,7 +173,7 @@ namespace Jungle\User\AccessControl\Adapter\PolicyAdater {
 
 		/**
 		 * @param array $definition
-		 * @return Policy\PolicyGroup
+		 * @return PolicyGroup
 		 * @throws \Exception
 		 */
 		protected function _requirePolicyGroup($definition){
@@ -265,7 +194,7 @@ namespace Jungle\User\AccessControl\Adapter\PolicyAdater {
 					'requirements' => null
 				],$definition);
 
-				$policy = new Policy\PolicyGroup($definition['name']);
+				$policy = new PolicyGroup($definition['name']);
 				if($definition['target']){
 					$policy->setTarget($this->_requireTarget($definition['target']));
 				}
@@ -274,11 +203,11 @@ namespace Jungle\User\AccessControl\Adapter\PolicyAdater {
 				}
 				if($definition['policies']){
 					foreach($definition['policies'] as $_policy){
-						$policy->addPolicy($this->_requirePolicy($_policy));
+						$policy->addChild($this->_requirePolicy($_policy));
 					}
 				}
 				if(isset($definition['effect'])){
-					$policy->setEffect($definition['effect']);
+					$policy->setEffect(Matchable::friendlyEffect($definition['effect']));
 				}
 				if(isset($definition['obligation'])){
 					$policy->setObligation($definition['obligation']);
@@ -288,13 +217,12 @@ namespace Jungle\User\AccessControl\Adapter\PolicyAdater {
 				}
 
 				if(isset($definition['requirements'])){
-					$policy->setRequirements($definition['requirements']);
+					$policy->setRequirement($definition['requirements']);
 				}
 				return $policy;
 			}
 			throw new \Exception(__METHOD__.' - definition invalid');
 		}
-
 
 	}
 }

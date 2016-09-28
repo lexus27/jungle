@@ -7,8 +7,8 @@
  */
 namespace Jungle\User\AccessControl\Adapter {
 
-	use Jungle\User\AccessControl\Policy;
-	use Jungle\User\AccessControl\Policy\Rule;
+	use Jungle\User\AccessControl\Matchable\Aggregator;
+	use Jungle\User\AccessControl\Matchable\Rule;
 
 	/**
 	 * Class PolicyAdapter
@@ -32,18 +32,18 @@ namespace Jungle\User\AccessControl\Adapter {
 		abstract public function getRules();
 
 		/**
-		 * @param Policy $policy
+		 * @param Aggregator $policy
 		 * @return $this
 		 */
-		abstract public function addPolicy(Policy $policy);
+		abstract public function addPolicy(Aggregator $policy);
 
 		/**
 		 * @param $name
-		 * @return Policy
+		 * @return \Jungle\User\AccessControl\Matchable\Aggregator
 		 */
 		abstract public function getPolicy($name);
 		/**
-		 * @return Policy[]
+		 * @return \Jungle\User\AccessControl\Matchable\Aggregator[]
 		 */
 		abstract public function getPolicies();
 

@@ -5,18 +5,18 @@
  * Date: 14.02.2016
  * Time: 21:50
  */
-namespace Jungle\User\AccessControl\Policy {
+namespace Jungle\User\AccessControl\Matchable {
 
 	use Jungle\ExoCode\LogicConstruction\Condition;
 	use Jungle\ExoCode\LogicConstruction\Operator;
 	use Jungle\RegExp;
 	use Jungle\User\AccessControl\Context;
 	use Jungle\User\AccessControl\Exception;
-	use Jungle\User\AccessControl\Policy\ConditionResolver\Exception as ResolveException;
-	use Jungle\User\AccessControl\Policy\ConditionResolver\Exception\BadMethodCall;
-	use Jungle\User\AccessControl\Policy\ConditionResolver\Exception\InvalidQuery;
-	use Jungle\User\AccessControl\Policy\ConditionResolver\Exception\PathNotFound;
-	use Jungle\User\AccessControl\Policy\ConditionResolver\Exception\Query;
+	use Jungle\User\AccessControl\Matchable\ConditionResolver\Exception as ResolveException;
+	use Jungle\User\AccessControl\Matchable\ConditionResolver\Exception\BadMethodCall;
+	use Jungle\User\AccessControl\Matchable\ConditionResolver\Exception\InvalidQuery;
+	use Jungle\User\AccessControl\Matchable\ConditionResolver\Exception\PathNotFound;
+	use Jungle\User\AccessControl\Matchable\ConditionResolver\Exception\Query;
 	use Jungle\Util\Observable;
 	use Jungle\Util\Value\Massive;
 	use Jungle\Util\Value\String;

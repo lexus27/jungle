@@ -11,9 +11,9 @@ namespace Jungle\User\AccessControl {
 
 	use Jungle\User\AccessControl\Adapter\ContextAdapter;
 	use Jungle\User\AccessControl\Adapter\PolicyAdapter;
-	use Jungle\User\AccessControl\Policy\Combiner;
-	use Jungle\User\AccessControl\Policy\ConditionResolver;
-	use Jungle\User\AccessControl\Policy\ExpressionResolver;
+	use Jungle\User\AccessControl\Matchable\Combiner;
+	use Jungle\User\AccessControl\Matchable\ConditionResolver;
+	use Jungle\User\AccessControl\Matchable\ExpressionResolver;
 
 	/**
 	 * Interface ManagerInterface

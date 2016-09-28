@@ -1,35 +1,112 @@
 <?php
+use Jungle\User\AccessControl\Adapter\PolicyAdater\Memory as MemoryPolicyAdapter;
 use Jungle\User\AccessControl\Context;
 use Jungle\User\AccessControl\Manager;
+use Jungle\User\AccessControl\Matchable;
+
+
+/**
+ *
+ *
+ *
+ * Определения
+ * ---------------------------------------------
+ * Контекст         - это источник информации на момент вычисления доступа. (Что?(Объект) Кто?(Пользователь) Зачем?(Применяемое действие), Где?(Данные окружения))
+ * Вычисляемый      - Объект который можно вычислить благодаря Контексту и получить Результат вычисления,
+ *                    субъективно, имеется ввиду что то одно из Правила, Политики или Группы политик.
+ * Комбинатор       - метод перебора множества Вычисляемых, комбинирующий решения дочерних Вычисляемых поголовно,
+ *                    таким образом чтобы дать результирующее решение контейнера.
+ * Агрегатор        - контейнер содержащий множество Вычисляемых объектов и использующий Комбинатор для результата вычисления.
+ * Цель             - это абстрактный барьер перед выполнением Агрегации, является провайдером Условий.
+ * Правило          - это конкретный объект вычисляющий решение, также является провайдером одного Условия.
+ * Условие          - заданная сверка двух значений, значения каждого операнда(стороны сравнения)
+ *                    могут представлятся статично или ссылкой на Контекст.
+ * Политика         - Агрегатор Правил, проверяет применимость Цели к Контексту, после чего выполняет дальнейшую Агрегацию.
+ * Группа политик   - Агрегатор Политик, проверяет применимость Цели к Контексту, после чего выполняет дальнейшую Агрегацию.
+ *
+ *
+ * Статусы возращаемые Вычисляемым
+ * ----------------------------------------------------------------------------------------
+ * NOT_APPLICABLE   (Не применимо)      - Условия Целей или Правил не соответствуют Контексту.
+ * INDETERMINATE    (Не определено)     - Ошибка помешавшая выявить решение
+ * PERMIT           (Разрешить) TRUE    - Разрешение
+ * DENY             (Заретить)  FALSE   - Запрет
+ *
+ *
+ * Итоговое решение о предоставлении прав доступа
+ * ----------------------------------------
+ * Итоговое решение может быть только PERMIT или DENY
+ *
+ * NOT_APPLICABLE   - это означает что ни один Вычисляемый не имел соответствий с Контекстом, поэтому итоговое значение
+ *                    будет назначено исходя из базирования менеджера(Разрешающий(Permit) или Запрещающий(Deny))
+ * INDETERMINATE    - склонен к отказу, т.к вычислить всё до конца не удастся изза ошибки на этапах связанных с вычислениями или завершения оных.
+ *
+ * NOT_APPLICABLE - Возможно интерпретировать из NULL значения, т.к NOT_APPLICABLE является переопределяемым от контейнера (итоговое)
+ * INDETERMINATE - Возможно реализовать при помощи Исключений
+ *
+ *
+ * Комбинаторы и Поведение
+ * ---------------------------------------------
+ * Комбинатор нужно подбирать достаточно скурпулезно в зависимости от задач авторизации действий.
+ *
+ * Вводные:
+ * Агрегатор использует Комбинатор для вычисления своего решения.
+ * Агрегатор базируется на эффекте.
+ * Агрегатор может быть Не применим, это вычисляется при помощи Комбинирования дочерних Вычисляющих
+ *
+ * Предполагаемые принципы комбинирования:
+ * А. [delegate]        Решение первого применимого дочернего делегируется как результат вычисления Агрегатора
+ * Б. [delegate_same]   Аналогия [A], но Агрегатор всегда является Применимым, при не применимости дочерних, его эффект будет в приоритете.
+ * В. [same_only]       Решение Агрегатора если минимум 1 дочерний равен Эффекту Агрегатора, и ни одного Противоположного
+ * Г. [same_soft]       Аналогия [В], но допускаются Не применимые
+ *
+ * Структура принципа комбинирования:
+ * Принцип комбинирования ложится на пошаговый перебор, каждый раз нового Вычисляемого
+ * и на основе его Решения происходит реакции способные выдать итоговое решение, заранее или в конце итераций
+ *
+ * Реакции определяются следующими событиями
+ *  Поведение при "Не применимых"
+ *  Поведение при "Не определенных"
+ *  Поведение при "Разрешающих"
+ *  Поведение при "Запрещающих"
+ *
+ */
+
+
 
 include './loader.php';
+
+
 
 echo '<pre>';
 
 $manager = new Manager();
-$manager->setBasedEffect(\Jungle\User\AccessControl\Matchable::PERMIT, true);
-$policyAdapter = new \Jungle\User\AccessControl\Adapter\PolicyAdater\Memory();
-/*
-$policyAdapter->fromArray([
+$manager->setDefaultEffect(Matchable::PERMIT);
+$manager->setSameEffect(Matchable::DENY);
+
+
+
+/**
+$policyAdapter->build([
 
 	'rules' => [ [
 		'name' => 'Permit',
-		'effect' => Rule::PERMIT
+		'effect' => Matchable::PERMIT
 	],[
 		'name' => 'Deny',
-		'effect' => Rule::DENY
+		'effect' => Matchable::DENY
 	],[
 		'name' => 'Access in work time',
 		'condition' => '[Scope.time.week_day] in [TIME.WORK_DAYS]',
-		'effect' => Rule::PERMIT
+		'effect' => Matchable::PERMIT
 	],[
 		'name' => 'Access in weekend',
 		'condition' => '[Scope.time.week_day] in [TIME.WEEK_END_DAYS]',
-		'effect' => Rule::PERMIT
+		'effect' => Matchable::PERMIT
 	],[
 		'name' => 'Access in first half of year',
 		'condition' => '[TIME.SEASONS.FIRST_HALF]',
-		'effect' => Rule::PERMIT
+		'effect' => Matchable::PERMIT
 	]],
 
 
@@ -40,7 +117,7 @@ $policyAdapter->fromArray([
 			'any_of' => '[Scope.time.week_day] in [TIME.WEEK_END_DAYS]',
 			'all_of' => '[User.group] = Developer'
 		],
-		'obligation' => function(\Jungle\User\AccessControl\Policy\MatchResult $result){
+		'obligation' => function(\Jungle\User\AccessControl\Matchable\Result $result){
 			echo 'Доступ закрыт: ['.$result.']'.$result->getMatchable()->getName().' <h3>Разработчики должны отдыхать в это время</h3>';
 		}
 	],[
@@ -50,7 +127,7 @@ $policyAdapter->fromArray([
 			'any_of' => '[Scope.time.week_day] in [TIME.WEEK_END_DAYS]',
 			'all_of' => '[User.group] = OfficeManager'
 		],
-		'obligation' => function(\Jungle\User\AccessControl\Policy\MatchResult $result){
+		'obligation' => function(\Jungle\User\AccessControl\Matchable\Result $result){
 			echo 'Доступ закрыт: ['.$result.']'.$result->getMatchable()->getName().' <h3>Отдыхай пока можешь!</h3>';
 		}
 	],[
@@ -60,7 +137,7 @@ $policyAdapter->fromArray([
 			'any_of' => '[Scope.time.week_day] in [TIME.WEEK_END_DAYS]',
 			'all_of' => '[User.group] = OfficeManager'
 		],
-		'obligation' => function(\Jungle\User\AccessControl\Policy\MatchResult $result){
+		'obligation' => function(\Jungle\User\AccessControl\Matchable\Result $result){
 			echo 'Доступ закрыт: ['.$result.']'.$result->getMatchable()->getName().' <h3>Отдыхай пока можешь!</h3>';
 		}
 	],[
@@ -160,98 +237,252 @@ $policyAdapter->fromArray([
 		]],
 	]]
 
-]);*/
+]);
+*/
 
-echo preg_match('/Перед/ui','перед').'<br/>'.'<br/>'.'<br/>';
-$policyAdapter->fromArray([
+
+
+
+
+
+$combiner_settings = [
+
+	'delegate' => [
+		'default' => 'not_applicable',
+		'applicable' => [
+			'early'     => true,
+			'effect'    => '{current}'
+		],
+	],
+
+	'delegate_same' => [
+		'default' => '{same}',
+		'applicable' => [
+			'early'     => true,
+			'effect'    => '{current}'
+		],
+	],
+
+	'dispute' => [
+		'default'   => '{!same}',
+		'empty'     => '{same}',
+		'applicable' => [
+			'check'     => '{same}',
+			'early'     => true,
+			'effect'    => '{current}'
+		],
+	],
+	'dispute_all' => [
+		'default'   => '{!same}',
+		'empty'     => '{same}',
+		'applicable' => [
+			'check'     => '{same}',
+			'effect'    => '{current}'
+		],
+	],
+
+
+	'permit_by_permit' => [
+		'return_only'   => 'permit',
+		'default'       => 'not_applicable',
+		'empty'         => 'not_applicable',
+		'deny'          => [
+			'early'         => true,
+			'effect'        => 'not_applicable'
+		],
+		'permit'        => [
+			'effect'        => '{current}'
+		],
+	],
+
+	'deny_by_deny' => [
+		'return_only'   => 'deny',
+		'default'       => 'not_applicable',
+		'empty'         => 'not_applicable',
+		'deny'          => [
+			'effect'        => '{current}'
+		],
+		'permit'        => [
+			'early'         => true,
+			'effect'        => 'not_applicable'
+		],
+	],
+
+
+	'same_by_same' => [
+		'default'       => 'not_applicable',
+		'empty'         => 'not_applicable',
+		'applicable' => [
+			'check'     => [[
+				'check'     => '{!same}',
+				'early'     => true,
+				'effect'    => 'not_applicable'
+			],[
+				'check'     => '{same}',
+				'effect'    => '{same}'
+			]]
+		],
+	],
+
+	'same' => [
+
+		'default'   => '{same}',
+		'empty'     => '{same}',
+		'applicable' => [
+			'check'     => '{!same}',
+			'early'     => true,
+			'effect'    => '{current}'
+		],
+
+	],
+
+	'same_only' => [
+		'default'=> '{same}',
+		'not_applicable' => [
+			'effect'    => '{current}'
+		],
+		'applicable' => [
+			'check'     => '{!same}',
+			'early'     => true,
+			'effect'    => '{current}'
+		]
+	],
+
+
+
+
+];
+
+
+$manager->setCombiner('delegate',  new Matchable\Combiner($combiner_settings['delegate']));
+$manager->setCombiner('delegate_same',  new Matchable\Combiner($combiner_settings['delegate_same']));
+$manager->setCombiner('same',  new Matchable\Combiner($combiner_settings['same']));
+$manager->setCombiner('same_only',  new Matchable\Combiner($combiner_settings['same_only']));
+$manager->setCombiner('same_by_same',  new Matchable\Combiner($combiner_settings['same_by_same']));
+$manager->setCombiner('permit_by_permit',  new Matchable\Combiner($combiner_settings['permit_by_permit']));
+$manager->setCombiner('deny_by_deny',  new Matchable\Combiner($combiner_settings['deny_by_deny']));
+$manager->setCombiner('dispute',  new Matchable\Combiner($combiner_settings['dispute']));
+$manager->setCombiner('dispute_all',  new Matchable\Combiner($combiner_settings['dispute_all']));
+
+$manager->setDefaultCombiner('dispute_all');
+$manager->setMainCombiner('dispute_all');
+
+$aggregator = new MemoryPolicyAdapter(null);
+$aggregator->build([
 
 	'policies' => [[
-
+		'effect'    => true,
+		'name'      => 'Администраторы',
+		'combiner'  => 'dispute',
+		'target'    => [
+			'all_of'    => [
+				'[user.group] = Administrators',
+			]
+		],
+	],[
+		'effect'    => false,
 		'name' => 'Анонимы',
+		'combiner'  => 'dispute',
 		'target' => [
 			'all_of' => [
-				'[Object::class] = Document',
-				'[User.group] = Anonymous',
+				'[object::class] = Document',
+				'[user.group] = Anonymous',
 			]
 		],
 		'obligation' => function(){
 			echo 'Мы запрещаем работать здесь анонимам';
 		},
-		'effect'    => false,
-		'combiner'  => 'effect_same_only',
 		'policies' => [[
-             'target' => [
-                 'all_of' => '[Action.name] = Read'
-             ],
-             'effect' => true,
-             'obligation' => function(){
-                 echo 'Просматривать можно';
-             },
-             'rules' => [[
-                 'condition' => '[Scope.time.week_day] in [TIME.WORK_DAYS]'
-             ]],
+			'effect' => true,
+			'target' => [
+				'all_of' => '[action.name] = Read'
+			],
+			'rules' => [[
+				'condition' => '[scope.time.week_day] in [TIME.WORK_DAYS]'
+			]],
+			'obligation' => function(){
+				echo 'Просматривать можно';
+			},
 		],[
 			'effect' => true,
+			'rules' => [[
+				'condition' => '[scope.time.week_day] in [TIME.WORK_DAYS]'
+			]],
 			'obligation' => function(){
 				echo 'Слава богу будние дни';
 			},
-			'rules' => [[
-				'condition' => '[Scope.time.week_day] in [TIME.WORK_DAYS]'
-			]],
-		]]
+		]],
+
 
 	],[
+		'effect'    => false,
 		'name'      => 'CurrentToken',
+		'combiner'  => 'dispute_all',
 		'obligation' => function(){
 			echo 'По токену Есть ограничения';
 		},
-		'effect'    => false,
-		'combiner'  => 'EffectSameIfNotApplicable',
+
 		'policies' => [[
+			'effect' => true,
+			'target' => [ 'all_of' => [ '[user.group] = Administrator', ], ],
+			'obligation' => function(){
+				echo 'Администраторам можно';
+			},
+		],[
+			'effect' => true,
+			'target' => [ 'all_of' => [ '[action.name] = Read', ], ],
 			'obligation' => function(){
 				echo 'Просмотр для токенов доступен';
 			},
-			'target' => [
-				'all_of' => [
-					'[Action.name] = Read',
-				],
-			],
-			'effect' => true
 		],[
+			'effect' => true,
+			'combiner' => 'same_by_same',
+			'rules' => [[ 'condition' => '[scope.time.week_day] in [TIME.WORK_DAYS]' ]],
 			'obligation' => function(){
 				echo 'В рабочие дни токен работает';
 			},
-			'rules' => [[
-				'condition' => '[Scope.time.week_day] in [TIME.WORK_DAYS]'
-			]],
-			'effect' => true
 		]],
+	],[
+
+		'name' => 'Deny',
+		'effect' => false,
+		'obligation' => function(){
+			echo 'Введен запрет на любые действия';
+		},
 	]]
 
 ]);
+$manager->setAggregator($aggregator);
 
-$manager->setPolicyAdapter($policyAdapter);
+$context = new Context();
+$context->setProperties([
 
-$manager->getContextAdapter()->setUser([
-	'id'    => 1,
-	'name'  => 'Alexey',
-	'login' => 'Kutuz27',
-	'group' => 'Anonymous',
-	'email' => 'lexus.1995@mail.ru',
-	'photo' => '/user/123223/avatar.jpg'
-])->setAdditionVariables([
+	'user' => [
+		'id'    => 1,
+		'name'  => 'Alexey',
+		'login' => 'Kutuz27',
+		'group' => 'Administrator',
+		'email' => 'lexus.1995@mail.ru',
+		'photo' => '/user/123223/avatar.jpg'
+	],
+
 	'route' => [
 		'module'        => null,
 		'controller'    => null,
 		'action'        => null,
 		'params'        => null
 	],
+
 	'client' => [
 		'request' => & $_REQUEST,
 		'server'  => & $_SERVER,
 		'cookies' => & $_COOKIE,
 		'session' => & $_SESSION
 	]
-]);
+
+], true);
+$manager->setContext($context);
+
+
 echo '<br/>';
-var_dump($manager->enforce('Update','[class: Document]'));
+var_dump($manager->enforce('Read','[class: Document]'));

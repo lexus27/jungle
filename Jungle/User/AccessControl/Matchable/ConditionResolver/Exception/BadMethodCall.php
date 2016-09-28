@@ -5,11 +5,11 @@
  * Date: 16.02.2016
  * Time: 19:01
  */
-namespace Jungle\User\AccessControl\Policy\ConditionResolver\Exception {
+namespace Jungle\User\AccessControl\Matchable\ConditionResolver\Exception {
 
 	/**
 	 * Class BadMethodCall
-	 * @package Jungle\User\AccessControl\Policy\ConditionResolver\Exception
+	 * @package Jungle\User\AccessControl\Matchable\ConditionResolver\Exception
 	 */
 	class BadMethodCall extends Query{
 		protected $type = 'call_error';

@@ -23,14 +23,13 @@ namespace Jungle\User\AccessControl\Context {
 
 		const CONDITION_ANY_OF = 'any_of';
 
+
 		/** @var  callable|null */
 		protected $accessor;
+
 		/** @var  array */
 		protected $predicates = [];
 
-		public function __construct(){
-			$this->predicates = [];
-		}
 
 		/**
 		 * @param callable|null $accessor
@@ -66,7 +65,7 @@ namespace Jungle\User\AccessControl\Context {
 		 * @return array
 		 */
 		public function getAnyOfPredicates(){
-			$a= [];
+			$a = [];
 			foreach($this->predicates as $field => $container){
 				$a[$field] = $container['any_of'];
 			}

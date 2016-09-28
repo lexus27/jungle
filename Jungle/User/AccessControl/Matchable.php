@@ -8,14 +8,14 @@
 namespace Jungle\User\AccessControl {
 
 	use Jungle\User\AccessControl\Context;
-	use Jungle\User\AccessControl\Policy\Expression;
-	use Jungle\User\AccessControl\Policy\MatchResult;
-	use Jungle\User\AccessControl\Policy\Target;
-	use Jungle\Util\Observable;
+	use Jungle\User\AccessControl\Matchable\Aggregator;
+	use Jungle\User\AccessControl\Matchable\Expression;
+	use Jungle\User\AccessControl\Matchable\Result;
+	use Jungle\User\AccessControl\Matchable\Target;
 
 	/**
 	 * Class Matchable
-	 * @package Jungle\User\AccessControl\Policy
+	 * @package Jungle\User\AccessControl\Matchable
 	 *
 	 * beforeInvoked(Matchable $this, $result, Context $context)
 	 * invoked(Matchable $this, $result, Context $context)
@@ -28,14 +28,14 @@ namespace Jungle\User\AccessControl {
 	 *
 	 *
 	 */
-	abstract class Matchable extends Observable implements MatchableInterface{
+	abstract class Matchable implements MatchableInterface{
 
 
 		/** Разрешено */
-		const PERMIT                = true;
+		const PERMIT                = 'permit';
 
 		/** Запрещено */
-		const DENY                  = false;
+		const DENY                  = 'deny';
 
 		/** Не определен */
 		const INDETERMINATE         = 'indeterminate';
@@ -43,37 +43,66 @@ namespace Jungle\User\AccessControl {
 		/** Не применим */
 		const NOT_APPLICABLE        = 'not_applicable';
 
+		/**
+		 * @param $effect
+		 * @return string
+		 */
+		public static function friendlyEffect($effect){
+			if($effect === true || $effect === 1){
+				return self::PERMIT;
+			}elseif($effect === false || $effect === 0){
+				return self::DENY;
+			}
+			return $effect;
+		}
+
 
 		/** @var  string */
 		protected $name;
 
-		/** @var  Target */
+		/** @var  Aggregator */
+		protected $parent;
+
+		/** @var  Target|null */
 		protected $target;
 
-		/** @var  Expression */
+		/** @var  callable|null */
 		protected $obligation;
 
-		/** @var  Expression */
+		/** @var  callable|null */
 		protected $advice;
 
-		/** @var  Expression|callable|null */
-		protected $requirements;
+		/** @var  callable|null */
+		protected $requirement;
 
 		/** @var bool */
 		protected $effect = null;
 
+		/**
+		 * @param Aggregator|null $parent
+		 * @param bool|false $appliedIn
+		 * @param bool|false $appliedOld
+		 * @return $this
+		 */
+		public function setParent(Aggregator $parent = null, $appliedIn = false, $appliedOld = false){
+			$old = $this->parent;
+			if($old !== $parent){
+				$this->parent = $parent;
+				if(!$appliedIn && $parent){
+					$parent->addChild($this, true);
+				}
+				if(!$appliedOld && $old){
+					$old->removeChild($this);
+				}
+			}
+			return $this;
+		}
 
-
-		public function __construct(){
-			$this->addEvent([
-				'beforeInvoked',
-				'invoked',
-				'invoked_obligation',
-				'invoked_advice',
-				'match',
-				'match_contain_check',
-				'match_contain_check_stop',
-			]);
+		/**
+		 * @return Aggregator
+		 */
+		public function getParent(){
+			return $this->parent;
 		}
 
 		/**
@@ -93,12 +122,11 @@ namespace Jungle\User\AccessControl {
 		}
 
 
-
 		/**
-		 * @param bool $effect
+		 * @param string $effect
 		 * @return $this
 		 */
-		public function setEffect($effect = self::DENY){
+		public function setEffect($effect){
 			$this->effect = $effect;
 			return $this;
 		}
@@ -107,20 +135,23 @@ namespace Jungle\User\AccessControl {
 		 * @return bool
 		 */
 		public function getEffect(){
+			if($this->parent && $this->effect === null){
+				return $this->parent->getEffect();
+			}
 			return $this->effect;
 		}
 
 		/**
-		 * @param Target $target
+		 * @param Target|null $target
 		 * @return $this
 		 */
-		public function setTarget(Target $target){
+		public function setTarget(Target $target = null){
 			$this->target = $target;
 			return $this;
 		}
 
 		/**
-		 * @return Target
+		 * @return Target|null
 		 */
 		public function getTarget(){
 			return $this->target;
@@ -137,7 +168,7 @@ namespace Jungle\User\AccessControl {
 		}
 
 		/**
-		 * @return Expression
+		 * @return callable|null
 		 */
 		public function getObligation(){
 			return $this->obligation;
@@ -147,42 +178,43 @@ namespace Jungle\User\AccessControl {
 
 
 		/**
-		 * @param callable $advice
+		 * @param callable|null $advice
 		 * @return $this
 		 */
-		public function setAdvice(callable $advice){
+		public function setAdvice(callable $advice = null){
 			$this->advice = $advice;
 			return $this;
 		}
 
 		/**
-		 * @return Expression
+		 * @return callable|null
 		 */
 		public function getAdvice(){
 			return $this->advice;
 		}
 
 		/**
-		 * @param callable $requirements
+		 * @param callable|null $requirement
 		 * @return $this
 		 */
-		public function setRequirements(callable $requirements){
-			$this->requirements = $requirements;
+		public function setRequirement(callable $requirement = null){
+			$this->requirement = $requirement;
 			return $this;
 		}
 
 		/**
 		 * @return mixed
 		 */
-		public function getRequirements(){
-			return $this->requirements;
+		public function getRequirement(){
+			return $this->requirement;
 		}
 
 		/**
 		 * @param Context $context
-		 * @return MatchResult
+		 * @param Aggregator $aggregator
+		 * @return Result
 		 */
-		abstract public function match(Context $context);
+		abstract public function match(Context $context, Aggregator $aggregator);
 
 	}
 }

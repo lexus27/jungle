@@ -9,9 +9,10 @@
  */
 namespace Jungle\User\AccessControl {
 	
-	use Jungle\User\AccessControl\Policy\Expression;
-	use Jungle\User\AccessControl\Policy\MatchResult;
-	use Jungle\User\AccessControl\Policy\Target;
+	use Jungle\User\AccessControl\Matchable\Aggregator;
+	use Jungle\User\AccessControl\Matchable\Expression;
+	use Jungle\User\AccessControl\Matchable\Result;
+	use Jungle\User\AccessControl\Matchable\Target;
 	use Jungle\Util\INamed;
 
 	/**
@@ -48,7 +49,7 @@ namespace Jungle\User\AccessControl {
 		 * @param Target $target
 		 * @return $this
 		 */
-		public function setTarget(Target $target);
+		public function setTarget(Target $target = null);
 
 		/**
 		 * @return Target
@@ -63,7 +64,7 @@ namespace Jungle\User\AccessControl {
 		public function setObligation(callable $obligation = null);
 
 		/**
-		 * @return Expression
+		 * @return callable|null
 		 */
 		public function getObligation();
 
@@ -74,10 +75,10 @@ namespace Jungle\User\AccessControl {
 		 * @param callable $advice
 		 * @return $this
 		 */
-		public function setAdvice(callable $advice);
+		public function setAdvice(callable $advice = null);
 
 		/**
-		 * @return Expression
+		 * @return callable|null
 		 */
 		public function getAdvice();
 
@@ -85,18 +86,19 @@ namespace Jungle\User\AccessControl {
 		 * @param callable $requirements
 		 * @return $this
 		 */
-		public function setRequirements(callable $requirements);
+		public function setRequirement(callable $requirements = null);
 
 		/**
-		 * @return mixed
+		 * @return callable|null
 		 */
-		public function getRequirements();
+		public function getRequirement();
 
 		/**
 		 * @param Context $context
-		 * @return MatchResult
+		 * @param Aggregator $aggregator
+		 * @return Result
 		 */
-		public function match(Context $context);
+		public function match(Context $context, Aggregator $aggregator);
 
 	}
 }

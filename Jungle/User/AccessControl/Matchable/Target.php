@@ -5,7 +5,7 @@
  * Date: 14.02.2016
  * Time: 19:22
  */
-namespace Jungle\User\AccessControl\Policy {
+namespace Jungle\User\AccessControl\Matchable {
 
 	use Jungle\User\AccessControl\Context;
 
@@ -57,6 +57,9 @@ namespace Jungle\User\AccessControl\Policy {
 			if(!is_array($conditions)){
 				$conditions = [$conditions];
 			}
+
+			eval('$a === $b');
+
 			foreach($conditions as $c){
 				if($c){
 					if(is_string($c)){
@@ -143,19 +146,19 @@ namespace Jungle\User\AccessControl\Policy {
 		 * @param Context $context
 		 * @return bool
 		 */
-		public function isApplicable(Context $context){
+		public function __invoke(Context $context){
 			if(!$this->all_of_conditions && !$this->any_of_conditions){
 				return true;
 			}
 			$result = true;
 			foreach($this->all_of_conditions as $condition){
-				if(!$context->getManager()->requireConditionResolver()->check($condition,$context)){
+				if(!$context->getManager()->getConditionResolver()->check($condition,$context)){
 					$result = false;
 				}
 			}
 			if($result === true && $this->any_of_conditions){
 				foreach($this->any_of_conditions as $condition){
-					if($context->getManager()->requireConditionResolver()->check($condition,$context)){
+					if($context->getManager()->getConditionResolver()->check($condition,$context)){
 						return true;
 					}
 				}
