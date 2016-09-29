@@ -104,7 +104,7 @@ namespace Jungle\User\AccessControl\Matchable {
 					'default'           => null,
 					'empty'             => null,
 					'result'            => null,
-					'history'           => true,
+					'history'           => false,
 					'not_applicable'    => [
 						'check'     => null,
 						'early'     => null,
@@ -288,6 +288,49 @@ namespace Jungle\User\AccessControl\Matchable {
 				$this->onEmpty();
 			}
 			return $aggregatorResult->setEffect($this->getEffect());
+		}
+
+		/**
+		 * @return bool
+		 */
+		public function hasInterrupts(){
+			if($this->config['applicable']['early']){
+				return true;
+			}elseif(is_array($this->config['applicable']['check'])){
+				foreach($this->config['applicable']['check'] as $check){
+					if(isset($check['early']) && $check['early']){
+						return true;
+					}
+				}
+			}
+			if($this->config['not_applicable']['early']){
+				return true;
+			}elseif(is_array($this->config['not_applicable']['check'])){
+				foreach($this->config['not_applicable']['check'] as $check){
+					if(isset($check['early']) && $check['early']){
+						return true;
+					}
+				}
+			}
+			if($this->config['permit']['early']){
+				return true;
+			}elseif(is_array($this->config['permit']['check'])){
+				foreach($this->config['permit']['check'] as $check){
+					if(isset($check['early']) && $check['early']){
+						return true;
+					}
+				}
+			}
+			if($this->config['deny']['early']){
+				return true;
+			}elseif(is_array($this->config['deny']['check'])){
+				foreach($this->config['deny']['check'] as $check){
+					if(isset($check['early']) && $check['early']){
+						return true;
+					}
+				}
+			}
+			return false;
 		}
 
 		/**

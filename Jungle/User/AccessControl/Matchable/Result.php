@@ -7,6 +7,7 @@
  */
 namespace Jungle\User\AccessControl\Matchable {
 
+	use Jungle\User\AccessControl\Context;
 	use Jungle\User\AccessControl\Matchable;
 
 	/**
@@ -17,6 +18,12 @@ namespace Jungle\User\AccessControl\Matchable {
 
 		/** @var  Matchable */
 		protected $matchable;
+
+		/** @var  Context */
+		protected $context;
+
+		/** @var  mixed */
+		protected $matchable_effect;
 
 		/** @var  bool|string */
 		protected $effect;
@@ -30,19 +37,48 @@ namespace Jungle\User\AccessControl\Matchable {
 		/** @var Result[]  */
 		protected $children = [];
 
+		/** @var array  */
+		protected $data = [];
 
 		/**
 		 * @Constructor
-		 * @param $effect
 		 * @param Matchable $matchable
+		 * @param Context $context
+		 * @param $effect
 		 */
-		public function __construct(Matchable $matchable = null, $effect = null){
+		public function __construct(Matchable $matchable = null,Context $context = null, $effect = null){
 			if($effect !== null){
 				$this->effect = $effect;
+			}
+			if($context!==null){
+				$this->context = $context;
 			}
 			if($matchable!==null){
 				$this->matchable = $matchable;
 			}
+		}
+
+		/**
+		 * @return bool
+		 */
+		public function isAllowed(){
+			return $this->effect === Matchable::PERMIT?true:false;
+		}
+
+		/**
+		 * @param Context $context
+		 * @return $this
+		 */
+		public function setContext(Context $context){
+			$this->context = $context;
+			return $this;
+		}
+
+		/**
+		 * @return Context
+		 */
+		public function getContext(){
+			return $this->context;
 		}
 
 
@@ -60,6 +96,15 @@ namespace Jungle\User\AccessControl\Matchable {
 		 */
 		public function getMatchable(){
 			return $this->matchable;
+		}
+
+		public function setMatchableEffect($effect){
+			$this->matchable_effect = $effect;
+			return $this;
+		}
+
+		public function getMatchableEffect(){
+			return $this->matchable_effect;
 		}
 
 
@@ -126,6 +171,37 @@ namespace Jungle\User\AccessControl\Matchable {
 		 */
 		public function getEffect(){
 			return $this->effect;
+		}
+
+
+		/**
+		 * @param $key
+		 * @param $value
+		 * @return $this
+		 */
+		public function setData($key, $value){
+			$this->data[$key] = $value;
+			return $this;
+		}
+
+		/**
+		 * @param $key
+		 * @param $value
+		 * @return $this
+		 */
+		public function addData($key, $value){
+			if(!isset($this->data[$key])){
+				$this->data[$key] = [];
+			}
+			$this->data[$key][] = $value;
+			return $this;
+		}
+
+		/**
+		 * @return array
+		 */
+		public function getData($key){
+			return isset($this->data[$key])?$this->data[$key]:null;
 		}
 
 

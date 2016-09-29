@@ -81,9 +81,6 @@ include './loader.php';
 echo '<pre>';
 
 $manager = new Manager();
-$manager->setDefaultEffect(Matchable::PERMIT);
-$manager->setSameEffect(Matchable::DENY);
-
 
 
 /**
@@ -264,20 +261,26 @@ $combiner_settings = [
 	],
 
 	'dispute' => [
-		'default'   => '{!same}',
+		'default'   => '{same}',
 		'empty'     => '{same}',
 		'applicable' => [
-			'check'     => '{same}',
+			'check'     => '{!same}',
 			'early'     => true,
 			'effect'    => '{current}'
 		],
 	],
 	'dispute_all' => [
-		'default'   => '{!same}',
+		'default'   => '{same}',
 		'empty'     => '{same}',
 		'applicable' => [
-			'check'     => '{same}',
-			'effect'    => '{current}'
+			'check' => [[
+				'check'     => '{!same}',
+				'effect'    => '{current}'
+			],[
+				'check'     => '{same}',
+				'early'     => true,
+				'effect'    => '{current}'
+			]]
 		],
 	],
 
@@ -354,6 +357,12 @@ $combiner_settings = [
 ];
 
 
+$resolver = new Matchable\Resolver\ConditionResolver();
+$manager->setConditionResolver($resolver);
+
+
+
+
 $manager->setCombiner('delegate',  new Matchable\Combiner($combiner_settings['delegate']));
 $manager->setCombiner('delegate_same',  new Matchable\Combiner($combiner_settings['delegate_same']));
 $manager->setCombiner('same',  new Matchable\Combiner($combiner_settings['same']));
@@ -367,13 +376,33 @@ $manager->setCombiner('dispute_all',  new Matchable\Combiner($combiner_settings[
 $manager->setDefaultCombiner('dispute_all');
 $manager->setMainCombiner('dispute_all');
 
+$manager->setDefaultEffect(Matchable::PERMIT);
+$manager->setSameEffect(Matchable::DENY);
+
 $aggregator = new MemoryPolicyAdapter(null);
 $aggregator->build([
 
 	'policies' => [[
+		'effect' => true,
+		'name' => 'Работа с Записками',
+		'target' => [
+			'all_of' => '[object::class] = Note',
+		],
+		'combiner' => 'delegate',
+		'rules' => [[
+			'condition' => '[user.group] = Administrators'
+		],[
+			'condition' => '[object.owner_id] = [user.id]'
+		],[
+			'condition' => '[object.public] = true'
+		]]
+	],[
 		'effect'    => true,
 		'name'      => 'Администраторы',
 		'combiner'  => 'dispute',
+		'obligation' => function(){
+			echo 'Вседозволенные Администраторы';
+		},
 		'target'    => [
 			'all_of'    => [
 				'[user.group] = Administrators',
@@ -394,11 +423,8 @@ $aggregator->build([
 		},
 		'policies' => [[
 			'effect' => true,
-			'target' => [
-				'all_of' => '[action.name] = Read'
-			],
 			'rules' => [[
-				'condition' => '[scope.time.week_day] in [TIME.WORK_DAYS]'
+				'condition' => '[action.name] = Read'
 			]],
 			'obligation' => function(){
 				echo 'Просматривать можно';
@@ -417,14 +443,13 @@ $aggregator->build([
 	],[
 		'effect'    => false,
 		'name'      => 'CurrentToken',
-		'combiner'  => 'dispute_all',
 		'obligation' => function(){
 			echo 'По токену Есть ограничения';
 		},
-
+		'combiner'  => 'same_by_same',
 		'policies' => [[
 			'effect' => true,
-			'target' => [ 'all_of' => [ '[user.group] = Administrator', ], ],
+			'target' => [ 'all_of' => [ '[user.group] = Administrators', ], ],
 			'obligation' => function(){
 				echo 'Администраторам можно';
 			},
@@ -442,14 +467,19 @@ $aggregator->build([
 				echo 'В рабочие дни токен работает';
 			},
 		]],
-	],[
+	],/*[
 
 		'name' => 'Deny',
 		'effect' => false,
+		'target' => [
+			'all_of' => [
+				'[user.group] != Administrators'
+			]
+		],
 		'obligation' => function(){
-			echo 'Введен запрет на любые действия';
+			echo 'Технические работы';
 		},
-	]]
+	]*/]
 
 ]);
 $manager->setAggregator($aggregator);
@@ -461,7 +491,7 @@ $context->setProperties([
 		'id'    => 1,
 		'name'  => 'Alexey',
 		'login' => 'Kutuz27',
-		'group' => 'Administrator',
+		'group' => 'A',
 		'email' => 'lexus.1995@mail.ru',
 		'photo' => '/user/123223/avatar.jpg'
 	],
@@ -485,4 +515,23 @@ $manager->setContext($context);
 
 
 echo '<br/>';
-var_dump($manager->enforce('Read','[class: Document]'));
+
+
+$object = new Context\ObjectAccessor([
+	'class' => 'Document',
+	'phantom' => [
+		'owner_id' => 2,
+	]
+]);
+
+
+$result = $manager->enforce('Read',$object, true);
+if($result->isAllowed() === $object->getPredicatesEffect()){
+	echo '<p><pre>';
+	var_dump($object->getSelectConditions());
+	echo '</pre></p>';
+}else{
+	echo '<p><pre>';
+	var_dump($result->getEffect());
+	echo '</pre></p>';
+}

@@ -12,8 +12,8 @@ namespace Jungle\User\AccessControl {
 	use Jungle\User\AccessControl\Adapter\ContextAdapter;
 	use Jungle\User\AccessControl\Adapter\PolicyAdapter;
 	use Jungle\User\AccessControl\Matchable\Combiner;
-	use Jungle\User\AccessControl\Matchable\ConditionResolver;
 	use Jungle\User\AccessControl\Matchable\ExpressionResolver;
+	use Jungle\User\AccessControl\Matchable\Resolver\ConditionResolver;
 
 	/**
 	 * Interface ManagerInterface
@@ -89,7 +89,7 @@ namespace Jungle\User\AccessControl {
 		public function setMainCombiner(Combiner $algorithm);
 
 		/**
-		 * @param ConditionResolver $resolver
+		 * @param \Jungle\User\AccessControl\Matchable\Resolver\ConditionResolver $resolver
 		 * @return $this
 		 */
 		public function setConditionResolver(ConditionResolver $resolver);

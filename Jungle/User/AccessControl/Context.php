@@ -81,16 +81,13 @@ namespace Jungle\User\AccessControl {
 		 * @return mixed|null
 		 */
 		public function __get($name){
-			if(isset($this->properties[$name])){
-				return $this->properties[$name];
-			}
 			switch($name){
 				case 'user':    return $this->getUser();
 				case 'scope':   return $this->getScope();
 				case 'action':  return $this->getAction();
 				case 'object':  return $this->getObject();
+				default: return isset($this->properties[$name])?$this->properties[$name]:null;
 			}
-			return null;
 		}
 
 		/**
@@ -98,16 +95,13 @@ namespace Jungle\User\AccessControl {
 		 * @return bool
 		 */
 		public function __isset($name){
-			if(isset($this->properties[$name])){
-				return true;
-			}
 			switch($name){
 				case 'user':    return !!$this->getUser();
 				case 'scope':   return !!$this->getScope();
 				case 'action':  return !!$this->getAction();
 				case 'object':  return !!$this->getObject();
+				default: return isset($this->properties[$name]);
 			}
-			return false;
 		}
 
 		/**
@@ -132,14 +126,14 @@ namespace Jungle\User\AccessControl {
 		 * @return mixed
 		 */
 		public function getUser(){
-			return null;
+			return isset($this->properties['user'])?$this->properties['user']:null;
 		}
 
 		/**
 		 * @return mixed
 		 */
 		public function getScope(){
-			return [
+			return array_replace_recursive([
 				'time'      => [
 					'hour'      => date('H'),
 					'minutes'   => date('i'),
@@ -152,21 +146,21 @@ namespace Jungle\User\AccessControl {
 					'year'      => intval(date('Y')),
 					'time'      => time()
 				],
-			];
+			],isset($this->properties['scope'])?$this->properties['scope']:[]);
 		}
 
 		/**
 		 * @return mixed
 		 */
 		public function getAction(){
-			return null;
+			return isset($this->properties['action'])?$this->properties['action']:null;
 		}
 
 		/**
 		 * @return mixed
 		 */
 		public function getObject(){
-			return null;
+			return isset($this->properties['object'])?$this->properties['object']:null;
 		}
 
 

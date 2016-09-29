@@ -23,34 +23,22 @@ namespace Jungle\User\AccessControl\Context {
 	 */
 	class Substitute implements SubstituteInterface{
 
-		/**
-		 * @var string class Name
-		 */
+		/** @var string class Name */
 		protected $class;
 
-		/**
-		 * @var string var type
-		 */
+		/** @var string var type */
 		protected $type;
 
-		/**
-		 * @var int count
-		 */
+		/** @var int count */
 		protected $count;
 
-		/**
-		 * @var int length
-		 */
+		/** @var int length */
 		protected $length;
 
-		/**
-		 * @var mixed value if not substitute
-		 */
+		/** @var mixed value if not substitute */
 		protected $value;
 
-		/**
-		 * @var bool value defined
-		 */
+		/** @var bool value defined */
 		protected $value_defined = false;
 
 
@@ -62,6 +50,7 @@ namespace Jungle\User\AccessControl\Context {
 			$this->class = $class_name;
 			return $this;
 		}
+
 		/**
 		 * @return string|null
 		 */
@@ -172,7 +161,7 @@ namespace Jungle\User\AccessControl\Context {
 		 * @param $value SubstituteInterface|mixed
 		 * @return int|null|string
 		 */
-		public static function getInfoFor($info_key, $value){
+		public static function infoQuery($info_key, $value){
 			if($value instanceof SubstituteInterface){
 				switch($info_key){
 					case 'class' :   return $value->getClass();

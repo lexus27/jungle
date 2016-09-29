@@ -57,9 +57,6 @@ namespace Jungle\User\AccessControl\Matchable {
 			if(!is_array($conditions)){
 				$conditions = [$conditions];
 			}
-
-			eval('$a === $b');
-
 			foreach($conditions as $c){
 				if($c){
 					if(is_string($c)){
@@ -144,21 +141,30 @@ namespace Jungle\User\AccessControl\Matchable {
 
 		/**
 		 * @param Context $context
+		 * @param Result $current
 		 * @return bool
+		 * @throws Resolver\ConditionResolver\Exception
 		 */
-		public function __invoke(Context $context){
+		public function __invoke(Context $context, Result $current){
 			if(!$this->all_of_conditions && !$this->any_of_conditions){
 				return true;
 			}
+			$resolver = $context->getManager()->getConditionResolver();
+			if($inspector = $resolver->getInspector()){
+				$inspector->setMode('all_of');
+			}
 			$result = true;
 			foreach($this->all_of_conditions as $condition){
-				if(!$context->getManager()->getConditionResolver()->check($condition,$context)){
+				if(!$resolver->resolve($context, $current, $condition)){
 					$result = false;
 				}
 			}
 			if($result === true && $this->any_of_conditions){
+				if($inspector){
+					$inspector->setMode('any_of');
+				}
 				foreach($this->any_of_conditions as $condition){
-					if($context->getManager()->getConditionResolver()->check($condition,$context)){
+					if($resolver->resolve($context, $current, $condition)){
 						return true;
 					}
 				}

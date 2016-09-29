@@ -7,6 +7,8 @@
  */
 namespace Jungle\User\AccessControl\Context {
 
+	use Jungle\Util\Value\Massive;
+
 	/**
 	 * TODO Recording Voice File clipped comment! Запись и привязка голосовых комментариев к файлу, субьекту работы, конкретному элементу)
 	 *
@@ -19,100 +21,176 @@ namespace Jungle\User\AccessControl\Context {
 	 */
 	class ObjectAccessor extends Substitute{
 
-		const CONDITION_ALL_OF = 'all_of';
-
-		const CONDITION_ANY_OF = 'any_of';
 
 
 		/** @var  callable|null */
 		protected $accessor;
 
 		/** @var  array */
-		protected $predicates = [];
+		protected $target_conditions = [];
+
+		/** @var  array */
+		protected $predicated_conditions = [];
+
+		/** @var  array */
+		protected $phantom;
+
+		/** @var bool|null  */
+		protected $collect_predicates_effect = null;
 
 
 		/**
-		 * @param callable|null $accessor
+		 * ObjectAccessor constructor.
+		 * @param array $properties
+		 */
+		public function __construct(array $properties = null){
+			if($properties){
+				if(isset($properties['class'])){
+					$this->class = $properties['class'];
+				}
+				if(isset($properties['phantom'])){
+					$this->phantom = $properties['phantom'];
+				}
+				if(isset($properties['conditions'])){
+					$this->target_conditions = $properties['condition'];
+				}
+				if(isset($properties['predicate_effect'])){
+					$this->collect_predicates_effect = $properties['predicate_effect'];
+				}
+			}
+		}
+
+		/**
+		 * @param array $object
 		 * @return $this
 		 */
-		public function setAccessor(callable $accessor = null){
-			$this->accessor = $accessor;
+		public function setPhantom(array $object){
+			$this->phantom = $object;
 			return $this;
 		}
 
 		/**
-		 * @return callable|null
+		 * @return array
 		 */
-		public function getAccessor(){
-			return $this->accessor;
+		public function getPhantom(){
+			return $this->phantom;
+		}
+
+
+
+		/**
+		 * @param string $name
+		 * @return null
+		 */
+		function __get($name){
+			return isset($this->phantom[$name])?$this->phantom[$name]:null;
+		}
+
+		/**
+		 * @param string $name
+		 * @param mixed $value
+		 */
+		function __set($name, $value){
+			$this->phantom[$name] = $value;
+		}
+
+		/**
+		 * @param string $name
+		 * @return bool
+		 */
+		function __isset($name){
+			return isset($this->phantom[$name]);
+		}
+
+		/**
+		 * @param string $name
+		 */
+		function __unset($name){
+			unset($this->phantom[$name]);
+		}
+
+
+
+		/**
+		 * @param array $conditions
+		 * @return $this
+		 */
+		public function setTargetConditions(array $conditions){
+			$this->target_conditions = $conditions;
+			return $this;
 		}
 
 		/**
 		 * @return array
 		 */
-		public function getPredicates(){
-			return $this->predicates;
+		public function getTargetConditions(){
+			return $this->target_conditions;
+		}
+
+
+
+		/**
+		 * @param array $conditions
+		 */
+		public function setPredicatedConditions(array $conditions){
+			$this->predicated_conditions = $conditions;
 		}
 
 		/**
 		 * @return array
 		 */
-		public function getPredicatedFields(){
-			return array_keys($this->predicates);
+		public function getPredicatedConditions(){
+			return $this->predicated_conditions;
 		}
+
+
 
 		/**
 		 * @return array
 		 */
-		public function getAnyOfPredicates(){
+		public function getSelectConditions(){
 			$a = [];
-			foreach($this->predicates as $field => $container){
-				$a[$field] = $container['any_of'];
+			if($this->predicated_conditions){
+				$a[] = $this->predicated_conditions;
 			}
-			return $a;
+			if($this->target_conditions){
+				$a[] = $this->target_conditions;
+			}
+			if($this->phantom){
+				$b = [];
+				foreach($this->phantom as $k => $v){
+					$b[] = [$k,'=',$v];
+				}
+				$a[] = $b;
+			}
+			if(count($a)===1){
+				return $a[0];
+			}else{
+				return Massive::insertSeparates($a, 'AND');
+			}
 		}
 
 		/**
-		 * @return array
+		 * @param $effect
+		 * @return $this
 		 */
-		public function getAllOfPredicates(){
-			$a= [];
-			foreach($this->predicates as $field => $container){
-				$a[$field] = $container['all_of'];
-			}
-			return $a;
-		}
-
-
-
-		/**
-		 * @param $field
-		 * @param $operator
-		 * @param $value
-		 */
-		public function addAllOfPredicate($field, $operator, $value){
-			if(!isset($this->predicates[$field])){
-				$this->predicates[$field] = [
-					'all_of' => [],
-					'any_of' => []
-				];
-			}
-			$this->predicates[$field]['all_of'][] = [$operator,$value];
+		public function setPredicatesEffect($effect){
+			$this->collect_predicates_effect = $effect;
+			return $this;
 		}
 
 		/**
-		 * @param $field
-		 * @param $operator
-		 * @param $value
+		 * @return bool
 		 */
-		public function addAnyOfPredicate($field, $operator, $value){
-			if(!isset($this->predicates[$field])){
-				$this->predicates[$field] = [
-					'all_of' => [],
-					'any_of' => []
-				];
-			}
-			$this->predicates[$field]['any_of'][] = [$operator,$value];
+		public function hasPredicatesEffect(){
+			return $this->collect_predicates_effect!==null;
+		}
+
+		/**
+		 * @return bool|null
+		 */
+		public function getPredicatesEffect(){
+			return $this->collect_predicates_effect;
 		}
 
 

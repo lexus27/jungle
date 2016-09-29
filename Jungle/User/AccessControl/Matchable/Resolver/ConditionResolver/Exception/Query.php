@@ -5,13 +5,13 @@
  * Date: 16.02.2016
  * Time: 19:03
  */
-namespace Jungle\User\AccessControl\Matchable\ConditionResolver\Exception {
+namespace Jungle\User\AccessControl\Matchable\Resolver\ConditionResolver\Exception {
 
-	use Jungle\User\AccessControl\Matchable\ConditionResolver\Exception;
+	use Jungle\User\AccessControl\Matchable\Resolver\ConditionResolver\Exception;
 
 	/**
 	 * Class Query
-	 * @package Jungle\User\AccessControl\Matchable\ConditionResolver\Exception
+	 * @package Jungle\User\AccessControl\Matchable\Resolver\ConditionResolver\Exception
 	 */
 	class Query extends Exception{
 

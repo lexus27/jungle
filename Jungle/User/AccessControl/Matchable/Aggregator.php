@@ -89,16 +89,21 @@ namespace Jungle\User\AccessControl\Matchable {
 		 */
 		public function match(Context $context, Aggregator $aggregator = null){
 			$manager = $context->getManager();
-			$result = new Result($this);
-			if($this->target && !call_user_func($this->target,$context)){
-				$result->setEffect(self::NOT_APPLICABLE);
-				$result->setMissed(true);
-				return $result;
-			}
+			$result = new Result($this,$context);
+
 			$effect = $this->getEffect();
 			if($effect===null){
 				$effect = $manager->getDefaultEffect();
 			}
+
+			$result->setMatchableEffect($effect);
+
+			if($this->target && !call_user_func($this->target,$context, $result)){
+				$result->setEffect(self::NOT_APPLICABLE);
+				$result->setMissed(true);
+				return $result;
+			}
+
 			$combiner = $manager->getCombiner($this->getCombiner());
 			$combiner = clone $combiner;
 			$combiner->setSame($effect);

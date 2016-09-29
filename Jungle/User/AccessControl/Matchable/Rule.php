@@ -44,22 +44,31 @@ namespace Jungle\User\AccessControl\Matchable {
 		 * @throws \Exception
 		 */
 		public function match(Context $context, Aggregator $aggregator = null){
-			$result = new Result($this);
+			$result = new Result($this,$context);
 			try{
-				$target = $this->target;
-				if($target && !$target($context)){
-					$result->setEffect(Matchable::NOT_APPLICABLE);
-					return $result;
-				}
-
+				$manager = $context->getManager();
 				$effect = $this->getEffect();
 				if($aggregator){
 					$effect = $effect===null?$aggregator->getEffect():$effect;
 				}
-				$effect = $effect!==null?$context->getManager()->getDefaultEffect():$effect;
+				$effect = $effect!==null?$manager->getDefaultEffect():$effect;
+
+				$result->setMatchableEffect($effect);
+
+
+				$target = $this->target;
+				if($target && !$target($context,$result)){
+					$result->setMissed(true);
+					$result->setEffect(Matchable::NOT_APPLICABLE);
+					return $result;
+				}
 
 				if($this->condition){
-					if($context->getManager()->getConditionResolver()->check($this->condition,$context)){
+					$resolver = $manager->getConditionResolver();
+					if($inspector = $resolver->getInspector()){
+						$inspector->setMode('any_of');
+					}
+					if($resolver->resolve($context, $result, $this->condition)){
 						$result->setEffect($effect);
 					}else{
 						$result->setEffect(Matchable::NOT_APPLICABLE);

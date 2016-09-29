@@ -43,18 +43,6 @@ namespace Jungle\User\AccessControl {
 		/** Не применим */
 		const NOT_APPLICABLE        = 'not_applicable';
 
-		/**
-		 * @param $effect
-		 * @return string
-		 */
-		public static function friendlyEffect($effect){
-			if($effect === true || $effect === 1){
-				return self::PERMIT;
-			}elseif($effect === false || $effect === 0){
-				return self::DENY;
-			}
-			return $effect;
-		}
 
 
 		/** @var  string */
@@ -216,6 +204,20 @@ namespace Jungle\User\AccessControl {
 		 */
 		abstract public function match(Context $context, Aggregator $aggregator);
 
+
+
+		/**
+		 * @param $effect
+		 * @return string
+		 */
+		public static function friendlyEffect($effect){
+			if($effect === true || $effect === 1){
+				return self::PERMIT;
+			}elseif($effect === false || $effect === 0){
+				return self::DENY;
+			}
+			return $effect;
+		}
 	}
 }
 
