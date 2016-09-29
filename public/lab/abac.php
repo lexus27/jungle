@@ -253,7 +253,7 @@ $context->setProperties([
 		'id'    => 1,
 		'name'  => 'Alexey',
 		'login' => 'Kutuz27',
-		'group' => 'A',
+		'group' => 'Anonymous',
 		'email' => 'lexus.1995@mail.ru',
 		'photo' => '/user/123223/avatar.jpg'
 	],
@@ -280,10 +280,11 @@ echo '<br/>';
 
 
 $object = new Context\ObjectAccessor([
-	'class' => 'Document',
+	'class' => 'Note',
 	'phantom' => [
 		'owner_id' => 2,
-	]
+	],
+	'predicate_effect' => true,
 ]);
 
 
