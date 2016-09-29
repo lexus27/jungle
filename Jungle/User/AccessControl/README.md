@@ -30,6 +30,47 @@ _**INDETERMINATE**_    - склонен к отказу, т.к вычислит�
 _**NOT_APPLICABLE**_ - Возможно интерпретировать из NULL значения, т.к NOT_APPLICABLE является переопределяемым от контейнера (итоговое)
 _**INDETERMINATE**_ - Возможно реализовать при помощи Исключений
 
+Примеры основного определения:
+------------------------------
+
+    <?php
+    use Jungle\User\AccessControl\Adapter\PolicyAdater\Memory as MemoryPolicyAdapter;
+    use Jungle\User\AccessControl\Context;
+    use Jungle\User\AccessControl\Manager;
+    use Jungle\User\AccessControl\Matchable;
+    
+    include './loader.php';
+    
+    $manager = new Manager();
+    
+    $resolver = new Matchable\Resolver\ConditionResolver();
+    $manager->setConditionResolver($resolver);
+    
+    // .........$combiner_set declaration
+    
+    $manager->setCombiner('delegate',  new Matchable\Combiner($combiner_set['delegate']));
+    $manager->setCombiner('delegate_same',  new Matchable\Combiner($combiner_set['delegate_same']));
+    $manager->setCombiner('same',  new Matchable\Combiner($combiner_set['same']));
+    $manager->setCombiner('same_only',  new Matchable\Combiner($combiner_set['same_only']));
+    $manager->setCombiner('same_by_same',  new Matchable\Combiner($combiner_set['same_by_same']));
+    $manager->setCombiner('permit_by_permit',  new Matchable\Combiner($combiner_set['permit_by_permit']));
+    $manager->setCombiner('deny_by_deny',  new Matchable\Combiner($combiner_set['deny_by_deny']));
+    $manager->setCombiner('dispute',  new Matchable\Combiner($combiner_set['dispute']));
+    $manager->setCombiner('dispute_all',  new Matchable\Combiner($combiner_set['dispute_all']));
+    
+    $manager->setDefaultCombiner('dispute_all');
+    $manager->setMainCombiner('dispute_all');
+    
+    $manager->setDefaultEffect(Matchable::PERMIT);
+    $manager->setSameEffect(Matchable::DENY);
+    
+    
+    // .........$aggregator main declaration
+    // ............$context main declaration
+    
+    $manager->setAggregator($aggregator);
+    $manager->setContext($context);
+
 Примеры Набора политик доступа
 ------------------------------
 
@@ -167,7 +208,6 @@ _**INDETERMINATE**_ - Возможно реализовать при помощ�
         ]
     
     ], true);
-    $manager->setContext($context);
 
 
 Комбинаторы и Поведение
@@ -194,6 +234,7 @@ _Комбинатор нужно подбирать достаточно ску�
  `Поведение при "Не определенных"`
  `Поведение при "Разрешающих"`
  `Поведение при "Запрещающих"`
+ 
 ##### Примеры в массивах:
 
     $combiner_set = [
@@ -303,7 +344,7 @@ _Комбинатор нужно подбирать достаточно ску�
                 'effect'    => '{current}'
             ]
         ],
-    ]
+    ];
 
 **Принцип был интерпретирован, переосмыслен и реализован по данной [статье](https://habrahabr.ru/company/custis/blog/258861)**
 
@@ -332,6 +373,3 @@ ABAC предоставляет возможность, проверить пр�
         var_dump($result->getEffect());
         echo '</pre></p>';
     }
-
-
-
