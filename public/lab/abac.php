@@ -526,7 +526,7 @@ $object = new Context\ObjectAccessor([
 
 
 $result = $manager->enforce('Read',$object, true);
-if($result->isAllowed() === $object->getPredicatesEffect()){
+if($result->isAllowed() === $object->getPredicateEffect()){
 	echo '<p><pre>';
 	var_dump($object->getSelectConditions());
 	echo '</pre></p>';

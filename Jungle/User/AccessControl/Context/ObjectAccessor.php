@@ -174,7 +174,7 @@ namespace Jungle\User\AccessControl\Context {
 		 * @param $effect
 		 * @return $this
 		 */
-		public function setPredicatesEffect($effect){
+		public function setPredicateEffect($effect){
 			$this->collect_predicates_effect = $effect;
 			return $this;
 		}
@@ -182,14 +182,14 @@ namespace Jungle\User\AccessControl\Context {
 		/**
 		 * @return bool
 		 */
-		public function hasPredicatesEffect(){
+		public function hasPredicateEffect(){
 			return $this->collect_predicates_effect!==null;
 		}
 
 		/**
 		 * @return bool|null
 		 */
-		public function getPredicatesEffect(){
+		public function getPredicateEffect(){
 			return $this->collect_predicates_effect;
 		}
 

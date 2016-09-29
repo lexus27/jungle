@@ -244,8 +244,8 @@ namespace Jungle\User\AccessControl {
 			$collectByEffect = null;
 
 			$object = $context->getObject();
-			if($object instanceof ObjectAccessor && $object->hasPredicatesEffect()){
-				$collectByEffect = Matchable::friendlyEffect($object->getPredicatesEffect());
+			if($object instanceof ObjectAccessor && $object->hasPredicateEffect()){
+				$collectByEffect = Matchable::friendlyEffect($object->getPredicateEffect());
 				$inspector = $this->getPredicateInspector();
 				$inspector->setTargetEffect($collectByEffect);
 				$resolver->setInspector($inspector);
