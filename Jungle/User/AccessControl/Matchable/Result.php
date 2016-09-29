@@ -8,6 +8,7 @@
 namespace Jungle\User\AccessControl\Matchable {
 
 	use Jungle\User\AccessControl\Context;
+	use Jungle\User\AccessControl\ContextInterface;
 	use Jungle\User\AccessControl\Matchable;
 
 	/**
@@ -19,7 +20,7 @@ namespace Jungle\User\AccessControl\Matchable {
 		/** @var  Matchable */
 		protected $matchable;
 
-		/** @var  Context */
+		/** @var  ContextInterface */
 		protected $context;
 
 		/** @var  mixed */
@@ -43,10 +44,10 @@ namespace Jungle\User\AccessControl\Matchable {
 		/**
 		 * @Constructor
 		 * @param Matchable $matchable
-		 * @param Context $context
+		 * @param ContextInterface $context
 		 * @param $effect
 		 */
-		public function __construct(Matchable $matchable = null,Context $context = null, $effect = null){
+		public function __construct(Matchable $matchable = null,ContextInterface $context = null, $effect = null){
 			if($effect !== null){
 				$this->effect = $effect;
 			}
@@ -66,10 +67,10 @@ namespace Jungle\User\AccessControl\Matchable {
 		}
 
 		/**
-		 * @param Context $context
+		 * @param ContextInterface $context
 		 * @return $this
 		 */
-		public function setContext(Context $context){
+		public function setContext(ContextInterface $context){
 			$this->context = $context;
 			return $this;
 		}

@@ -54,10 +54,10 @@ namespace Jungle\User\AccessControl {
 		protected $default_effect = Matchable::PERMIT;
 
 		/**
-		 * @param Context $context
+		 * @param ContextInterface $context
 		 * @return $this
 		 */
-		public function setContext(Context $context){
+		public function setContext(ContextInterface $context){
 			$this->context = $context;
 			return $this;
 		}
@@ -261,10 +261,10 @@ namespace Jungle\User\AccessControl {
 		}
 
 		/**
-		 * @param Context $context
+		 * @param ContextInterface $context
 		 * @return Result
 		 */
-		public function decise(Context $context){
+		public function decise(ContextInterface $context){
 			$sameEffect = $this->getSameEffect();
 
 			$aggregator = $this->getAggregator();
@@ -301,10 +301,10 @@ namespace Jungle\User\AccessControl {
 		}
 
 		/**
-		 * @param Context $context
+		 * @param ContextInterface $context
 		 * @param Result $result
 		 */
-		protected function _handleResult(Context $context,Result $result){
+		protected function _handleResult(ContextInterface $context,Result $result){
 			$inspector  = $this->condition_resolver->getInspector();
 			if($inspector instanceof PredicateInspector){
 				$conditions = $inspector->collectCondition($context, $result);
@@ -355,10 +355,10 @@ namespace Jungle\User\AccessControl {
 		/**
 		 * @param $finalEffect
 		 * @param Result $result
-		 * @param Context $context
+		 * @param ContextInterface $context
 		 * @throws \Exception
 		 */
-		protected function invoke($finalEffect,Result $result,Context $context){
+		protected function invoke($finalEffect,Result $result,ContextInterface $context){
 			$matchable = $result->getMatchable();
 			if($matchable instanceof Aggregator){
 				foreach($result->getChildren() as $child){

@@ -8,6 +8,7 @@
 namespace Jungle\User\AccessControl\Matchable {
 
 	use Jungle\User\AccessControl\Context;
+	use Jungle\User\AccessControl\ContextInterface;
 	use Jungle\User\AccessControl\Matchable;
 	use Jungle\User\AccessControl\Matchable\Aggregator;
 
@@ -247,10 +248,10 @@ namespace Jungle\User\AccessControl\Matchable {
 		/**
 		 * @param Result $aggregatorResult
 		 * @param \Jungle\User\AccessControl\Matchable\Aggregator $aggregator
-		 * @param Context $context
+		 * @param ContextInterface $context
 		 * @return Result
 		 */
-		public function match(Result $aggregatorResult, Aggregator $aggregator, Context $context){
+		public function match(Result $aggregatorResult, Aggregator $aggregator, ContextInterface $context){
 			$this->reset();
 			$this->result = $aggregatorResult;
 			$aggregation = $aggregator->getChildren();

@@ -8,6 +8,7 @@
 namespace Jungle\User\AccessControl\Matchable {
 
 	use Jungle\User\AccessControl\Context;
+	use Jungle\User\AccessControl\ContextInterface;
 	use Jungle\User\AccessControl\Exception;
 	use Jungle\User\AccessControl\Matchable;
 
@@ -82,12 +83,12 @@ namespace Jungle\User\AccessControl\Matchable {
 		}
 
 		/**
-		 * @param Context $context
+		 * @param ContextInterface $context
 		 * @param Aggregator $aggregator
 		 * @return \Jungle\User\AccessControl\Matchable\Result
 		 * @throws Exception
 		 */
-		public function match(Context $context, Aggregator $aggregator = null){
+		public function match(ContextInterface $context, Aggregator $aggregator = null){
 			$manager = $context->getManager();
 			$result = new Result($this,$context);
 

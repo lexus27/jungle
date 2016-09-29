@@ -8,6 +8,7 @@
 namespace Jungle\User\AccessControl\Matchable {
 
 	use Jungle\User\AccessControl\Context;
+	use Jungle\User\AccessControl\ContextInterface;
 	use Jungle\User\AccessControl\Manager;
 	use Jungle\User\AccessControl\Matchable;
 	use Jungle\User\AccessControl\Matchable\Aggregator;
@@ -38,12 +39,12 @@ namespace Jungle\User\AccessControl\Matchable {
 
 		/**
 		 * Произвести проверку данного правила в контексте $context
-		 * @param Context $context
+		 * @param ContextInterface $context
 		 * @param \Jungle\User\AccessControl\Matchable\Aggregator $aggregator
 		 * @return mixed result
 		 * @throws \Exception
 		 */
-		public function match(Context $context, Aggregator $aggregator = null){
+		public function match(ContextInterface $context, Aggregator $aggregator = null){
 			$result = new Result($this,$context);
 			try{
 				$manager = $context->getManager();

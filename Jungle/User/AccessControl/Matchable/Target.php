@@ -8,9 +8,10 @@
 namespace Jungle\User\AccessControl\Matchable {
 
 	use Jungle\User\AccessControl\Context;
+	use Jungle\User\AccessControl\ContextInterface;
 
 	/**
-	 * Class TargetTable
+	 * Class Target
 	 * @package Jungle\User\AccessControl
 	 *
 	 * Цель политики, целью является определенно-подходящая комбинация атрибутов контекста
@@ -140,12 +141,12 @@ namespace Jungle\User\AccessControl\Matchable {
 
 
 		/**
-		 * @param Context $context
+		 * @param ContextInterface $context
 		 * @param Result $current
 		 * @return bool
 		 * @throws Resolver\ConditionResolver\Exception
 		 */
-		public function __invoke(Context $context, Result $current){
+		public function __invoke(ContextInterface $context, Result $current){
 			if(!$this->all_of_conditions && !$this->any_of_conditions){
 				return true;
 			}

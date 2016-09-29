@@ -94,11 +94,11 @@ namespace Jungle\User\AccessControl {
 		public function getRequirement();
 
 		/**
-		 * @param Context $context
+		 * @param ContextInterface $context
 		 * @param Aggregator $aggregator
 		 * @return Result
 		 */
-		public function match(Context $context, Aggregator $aggregator);
+		public function match(ContextInterface $context, Aggregator $aggregator);
 
 	}
 }

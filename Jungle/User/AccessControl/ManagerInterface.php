@@ -129,21 +129,21 @@ namespace Jungle\User\AccessControl {
 		 * @param $object
 		 * @param null $otherUser
 		 * @param null $otherScope
-		 * @return Context
+		 * @return ContextInterface
 		 */
 		public function contextFrom($action, $object, $otherUser = null, $otherScope = null);
 
 		/**
-		 * @param Context $context
+		 * @param ContextInterface $context
 		 * @return bool
 		 */
-		public function contextCheck(Context $context);
+		public function contextCheck(ContextInterface $context);
 
 		/**
-		 * @param Context $context
+		 * @param ContextInterface $context
 		 * @return Combiner
 		 */
-		public function decise(Context $context);
+		public function decise(ContextInterface $context);
 
 	}
 }

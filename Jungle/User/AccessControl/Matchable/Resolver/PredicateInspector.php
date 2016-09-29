@@ -12,6 +12,7 @@ namespace Jungle\User\AccessControl\Matchable\Resolver {
 	use Jungle\Data\Record\Head\Field;
 	use Jungle\User\AccessControl\Context;
 	use Jungle\User\AccessControl\Context\ObjectAccessor;
+	use Jungle\User\AccessControl\ContextInterface;
 	use Jungle\User\AccessControl\Matchable;
 	use Jungle\User\AccessControl\Matchable\Result;
 	use Jungle\Util\Value\Massive;
@@ -29,12 +30,12 @@ namespace Jungle\User\AccessControl\Matchable\Resolver {
 		protected $target_effect;
 
 		/**
-		 * @param Context $context
+		 * @param ContextInterface $context
 		 * @param Result $result
 		 * @param $expression
 		 * @return $this
 		 */
-		public function beginInspect(Context $context, Result $result, $expression){
+		public function beginInspect(ContextInterface $context, Result $result, $expression){
 			$this->context = $context;
 			$this->result = $result;
 			$this->expression = $expression;
@@ -91,11 +92,11 @@ namespace Jungle\User\AccessControl\Matchable\Resolver {
 
 
 		/**
-		 * @param Context $context
+		 * @param ContextInterface $context
 		 * @param Result $result
 		 * @return array|null
 		 */
-		public function collectCondition(Context $context, Result $result){
+		public function collectCondition(ContextInterface $context, Result $result){
 			$anyOf = $result->getData('predicate_any_of');
 			$allOf = $result->getData('predicate_all_of');
 			$clause = [];

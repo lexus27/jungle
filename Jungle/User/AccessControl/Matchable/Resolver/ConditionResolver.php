@@ -11,6 +11,7 @@ namespace Jungle\User\AccessControl\Matchable\Resolver {
 	use Jungle\ExoCode\LogicConstruction\Operator;
 	use Jungle\RegExp;
 	use Jungle\User\AccessControl\Context;
+	use Jungle\User\AccessControl\ContextInterface;
 	use Jungle\User\AccessControl\Matchable\Resolver;
 	use Jungle\User\AccessControl\Matchable\Resolver\ConditionResolver\Exception as ResolveException;
 	use Jungle\User\AccessControl\Matchable\Resolver\ConditionResolver\Exception\BadMethodCall;
@@ -132,13 +133,13 @@ namespace Jungle\User\AccessControl\Matchable\Resolver {
 		}
 
 		/**
-		 * @param Context $context
+		 * @param ContextInterface $context
 		 * @param Result $result
 		 * @param $condition
 		 * @return bool
 		 * @throws ResolveException
 		 */
-		public function resolve(Context $context, Result $result, $condition){
+		public function resolve(ContextInterface $context, Result $result, $condition){
 			$this->current_context = $context;
 			if($this->inspector){
 				$this->inspector->beginInspect($context, $result, $condition);

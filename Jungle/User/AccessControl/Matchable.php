@@ -198,11 +198,11 @@ namespace Jungle\User\AccessControl {
 		}
 
 		/**
-		 * @param Context $context
+		 * @param ContextInterface $context
 		 * @param Aggregator $aggregator
 		 * @return Result
 		 */
-		abstract public function match(Context $context, Aggregator $aggregator);
+		abstract public function match(ContextInterface $context, Aggregator $aggregator);
 
 
 

@@ -10,6 +10,7 @@
 namespace Jungle\User\AccessControl\Matchable\Resolver {
 	
 	use Jungle\User\AccessControl\Context;
+	use Jungle\User\AccessControl\ContextInterface;
 	use Jungle\User\AccessControl\Matchable\Result;
 
 	/**
@@ -56,12 +57,12 @@ namespace Jungle\User\AccessControl\Matchable\Resolver {
 		}
 
 		/**
-		 * @param Context $context
+		 * @param ContextInterface $context
 		 * @param Result $result
 		 * @param $expression
 		 * @return $this
 		 */
-		public function beginInspect(Context $context, Result $result, $expression){
+		public function beginInspect(ContextInterface $context, Result $result, $expression){
 			$this->context = $context;
 			$this->result = $result;
 			$this->expression = $expression;
