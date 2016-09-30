@@ -121,7 +121,15 @@ namespace Jungle\Application\View\Renderer\TemplateEngine {
 		 * @return string
 		 */
 		function __get($name){
-			return isset($this->template_variables[$name])?$this->template_variables[$name]:'';
+			return isset($this->template_variables[$name])?$this->template_variables[$name]:null;
+		}
+
+		/**
+		 * @param string $name
+		 * @return string
+		 */
+		function __isset($name){
+			return isset($this->template_variables[$name]);
 		}
 
 		/**

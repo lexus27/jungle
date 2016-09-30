@@ -134,12 +134,12 @@ namespace Jungle\Util\Data\Schema\ValueType {
 
 			$this->type(['email'],[
 				'rules' => [
-					new RegExp([ 'pattern' => '@^[[:alpha:]][\w\-\_]*@[[:alpha:]]\w*\.[[:alpha:]]\w*$@S' ])
+					new RegExp([ 'pattern' => '@^[[:alpha:]][\w\-\_]*@[[:alpha:]]\w*\.[[:alpha:]]\w*$@uS' ])
 				]
 			]);
 			$this->type(['words'],[
 				'rules' => [
-					new RegExp([ 'pattern' => '@^[[:alpha:]]*[\w\-\_\d\s]*$@S' ])
+					new RegExp([ 'pattern' => '@^[[:alpha:]]*[\w\-\_\d\s]*$@uS' ])
 				]
 			]);
 		}

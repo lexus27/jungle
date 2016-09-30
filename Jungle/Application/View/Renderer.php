@@ -247,6 +247,28 @@ namespace Jungle\Application\View {
 			return $this;
 		}
 
+		/**
+		 * @param $name
+		 * @return mixed
+		 */
+		public function getService($name){
+			if(static::$_dependency_injection_cacheable){
+				if(!array_key_exists($name,$this->_dependency_injection_cache)){
+					$result = $this->_dependency_injection->get($name);
+					$this->_dependency_injection_cache[$name] = $result;
+					return $result;
+				}
+				return $this->_dependency_injection_cache[$name];
+			}else{
+				if(!$this->_dependency_injection){
+					throw new \LogicException('DependencyInjector is not supplied in object');
+				}
+				return $this->getDi()->get($name);
+			}
+		}
+
+
+
 	}
 }
 
