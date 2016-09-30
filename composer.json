@@ -1,7 +1,7 @@
 {
   "name": "Lexus27/Jungle",
   "description": "Jungle PHP Framework",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "license": "Apache 2.0",
   "require": {
 	"php":">=5.6.0"
