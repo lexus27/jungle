@@ -1,0 +1,146 @@
+.enum {
+	position: relative;
+	
+	display: flex;
+
+	justify-content: flex-start;
+	-ms-justify-content: flex-start;
+	-webkit-justify-content: flex-start;
+
+	align-items: stretch;
+	-ms-align-items: stretch;
+	-webkit-align-items: stretch;
+
+	align-content: stretch;
+	-ms-align-content: stretch;
+	-webkit-align-content: stretch;
+
+	flex-direction: row;
+	-ms-flex-direction: row;
+	-webkit-flex-direction: row;
+
+	flex-wrap: wrap;
+	-ms-flex-wrap: wrap;
+	-webkit-flex-wrap: wrap;
+
+}
+
+.enum > *{
+	flex: 0 0 auto;
+}
+
+.enum.enum-wrap{
+	flex-wrap: nowrap;
+	-ms-flex-wrap: nowrap;
+	-webkit-flex-wrap: nowrap;
+}
+.enum.enum-no-wrap{
+	flex-wrap: nowrap;
+	-ms-flex-wrap: nowrap;
+	-webkit-flex-wrap: nowrap;
+}
+
+.enum.enum-row{
+	flex-direction: row;
+	-ms-flex-direction: row;
+	-webkit-flex-direction: row;
+
+
+}
+.enum.enum-col{
+	flex-direction: column;
+	-ms-flex-direction: column;
+	-webkit-flex-direction: column;
+}
+
+/**
+* Распределение
+**/
+
+.enum.enum-pos-start{
+	justify-content: flex-start;
+	-ms-justify-content: flex-start;
+	-webkit-justify-content: flex-start;
+}
+.enum.enum-pos-end{
+	justify-content: flex-end;
+	-ms-justify-content: flex-end;
+	-webkit-justify-content: flex-end;
+}
+.enum.enum-pos-center{
+	justify-content: center;
+	-ms-justify-content: center;
+	-webkit-justify-content: center;
+}
+.enum.enum-pos-around{
+	justify-content: space-between;
+	-ms-justify-content: space-between;
+	-webkit-justify-content: space-between;
+}
+.enum.enum-pos-between{
+	justify-content: space-between;
+	-ms-justify-content: space-between;
+	-webkit-justify-content: space-between;
+}
+
+/**
+* Поперечное Распределение содержащегося контента
+**/
+
+.enum.enum-tv-start{
+	align-content: flex-start;
+	-ms-align-content: flex-start;
+	-webkit-align-content: flex-start;
+}
+.enum.enum-tv-end{
+	align-content: flex-end;
+	-ms-align-content: flex-end;
+	-webkit-align-content: flex-end;
+}
+.enum.enum-tv-center{
+	align-content: center;
+	-ms-align-content: center;
+	-webkit-align-content: center;
+}
+.enum.enum-tv-stretch{
+	align-content: stretch;
+	-ms-align-content: stretch;
+	-webkit-align-content: stretch;
+}
+.enum.enum-tv-around{
+	align-content: space-around;
+	-ms-align-content: space-around;
+	-webkit-align-content: space-around;
+}
+.enum.enum-tv-between{
+	align-content: space-between;
+	-ms-align-content: space-between;
+	-webkit-align-content: space-between;
+}
+
+/**
+* Поперечное Распределение элементов на одной линии
+**/
+
+.enum.enum-tv-el-start{
+	align-items: flex-start;
+	-ms-align-items: flex-start;
+	-webkit-align-items: flex-start;
+}
+.enum.enum-tv-el-end{
+	align-items: flex-end;
+	-ms-align-items: flex-end;
+	-webkit-align-items: flex-end;
+}
+.enum.enum-tv-el-center{
+	align-items: center;
+	-ms-align-items: center;
+	-webkit-align-items: center;
+}
+.enum.enum-tv-el-stretch{
+	align-items: center;
+	-ms-align-items: center;
+	-webkit-align-items: center;
+}
+
+

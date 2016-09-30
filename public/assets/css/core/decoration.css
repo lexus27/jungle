@@ -1,0 +1,294 @@
+/* контейнер
+Текст
+Изображение
+
+Растянуть
+По центру
+
+*/
+.f-size-8{  font-size: 8px;  }
+.f-size-10{  font-size: 10px;  }
+.f-size-12{  font-size: 12px;  }
+.f-size-14{  font-size: 14px;  }
+.f-size-16{  font-size: 16px;  }
+.f-size-18{  font-size: 18px;  }
+.f-size-20{  font-size: 20px;  }
+.f-size-22{  font-size: 22px;  }
+.f-size-24{  font-size: 24px;  }
+.f-size-26{  font-size: 26px;  }
+.f-size-28{  font-size: 28px;  }
+.f-size-30{  font-size: 30px;  }
+.f-size-40{  font-size: 40px;  }
+.f-size-50{  font-size: 50px;  }
+.f-size-60{  font-size: 60px;  }
+.f-size-70{  font-size: 70px;  }
+.f-size-80{  font-size: 80px;  }
+.f-size-90{  font-size: 90px;  }
+.f-size-100{  font-size: 100px;  }
+
+.font-color-purple{
+	color: rebeccapurple;
+}
+.font-color-yellow{
+	color: yellow;
+}
+.font-color-crimson{
+	color: crimson;
+}
+.font-color-green{
+	color: forestgreen;
+}
+.font-color-cyan{
+	color: darkcyan;
+}
+.font-color-orange{
+	color: orangered;
+}
+
+.decoration{
+
+	position:relative;
+	opacity: .99;
+	text-align: center;
+	margin: 0 auto;
+	display: flex;
+	justify-content: center; /* Текущая ось */
+	align-items: center; /* Поперечная ось, поведение на 1 линии (их может быть больше при wrap) */
+	align-content: center; /* Поперечная ось */
+
+	width: 100%;
+	height: auto;
+
+	color: #ac6ed3;
+	font-size: 10vw;
+
+
+	background-repeat: no-repeat;
+	background-position: 50%;
+	-webkit-background-size: auto 100%;
+	background-size: auto 100%;
+
+}
+
+a.decoration{
+	text-decoration: none;
+}
+a.decoration:hover{
+	text-decoration: none;
+}
+a.decoration:visited{
+	text-decoration: none;
+}
+a.decoration:active{
+	text-decoration: none;
+}
+
+.decoration::before{
+	content: '';
+	display: block;
+	position: relative;
+}
+/* Элемент внутри контейнера */
+.decoration > *{
+	display: block;
+	width: 100%;
+	height: auto;
+	max-width: 100%;
+	max-height: 100%;
+}
+
+
+
+
+.decoration.decoration-natural {
+	border: none;
+}
+.decoration.decoration-reflect{
+	border: none;
+	-webkit-box-reflect:
+			below 0px -webkit-gradient(linear, left top, left bottom, from(transparent), color-stop(70%, transparent) , to(rgba(250, 250, 250, 0.3)));
+}
+
+.decoration.decoration-circle{
+	-webkit-border-radius: 50%;
+	-moz-border-radius: 50%;
+	border-radius: 50%;
+
+	border-style: solid;
+	border-width: 20px;
+	border-color: #e9e1ed;
+}
+.decoration.decoration-circle:before{
+	padding-top: 100%;
+}
+
+.decoration.decoration-circle-1{
+	-webkit-border-radius: 50%;
+	-moz-border-radius: 50%;
+	border-radius: 50%;
+
+	background-image:
+			linear-gradient(180deg, #e9e1ed 50%, transparent 60%),
+			linear-gradient(0deg, #e9e1ed 50%, transparent 60%);
+	background-position: 0 0, 100% 0;
+	background-repeat: no-repeat;
+	background-size: 50% 100%;
+
+	border-style: solid;
+	border-width: 20px;
+	border-color: #e9e1ed;
+}
+.decoration.decoration-circle-1:before{
+	padding-top: 100%;
+}
+
+
+
+.decoration.decoration-rectangle{
+	border-style: solid;
+	border-width: 20px;
+	border-color: #e9e1ed;
+	/*width: 85%;*/
+}
+.decoration.decoration-rectangle:before{
+	padding-top: 70%;
+}
+
+
+
+
+.decoration.decoration-small{
+	width: 40% !important;
+}
+.decoration.decoration-medium{
+	width: 70% !important;
+}
+.decoration.decoration-full{
+	width: 100% !important;
+}
+
+
+.decoration.decoration-b2-auto{
+	border-width: 0.5vw !important;
+}
+.decoration.decoration-b4-auto{
+	border-width: 1vw !important;
+}
+.decoration.decoration-b6-auto{
+	border-width: 2vw !important;
+}
+.decoration.decoration-b-8-auto{
+	border-width: 4vw !important;
+}
+.decoration.decoration-b10-auto{
+	border-width: 5vw !important;
+}
+
+
+.decoration.decoration-b1{
+	border-width: 1px !important;
+}
+.decoration.decoration-b2{
+	border-width: 2px !important;
+}
+.decoration.decoration-b4{
+	border-width: 4px !important;
+}
+.decoration.decoration-b6{
+	border-width: 6px !important;
+}
+.decoration.decoration-b8{
+	border-width: 8px !important;
+}
+.decoration.decoration-b10{
+	border-width: 10px !important;
+}
+
+
+
+.decoration.decoration-b-crimson{
+	border-width: 4px;
+	border-style: solid;
+	border-color: crimson !important;
+}
+.decoration.decoration-b-yellow{
+	border-width: 4px;
+	border-style: solid;
+	border-color: yellow !important;
+}
+.decoration.decoration-b-orange{
+	border-width: 4px;
+	border-style: solid;
+	border-color: orange !important;
+}
+.decoration.decoration-b-cyan{
+	border-width: 4px;
+	border-style: solid;
+	border-color: cyan !important;
+}
+.decoration.decoration-b-purple{
+	border-width: 4px;
+	border-style: solid;
+	border-color: purple !important;
+}
+
+
+.decoration.decoration-shadows{
+
+	box-shadow:
+			-1px -1px 0 rgba(128, 128, 128, 0.1),
+			-2px -2px 0 rgba(128, 128, 128, 0.1),
+			-3px -3px 0 rgba(128, 128, 128, 0.1),
+			-4px -4px 0 rgba(128, 128, 128, 0.1),
+			-5px -5px 0 rgba(128, 128, 128, 0.1),
+			-6px -6px 0 rgba(128, 128, 128, 0.1),
+			1px 1px 0 rgba(128, 128, 128, 0.1),
+			2px 2px 0 rgba(128, 128, 128, 0.1),
+			3px 3px 0 rgba(128, 128, 128, 0.1),
+			4px 4px 0 rgba(128, 128, 128, 0.1),
+			5px 5px 0 rgba(128, 128, 128, 0.1),
+			6px 6px 0 rgba(128, 128, 128, 0.1);
+
+}
+.decoration.decoration-bg-dark{
+	background-color: #26264c;
+}
+.decoration.decoration-bg-light{
+	background-color: lightgrey;
+}
+
+
+.decoration.decoration-bg-crimson{
+	background-color: crimson;
+}
+.decoration.decoration-bg-purple{
+	background-color: purple;
+}
+.decoration.decoration-bg-yellow{
+	background-color: yellow;
+}
+
+
+.decoration.decoration-b-solid{
+
+	border-width: 4px;
+	border-color: #e9e1ed;
+
+	border-style: solid !important;
+}
+.decoration.decoration-b-dashed{
+
+	border-width: 4px;
+	border-color: #e9e1ed;
+
+	border-style: dashed !important;
+}
+.decoration.decoration-b-dotted{
+
+	border-width: 4px;
+	border-color: #e9e1ed;
+
+	border-style: dotted !important;
+}
+
+
