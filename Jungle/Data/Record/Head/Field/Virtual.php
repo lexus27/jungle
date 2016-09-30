@@ -11,7 +11,7 @@ namespace Jungle\Data\Record\Head\Field {
 	
 	use Jungle\Data\Record;
 	use Jungle\Data\Record\Head\Field;
-	use Jungle\Util\Data\Foundation\Schema\OuterInteraction\ValueAccessor;
+	use Jungle\Util\Data\Schema\OuterInteraction\ValueAccessor;
 
 	/**
 	 * Class Virtual

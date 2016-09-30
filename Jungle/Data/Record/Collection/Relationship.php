@@ -15,9 +15,9 @@ namespace Jungle\Data\Record\Collection {
 	use Jungle\Data\Record\Head\Field\Relation;
 	use Jungle\Data\Record\Head\Schema;
 	use Jungle\Exception;
-	use Jungle\Util\Data\Foundation\Condition\Condition;
-	use Jungle\Util\Data\Foundation\Condition\ConditionComplex;
-	use Jungle\Util\Data\Foundation\Condition\ConditionInterface;
+	use Jungle\Util\Data\Condition\Condition;
+	use Jungle\Util\Data\Condition\ConditionComplex;
+	use Jungle\Util\Data\Condition\ConditionInterface;
 
 	/**
 	 * Class Relationship

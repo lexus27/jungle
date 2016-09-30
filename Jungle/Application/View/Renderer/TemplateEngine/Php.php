@@ -9,6 +9,7 @@
  */
 namespace Jungle\Application\View\Renderer\TemplateEngine {
 	
+	use Jungle\Application\View\Exception;
 	use Jungle\Application\View\Renderer\TemplateEngine;
 
 	/**
@@ -63,7 +64,7 @@ namespace Jungle\Application\View\Renderer\TemplateEngine {
 					$this->error_reporting = error_reporting();
 					error_reporting(E_ALL & ~(E_NOTICE | E_DEPRECATED | E_STRICT | E_WARNING));
 				}
-
+				$process = $this->process;
 				extract($variables);
 				unset($variables);
 
@@ -99,10 +100,11 @@ namespace Jungle\Application\View\Renderer\TemplateEngine {
 
 		/**
 		 * @param $path
+		 * @throws Exception
 		 */
 		protected function _validatePath($path){
 			if(strpos($path,"\0")!==false || strpos($path,"..")!==false){
-				throw new \LogicException('Path is not valid');
+				throw new Exception('Path is not valid');
 			}
 		}
 
@@ -119,7 +121,15 @@ namespace Jungle\Application\View\Renderer\TemplateEngine {
 		 * @return string
 		 */
 		function __get($name){
-			return isset($this->template_variables[$name])?$this->template_variables[$name]:'';
+			return isset($this->template_variables[$name])?$this->template_variables[$name]:null;
+		}
+
+		/**
+		 * @param string $name
+		 * @return string
+		 */
+		function __isset($name){
+			return isset($this->template_variables[$name]);
 		}
 
 		/**

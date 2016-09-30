@@ -9,17 +9,14 @@ namespace Jungle\User\AccessControl {
 
 	use Jungle\Application\Component;
 	use Jungle\User\AccessControl\Adapter\ContextAdapter;
-	use Jungle\User\AccessControl\Adapter\PolicyAdapter;
 	use Jungle\User\AccessControl\Context\ObjectAccessor;
-	use Jungle\User\AccessControl\Policy;
-	use Jungle\User\AccessControl\Policy\Combiner;
-	use Jungle\User\AccessControl\Policy\ConditionResolver;
-	use Jungle\User\AccessControl\Policy\ExpressionResolver;
-	use Jungle\User\AccessControl\Policy\MatchResult;
-	use Jungle\User\AccessControl\Policy\Rule;
-	use Jungle\Util\ObservableTrait;
-	use Jungle\Util\Value\Massive;
-	use Jungle\Util\Value\String;
+	use Jungle\User\AccessControl\Matchable\Aggregator;
+	use Jungle\User\AccessControl\Matchable\Combiner;
+	use Jungle\User\AccessControl\Matchable\ExpressionResolver;
+	use Jungle\User\AccessControl\Matchable\Resolver\ConditionResolver;
+	use Jungle\User\AccessControl\Matchable\Resolver\PredicateInspector;
+	use Jungle\User\AccessControl\Matchable\Result;
+	use Jungle\User\AccessControl\Matchable\Rule;
 
 	/**
 	 * Class Pool
@@ -27,119 +24,73 @@ namespace Jungle\User\AccessControl {
 	 */
 	class Manager extends Component{
 
-		use ObservableTrait;
+		/** @var  Context */
+		protected $context;
 
-		/** @var  ContextAdapter */
-		protected $context_adapter;
-
-		/** @var  PolicyAdapter */
-		protected $policy_adapter;
+		/** @var  Aggregator */
+		protected $aggregator;
 
 		/** @var  ConditionResolver */
 		protected $condition_resolver;
 
-		/** @var  ExpressionResolver */
-		protected $expression_resolver;
-
-
-
-
-
-		/** @var   */
-		protected $_listeners_propagation;
-
-
-		/** @var  Combiner */
-		protected $main_combiner;
+		/** @var  PredicateInspector */
+		protected $predicate_inspector;
 
 		/** @var  Combiner */
 		protected $default_combiner;
 
+		/** @var  Combiner */
+		protected $main_combiner;
+
 		/** @var Combiner[]  */
 		protected $combiners = [];
 
-		/**
-		 *
-		 * Базовый эффект на основе чего будет считаться текущий менеджер Policy Enforcement Point
-		 *
-		 * @see Policy\Matchable::DENY - Запрещающий PEP
-		 * - Запрещающий (Deny based) PEP действует по принципу «Запрещено все, что явно не разрешено».
-		 * Это означает, что только в случае положительного решения доступ будет разрешен.
-		 * В остальных трех случаях доступ будет запрещен, А с корректировкой
-		 * @see $base_effect_strict===true только в 1 инверсном(PERMIT) случае
-		 *
-		 * @see Policy\Matchable::PERMIT
-		 * - Разрешающий (Permit based) PEP действует по принципу «Разрешено все, что явно не запрещено».
-		 * Это означает, что только в случае отрицательного решения будет запрещен доступ.
-		 * В остальных трех случаях доступ будет разрешен, А с корректировкой
-		 * @see $base_effect_strict===true только в 1 инверсном(DENY) случае
-		 *
-		 * @var bool
-		 */
-		protected $based_effect = \Jungle\User\AccessControl\Matchable::PERMIT;
+
+
+		/** @var  string */
+		protected $same_effect = Matchable::DENY;
+
+		/** @var  string */
+		protected $default_effect = Matchable::PERMIT;
 
 		/**
-		 * Строгость базового эффекта если равен true
-		 * то для достижения $based_effect требуется чтобы ответ от decise был эквивалентом базового решения
-		 * @var bool
-		 */
-		protected $based_effect_strict = false;
-
-
-
-		public function __construct(){
-			$this->addEvent([
-				'beforeInvoked',
-				'invoked',
-				'invoked_obligation',
-				'invoked_advice',
-				'match',
-				'match_contain_check',
-				'match_contain_check_stop',
-				'enforced'
-			]);
-
-		}
-
-		/**
-		 * @param ContextAdapter $adapter
+		 * @param ContextInterface $context
 		 * @return $this
 		 */
-		public function setContextAdapter(ContextAdapter $adapter){
-			$this->context_adapter = $adapter;
+		public function setContext(ContextInterface $context){
+			$this->context = $context;
 			return $this;
 		}
 
 		/**
-		 * @return ContextAdapter
+		 * @return Context
 		 * @throws Exception
 		 */
-		public function getContextAdapter(){
-			if(!$this->context_adapter){
-				$this->context_adapter = new ContextAdapter\Base();
-				//throw new Exception('Context adapter is not set to ABAC::Pool');
+		public function getContext(){
+			if(!$this->context){
+				$this->context = new Context();
 			}
-			return $this->context_adapter;
+			return $this->context;
 		}
 
 		/**
-		 * @param PolicyAdapter $adapter
+		 * @param Aggregator $adapter
 		 * @return $this
 		 */
-		public function setPolicyAdapter(PolicyAdapter $adapter){
-			$this->policy_adapter = $adapter;
+		public function setAggregator(Aggregator $adapter){
+			$this->aggregator = $adapter;
 			return $this;
 		}
 
 		/**
-		 * @return PolicyAdapter
+		 * @return Aggregator
 		 * @throws Exception
 		 */
-		public function getPolicyAdapter(){
-			if(!$this->policy_adapter){
-				throw new Exception('Policy adapter is not set to ABAC::SignManager');
+		public function getAggregator(){
+			if(!$this->aggregator){
+				throw new Exception('Aggregator is not set to ABAC::SignManager');
 			}
-			return $this->policy_adapter;
+			return $this->aggregator;
 		}
 
 
@@ -148,9 +99,9 @@ namespace Jungle\User\AccessControl {
 		 * @return Combiner
 		 * @throws Exception
 		 */
-		public function requireCombiner($combiner_key = null){
+		public function getCombiner($combiner_key = null){
 			if($combiner_key === null){
-				return $this->requireDefaultCombiner();
+				return $this->getDefaultCombiner();
 			}
 			if($combiner_key instanceof Combiner){
 				return $combiner_key;
@@ -158,71 +109,55 @@ namespace Jungle\User\AccessControl {
 			if(isset($this->combiners[$combiner_key])){
 				return $this->combiners[$combiner_key];
 			}else{
-				if(($combiner = Combiner::get($combiner_key))){
-					return $combiner;
-				}else{
-					throw new Exception('Combiner with key "'.$combiner_key.'" not found');
-				}
+				throw new Exception('Combiner with key "'.$combiner_key.'" not found');
 			}
 		}
 
 		/**
-		 * @return Combiner
-		 * @throws Exception
-		 */
-		public function requireDefaultCombiner(){
-			if(!$this->default_combiner){
-				$this->default_combiner = Combiner::get('effect_same_soft');
-			}
-			return $this->default_combiner;
-		}
-
-		/**
-		 * @return Combiner
-		 * @throws Exception
-		 */
-		public function requireMainCombiner(){
-			if($this->main_combiner){
-				return $this->main_combiner;
-			}else{
-				return $this->requireDefaultCombiner();
-			}
-		}
-
-		/**
-		 * @return ConditionResolver
-		 */
-		public function requireConditionResolver(){
-			if(!$this->condition_resolver){
-				$this->condition_resolver = new ConditionResolver();
-			}
-			return $this->condition_resolver;
-		}
-
-		/**
-		 * @return ExpressionResolver
-		 */
-		public function requireExpressionResolver(){
-			if(!$this->expression_resolver){
-				$this->expression_resolver = new ExpressionResolver();
-			}
-			return $this->expression_resolver;
-		}
-
-
-		/**
-		 * @param Combiner $algorithm
+		 * @param $key
+		 * @param Combiner $combiner
 		 * @return $this
 		 */
-		public function setDefaultCombiner(Combiner $algorithm){
+		public function setCombiner($key, Combiner $combiner){
+			$this->combiners[$key] = $combiner;
+			return $this;
+		}
+
+
+		/**
+		 * @param Combiner|string $algorithm
+		 * @return $this
+		 */
+		public function setDefaultCombiner($algorithm){
 			$this->default_combiner = $algorithm;
 			return $this;
 		}
 
-		public function setMainCombiner(Combiner $algorithm){
+		/**
+		 * @return Combiner
+		 * @throws Exception
+		 */
+		public function getDefaultCombiner(){
+			return $this->getCombiner($this->default_combiner);
+		}
+
+		/**
+		 * @param Combiner|string $algorithm
+		 * @return $this
+		 */
+		public function setMainCombiner($algorithm){
 			$this->main_combiner = $algorithm;
 			return $this;
 		}
+
+		/**
+		 * @return Combiner
+		 * @throws Exception
+		 */
+		public function getMainCombiner(){
+			return $this->getCombiner($this->main_combiner);
+		}
+
 
 		/**
 		 * @param ConditionResolver $resolver
@@ -234,247 +169,253 @@ namespace Jungle\User\AccessControl {
 		}
 
 		/**
-		 * @param ExpressionResolver $resolver
+		 * @return \Jungle\User\AccessControl\Matchable\Resolver\ConditionResolver
+		 */
+		public function getConditionResolver(){
+			if(!$this->condition_resolver){
+				$this->condition_resolver = new ConditionResolver();
+			}
+			return $this->condition_resolver;
+		}
+
+		/**
+		 * @param PredicateInspector $inspector
 		 * @return $this
 		 */
-		public function setExpressionResolver(ExpressionResolver $resolver){
-			$this->expression_resolver = $resolver;
+		public function setPredicateInspector(PredicateInspector $inspector){
+			$this->predicate_inspector = $inspector;
 			return $this;
+		}
+
+		/**
+		 * @return PredicateInspector
+		 */
+		public function getPredicateInspector(){
+			if(!$this->predicate_inspector){
+				$this->predicate_inspector = new PredicateInspector();
+			}
+			return $this->predicate_inspector;
+
 		}
 
 
 		/**
 		 * @param $effect
-		 * @param null $strict
 		 * @return $this
 		 */
-		public function setBasedEffect($effect, $strict = null){
-			if($strict!==null){
-				$this->based_effect_strict = boolval($strict);
-			}
-			$this->based_effect = $effect;
+		public function setDefaultEffect($effect){
+			$this->default_effect = $effect;
 			return $this;
 		}
 
 		/**
 		 * @return mixed
 		 */
-		public function getBasedEffect(){
-			return $this->based_effect;
+		public function getDefaultEffect(){
+			return $this->default_effect;
 		}
-
 
 		/**
-		 * Метод для вычисления изходя из текущих настроек контекста.
-		 * @param $action
-		 * @param null|string|array|object $object Объект над которым производится действие, если $useObjectPredicates===true то должна использовать строка имени класса объекта
-		 * @param bool $useObjectPredicates TODO implement
-		 * @return bool|array(collected predicates) TODO Predicates!!! если Объект передается до получения конкретного, то требуется генерировать Where compatible предикат
-		 * TODO Predicates!!! если Объект передается до получения конкретного, то требуется генерировать Where compatible предикат
-		 * @throws Exception
+		 * @param $same
+		 * @return $this
 		 */
-		public function enforce($action, $object, $useObjectPredicates = false){
-			$context = $this->contextFrom($action,$object);
-			$result = $this->contextCheck($context);
-			return $result===Policy::PERMIT?true:false;
+		public function setSameEffect($same){
+			$this->same_effect = $same;
+			return $this;
 		}
+
+		/**
+		 * @return string
+		 */
+		public function getSameEffect(){
+			return $this->same_effect;
+		}
+
 
 		/**
 		 * @param $action
 		 * @param $object
-		 * @param null $otherUser
-		 * @param null $otherScope
+		 * @param bool $returnResult
+		 * @return Result|bool
+		 */
+		public function enforce($action, $object, $returnResult = false){
+			$resolver = $this->getConditionResolver();
+			$context = $this->contextFrom($action,$object);
+			$collectByEffect = null;
+
+			$object = $context->getObject();
+			if($object instanceof ObjectAccessor && $object->hasPredicateEffect()){
+				$collectByEffect = Matchable::friendlyEffect($object->getPredicateEffect());
+				$inspector = $this->getPredicateInspector();
+				$inspector->setTargetEffect($collectByEffect);
+				$resolver->setInspector($inspector);
+
+			}else{
+				$resolver->setInspector(null);
+			}
+			$result = $this->decise($context);
+			if($returnResult || $collectByEffect!==null){
+				return $result;
+			}
+			return $result->isAllowed();
+		}
+
+		/**
+		 * @param ContextInterface $context
+		 * @return Result
+		 */
+		public function decise(ContextInterface $context){
+			$sameEffect = $this->getSameEffect();
+
+			$aggregator = $this->getAggregator();
+			$combiner = $this->getMainCombiner();
+			$combiner->setSame($sameEffect);
+
+			$result = new Result($aggregator,$context);
+			$result->setMatchableEffect($sameEffect);
+
+			$result = $combiner->match($result, $aggregator, $context);
+			$this->_handleResult($context, $result);
+
+
+			$effect = $result->getEffect();
+			if(in_array($effect,[Rule::DENY,Rule::PERMIT],true)){
+				try{
+					$results = $result->getChildren();
+					foreach($results as $r){
+						$this->invoke($effect,$r,$context);
+					}
+				}catch(\Exception $e){
+					$result->setEffect(Rule::INDETERMINATE);
+				}
+			}elseif(in_array($effect,[Rule::NOT_APPLICABLE,Rule::INDETERMINATE],true)){
+				$results = $result->getChildren();
+				foreach($results as $r){
+					$this->invoke($effect,$r,$context);
+				}
+				$result->setEffect($aggregator->getEffect());
+			}else{
+				throw new \LogicException('Bad result effect '. var_export($effect, true));
+			}
+			return $result;
+		}
+
+		/**
+		 * @param ContextInterface $context
+		 * @param Result $result
+		 */
+		protected function _handleResult(ContextInterface $context,Result $result){
+			$inspector  = $this->condition_resolver->getInspector();
+			if($inspector instanceof PredicateInspector){
+				$conditions = $inspector->collectCondition($context, $result);
+				if($conditions){
+					$object = $context->getObject();
+					if($object instanceof ObjectAccessor){
+						$object->setPredicatedConditions($conditions);
+					}
+				}
+			}
+		}
+
+
+		/**
+		 * @param $action
+		 * @param $object
 		 * @return Context
 		 */
-		public function contextFrom($action, $object, $otherUser = null, $otherScope = null){
-
+		public function contextFrom($action, $object){
 			if(is_string($object)){
-				if(($object = trim($object)) && String::isCovered($object,'[',']')){
-					$object = String::trimSides($object,'[',']');
+				if(($object = trim($object)) && substr($object,0,1)==='[' && substr($object,-1)===']'){
+					$object = rtrim($object,']');
+					$object = ltrim($object,'[');
+
 					$object = explode(',',$object);
 					if($object){
-						$object = Massive::universalMap(function(& $value, & $key){
-							list($key,$value) = explode(':',$value);
-							$key = trim($key);
-							$value = trim($value);
-						},$object,true);
+						$_o = [];
+						foreach($object as $pair){
+							$pair = explode(':',$pair);
+							$_o[trim($pair[0])] = trim($pair[1]);
+						}
+						$object = ObjectAccessor::release($_o);
 					}
-					$object = ObjectAccessor::release($object);
 				}else{
 					throw new \LogicException('Object definition is invalid! "'.$object.'"');
 				}
 			}
-
-			$context = $this->getContextAdapter()->getBaseContext([
+			$context = $this->getContext();
+			$context = clone $context;
+			$context->setManager($this);
+			$context->setProperties([
 				'action' => is_string($action)?['name' => $action]:$action,
 				'object' => $object
-			],$otherUser,$otherScope);
-			$context->setManager($this);
+			], true);
 			return $context;
 		}
 
 		/**
-		 * @param Context $context
-		 * @return bool
-		 */
-		public function contextCheck(Context $context){
-			$combiner = $this->decise($context);
-			$effect = $combiner->getEffect();
-			$results = $combiner->getResults();
-			if(in_array($effect,[Rule::DENY,Rule::PERMIT],true)){
-				try{
-					$results = $combiner->getResults();
-					foreach($results as $result){
-						$this->invoke($effect,$result,$context);
-					}
-				}catch(\Exception $e){
-					$effect = Rule::INDETERMINATE;
-				}
-			}
-			if(in_array($effect,[Rule::NOT_APPLICABLE,Rule::INDETERMINATE],true)){
-				$effect = $this->getBasedEffect();
-				if($this->based_effect_strict){
-					$effect = !$effect;
-				}
-			}
-			$this->invokeEvent('enforced',$this, $effect, $results, $context);
-			return $effect;
-		}
-
-
-
-
-		/**
-		 * @param Context $context
-		 * @return Combiner
-		 */
-		public function decise(Context $context){
-			$combiner = $this->requireMainCombiner()->begin($this->getBasedEffect());
-			foreach($this->getPolicyAdapter()->getPolicies() as $policy){
-				$r = $policy->match($context);
-				if($combiner->check($r)===false){
-					$r->setStopped(true);
-					break;
-				}
-			}
-			return $combiner;
-		}
-
-		/**
-		 * @param $effect
-		 * @param MatchResult $result
-		 * @param Context $context
+		 * @param $finalEffect
+		 * @param Result $result
+		 * @param ContextInterface $context
 		 * @throws \Exception
 		 */
-		protected function invoke($effect,MatchResult $result,Context $context){
-			$m = $result->getMatchable();
-			if($m instanceof Policy){
+		protected function invoke($finalEffect,Result $result,ContextInterface $context){
+			$matchable = $result->getMatchable();
+			if($matchable instanceof Aggregator){
 				foreach($result->getChildren() as $child){
-					$this->invoke($effect,$child,$context);
+					$this->invoke($finalEffect,$child,$context);
 				}
 			}
-			$e = $m->getEffect();
-			if($e === null){
-				$e = $this->getBasedEffect();
-			}
-			if($e === $effect && $result->getResult() === $e){
-				$obligation = $m->getObligation();
+			$effect = $result->getEffect();
+			$sameEffect = $matchable->getEffect()?:$this->getDefaultEffect();
+			if($sameEffect === $finalEffect && $effect === $sameEffect){
+				$obligation = $matchable->getObligation();
 				if($obligation){
 					try{
 						if(call_user_func($obligation,$result,$context)===false){
-							throw new Exception('internal error.');
+							throw new Exception('Obligation is not executed');
 						}
 					}catch(\Exception $e){
-						$result->setIndeterminate('ObligationError: '.$e->getMessage(),true);
-						throw $e;
+						$this->_handleImportantException($e, $result, $obligation);
 					}
 				}
-				$advice = $m->getAdvice();
+				$advice = $matchable->getAdvice();
 				if($advice){
 					try{
 						call_user_func($advice,$result,$context);
-					}catch(\Exception $e){}
-				}
-			}
-		}
-
-
-		/**
-		 * @param array $listeners
-		 * @param \Jungle\User\AccessControl\Matchable $policy
-		 * @param bool $internal
-		 */
-		public function propagateListeners(array $listeners, \Jungle\User\AccessControl\Matchable $policy = null,$internal = false){
-			if($listeners){
-				if(!$internal && $this->_listeners_propagation){
-					$this->stopPropagateListeners();
-				}
-				if($policy!==null){
-					if($policy instanceof Policy){
-						foreach($policy->getContains() as $p){
-							$this->propagateListeners($listeners,$p);
-						}
-					}
-					foreach($listeners as $eName => $listener){
-						$policy->addListener($eName,$listener);
-					}
-				}else{
-					foreach($this->policies as $p){
-						$this->propagateListeners($listeners,$p);
-					}
-					if(!$internal){
-						$this->_listeners_propagation = $listeners;
+					}catch(\Exception $e){
+						$this->_handleException($e, $result);
 					}
 				}
-			}
-		}
-
-
-
-
-		/**
-		 * @param \Jungle\User\AccessControl\Matchable|null $policy
-		 */
-		protected function delegateEvents(\Jungle\User\AccessControl\Matchable $policy = null){
-			if($policy!==null){
-				if($policy instanceof Policy){
-					foreach($policy->getContains() as $p){
-						$this->delegateEvents($p);
+			}elseif(!$result->isMissed()){
+				$requirements = $matchable->getRequirement();
+				if($requirements){
+					try{
+						call_user_func($requirements,$result,$context);
+					}catch(\Exception $e){
+						$this->_handleException($e, $result);
 					}
-				}
-				$policy->addListener($this);
-			}else{
-				foreach($this->getPolicyAdapter()->getPolicies() as $p){
-					$this->delegateEvents($p);
 				}
 			}
 		}
 
 		/**
-		 * @param array $listeners
-		 * @param \Jungle\User\AccessControl\Matchable|null $policy
+		 * @param \Exception $exception
+		 * @throws \Exception
 		 */
-		public function stopPropagateListeners(array $listeners = null, \Jungle\User\AccessControl\Matchable $policy = null){
-			if($policy!==null){
-				if($policy instanceof Policy){
-					foreach($policy->getContains() as $p){
-						$this->stopPropagateListeners($listeners,$p);
-					}
-				}
-				foreach(($listeners===null?$this->_listeners_propagation:$listeners) as $eName => $listener){
-					$policy->removeListener($eName,$listener);
-				}
-			}else{
-				foreach($this->policies as $p){
-					$this->stopPropagateListeners($listeners,$p);
-				}
-				if($listeners===null){
-					$this->_listeners_propagation = null;
-				}
-			}
+		protected function _handleException(\Exception $exception, Result $result){
+
 		}
 
-
+		/**
+		 * @param \Exception $exception
+		 * @param Result $result
+		 * @param callable $obligation
+		 * @throws \Exception
+		 */
+		protected function _handleImportantException(\Exception $exception, Result $result, callable $obligation = null){
+			$result->setEffect('indeterminate');
+			throw $exception;
+		}
 
 
 	}

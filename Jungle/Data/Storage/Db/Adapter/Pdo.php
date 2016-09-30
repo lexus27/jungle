@@ -16,7 +16,7 @@ namespace Jungle\Data\Storage\Db\Adapter {
 	 * @package Jungle\Data\Storage\Db\Adapter
 	 *
 	 */
-	class Pdo extends Adapter {
+	abstract class Pdo extends Adapter {
 
 		/**
 		 * @var \PDO
@@ -77,7 +77,10 @@ namespace Jungle\Data\Storage\Db\Adapter {
 			$this->connection = new \PDO(
 				$options['type'].':'.implode(';',$dsn),
 				$username,$password,
-				array(\PDO::ATTR_CURSOR => \PDO::CURSOR_SCROLL)
+				array(
+					\PDO::ATTR_CURSOR => \PDO::CURSOR_SCROLL,
+					\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION
+				)
 			);
 		}
 
@@ -143,17 +146,41 @@ namespace Jungle\Data\Storage\Db\Adapter {
 			return $this->connection->exec($sql);
 		}
 
+
+
+
 		/**
-		 * @return array
+		 * @return bool
 		 */
-		public function getLastErrorInfo(){
+		public function hasLastError(){
 			if($this->statement){
-				return $this->statement->errorInfo();
+				return !!$this->statement->errorInfo()[1];
 			}else{
-				return $this->connection->errorInfo();
+				return !!$this->connection->errorInfo()[1];
 			}
 		}
 
+		/**
+		 * @return string
+		 */
+		public function getLastErrorCode(){
+			if($this->statement){
+				return $this->statement->errorInfo()[1];
+			}else{
+				return $this->statement->errorInfo()[1];
+			}
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getLastSQLStateCode(){
+			if($this->statement){
+				return $this->statement->errorCode();
+			}else{
+				return $this->connection->errorCode();
+			}
+		}
 		/**
 		 * Error Description
 		 * @return string
@@ -167,24 +194,13 @@ namespace Jungle\Data\Storage\Db\Adapter {
 		}
 
 		/**
-		 * @return string
+		 * @return array
 		 */
-		public function getLastErrorCode(){
+		public function getLastErrorInfo(){
 			if($this->statement){
-				return $this->statement->errorCode();
+				return $this->statement->errorInfo();
 			}else{
-				return $this->connection->errorCode();
-			}
-		}
-
-		/**
-		 * @return bool
-		 */
-		public function hasLastError(){
-			if($this->statement){
-				return !!$this->statement->errorInfo()[1];
-			}else{
-				return !!$this->connection->errorInfo()[1];
+				return $this->connection->errorInfo();
 			}
 		}
 

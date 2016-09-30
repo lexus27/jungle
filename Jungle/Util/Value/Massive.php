@@ -735,7 +735,7 @@ namespace Jungle\Util\Value {
 		 * @param bool|false $caseLess
 		 * @return bool
 		 */
-		public static function searchString(array & $array,$string,$caseLess = false){
+		public static function searchString(array $array,$string,$caseLess = false){
 			foreach($array as $param => $value){
 				if(is_string($value) && String::match($string,$value,$caseLess)){
 					return $param;
@@ -757,6 +757,29 @@ namespace Jungle\Util\Value {
 				}
 			}
 			return false;
+		}
+
+		/**
+		 * @param array $array
+		 * @param $separatorElement
+		 * @return array
+		 */
+		public static function insertSeparates(array $array, $separatorElement){
+			$count = count($array);$i = 0;
+			if($count <= 1){
+				return $array;
+			}else{
+				$newArray = [];
+				foreach($array as $k => $item){$i++;
+					$newArray[] = $item;
+					if($count > $i){
+						$newArray[] = $separatorElement;
+					}
+				}
+				return $newArray;
+			}
+
+
 		}
 
 

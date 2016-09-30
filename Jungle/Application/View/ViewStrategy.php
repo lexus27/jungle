@@ -25,11 +25,16 @@ namespace Jungle\Application\View {
 		/** @var RendererRule[]|callable[] */
 		protected $rules = [];
 
+		/** @var  string */
+		protected $default;
+
 		/** @var  mixed[]  */
 		protected $variables = [];
 
 		/** @var  mixed[]  */
 		protected $options = [];
+
+
 
 		/**
 		 * @param $alias
@@ -121,6 +126,23 @@ namespace Jungle\Application\View {
 			return $this;
 		}
 
+
+		/**
+		 * @param $alias
+		 * @return $this
+		 */
+		public function setDefault($alias){
+			$this->default = $alias;
+			return $this;
+		}
+
+		/**
+		 * @return string
+		 */
+		public function getDefault(){
+			return $this->default;
+		}
+
 		/**
 		 * @param $alias
 		 * @param callable $rule
@@ -181,7 +203,7 @@ namespace Jungle\Application\View {
 					return $alias;
 				}
 			}
-			return null;
+			return $this->default;
 		}
 
 		/**

@@ -94,6 +94,9 @@ class Operator implements INamed{
 		return null;
 	}
 
+	/**
+	 * @return Operator[]
+	 */
 	public static function getAllowedOperators(){
 		static $base_initialized = false;
 		if(!$base_initialized){
@@ -103,14 +106,18 @@ class Operator implements INamed{
 		return static::$_operators;
 	}
 
+	/**
+	 *
+	 */
 	protected static function _initializeDefaultOperators(){
 		static::$_operators = [
 			(new Operator())->setName(false)->setHandler(function($a,$b=null){return !$a;}),
 			(new Operator())->setName(true)->setHandler(function($a,$b=null){return (bool)$a;}),
-			(new Operator())->setName('=')->setHandler(function($a,$b){return $a==$b;}),
 			(new Operator())->setName('===')->setHandler(function($a,$b){return $a===$b;}),
 			(new Operator())->setName('==')->setHandler(function($a,$b){return $a==$b;}),
-			(new Operator())->setName('!=')->setHandler(function($a,$b){return $a!==$b;}),
+			(new Operator())->setName('=')->setHandler(function($a,$b){return $a==$b;}),
+			(new Operator())->setName('!=')->setHandler(function($a,$b){return $a!=$b;}),
+			(new Operator())->setName('!==')->setHandler(function($a,$b){return $a!==$b;}),
 			(new Operator())->setName('>')->setHandler(function($a,$b){return $a>$b;}),
 			(new Operator())->setName('>=')->setHandler(function($a,$b){return $a>=$b;}),
 			(new Operator())->setName('<')->setHandler(function($a,$b){return $a<$b;}),

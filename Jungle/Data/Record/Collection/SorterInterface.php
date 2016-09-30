@@ -9,7 +9,7 @@
  */
 namespace Jungle\Data\Record\Collection {
 
-	use Jungle\Util\Data\Foundation\Schema\OuterInteraction\ValueAccessAwareInterface;
+	use Jungle\Util\Data\Schema\OuterInteraction\ValueAccessAwareInterface;
 
 	/**
 	 * Interface SorterInterface

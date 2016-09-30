@@ -15,7 +15,7 @@ namespace Jungle\Data\Storage\Db {
 	use Jungle\Data\Storage\Db\Structure\Column\TypePool;
 	use Jungle\Data\Storage\Db\Structure\Database;
 	use Jungle\Data\Storage\Db\Structure\Table;
-	use Jungle\Util\Data\Foundation\Storage;
+	use Jungle\Util\Data\Storage;
 
 	/**
 	 * Class Adapter
@@ -157,6 +157,12 @@ namespace Jungle\Data\Storage\Db {
 		 */
 		abstract public function hasLastError();
 
+		/**
+		 * @param $type
+		 * @param \Exception $e
+		 * @return
+		 */
+		abstract protected function _handleOperationException($type = null, \Exception $e = null);
 
 		/**
 		 * @param null $sequenceName
@@ -172,21 +178,27 @@ namespace Jungle\Data\Storage\Db {
 		 * @return bool
 		 */
 		public function create($data, $source, $many = false){
-			$types = [];
-			foreach($data as $k => $v){
-				$types[] = isset($dataTypes[$k])?$dataTypes[$k]:null;
-			}
-			$sql = $this->dialect->insert($source,array_keys($data),array_values($data),$types,$many);
-			$affected = $this->execute($sql->getSql(),$sql->getBindings(),$sql->getDataTypes());
-			if($affected===false){
-				throw new \LogicException(
-					'Insert error: Code['. $this->getLastErrorCode().
-					"] info: \r\n".var_export($this->getLastErrorInfo(),true)
-				);
-			}else{
-				return $affected;
+			try{
+				$types = [];
+				foreach($data as $k => $v){
+					$types[] = isset($dataTypes[$k])?$dataTypes[$k]:null;
+				}
+				$sql = $this->dialect->insert($source,array_keys($data),array_values($data),$types,$many);
+				$affected = $this->execute($sql->getSql(),$sql->getBindings(),$sql->getDataTypes());
+				if($affected===false){
+					throw new \LogicException(
+						'Insert error: Code['. $this->getLastErrorCode().
+						"] info: \r\n".var_export($this->getLastErrorInfo(),true)  . 'sql: "' . $sql->getSql().'"'
+					);
+				}else{
+					return $affected;
+				}
+			}catch(\Exception $e){
+				$this->_handleOperationException('create',$e);
+				return false;
 			}
 		}
+
 
 		/**
 		 * @param null $sequenceName
@@ -224,19 +236,24 @@ namespace Jungle\Data\Storage\Db {
 		 * @return bool
 		 */
 		public function update($data, $condition, $source, array $options = null){
-			$types = [];
-			foreach($data as $k => $v){
-				$types[] = isset($dataTypes[$k])?$dataTypes[$k]:null;
-			}
-			$sql = $this->dialect->update($source,array_keys($data),array_values($data),$types,$condition,$options);
-			$affected = $this->execute($sql->getSql(),$sql->getBindings(),$sql->getDataTypes());
-			if($affected===false){
-				throw new \LogicException(
-					'Insert error: Code['. $this->getLastErrorCode().
-					"] info: \r\n".var_export($this->getLastErrorInfo(),true)  . 'sql: "' . $sql->getSql().'"'
-				);
-			}else{
-				return $affected;
+			try{
+				$types = [];
+				foreach($data as $k => $v){
+					$types[] = isset($dataTypes[$k])?$dataTypes[$k]:null;
+				}
+				$sql = $this->dialect->update($source,array_keys($data),array_values($data),$types,$condition,$options);
+				$affected = $this->execute($sql->getSql(),$sql->getBindings(),$sql->getDataTypes());
+				if($affected===false){
+					throw new \LogicException(
+						'Update error: Code['. $this->getLastErrorCode().
+						"] info: \r\n".var_export($this->getLastErrorInfo(),true)  . 'sql: "' . $sql->getSql().'"'
+					);
+				}else{
+					return $affected;
+				}
+			}catch(\Exception $e){
+				$this->_handleOperationException('update', $e);
+				return false;
 			}
 		}
 
@@ -247,15 +264,20 @@ namespace Jungle\Data\Storage\Db {
 		 * @return int
 		 */
 		public function delete($condition, $source, array $options = null){
-			$sql = $this->dialect->delete($source,$condition,$options);
-			$affected = $this->execute($sql->getSql(),$sql->getBindings(),$sql->getDataTypes());
-			if($affected===false){
-				throw new \LogicException(
-					'Delete error: Code['. $this->getLastErrorCode().
-					"] info: \r\n".var_export($this->getLastErrorInfo(),true)  . 'sql: "' . $sql->getSql().'"'
-				);
-			}else{
-				return $affected;
+			try{
+				$sql = $this->dialect->delete($source,$condition,$options);
+				$affected = $this->execute($sql->getSql(),$sql->getBindings(),$sql->getDataTypes());
+				if($affected===false){
+					throw new \LogicException(
+						'Delete error: Code['. $this->getLastErrorCode().
+						"] info: \r\n".var_export($this->getLastErrorInfo(),true)  . 'sql: "' . $sql->getSql().'"'
+					);
+				}else{
+					return $affected;
+				}
+			}catch(\Exception $e){
+				$this->_handleOperationException('update', $e);
+				return false;
 			}
 		}
 
@@ -269,18 +291,23 @@ namespace Jungle\Data\Storage\Db {
 		 * @return int
 		 */
 		public function count($condition, $source, $offset = null, $limit = null, array $options = null){
-			$sql = $this->dialect->select(array_replace([
-				'table' => $source,
-				'columns' => 'COUNT(*)',
-				'columns_escape' => false,
-				'limit' => $limit,
-				'offset' => $offset,
-				'where' => $condition
-			],(array)$options));
-			$stmt = $this->query($sql->getSql(),$sql->getBindings(),$sql->getDataTypes(), true);
-			if($stmt){
-				return $stmt->fetchColumn(0);
-			}else{
+			try{
+				$sql = $this->dialect->select(array_replace([
+					'table' => $source,
+					'columns' => 'COUNT(*)',
+					'columns_escape' => false,
+					'limit' => $limit,
+					'offset' => $offset,
+					'where' => $condition
+				],(array)$options));
+				$stmt = $this->query($sql->getSql(),$sql->getBindings(),$sql->getDataTypes(), true);
+				if($stmt){
+					return $stmt->fetchColumn(0);
+				}else{
+					return false;
+				}
+			}catch(\Exception $e){
+				$this->_handleOperationException('count', $e);
 				return false;
 			}
 		}
@@ -297,20 +324,26 @@ namespace Jungle\Data\Storage\Db {
 		 * @return ResultInterface
 		 */
 		public function select($columns, $source, $condition, $limit = null, $offset = null, $orderBy = null, array $options = null){
-			$sql = $this->getDialect()->select(array_replace([
-				'table' => $source,
-			    'columns' => $columns,
-			    'where' => $condition,
-			    'limit' => $limit,
-			    'offset' => $offset,
-			    'order_by' => $orderBy,
-			],(array)$options));
-			$result = $this->query($sql->getSql(),$sql->getBindings(),$sql->getDataTypes());
-			if($result){
-				$result->setFetchMode(Db::FETCH_NUM);
-				return $result;
-			}else{
-				throw new \LogicException($this->getLastErrorMessage() . ' SQL: "'.$sql.'"');
+			try{
+
+				$sql = $this->getDialect()->select(array_replace([
+					'table' => $source,
+					'columns' => $columns,
+					'where' => $condition,
+					'limit' => $limit,
+					'offset' => $offset,
+					'order_by' => $orderBy,
+				],(array)$options));
+				$result = $this->query($sql->getSql(),$sql->getBindings(),$sql->getDataTypes());
+				if($result){
+					$result->setFetchMode(Db::FETCH_NUM);
+					return $result;
+				}else{
+					throw new \LogicException($this->getLastErrorMessage() . ' SQL: "'.$sql.'"');
+				}
+			}catch(\Exception $e){
+				$this->_handleOperationException('select', $e);
+				return false;
 			}
 		}
 

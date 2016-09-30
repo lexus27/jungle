@@ -9,8 +9,8 @@
  */
 namespace Jungle\User {
 
-	use Jungle\Util\Data\Foundation\Registry\RegistryInterface;
-	use Jungle\Util\Data\Foundation\Registry\RegistryRemovableInterface;
+	use Jungle\Util\Data\Registry\RegistryInterface;
+	use Jungle\Util\Data\Registry\RegistryRemovableInterface;
 
 	/**
 	 * Interface SessionInterface

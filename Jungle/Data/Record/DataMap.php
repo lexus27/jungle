@@ -50,6 +50,7 @@ namespace Jungle\Data\Record {
 		public function reset($fieldName = null){
 			if($fieldName === null){
 				$this->_properties = [];
+				$this->_afterReset();
 			}else{
 				unset($this->_properties[$fieldName]);
 			}
@@ -63,6 +64,7 @@ namespace Jungle\Data\Record {
 			if($fieldName === null){
 				$this->_processed = [];
 				$this->_properties = [];
+				$this->_afterResetAll();
 			}else{
 				unset($this->_processed[$fieldName]);
 				unset($this->_properties[$fieldName]);

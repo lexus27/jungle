@@ -30,9 +30,10 @@ namespace Jungle\Data\Record {
 
 		/**
 		 * Model constructor.
+		 * @param null $validationCollector
 		 */
-		public function __construct(){
-			parent::__construct();
+		public function __construct($validationCollector = null){
+			parent::__construct($validationCollector);
 			//  Здесь мы проверяем инициализованая ли модель. по статическому менеджеру схем
 			//  Если нет то инициализуем её в регистре, совместно с получением самой схемы
 			//  Для формирования схемы требуются
@@ -60,6 +61,7 @@ namespace Jungle\Data\Record {
 			}else{
 				$this->_schema = $schema;
 			}
+			$this->_initValidationCollector($validationCollector);
 			$this->onConstruct();
 			$this->onRecordReady();
 		}
@@ -227,6 +229,7 @@ namespace Jungle\Data\Record {
 		public function reset($fieldName = null){
 			if($fieldName === null){
 				$this->_initialized_properties = [];
+				$this->_afterReset();
 			}else{
 				unset($this->_initialized_properties[$fieldName]);
 			}
@@ -240,6 +243,7 @@ namespace Jungle\Data\Record {
 			if($fieldName === null){
 				$this->_processed = [];
 				$this->_initialized_properties = [];
+				$this->_afterResetAll();
 			}else{
 				unset($this->_processed[$fieldName]);
 				unset($this->_initialized_properties[$fieldName]);

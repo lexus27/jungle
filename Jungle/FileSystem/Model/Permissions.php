@@ -7,8 +7,6 @@
  */
 namespace Jungle\FileSystem\Model {
 
-	use Jungle\FileSystem\Model;
-
 	/**
 	 * Class Permissions
 	 * @package Jungle\FileSystem\Model

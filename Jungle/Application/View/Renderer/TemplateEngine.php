@@ -185,7 +185,7 @@ namespace Jungle\Application\View\Renderer {
 		 * @param array $options
 		 * @return array
 		 */
-		protected function _optionsBeforeRender(array $options = [ ]){
+		protected function _prepareOptions(array $options = [ ]){
 			return array_replace($this->options, $options);
 		}
 
@@ -203,13 +203,16 @@ namespace Jungle\Application\View\Renderer {
 		 * @return string
 		 */
 		public function render(ProcessInterface $process, ViewInterface $view, array $variables = [], array $options = []){
-			$this->process = $process; $r = $process->getReference();
-			$levels = $this->_prepareTemplateLevels([ $r['action'], $r['controller'], $r['module'] ]);
-			$options = $this->_optionsBeforeRender($options);
+			$this->process = $process;
+			$reference = $process->getReference();
+
+			$options = $this->_prepareOptions($options);
 			$variables = $this->prepareVariables($process, $variables);
-			$this->_beforeRender($options,$variables);
+			$levels = $this->_prepareTemplateLevels([ $reference['action'], $reference['controller'], $reference['module'] ],$process->hasTasks()?'prepare':null);
+
 			$content = null;
 			$isBreakLevel = false;
+			$this->_beforeRender($options,$variables);
 			foreach($levels as $level => $templateName){
 				if($options['render_level'] < $level){
 					return $content;
@@ -270,15 +273,17 @@ namespace Jungle\Application\View\Renderer {
 		abstract protected function _renderTemplate($name, array $variables = [], & $break = false);
 
 		/**
-		 * @param $levelNames
+		 * @param array $levelNames
+		 * @param null $actionStage
 		 * @return array
 		 */
-		protected function _prepareTemplateLevels(array $levelNames){
-			$levels = [];$ext = $this->getExtension();
+		protected function _prepareTemplateLevels(array $levelNames, $actionStage = null){
+			$levels = [];
+			$ext = $this->getExtension();
 			$name = $this->getName();
 			$levelNames = array_reverse($levelNames);
 			for( $i = 0, $c = count($levelNames) ; $i < $c ; $i++ ){
-				$levels[$i] = $name . '/' . $this->_prepareTemplateName(implode('/',$levelNames),$ext);
+				$levels[$i] = $name . '/' . $this->_prepareTemplateName(implode('/',$levelNames),!$i?$actionStage:null, $ext);
 				array_pop($levelNames);
 			}
 			return $levels;
@@ -286,14 +291,15 @@ namespace Jungle\Application\View\Renderer {
 
 		/**
 		 * @param $templateName
+		 * @param null $stage
 		 * @param null $extension
 		 * @return string
 		 */
-		protected function _prepareTemplateName($templateName, $extension = null){
+		protected function _prepareTemplateName($templateName, $stage = null, $extension = null){
 			if(is_null($extension)){
 				$extension = $this->getExtension();
 			}
-			return $templateName . '.' . $extension;
+			return $templateName . ($stage?'#'.$stage:'') . '.' . $extension;
 		}
 
 	}

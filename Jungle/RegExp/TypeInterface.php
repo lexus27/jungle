@@ -20,7 +20,7 @@ namespace Jungle\RegExp {
 		 * @param array $arguments
 		 * @return mixed
 		 */
-		public function isValid($value, array $arguments = null);
+		public function validate($value, array $arguments = null);
 
 		/**
 		 * @param $value

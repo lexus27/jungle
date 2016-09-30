@@ -263,6 +263,18 @@ namespace Jungle {
 		}
 
 		/**
+		 * @param $path
+		 * @return string
+		 */
+		protected function _normalizePath($path){
+			if(DIRECTORY_SEPARATOR === '/'){
+				return strtr($path,'\\',DIRECTORY_SEPARATOR);
+			}else{
+				return strtr($path,'/',DIRECTORY_SEPARATOR);
+			}
+		}
+
+		/**
 		 * @param string $className - NameSpace\NameSpace\ClassClass or Vendor_Class or VendorClass
 		 * @return bool
 		 */
@@ -361,6 +373,7 @@ namespace Jungle {
 		}
 
 		protected function check($path,$className){
+			$path = $this->_normalizePath($path);
 			if(!isset($this->foundPaths[$path])){
 				if(file_exists($path)){
 					$this->foundPaths[$path] = true;

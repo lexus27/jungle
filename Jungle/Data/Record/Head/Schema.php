@@ -14,11 +14,13 @@ namespace Jungle\Data\Record\Head {
 	use Jungle\Data\Record\DataMap;
 	use Jungle\Data\Record\Head\Field;
 	use Jungle\Data\Record\Head\Field\Relation;
-	use Jungle\Util\Data\Foundation\Schema\OuterInteraction\Mapped\Schema as MappedSchema;
-	use Jungle\Util\Data\Foundation\ShipmentInterface;
-	use Jungle\Util\Data\Foundation\Storage;
-	use Jungle\Util\Data\Foundation\Storage\StorageInterface;
-	
+	use Jungle\Data\Storage\Exception;
+	use Jungle\Util\Data\Schema\OuterInteraction\Mapped\Schema as MappedSchema;
+	use Jungle\Util\Data\ShipmentInterface;
+	use Jungle\Util\Data\Storage;
+	use Jungle\Util\Data\Storage\StorageInterface;
+	use Jungle\Util\Data\Validation;
+
 	/**
 	 * Class Schema
 	 * @package modelX
@@ -43,6 +45,9 @@ namespace Jungle\Data\Record\Head {
 
 		/** @var  Field[] */
 		protected $fields = [];
+
+		/** @var  Validation|null|bool */
+		protected $validation;
 
 		/** @var  SchemaManager */
 		protected $schema_manager;
@@ -135,6 +140,39 @@ namespace Jungle\Data\Record\Head {
 		 */
 		public function getName(){
 			return $this->name;
+		}
+
+		/**
+		 * @param Validation $validation
+		 * @return $this
+		 */
+		public function setValidation(Validation $validation = null){
+			$this->validation = $validation;
+			return $this;
+		}
+
+		/**
+		 * @return $this
+		 */
+		public function disableValidation(){
+			$this->validation = false;
+			return $this;
+		}
+
+		/**
+		 * @return Validation|null
+		 */
+		public function getValidation(){
+			if($this->validation){
+				return $this->validation;
+			}elseif($this->validation === null && $this->ancestor){
+				if($this->ancestor->validation === false && $this->ancestor->ancestor){
+					return $this->ancestor->ancestor->getValidation();
+				}
+				return $this->ancestor->getValidation();
+			}else{
+				return null;
+			}
 		}
 
 		/**
@@ -606,9 +644,13 @@ namespace Jungle\Data\Record\Head {
 				$source = $this->getSource();
 			}
 			$storage = $this->getStorage();
-			return $storage->create($data,$source);
+			try{
+				return $storage->create($data,$source);
+			}catch(Exception\Operation $e){
+				$this->handleStorageOperationException($e);
+				return false;
+			}
 		}
-
 
 		/**
 		 * @param null $condition
@@ -618,7 +660,12 @@ namespace Jungle\Data\Record\Head {
 		 * @return int
 		 */
 		public function storageCount($condition = null, $offset = null, $limit = null, array $options = null){
-			return $this->getStorage()->count($condition,$this->getSource(), $offset, Collection::isInfinityLimit($limit)?null:$limit, $options);
+			try{
+				return $this->getStorage()->count($condition,$this->getSource(), $offset, Collection::isInfinityLimit($limit)?null:$limit, $options);
+			}catch(Exception\Operation $e){
+				$this->handleStorageOperationException($e);
+				return false;
+			}
 		}
 
 		/**
@@ -643,7 +690,12 @@ namespace Jungle\Data\Record\Head {
 				}
 			}
 			$manager = $this->getStorage();
-			return $manager->select($columns,$this->getSource(), $condition, Collection::isInfinityLimit($limit)?null:$limit, $offset, $orderBy, $options);
+			try{
+				return $manager->select($columns,$this->getSource(), $condition, Collection::isInfinityLimit($limit)?null:$limit, $offset, $orderBy, $options);
+			}catch(Exception\Operation $e){
+				$this->handleStorageOperationException($e);
+				return false;
+			}
 		}
 
 		/**
@@ -656,7 +708,13 @@ namespace Jungle\Data\Record\Head {
 				$condition = $this->normalizeCondition($condition);
 			}
 			$store = $this->getWriteStorage();
-			return $store->update($data,$condition,$this->getWriteSource());
+			try{
+				return $store->update($data,$condition,$this->getWriteSource());
+			}catch(Exception\Operation $e){
+				$this->handleStorageOperationException($e);
+				return false;
+			}
+
 		}
 
 		/**
@@ -672,7 +730,12 @@ namespace Jungle\Data\Record\Head {
 				}
 			}
 			$store = $this->getWriteStorage();
-			return $store->delete($condition, $this->getWriteSource());
+			try{
+				return $store->delete($condition, $this->getWriteSource());
+			}catch(Exception\Operation $e){
+				$this->handleStorageOperationException($e);
+				return false;
+			}
 		}
 
 		/**
@@ -754,15 +817,23 @@ namespace Jungle\Data\Record\Head {
 				$orderBy = $o;
 			}
 
-			$shipment = $store->select($columns,$this->getSource(),$condition,Collection::isInfinityLimit($limit)?null:$limit,$offset,$orderBy,[
-				'alias' => 'self',
-				'joins' => [[
-					            'table' => $intermediateSchema->getSource(),
-					            'alias' => 'intermediate',
-					            'on'    => $intermediateOn
-				            ]],
-			]);
-			return $shipment;
+
+			try{
+				$shipment = $store->select($columns,$this->getSource(),$condition,Collection::isInfinityLimit($limit)?null:$limit,$offset,$orderBy,[
+					'alias' => 'self',
+					'joins' => [[
+						'table' => $intermediateSchema->getSource(),
+						'alias' => 'intermediate',
+						'on'    => $intermediateOn
+					]],
+				]);
+				return $shipment;
+			}catch(Exception\Operation $e){
+				$this->handleStorageOperationException($e);
+				return false;
+			}
+
+
 		}
 
 		/**
@@ -814,13 +885,19 @@ namespace Jungle\Data\Record\Head {
 				}
 			}
 
-			return $store->update($data,$condition,$this->getSource(),[
-				'joins' => [[
-		            'table' => $intermediateSchema->getSource(),
-		            'alias' => 'intermediate',
-		            'on'    => $intermediateOn
-	            ]],
-			]);
+			try{
+				return $store->update($data,$condition,$this->getSource(),[
+					'joins' => [[
+						'table' => $intermediateSchema->getSource(),
+						'alias' => 'intermediate',
+						'on'    => $intermediateOn
+					]],
+				]);
+			}catch(Exception\Operation $e){
+				$this->handleStorageOperationException($e);
+				return false;
+			}
+
 		}
 
 
@@ -861,13 +938,21 @@ namespace Jungle\Data\Record\Head {
 				'intermediate' => $intermediateSchema
 			]);
 
-			return $store->delete($condition,$this->getSource(),[
-				'joins' => [[
-					            'table' => $intermediateSchema->getSource(),
-					            'alias' => 'intermediate',
-					            'on'    => $intermediateOn
-				            ]],
-			]);
+
+			try{
+				return $store->delete($condition,$this->getSource(),[
+					'joins' => [[
+						'table' => $intermediateSchema->getSource(),
+						'alias' => 'intermediate',
+						'on'    => $intermediateOn
+					]],
+				]);
+			}catch(Exception\Operation $e){
+				$this->handleStorageOperationException($e);
+				return false;
+			}
+
+
 		}
 
 
@@ -897,6 +982,25 @@ namespace Jungle\Data\Record\Head {
 			return !!$this->storageRemove([$this->getPrimaryField()->getName(),'=',$id]);
 		}
 
+
+		/**
+		 * @param Exception\Operation $exception
+		 * @throws Exception\FieldValueException
+		 * @throws Exception\Operation
+		 * @throws \Exception
+		 */
+		public function handleStorageOperationException(Exception\Operation $exception){
+			if($exception instanceof Exception\FieldValueException){
+				if($originalKey = $exception->getFieldName()){
+					$field = $this->getFieldByOriginalKey($originalKey);
+					$exception->setFieldName($field->getName());
+					throw $exception;
+				}else{
+					throw new \Exception('Bad Exception for handle',0,$exception);
+				}
+			}
+			throw $exception;
+		}
 
 
 		/**

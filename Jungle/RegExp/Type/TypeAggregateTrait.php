@@ -12,6 +12,10 @@ namespace Jungle\RegExp\Type {
 	use Jungle\RegExp\Type;
 
 
+	/**
+	 * Class TypeAggregateTrait
+	 * @package Jungle\RegExp\Type
+	 */
 	trait TypeAggregateTrait{
 
 		/** @var  Type[]*/
