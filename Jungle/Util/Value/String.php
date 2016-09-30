@@ -77,7 +77,7 @@ namespace Jungle\Util\Value {
 			$parameters['null'] = isset($parameters['null'])?$parameters['null']:'NULL';
 
 			$parameters['empty'] = (
-				isset($parameters['empty']) ||
+				isset($parameters['empty']) &&
 				is_string($parameters['empty']) &&
 				$parameters['empty']
 			)? $parameters['empty']:'EMPTY';

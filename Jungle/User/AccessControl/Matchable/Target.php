@@ -5,12 +5,13 @@
  * Date: 14.02.2016
  * Time: 19:22
  */
-namespace Jungle\User\AccessControl\Policy {
+namespace Jungle\User\AccessControl\Matchable {
 
 	use Jungle\User\AccessControl\Context;
+	use Jungle\User\AccessControl\ContextInterface;
 
 	/**
-	 * Class TargetTable
+	 * Class Target
 	 * @package Jungle\User\AccessControl
 	 *
 	 * Цель политики, целью является определенно-подходящая комбинация атрибутов контекста
@@ -140,24 +141,37 @@ namespace Jungle\User\AccessControl\Policy {
 
 
 		/**
-		 * @param Context $context
+		 * @param ContextInterface $context
+		 * @param Result $current
 		 * @return bool
+		 * @throws Resolver\ConditionResolver\Exception
 		 */
-		public function isApplicable(Context $context){
+		public function __invoke(ContextInterface $context, Result $current){
 			if(!$this->all_of_conditions && !$this->any_of_conditions){
 				return true;
 			}
+			$resolver = $context->getManager()->getConditionResolver();
+			if($inspector = $resolver->getInspector()){
+				$inspector->setMode('all_of');
+			}
+			$result = true;
 			foreach($this->all_of_conditions as $condition){
-				if(!$context->getManager()->requireConditionResolver()->check($condition,$context)){
-					return false;
+				if(!$resolver->resolve($context, $current, $condition)){
+					$result = false;
 				}
 			}
-			foreach($this->any_of_conditions as $condition){
-				if($context->getManager()->requireConditionResolver()->check($condition,$context)){
-					return true;
+			if($result === true && $this->any_of_conditions){
+				if($inspector){
+					$inspector->setMode('any_of');
 				}
+				foreach($this->any_of_conditions as $condition){
+					if($resolver->resolve($context, $current, $condition)){
+						return true;
+					}
+				}
+				return false;
 			}
-			return false;
+			return $result;
 		}
 
 	}

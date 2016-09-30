@@ -385,56 +385,64 @@ namespace Jungle\Data {
 		 * @throws UnexpectedValue
 		 */
 		protected function _setRelationFieldValue($key, $value,Relation $field, $appliedInOld = false, $appliedInNew = false){
-			if(!$field->isMany()){
-				if($this->isInitializedProperty($key)){
-					$old = $this->_getFrontProperty($key);
-					if($value !== $old){
+			try{
+				self::$properties_changes_restrict_level++;
+				if(!$field->isMany()){
+					if($this->isInitializedProperty($key)){
+						$old = $this->_getFrontProperty($key);
+						if($value !== $old){
+							$this->_setFrontProperty($key, $value);
+							/** @var Relation[] $opposites */
+							if((!$appliedInOld && $old) || (!$appliedInNew && $value)){
+								$opposites = $field->getOppositeRelations($this);
+							}
+							if(!$appliedInOld && $old instanceof Record){
+								foreach($opposites as $f){
+									if($f->isMany()){
+										$relationship = $old->getProperty($f->getName());
+										$relationship->removeItem($this);
+									}else{
+										$old->setProperty($f->getName(), null, true, true);
+									}
+								}
+							}
+
+							if(!$appliedInNew && $value instanceof Record){
+								foreach($opposites as $f){
+									if($f->isMany()){
+										$relationship = $value->getProperty($f->getName());
+										$relationship->add($this);
+									}else{
+										$value->setProperty($f->getName(), $this, true, true);
+									}
+								}
+							}
+
+						}
+					}else{
 						$this->_setFrontProperty($key, $value);
-						/** @var Relation[] $opposites */
-						if((!$appliedInOld && $old) || (!$appliedInNew && $value)){
-							$opposites = $field->getOppositeRelations($this);
+					}
+					if(!$value && $field->isBelongs()){
+						foreach($field->getFields() as $f){
+							$this->setProperty($f, null);
 						}
-						if(!$appliedInOld && $old instanceof Record){
-							foreach($opposites as $f){
-								if($f->isMany()){
-									$relationship = $old->getProperty($f->getName());
-									$relationship->removeItem($this);
-								}else{
-									$old->setProperty($f->getName(), null, true ,true);
-								}
-							}
+						if($field->isDynamic()){
+							$this->setProperty($field->getDynamicSchemafield(), null);
 						}
-
-						if(!$appliedInNew && $value instanceof Record){
-							foreach($opposites as $f){
-								if($f->isMany()){
-									$relationship = $value->getProperty($f->getName());
-									$relationship->add($this);
-								}else{
-									$value->setProperty($f->getName(), $this, true ,true);
-								}
-							}
-						}
-
 					}
 				}else{
-					$this->_setFrontProperty($key, $value);
-				}
-				if(!$value && $field->isBelongs()){
-					foreach($field->getFields() as $f){
-						$this->setProperty($f,null);
+					if($value === null || (is_array($value) && empty($value))){
+						$relationship = $this->_getFrontProperty($key);
+						$relationship->remove();
+					}else{
+						throw new Exception\Field(
+							'Set property "' . $key .
+							'" positive value is forbidden, but you can detach all by pass null or empty array'
+						);
 					}
-					if($field->isDynamic()){
-						$this->setProperty($field->getDynamicSchemafield(), null);
-					}
 				}
-			}else{
-				if($value === null || (is_array($value) && empty($value))){
-					$relationship = $this->_getFrontProperty($key);
-					$relationship->remove();
-				}else{
-					throw new Exception\Field('Set property "'.$key.'" positive value is forbidden, but you can detach all by pass null or empty array');
-				}
+			}finally{
+				self::$properties_changes_restrict_level--;
 			}
 		}
 

@@ -15,8 +15,6 @@ namespace Jungle\Application {
 	 */
 	class LinkGenerator{
 
-
-
 		/**
 		 * TODO: Реализовать генерирования ссылок со следующими компонентами:
 		 * Маршрутизатор,

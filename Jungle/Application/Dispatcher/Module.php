@@ -262,7 +262,7 @@ namespace Jungle\Application\Dispatcher {
 
 				$result = null;
 				$process = $this->factoryProcess($this->dispatcher, $controller, $data, $reference, $initiator);
-
+				$this->getAttachedDi()->set('process', $process, true);
 				try{
 					$process->startOutputBuffering();
 					if($this->beforeControl($process)===false){
