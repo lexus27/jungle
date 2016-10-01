@@ -10,7 +10,6 @@
 namespace Jungle\Data\Record\Exception\Field {
 
 	use Jungle\Data\Record\Head\Field;
-	use Jungle\Util\Data\Validation\Message\AggregationMessageException;
 	use Jungle\Util\Data\Validation\Message\ValidatorMessage;
 
 	/**

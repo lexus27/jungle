@@ -8,8 +8,7 @@
  * Time: 3:00
  */
 namespace Jungle\Application\View\Renderer\Data {
-	
-	use Jungle\Application\Dispatcher\Controller\ProcessInterface;
+
 	use Jungle\Application\View\Renderer\Data;
 
 	/**

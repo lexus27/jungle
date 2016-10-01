@@ -14,14 +14,15 @@ namespace Jungle\Util\Communication\Stream\Connection {
 	 * @package Jungle\Util\Communication\Stream\Connection
 	 */
 	class Test extends Connection{
-
 		/**
 		 * @param $length
-		 * @return string
+		 * @param callable|null $reader
+		 * @return mixed
 		 */
-		protected function _read($length){
+		protected function _read($length, callable $reader = null){
 			return '200 Success data from this connection';
 		}
+
 
 		/**
 		 * @param $data

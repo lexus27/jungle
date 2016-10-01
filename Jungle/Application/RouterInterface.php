@@ -9,7 +9,6 @@
  */
 namespace Jungle\Application {
 
-	use Jungle\Application\Dispatcher\Context;
 	use Jungle\Application\Router\RouteInterface;
 	use Jungle\Application\Router\RoutingInterface;
 	use Jungle\RegExp\Template;

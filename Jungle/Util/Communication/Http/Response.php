@@ -194,6 +194,21 @@ namespace Jungle\Util\Communication\Http {
 		public function send(){
 			// TODO: Implement send() method.
 		}
+
+		/**
+		 * @param $code
+		 * @return mixed
+		 */
+		public function setCode($code){
+			// TODO: Implement setCode() method.
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getCode(){
+			// TODO: Implement getCode() method.
+		}
 	}
 }
 

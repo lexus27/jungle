@@ -7,15 +7,14 @@
  */
 namespace Jungle\Messenger\Mail\SMTP {
 
-	use Jungle\Communication\Stream;
-	use Jungle\Communication\Stream\Connection;
-	use Jungle\Communication\URL;
 	use Jungle\Messenger;
 	use Jungle\Messenger\ICombination;
 	use Jungle\Messenger\IContact;
 	use Jungle\Messenger\Mail\Contact;
 	use Jungle\Messenger\Mail\IMessage;
 	use Jungle\User\AccessAuth\Auth;
+	use Jungle\Util\Communication\Stream;
+	use Jungle\Util\Communication\URL;
 	use Jungle\Util\Specifications\TextTransfer\Body\Multipart;
 	use Jungle\Util\Specifications\TextTransfer\Document;
 
@@ -93,19 +92,19 @@ namespace Jungle\Messenger\Mail\SMTP {
 		 * @return void
 		 */
 		protected function registerDestination(IContact $destination){
-			if($destination instanceof Messager\Mail\IContact){
+			if($destination instanceof Messenger\Mail\IContact){
 				switch($destination->getType()){
-					case Messager\Mail\IContact::TYPE_MAIN:
+					case Messenger\Mail\IContact::TYPE_MAIN:
 						if(count($this->to) < 1){
 							$this->to[] = $destination;
 						}else{
 							$this->cc[] = $destination;
 						}
 						break;
-					case Messager\Mail\IContact::TYPE_CC:
+					case Messenger\Mail\IContact::TYPE_CC:
 						$this->cc[] = $destination;
 						break;
-					case Messager\Mail\IContact::TYPE_BCC:
+					case Messenger\Mail\IContact::TYPE_BCC:
 						$this->bcc[] = $destination;
 						break;
 				}
@@ -195,21 +194,21 @@ namespace Jungle\Messenger\Mail\SMTP {
 
 			$to = [];
 			foreach($this->to as $d){
-				$to[] = ($d instanceof Messager\Mail\IContact && $d->getName()?$this->prepareString($d->getName()):'')." <{$d->getAddress()}>";
+				$to[] = ($d instanceof Messenger\Mail\IContact && $d->getName()?$this->prepareString($d->getName()):'')." <{$d->getAddress()}>";
 				$destinations[] = $d;
 			}
 			if($to) $document->setHeader('To',implode('; ',$to));
 
 			$cc = [];
 			foreach($this->cc as $d){
-				$cc[] = ($d instanceof Messager\Mail\IContact && $d->getName()?$this->prepareString($d->getName()):'')." <{$d->getAddress()}>";
+				$cc[] = ($d instanceof Messenger\Mail\IContact && $d->getName()?$this->prepareString($d->getName()):'')." <{$d->getAddress()}>";
 				$destinations[] = $d;
 			}
 			if($cc) $document->setHeader('Cc',implode('; ',$cc));
 
 			$bcc = [];
 			foreach($this->bcc as $d){
-				$bcc[] = ($d instanceof Messager\Mail\IContact && $d->getName()?$this->prepareString($d->getName()):'')." <{$d->getAddress()}>";
+				$bcc[] = ($d instanceof Messenger\Mail\IContact && $d->getName()?$this->prepareString($d->getName()):'')." <{$d->getAddress()}>";
 				$destinations[] = $d;
 			}
 			if($bcc) $document->setHeader('Bcc',implode('; ',$bcc));

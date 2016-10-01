@@ -468,7 +468,6 @@ namespace Jungle\Util\Value {
 		 * @param null $delimiter
 		 * @param null $afterNumerable
 		 * @return mixed
-		 * @internal param null $pattern
 		 */
 		public static function increment($string, $value = 1, $delimiter = null, $afterNumerable = null){
 

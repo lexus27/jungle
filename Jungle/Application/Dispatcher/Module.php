@@ -9,7 +9,6 @@
  */
 namespace Jungle\Application\Dispatcher {
 
-	use ControllerInterface;
 	use Jungle\Application\Dispatcher;
 	use Jungle\Application\Dispatcher\Exception\Control;
 	use Jungle\Application\Dispatcher\Process;

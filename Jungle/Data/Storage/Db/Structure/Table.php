@@ -70,7 +70,11 @@ namespace Jungle\Data\Storage\Db\Structure {
 		 * @return int
 		 */
 		public function getCount(){
-			return $this->_adapter->fetchColumn($this->_adapter->getDialect()->select([$this->getName(),$this->getDatabase()->getName()],'COUNT(*)'));
+			return $this->_adapter->fetchColumn([
+				'table' => [$this->getName(),$this->getDatabase()->getName()],
+				'columns' => 'COUNT(*)'
+
+			]);
 		}
 
 		/**
@@ -84,7 +88,10 @@ namespace Jungle\Data\Storage\Db\Structure {
 		 * @return array
 		 */
 		public function getRecords(){
-			return $this->_adapter->fetchAll($this->_adapter->getDialect()->select([$this->getName(),$this->getDatabase()->getName()], $this->_adapter->getDialect()->escapeColumns($this->getColumnNames()) ),Db::FETCH_NUM);
+			return $this->_adapter->fetchAll([
+				'table' => [$this->getName(),$this->getDatabase()->getName()],
+				'columns' => $this->_adapter->getDialect()->escapeColumns($this->getColumnNames()),
+			],Db::FETCH_NUM);
 		}
 
 		/**

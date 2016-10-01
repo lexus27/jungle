@@ -7,8 +7,8 @@
  */
 namespace Jungle\Util\Value {
 
-	use Jungle\DataOldRefactoring\Collection\Cmp;
-	use Jungle\DataOldRefactoring\DataMap\ValueAccess;
+	use Jungle\Util\Data\Cmp;
+	use Jungle\Util\Data\Schema\OuterInteraction\ValueAccessor;
 	use Jungle\Util\INamed;
 	use Jungle\Util\Value\Cmp as UtilCmp;
 
@@ -132,7 +132,7 @@ namespace Jungle\Util\Value {
 			callable $valueCmp = null
 		){
 			$collator = Cmp::checkoutCmp($valueCmp);
-			$getter = ValueAccess::checkoutGetter($getter);
+			$getter = ValueAccessor::checkoutGetter($getter);
 			if($key_sort){
 				uksort($array,function($a,$b) use ($getter,$collator, $asc){
 					$a = call_user_func($getter,$a);

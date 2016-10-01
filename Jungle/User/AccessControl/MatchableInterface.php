@@ -10,7 +10,6 @@
 namespace Jungle\User\AccessControl {
 	
 	use Jungle\User\AccessControl\Matchable\Aggregator;
-	use Jungle\User\AccessControl\Matchable\Expression;
 	use Jungle\User\AccessControl\Matchable\Result;
 	use Jungle\User\AccessControl\Matchable\Target;
 	use Jungle\Util\INamed;

@@ -46,6 +46,12 @@ namespace Jungle\User\Session\SignatureInspector {
 			// TODO: Implement generateSignature() method.
 		}
 
+		/**
+		 * @return bool
+		 */
+		public function hasSignal(){
+			// TODO: Implement hasSignal() method.
+		}
 	}
 }
 

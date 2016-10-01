@@ -363,7 +363,7 @@ namespace Jungle\FileSystem\Model {
 		 * @return File[]|Directory[]
 		 * @throws Exception
 		 */
-		public function & expand($directoryInclude = false, $directoryAfterChildren = false, callable $checker = null){
+		public function &expand($directoryInclude = false, $directoryAfterChildren = false, callable $checker = null){
 			$names = $this->getNodeNames();
 			if($checker){
 				foreach($names as $name){

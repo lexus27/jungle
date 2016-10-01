@@ -12,7 +12,6 @@ namespace Jungle\User\AccessControl {
 	use Jungle\User\AccessControl\Adapter\ContextAdapter;
 	use Jungle\User\AccessControl\Adapter\PolicyAdapter;
 	use Jungle\User\AccessControl\Matchable\Combiner;
-	use Jungle\User\AccessControl\Matchable\ExpressionResolver;
 	use Jungle\User\AccessControl\Matchable\Resolver\ConditionResolver;
 
 	/**
@@ -70,11 +69,6 @@ namespace Jungle\User\AccessControl {
 		 */
 		public function requireConditionResolver();
 
-		/**
-		 * @return ExpressionResolver
-		 */
-		public function requireExpressionResolver();
-
 
 		/**
 		 * @param Combiner $algorithm
@@ -93,12 +87,6 @@ namespace Jungle\User\AccessControl {
 		 * @return $this
 		 */
 		public function setConditionResolver(ConditionResolver $resolver);
-
-		/**
-		 * @param ExpressionResolver $resolver
-		 * @return $this
-		 */
-		public function setExpressionResolver(ExpressionResolver $resolver);
 
 
 		/**

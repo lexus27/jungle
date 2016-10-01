@@ -60,6 +60,14 @@ namespace Jungle\Application\View\Renderer\TemplateEngine {
 		protected function _initTemplateLoader($engine){
 			// TODO: Implement _initTemplateLoader() method.
 		}
+
+		/**
+		 * @param $engine
+		 * @return mixed
+		 */
+		protected function _initScope($engine){
+			// TODO: Implement _initScope() method.
+		}
 	}
 }
 

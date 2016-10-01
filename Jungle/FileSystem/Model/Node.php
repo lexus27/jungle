@@ -681,8 +681,6 @@ namespace Jungle\FileSystem\Model {
 			$oldAdapter = $this->getAdapter();
 
 
-			ftp_fput();
-
 		}
 
 		/**

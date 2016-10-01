@@ -12,7 +12,6 @@ namespace Jungle\User\AccessControl {
 	use Jungle\User\AccessControl\Context\ObjectAccessor;
 	use Jungle\User\AccessControl\Matchable\Aggregator;
 	use Jungle\User\AccessControl\Matchable\Combiner;
-	use Jungle\User\AccessControl\Matchable\ExpressionResolver;
 	use Jungle\User\AccessControl\Matchable\Resolver\ConditionResolver;
 	use Jungle\User\AccessControl\Matchable\Resolver\PredicateInspector;
 	use Jungle\User\AccessControl\Matchable\Result;

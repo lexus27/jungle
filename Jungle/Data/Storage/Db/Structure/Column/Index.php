@@ -200,7 +200,7 @@ namespace Jungle\Data\Storage\Db\Structure\Column {
 				return false;
 			}
 			if($this->isNew()){
-				if($this->_adapter->createIndex($this)){
+				if($this->_adapter->addIndex($this)){
 					$this->setNew(false);
 					$this->setDirty(false);
 				}else{
@@ -210,7 +210,7 @@ namespace Jungle\Data\Storage\Db\Structure\Column {
 			}
 			if($this->isDirty()){
 				if($this->_adapter->removeIndex($this)){
-					if($this->_adapter->createIndex($this)){
+					if($this->_adapter->addIndex($this)){
 						$this->setNew(false);
 						$this->setDirty(false);
 					}else{

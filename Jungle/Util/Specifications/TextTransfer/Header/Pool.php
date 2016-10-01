@@ -11,7 +11,7 @@ namespace Jungle\Util\Specifications\TextTransfer\Header {
 	use Jungle\Util\Smart\Keyword\Pool as KeyPool;
 	use Jungle\Util\Smart\Keyword\Storage\Dummy;
 	use Jungle\Util\Specifications\TextTransfer\Header;
-	use Phalcon\Text;
+	use Jungle\Util\Value\String;
 
 	/**
 	 * Class Pool
@@ -52,7 +52,7 @@ namespace Jungle\Util\Specifications\TextTransfer\Header {
 		}
 
 		public static function getConcreteClassNameByHeader($header){
-			return __NAMESPACE__.'\\Concrete\\'.(Text::camelize((string)$header));
+			return __NAMESPACE__.'\\Concrete\\'.(String::camelize((string)$header));
 		}
 
 		/**

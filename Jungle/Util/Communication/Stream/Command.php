@@ -27,7 +27,7 @@ namespace Jungle\Util\Communication\Stream {
 		/** @var string|null */
 		protected $response;
 
-		/** @var \Jungle\Util\Communication\Stream\Specification\\Jungle\Util\Communication\Stream\Command\Rule[] */
+		/** @var \Jungle\Util\Communication\Stream\Specification|\Jungle\Util\Communication\Stream\Command\Rule[] */
 		protected $rules = [];
 
 		/** @var int|string */
@@ -192,7 +192,7 @@ namespace Jungle\Util\Communication\Stream {
 		}
 
 		/**
-		 * @param \Jungle\Util\Communication\Stream\Specification\\Jungle\Util\Communication\Stream\Command\Rule $rule
+		 * @param \Jungle\Util\Communication\Stream\Specification|\Jungle\Util\Communication\Stream\Command\Rule $rule
 		 * @return $this
 		 */
 		public function removeRule(Rule $rule){

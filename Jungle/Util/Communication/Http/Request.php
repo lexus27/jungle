@@ -203,7 +203,7 @@ namespace Jungle\Util\Communication\Http {
 		 * @param $parameter
 		 * @return mixed
 		 */
-		public function getParam($parameter){
+		public function getParam($parameter = null){
 			return (isset($this->post_parameters[$parameter])?
 				$this->post_parameters[$parameter]:(isset($this->query_parameters[$parameter])?
 					$this->query_parameters[$parameter]:null));
@@ -213,7 +213,7 @@ namespace Jungle\Util\Communication\Http {
 		 * @param $parameter
 		 * @return bool
 		 */
-		public function hasParam($parameter){
+		public function hasParam($parameter = null){
 			return isset($this->post_parameters[$parameter]) || isset($this->query_parameters[$parameter]);
 		}
 
@@ -221,7 +221,7 @@ namespace Jungle\Util\Communication\Http {
 		 * @param $key
 		 * @return mixed
 		 */
-		public function getQuery($key){
+		public function getQuery($key = null){
 			return isset($this->query_parameters[$key])?$this->query_parameters[$key]:null;
 		}
 
@@ -229,7 +229,7 @@ namespace Jungle\Util\Communication\Http {
 		 * @param $key
 		 * @return mixed
 		 */
-		public function hasQuery($key){
+		public function hasQuery($key = null){
 			return isset($this->query_parameters[$key]);
 		}
 
@@ -239,7 +239,7 @@ namespace Jungle\Util\Communication\Http {
 		 * @param $key
 		 * @return mixed
 		 */
-		public function getPost($key){
+		public function getPost($key = null){
 			return isset($this->post_parameters[$key])?$this->post_parameters[$key]:null;
 		}
 
@@ -247,7 +247,7 @@ namespace Jungle\Util\Communication\Http {
 		 * @param $key
 		 * @return mixed
 		 */
-		public function hasPost($key){
+		public function hasPost($key = null){
 			return isset($this->post_parameters[$key]);
 		}
 
@@ -493,6 +493,52 @@ namespace Jungle\Util\Communication\Http {
 			return $this;
 		}
 
+		/**
+		 * @return mixed
+		 */
+		public function getScheme(){
+			// TODO: Implement getScheme() method.
+		}
+
+		/**
+		 * @return bool
+		 */
+		public function hasObject(){
+			// TODO: Implement hasObject() method.
+		}
+
+		/**
+		 * @return array|mixed|null
+		 */
+		public function getObject(){
+			// TODO: Implement getObject() method.
+		}
+
+		/**
+		 * @param $key
+		 * @param null $filter
+		 * @param null $default
+		 * @return mixed|null
+		 */
+		public function getObjectParam($key, $filter = null, $default = null){
+			// TODO: Implement getObjectParam() method.
+		}
+
+		/**
+		 * @param $key
+		 * @return bool
+		 */
+		public function hasObjectParam($key){
+			// TODO: Implement hasObjectParam() method.
+		}
+
+		/**
+		 * @param $scheme
+		 * @return mixed
+		 */
+		public function setScheme($scheme = 'http'){
+			// TODO: Implement setScheme() method.
+		}
 	}
 }
 

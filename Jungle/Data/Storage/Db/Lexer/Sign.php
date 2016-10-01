@@ -9,7 +9,6 @@ namespace Jungle\Data\Storage\Db\Lexer {
 
 	use Jungle\Util\INamed;
 	use Jungle\Util\Smart\Keyword\Keyword;
-	use Jungle\XPlate\CSS\Selector;
 
 	/**
 	 * Class Entity

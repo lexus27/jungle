@@ -51,7 +51,7 @@ namespace Jungle\RegExp {
 			for($i = 0; $i < $len; $i++){
 				$token = $pattern{$i};
 				if($token === '('){
-					for($backslashes = 0; read_before($pattern, $i, 1, $backslashes) === '\\'; $backslashes++){
+					for($backslashes = 0; self::byte_read_before($pattern, $i, 1, $backslashes) === '\\'; $backslashes++){
 					}
 					if($backslashes % 2 == 0){
 						if(!self::byte_has_after($pattern, $i, self::$not_capturing_groups)){
@@ -165,7 +165,7 @@ namespace Jungle\RegExp {
 			foreach($needle as $item){
 				$l = strlen($item);
 				if(!isset($s) || $ll != $l){
-					$s = read_before($string, $position, $l, $offset);
+					$s = self::byte_read_before($string, $position, $l, $offset);
 					$ll = $l;
 				}
 				if($s === $item) return true;
@@ -188,7 +188,7 @@ namespace Jungle\RegExp {
 			foreach($needle as $item){
 				$l = strlen($item);
 				if(!isset($s) || $ll != $l){
-					$s = read_after($string, $position, $l, $offset);
+					$s = self::byte_read_after($string, $position, $l, $offset);
 					$ll = $l;
 				}
 				if($s === $item) return true;

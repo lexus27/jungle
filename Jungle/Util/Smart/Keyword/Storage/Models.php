@@ -32,9 +32,11 @@ namespace Jungle\Util\Smart\Keyword\Storage {
 		}
 
 		/**
+		 * @TODO $matcher CLASS MATCHER
+		 * @param $matcher
 		 * @return array identifiers
 		 */
-		public function getList(){
+		public function getList($matcher = null){
 			// TODO: Implement getList() method.
 		}
 
@@ -52,6 +54,15 @@ namespace Jungle\Util\Smart\Keyword\Storage {
 		 */
 		public function remove($identifier){
 			// TODO: Implement removeNode() method.
+		}
+
+		/**
+		 * @TODO $matcher CLASS MATCHER
+		 * @param $matcher
+		 * @return mixed
+		 */
+		public function getCount($matcher = null){
+			// TODO: Implement getCount() method.
 		}
 	}
 }
