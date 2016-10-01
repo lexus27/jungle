@@ -239,6 +239,12 @@ namespace Jungle\User\AccessControl\Matchable {
 			if($result!==null){
 				if(is_callable($result)){
 					$this->fixed_effect = call_user_func($result, $this->history, $this->fixed_effect, $this->same_effect, $this->current_effect);
+				}elseif(is_array($result)){
+					foreach($result as $check){
+						if($this->_handleOneHistoryCheck($check)){
+							break;
+						}
+					}
 				}
 			}
 			return $this->fixed_effect===null?$this->default_effect:$this->fixed_effect;
@@ -400,15 +406,14 @@ namespace Jungle\User\AccessControl\Matchable {
 
 		protected function _handleOneConditionCheck($check){
 			$check = array_replace([
-				'check' => null,
-				'early' => null,
-				'effect' => null
+				'check'     => null,
+				'early'     => null,
+				'effect'    => null
 			],$check);
 			/**
 			 * @var mixed $effect
 			 * @var mixed $check
 			 * @var bool $early
-			 * @var bool $history
 			 */
 			extract($check,EXTR_OVERWRITE);
 			if($check === '{same}'){
@@ -435,6 +440,49 @@ namespace Jungle\User\AccessControl\Matchable {
 			return false;
 		}
 
+
+		/**
+		 * @param $check
+		 * @return bool
+		 */
+		protected function _handleOneHistoryCheck($check){
+			$check = array_replace([
+				'check'     => null,
+				'value'     => null,
+				'effect'    => null
+			],$check);
+			/**
+			 * @var mixed $effect
+			 * @var mixed $check
+			 * @var mixed $value
+			 */
+			extract($check,EXTR_OVERWRITE);
+
+			$value = $this->_checkoutEffect($value);
+
+			if($check!==null){
+				if(in_array($value, $this->history, true)){
+					if($check === 'exists'){
+						if($effect !== null){
+							$this->fixed_effect = $this->_checkoutEffect($effect);
+						}
+						return true;
+					}
+				}elseif($check === 'not_exists'){
+					if($effect !== null){
+						$this->fixed_effect = $this->_checkoutEffect($effect);
+					}
+					return true;
+				}
+			}else{
+				if($effect !== null){
+					$this->fixed_effect = $this->_checkoutEffect($effect);
+					return true;
+				}
+			}
+			return false;
+		}
+
 		/**
 		 * @param $checks
 		 * @return bool
@@ -452,21 +500,35 @@ namespace Jungle\User\AccessControl\Matchable {
 
 		/**
 		 * @param $effect
+		 * @return null|string
+		 */
+		protected function _invertEffect($effect){
+			if($effect === Matchable::PERMIT){
+				return Matchable::DENY;
+			}elseif($effect === Matchable::DENY){
+				return Matchable::PERMIT;
+			}else{
+				return null;
+			}
+		}
+
+		/**
+		 * @param $effect
 		 * @return mixed
 		 */
 		protected function _checkoutEffect($effect){
 			if($effect === '{same}'){
 				return $this->same_effect;
 			}elseif($effect === '{!same}'){
-				if($this->same_effect === Matchable::PERMIT){
-					return Matchable::DENY;
-				}elseif($this->same_effect === Matchable::DENY){
-					return Matchable::PERMIT;
-				}else{
-					return null;
-				}
+				return $this->_invertEffect($this->same_effect);
 			}elseif($effect === '{current}'){
 				return $this->current_effect;
+			}elseif($effect === '{!current}'){
+				return $this->_invertEffect($this->current_effect);
+			}elseif($effect === '{fixed}'){
+				return $this->fixed_effect;
+			}elseif($effect === '{!fixed}'){
+				return $this->_invertEffect($this->fixed_effect);
 			}elseif(is_callable($effect)){
 				return call_user_func($effect, $this, $this->history, $this->fixed_effect, $this->same_effect, $this->current_effect);
 			}else{
