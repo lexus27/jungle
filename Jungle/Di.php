@@ -12,6 +12,7 @@ namespace Jungle {
 	use Jungle\Di\DiNestingOverlappingTrait;
 	use Jungle\Di\DiNestingTrait;
 	use Jungle\Di\DiSettingInterface;
+	use Jungle\Di\HolderChains;
 	use Jungle\Di\Service;
 	use Jungle\Di\ServiceInterface;
 
@@ -26,6 +27,9 @@ namespace Jungle {
 
 		/** @var Di  */
 		protected static $latest_created;
+
+		/** @var  DiSettingInterface|DiInterface|HolderChains */
+		protected static $default;
 
 		/** @var  ServiceInterface[]|DiInterface[]  */
 		protected $services = [];
@@ -51,14 +55,18 @@ namespace Jungle {
 		 * @return Di
 		 */
 		public static function getDefault(){
+			if(self::$default){
+				return self::$default;
+			}
 			if(!self::$latest_created){
 				return new self();
 			}
 			return self::$latest_created;
 		}
 
-
-
+		public static function setDefault($di){
+			self::$default = $di;
+		}
 
 
 		/**

@@ -49,6 +49,7 @@ namespace Jungle {
 			$this->loader = $loader;
 
 			$holderChains = new HolderChains();
+			Di::setDefault($holderChains);
 			$holderChains->insertHolder('default',($di = new Di()), 0);
 			$this->setDi($holderChains);
 

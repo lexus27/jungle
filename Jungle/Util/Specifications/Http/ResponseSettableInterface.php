@@ -28,6 +28,20 @@ namespace Jungle\Util\Specifications\Http {
 		public function setServer(ServerInterface $server);
 
 		/**
+		 * @param null $path
+		 * @param int $code
+		 */
+		public function sendRedirect($path = null, $code = 302);
+
+		/**
+		 * @param null $path
+		 * @param int $code
+		 * @return $this
+		 */
+		public function setRedirect($path = null, $code = 302);
+
+
+		/**
 		 * @param $key
 		 * @param $value
 		 * @param int $expire
