@@ -754,6 +754,7 @@ namespace Jungle\Data {
 			$changed = [];
 			foreach($this->_schema->getFields() as $field){
 				$name = $field->getName();
+
 				if($this->isInitializedProperty($name)){
 					if($field instanceof Field\Relation && $field->isMany()){
 						/** @var Relationship $c */
