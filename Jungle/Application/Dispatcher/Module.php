@@ -13,6 +13,7 @@ namespace Jungle\Application\Dispatcher {
 	use Jungle\Application\Dispatcher\Exception\Control;
 	use Jungle\Application\Dispatcher\Process;
 	use Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface;
+	use Jungle\Application\Notification\Responsible\AccessDenied;
 	use Jungle\Application\Notification\Responsible\AuthenticationMissed;
 	use Jungle\Application\Notification\Responsible\NeedIntroduce;
 	use Jungle\Di;
@@ -225,6 +226,9 @@ namespace Jungle\Application\Dispatcher {
 			}
 			if($e instanceof NeedIntroduce){
 				$process->setTask('introduce', $e);
+			}
+			if($e instanceof AccessDenied){
+				$process->setTask('access', $e);
 			}
 
 			if(!$process->hasTasks()) throw $e;
