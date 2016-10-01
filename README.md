@@ -27,8 +27,16 @@ Current Version 0.0.3
 
 # Используй прямо сейчас
 
+## Установка
+
+### Git
+
     git clone https://github.com/Lexus27/Jungle.git
 
+### Composer
+
+    composer require lexus27/jungle
+    
 ## Структура файловой системы WEB-Сервера
 Структура файловой системы может быть индивидуальна, но базовой для начала работы можно считать следующую
 
