@@ -8,15 +8,15 @@
 
 namespace Jungle\Util\Smart\Keyword;
 
-use Jungle\Util\INamed;
-use Jungle\Util\ITransient;
+use Jungle\Util\NamedInterface;
 use Jungle\Util\Smart\Keyword\Storage;
+use Jungle\Util\TransientInterface;
 
 /**
  * Class Pool
  * @package Jungle\Util\Smart\Keyword
  */
-abstract class Pool implements ITransient , INamed{
+abstract class Pool implements TransientInterface , NamedInterface{
 
 	/** @var  string */
 	protected $alias;

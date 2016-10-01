@@ -9,11 +9,11 @@
 namespace Jungle\Util;
 
 /**
- * Interface ITransient(Переходящий)
+ * Interface TransientInterface(Переходящий)
  * @package Jungle\Basic
  * Обеспечивающий целостность данных
  */
-interface ITransient {
+interface TransientInterface {
 
 	/**
 	 * Указать что объект был изменен или наоборот приведен к исходному состоянию

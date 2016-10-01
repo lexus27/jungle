@@ -12,13 +12,13 @@ namespace Jungle\RegExp\Template {
 	use Jungle\RegExp\Pattern;
 	use Jungle\RegExp\Template;
 	use Jungle\RegExp\Type;
-	use Jungle\Util\INamed;
+	use Jungle\Util\NamedInterface;
 	use Jungle\Util\Value\String;
 
 	/**
 	 * Class Placeholder
 	 */
-	class Placeholder implements INamed{
+	class Placeholder implements NamedInterface{
 
 		/** @var  Template */
 		protected $template;

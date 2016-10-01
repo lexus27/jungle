@@ -8,10 +8,10 @@
 namespace Jungle\Util {
 
 	/**
-	 * Interface INamedWrite
+	 * Interface NamedWriteInterface
 	 * @package Jungle\Basic
 	 */
-	interface INamedWrite{
+	interface NamedWriteInterface{
 
 		/**
 		 * Выставить имя объекту

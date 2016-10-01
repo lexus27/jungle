@@ -7,12 +7,12 @@
  */
 namespace Jungle\Messenger {
 
-	use Jungle\Util\INamed;
+	use Jungle\Util\NamedInterface;
 
 	/**
 	 * Interface IContactNamed
 	 * @package Jungle\Messenger
 	 */
-	interface IContactNamed extends IContact, INamed{}
+	interface IContactNamed extends IContact, NamedInterface{}
 }
 

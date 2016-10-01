@@ -12,13 +12,13 @@ namespace Jungle\User\AccessControl {
 	use Jungle\User\AccessControl\Matchable\Aggregator;
 	use Jungle\User\AccessControl\Matchable\Result;
 	use Jungle\User\AccessControl\Matchable\Target;
-	use Jungle\Util\INamed;
+	use Jungle\Util\NamedInterface;
 
 	/**
 	 * Interface MatchableInterface
 	 * @package Jungle\User\AccessControl
 	 */
-	interface MatchableInterface extends INamed{
+	interface MatchableInterface extends NamedInterface{
 
 		/**
 		 * @param $name

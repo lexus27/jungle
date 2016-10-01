@@ -9,7 +9,7 @@
  */
 namespace Jungle\Util\Specifications\Http {
 
-	use Jungle\Util\INamed;
+	use Jungle\Util\NamedInterface;
 	use Jungle\Util\Smart\Value\IValue;
 	use Jungle\Util\Smart\Value\IValueSettable;
 	
@@ -17,7 +17,7 @@ namespace Jungle\Util\Specifications\Http {
 	 * Interface CookieInterface
 	 * @package Jungle\Util\Specifications\Http
 	 */
-	interface CookieInterface extends CookieConfigurationInterface, IValue, IValueSettable, INamed{
+	interface CookieInterface extends CookieConfigurationInterface, IValue, IValueSettable, NamedInterface{
 
 		/**
 		 * @return mixed

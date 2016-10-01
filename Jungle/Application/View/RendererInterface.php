@@ -12,13 +12,13 @@ namespace Jungle\Application\View {
 	use Jungle\Application\Dispatcher\ProcessInterface;
 	use Jungle\Application\ViewInterface;
 	use Jungle\Util\CacheableInterface;
-	use Jungle\Util\INamedRead;
+	use Jungle\Util\NamedReadInterface;
 
 	/**
 	 * Class RendererInterface
 	 * @package Jungle\Application
 	 */
-	interface RendererInterface extends CacheableInterface, ViewConfigurationInterface, INamedRead{
+	interface RendererInterface extends CacheableInterface, ViewConfigurationInterface, NamedReadInterface{
 
 		/**
 		 * @param ViewInterface $view

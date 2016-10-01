@@ -7,13 +7,13 @@
  */
 namespace Jungle\Data\Storage\Db\Lexer {
 
-	use Jungle\Util\INamed;
+	use Jungle\Util\NamedInterface;
 
 	/**
 	 * Class TokenGroup
 	 * @package Jungle\Data\Storage\Db\Lexer
 	 */
-	class TokenGroup implements \Countable, INamed{
+	class TokenGroup implements \Countable, NamedInterface{
 
 		/** @var  SignGroup */
 		protected $sign_group;

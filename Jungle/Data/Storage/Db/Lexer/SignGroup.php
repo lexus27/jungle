@@ -7,13 +7,13 @@
  */
 namespace Jungle\Data\Storage\Db\Lexer {
 
-	use Jungle\Util\INamed;
+	use Jungle\Util\NamedInterface;
 
 	/**
 	 * Class SignGroup
 	 * @package Jungle\Data\Storage\Db\Lexer
 	 */
-	class SignGroup implements ISign, INamed{
+	class SignGroup implements ISign, NamedInterface{
 
 		/** @var array */
 		protected $brackets = ['(',')'];

@@ -9,7 +9,7 @@ namespace Jungle\Util\Value {
 
 	use Jungle\Util\Data\Cmp;
 	use Jungle\Util\Data\Schema\OuterInteraction\ValueAccessor;
-	use Jungle\Util\INamed;
+	use Jungle\Util\NamedInterface;
 	use Jungle\Util\Value\Cmp as UtilCmp;
 
 	/**
@@ -190,16 +190,16 @@ namespace Jungle\Util\Value {
 
 
 		/**
-		 * @param INamed[] $array
+		 * @param NamedInterface[] $array
 		 * @param $name
 		 * @param callable $cmp
-		 * @return INamed|null
+		 * @return NamedInterface|null
 		 */
 		public static function getNamed(array $array, $name,callable $cmp = null){
 			if($cmp===null)$cmp = 'strcmp';
 			foreach($array as $item){
 				if(
-					$item instanceof INamed &&
+					$item instanceof NamedInterface &&
 					call_user_func($cmp,$item->getName(),$name)===0
 				){
 					return $item;
@@ -216,7 +216,7 @@ namespace Jungle\Util\Value {
 		public static function getNames(array $array,$caseOnly = true){
 			$a = [];
 			foreach($array as $item){
-				if($item instanceof INamed){
+				if($item instanceof NamedInterface){
 					$a[] = $caseOnly?mb_strtolower($item->getName()):$item->getName();
 				}
 			}
@@ -224,17 +224,17 @@ namespace Jungle\Util\Value {
 		}
 
 		/**
-		 * @param \Jungle\Util\INamed[] $array
+		 * @param \Jungle\Util\NamedInterface[] $array
 		 * @param $name
 		 * @param callable $cmp
-		 * @return \Jungle\Util\INamed[]
+		 * @return \Jungle\Util\NamedInterface[]
 		 */
 		public static function collectNames(array $array, $name,callable $cmp = null){
 			if($cmp===null)$cmp = 'strcmp';
 			$collection = [];
 			foreach($array as $item){
 				if(
-					$item instanceof INamed &&
+					$item instanceof NamedInterface &&
 					call_user_func($cmp,$item->getName(),$name)===0
 				){
 					$collection[] = $item;
@@ -244,16 +244,16 @@ namespace Jungle\Util\Value {
 		}
 
 		/**
-		 * @param INamed[] $array
+		 * @param NamedInterface[] $array
 		 * @param $name
 		 * @param callable $cmp
-		 * @return \Jungle\Util\INamed[]
+		 * @return \Jungle\Util\NamedInterface[]
 		 */
 		public static function filterNamed(array $array, $name,callable $cmp = null){
 			if($cmp===null)$cmp = 'strcmp';
 			$newArray = [];
 			foreach($array as $item){
-				if($item instanceof INamed){
+				if($item instanceof NamedInterface){
 					if(call_user_func($cmp,$item->getName(),$name)!==0){
 						$newArray[] = $item;
 					}else{
@@ -267,12 +267,12 @@ namespace Jungle\Util\Value {
 		}
 
 		/**
-		 * @param INamed[] $array
-		 * @param \Jungle\Util\INamed $name
+		 * @param NamedInterface[] $array
+		 * @param \Jungle\Util\NamedInterface $name
 		 * @param callable $cmp
 		 * @param null $modeExists
 		 */
-		public static function setNamed(array & $array, INamed $name,callable  $cmp = null, $modeExists = null){
+		public static function setNamed(array & $array, NamedInterface $name,callable  $cmp = null, $modeExists = null){
 			if($cmp===null)$cmp = 'strcmp';
 			if(!in_array($modeExists,[null,false,true],true)){
 				throw new \LogicException('Mode exists is invalid, must be [null|false|true], passed: "'.String::representFrom($modeExists).'" ');
@@ -280,7 +280,7 @@ namespace Jungle\Util\Value {
 			$exists = [];
 			$n = $name->getName();
 			foreach($array as $i => $item){
-				if($item instanceof INamed){
+				if($item instanceof NamedInterface){
 					if(call_user_func($cmp,$item->getName(),$n)===0){
 						$exists[] = $i;
 					}
@@ -300,7 +300,7 @@ namespace Jungle\Util\Value {
 		}
 
 		/**
-		 * @param \Jungle\Util\INamed[] $array
+		 * @param \Jungle\Util\NamedInterface[] $array
 		 * @param string $name
 		 * @param callable $cmp
 		 * @return bool|int
@@ -308,7 +308,7 @@ namespace Jungle\Util\Value {
 		public static function searchNamed(array $array, $name,callable  $cmp = null){
 			if($cmp===null)$cmp = 'strcmp';
 			foreach($array as $i => $item){
-				if($item instanceof INamed && call_user_func($cmp,$item->getName(),$name)===0){
+				if($item instanceof NamedInterface && call_user_func($cmp,$item->getName(),$name) === 0){
 					return $i;
 				}
 			}

@@ -10,13 +10,13 @@
 namespace Jungle\Application {
 
 	use Jungle\Di\DiInterface;
-	use Jungle\Util\INamed;
+	use Jungle\Util\NamedInterface;
 
 	/**
 	 * Interface StrategyInterface
 	 * @package Jungle\Application
 	 */
-	interface StrategyInterface extends DiInterface, INamed{
+	interface StrategyInterface extends DiInterface, NamedInterface{
 
 		/**
 		 * @param $type

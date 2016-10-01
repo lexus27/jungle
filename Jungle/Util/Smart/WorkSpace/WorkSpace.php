@@ -8,13 +8,13 @@
 
 namespace Jungle\Util\Smart\WorkSpace {
 
-	use Jungle\Util\INamed;
+	use Jungle\Util\NamedInterface;
 
 	/**
 	 * Class NaSpace
 	 * @package Jungle\Util\Smart\NaSpace
 	 */
-	class WorkSpace implements INamed{
+	class WorkSpace implements NamedInterface{
 
 		const DELIMITER = '.';
 

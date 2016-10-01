@@ -8,10 +8,10 @@
 namespace Jungle\Util {
 
 	/**
-	 * Interface INamedRead
+	 * Interface NamedReadInterface
 	 * @package Jungle\Basic
 	 */
-	interface INamedRead{
+	interface NamedReadInterface{
 
 		/**
 		 * Получить имя объекта

@@ -11,13 +11,13 @@ namespace Jungle\Data\Storage\Db\Structure {
 	use Jungle\Data\Storage\Db\Dialect;
 	use Jungle\Data\Storage\Db\Structure\Column\ForeignKey;
 	use Jungle\Data\Storage\Db\Structure\Column\Index;
-	use Jungle\Util\INamed;
+	use Jungle\Util\NamedInterface;
 
 	/**
 	 * Class TargetTable
 	 * @package Jungle\Data\Storage\Db\Structure
 	 */
-	class Table extends StructureObject implements INamed{
+	class Table extends StructureObject implements NamedInterface{
 
 		/** @var  Database owner */
 		protected $database;

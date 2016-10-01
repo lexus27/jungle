@@ -9,13 +9,13 @@ namespace Jungle\TypeHint\Rule {
 
 	use Jungle\TypeHint;
 	use Jungle\TypeHint\Rule;
-	use Jungle\Util\INamed;
+	use Jungle\Util\NamedInterface;
 
 	/**
 	 * Class Builder
 	 * @package Jungle\TypeHint\Rule
 	 */
-	abstract class Builder implements INamed{
+	abstract class Builder implements NamedInterface{
 
 		protected $name;
 

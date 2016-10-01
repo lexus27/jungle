@@ -8,14 +8,14 @@
 
 namespace Jungle\Util\Smart\Value\Measure {
 
-	use Jungle\Util\INamed;
+	use Jungle\Util\NamedInterface;
 
 	/**
 	 * Тип единицы измерения или же то что измеряет единица измерения в данном типе (Скорость,Растояние,Объем,Деньги, и т.д)
 	 * Interface IUnitType
 	 * @package Jungle\Util\Smart\Value\Measure
 	 */
-	interface IUnitType extends INamed{
+	interface IUnitType extends NamedInterface{
 
 		/**
 		 * @param $name

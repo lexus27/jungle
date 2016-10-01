@@ -7,14 +7,14 @@
  */
 namespace Jungle\Data\Storage\Db\Lexer {
 
-	use Jungle\Util\INamed;
+	use Jungle\Util\NamedInterface;
 	use Jungle\Util\Smart\Keyword\Keyword;
 
 	/**
 	 * Class Entity
 	 * @package Jungle\Data\Storage\Db\Lexer
 	 */
-	class Sign extends Keyword implements ISign, INamed{
+	class Sign extends Keyword implements ISign, NamedInterface{
 
 		const TYPE_IDENTIFIER   = 1;
 

@@ -11,13 +11,13 @@ namespace Jungle\Data\Storage\Db\Structure {
 	use Jungle\Data\Storage\Db\Structure\Column\ForeignKey;
 	use Jungle\Data\Storage\Db\Structure\Column\Index;
 	use Jungle\Data\Storage\Db\Structure\Column\Type;
-	use Jungle\Util\INamed;
+	use Jungle\Util\NamedInterface;
 
 	/**
 	 * Class Column
 	 * @package Jungle\Data\Storage\Db\Structure
 	 */
-	class Column extends StructureObject implements INamed{
+	class Column extends StructureObject implements NamedInterface{
 
 		/**
 		 * Bind Type Null

@@ -15,6 +15,6 @@ namespace Jungle\Util {
 	 * Базовый интерфейс для именованых объектов
 	 *
 	 */
-	interface INamed extends INamedWrite, INamedRead{}
+	interface NamedInterface extends NamedWriteInterface, NamedReadInterface{}
 
 }

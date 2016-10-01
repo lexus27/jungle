@@ -8,14 +8,14 @@
 namespace Jungle\TypeHint {
 
 	use Jungle\TypeHint;
-	use Jungle\Util\INamed;
+	use Jungle\Util\NamedInterface;
 	use Jungle\Util\Value\String;
 
 	/**
 	 * Class TypeChecker
 	 * @package Jungle\TypeHint
 	 */
-	abstract class TypeChecker implements INamed{
+	abstract class TypeChecker implements NamedInterface{
 
 		/** @var string */
 		protected $name;

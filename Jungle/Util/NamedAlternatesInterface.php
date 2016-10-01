@@ -10,10 +10,10 @@
 namespace Jungle\Util {
 
 	/**
-	 * Interface INamedAlternates
+	 * Interface NamedAlternatesInterface
 	 * @package Jungle\Basic
 	 */
-	interface INamedAlternates extends INamed{
+	interface NamedAlternatesInterface extends NamedInterface{
 
 		/**
 		 * @param $name
