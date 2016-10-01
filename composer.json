@@ -1,14 +1,23 @@
 {
-  "name": "Lexus27/Jungle",
-  "description": "Jungle PHP Framework",
+  "name": "lexus27/jungle",
   "version": "0.0.3",
   "license": "Apache 2.0",
+  "description": "Jungle PHP Framework",
+  "keywords": ["framework", "toolkit"],
+  "homepage": "https://github.com/Lexus27/Jungle",
+  "authors": [{
+	  "name": "Alexey Kutuzov",
+	  "email": "lexus27.khv@gmail.com",
+	  "homepage": "",
+	  "role": "Developer"
+  }],
+  "type": "library",
   "require": {
 	"php":">=5.6.0"
   },
   "autoload": {
-	"classmap": [
-	  "Jungle/"
-	]
+	"psr-4": {
+	  "Jungle\\": "Jungle/"
+	}
   }
 }
