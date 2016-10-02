@@ -18,9 +18,10 @@ namespace Jungle\Util\Communication\Http {
 	 */
 	class Manager{
 
-		/** @var array  */
+		/** @var  Request  */
 		protected $requests = [];
 
+		/** @var   */
 		protected $default_agent;
 
 		/**
@@ -32,12 +33,26 @@ namespace Jungle\Util\Communication\Http {
 			return $this;
 		}
 
-		public function addRequest(RequestInterface $request, ServerInterface $server){
+		/**
+		 * @return mixed
+		 */
+		public function getDefaultAgent(){
+			return $this->default_agent;
+		}
 
+		/**
+		 * @param RequestInterface $request
+		 * @param ServerInterface $server
+		 */
+		public function addRequest(RequestInterface $request, ServerInterface $server){
+			$this->requests[] = $request;
 		}
 		
 		public function execute(){
-			
+			$cm = curl_multi_init();
+
+
+
 		}
 
 	}

@@ -415,6 +415,17 @@ namespace Jungle\Application\Dispatcher {
 			}
 		}
 
+		/**
+		 * @param $reference
+		 * @param $data
+		 * @param array $params
+		 */
+		public function forwardRedirect($reference, $data = null, array $params = []){
+			$link = $this->getRouter()->generateLink($data,$reference);
+			$code = isset($params['code'])?$params['code']:302;
+			$this->dispatcher->response->setRedirect($link, $code);
+		}
+
 
 		/**
 		 * @param null $params

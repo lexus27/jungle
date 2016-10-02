@@ -249,6 +249,9 @@ namespace Jungle\Util\Communication {
 		}
 
 
+		protected static function arrayGetOffset($array, $offset, $default = null, $checkEmpty = false){
+			return isset($array[$offset])?($checkEmpty && !$array[$offset]?$default:$array[$offset]):$default;
+		}
 
 		/**
 		 * @param $url
@@ -275,26 +278,31 @@ namespace Jungle\Util\Communication {
 				if($matched){
 					$data = [];
 					foreach($placeholders as $key => $maskId){
-						$data[$key] = $matches[$maskId];
+						if(array_key_exists($maskId,$matches)){
+							$data[$key] = $matches[$maskId];
+						}
 					}
 
 					$a = [];
 
-					$a[self::V_SCHEME]      = $data[self::V_SCHEME];
-					$a[self::V_LOGIN]       = $data[self::V_LOGIN];
-					$a[self::V_PASSWORD]    = $data[self::V_PASSWORD];
+					$a[self::V_SCHEME]      = self::arrayGetOffset($data,self::V_SCHEME,null,true);
+					$a[self::V_LOGIN]       = self::arrayGetOffset($data,self::V_LOGIN,null,true);
+					$a[self::V_PASSWORD]    = self::arrayGetOffset($data,self::V_PASSWORD,null,true);
+					$a[self::V_SCHEME]      = self::arrayGetOffset($data,self::V_SCHEME,null,true);
+
+
 					if($a[self::V_PASSWORD] && ($decoded = @urldecode($a[self::V_PASSWORD]))){
 						$a[self::V_PASSWORD] = $decoded;
 					}
 
 
-					$a[self::V_HOST]        = trim($data[self::V_HOST],'[]');
-					$a[self::V_PORT]        = $data[self::V_PORT];
+					$a[self::V_HOST]        = trim(self::arrayGetOffset($data,self::V_HOST,null,true),'[]');
+					$a[self::V_PORT]        = self::arrayGetOffset($data,self::V_PORT,null,true);
 					$a[self::V_PORT]        = intval($a[self::V_PORT]);
 
-					$a[self::V_URI]         = self::parseUri($data[self::V_URI]);
-					$a[self::V_PARAMETERS]  = self::parseParameters($data[self::V_PARAMETERS]);
-					$a[self::V_ANCHOR]      = $data[self::V_ANCHOR];
+					$a[self::V_URI]         = self::parseUri(self::arrayGetOffset($data,self::V_URI,null,true));
+					$a[self::V_PARAMETERS]  = self::parseParameters(self::arrayGetOffset($data,self::V_PARAMETERS,null,true));
+					$a[self::V_ANCHOR]      = self::arrayGetOffset($data,self::V_ANCHOR,null,true);
 
 					return $a;
 				}
@@ -481,14 +489,14 @@ namespace Jungle\Util\Communication {
 		 * @return string
 		 */
 		public static function renderURLFromArray(array $chunks){
-			$chunks[self::V_SCHEME]     = $chunks[self::V_SCHEME]       ?:null;
-			$chunks[self::V_LOGIN]      = $chunks[self::V_LOGIN]        ?:null;
-			$chunks[self::V_PASSWORD]   = $chunks[self::V_PASSWORD]     ?:null;
-			$chunks[self::V_HOST]       = $chunks[self::V_HOST]         ?:null;
-			$chunks[self::V_PORT]       = $chunks[self::V_PORT]         ?:null;
-			$chunks[self::V_URI]        = $chunks[self::V_URI]          ?:null;
-			$chunks[self::V_PARAMETERS] = $chunks[self::V_PARAMETERS]   ?:[];
-			$chunks[self::V_ANCHOR]     = $chunks[self::V_ANCHOR]       ?:null;
+			$chunks[self::V_SCHEME]     = isset($chunks[self::V_SCHEME])?   $chunks[self::V_SCHEME]:null;
+			$chunks[self::V_LOGIN]      = isset($chunks[self::V_LOGIN])?    $chunks[self::V_LOGIN]:null;
+			$chunks[self::V_PASSWORD]   = isset($chunks[self::V_PASSWORD])? $chunks[self::V_PASSWORD]:null;
+			$chunks[self::V_HOST]       = isset($chunks[self::V_HOST])?     $chunks[self::V_HOST]:null;
+			$chunks[self::V_PORT]       = isset($chunks[self::V_PORT])?     $chunks[self::V_PORT]:null;
+			$chunks[self::V_URI]        = isset($chunks[self::V_URI])?      $chunks[self::V_URI]:null;
+			$chunks[self::V_PARAMETERS] = isset($chunks[self::V_PARAMETERS])?$chunks[self::V_PARAMETERS]:[];
+			$chunks[self::V_ANCHOR]     = isset($chunks[self::V_ANCHOR])?   $chunks[self::V_ANCHOR]:null;
 			if(!$chunks[self::V_HOST]){
 				throw new \LogicException('Host must have in url chunks');
 			}

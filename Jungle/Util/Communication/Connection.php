@@ -13,22 +13,64 @@ namespace Jungle\Util\Communication {
 	 * Class Connection
 	 * @package Jungle\Util\Communication
 	 */
-	abstract class Connection{
+	abstract class Connection implements ConnectionInterface{
 
-		/**
-		 * @var int
-		 */
-		protected $timeout = 2;
-
-		/**
-		 * @var resource|bool
-		 */
+		/** @var resource|bool */
 		protected $connection;
 
+		/** @var  array */
+		protected $config = [];
+
+
 		/**
-		 * @var URL
+		 * Connection constructor.
+		 * @param array $config
 		 */
-		protected $url;
+		public function __construct(array $config){
+			$this->setConfig($config);
+		}
+
+		/**
+		 * @param array $config
+		 * @return $this
+		 */
+		public function setConfig(array $config){
+			$this->config = array_replace([
+				'host' => null,
+				'port' => null,
+				'timeout' => 2,
+			], $config);
+			return $this;
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getConfig(){
+			return $this->config;
+		}
+
+		/**
+		 * @param $key
+		 * @param $default
+		 * @param bool $required
+		 * @return null
+		 * @throws Exception\ConfigException
+		 */
+		public function getOption($key, $default = null, $required = false){
+			if(isset($this->config[$key])){
+				return $this->config[$key];
+			}elseif($required!==false){
+				if(is_string($required)){
+					throw new Exception\ConfigException('Param "'.$key.'" required: "'.$required.'"');
+				}else{
+					throw new Exception\ConfigException('Param "'.$key.'" required.');
+				}
+			}else{
+				return $default;
+			}
+		}
+
 
 		/**
 		 * @return $this
@@ -37,39 +79,6 @@ namespace Jungle\Util\Communication {
 			$this->close();
 			return $this;
 		}
-
-		/**
-		 * @param URL $url
-		 * @return $this
-		 */
-		public function setUrl($url){
-			$this->url = URL::getURL($url);
-			return $this;
-		}
-
-		/**
-		 * @return URL
-		 */
-		public function getUrl(){
-			return $this->url;
-		}
-
-		/**
-		 * @param int $timeout
-		 * @return $this
-		 */
-		public function setTimeout($timeout){
-			$this->timeout = intval($timeout);
-			return $this;
-		}
-
-		/**
-		 * @return int
-		 */
-		public function getTimeout(){
-			return $this->timeout;
-		}
-
 
 		/**
 		 * @return $this
@@ -92,7 +101,6 @@ namespace Jungle\Util\Communication {
 			return $this;
 		}
 
-
 		/**
 		 * Open connection
 		 * @return resource|bool
@@ -104,14 +112,6 @@ namespace Jungle\Util\Communication {
 		 */
 		abstract protected function _close();
 
-		/**
-		 * @param $message
-		 * @param $code
-		 * @throws Exception
-		 */
-		protected function error($message,$code){
-			throw new Exception($message,$code);
-		}
 
 		/**
 		 * @return $this
@@ -120,12 +120,15 @@ namespace Jungle\Util\Communication {
 			$this->connection = null;
 		}
 
+
 		/**
 		 * @return resource
 		 */
-		public function getRealConnection(){
+		public function getInternalConnection(){
 			return $this->connection;
 		}
+
+
 
 	}
 }

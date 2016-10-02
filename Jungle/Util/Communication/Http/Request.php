@@ -60,6 +60,9 @@ namespace Jungle\Util\Communication\Http {
 		protected $cookies = [];
 
 		/** @var  string */
+		protected $scheme = 'http';
+
+		/** @var  string */
 		protected $uri;
 
 		/** @var  bool  */
@@ -78,6 +81,9 @@ namespace Jungle\Util\Communication\Http {
 		protected $onSuccess;
 
 		protected $onFailure;
+
+
+
 
 
 		/**
@@ -201,12 +207,19 @@ namespace Jungle\Util\Communication\Http {
 
 		/**
 		 * @param $parameter
+		 * @param null $default
 		 * @return mixed
 		 */
-		public function getParam($parameter = null){
-			return (isset($this->post_parameters[$parameter])?
-				$this->post_parameters[$parameter]:(isset($this->query_parameters[$parameter])?
-					$this->query_parameters[$parameter]:null));
+		public function getParam($parameter = null, $default = null){
+			if($parameter === null){
+				return $_REQUEST;
+			}
+			if(isset($this->post_parameters[$parameter])){
+				return $this->post_parameters[$parameter];
+			}elseif(isset($this->query_parameters[$parameter])){
+				return $this->query_parameters[$parameter];
+			}
+			return $this->getObjectParam($parameter,$default);
 		}
 
 		/**
@@ -214,15 +227,21 @@ namespace Jungle\Util\Communication\Http {
 		 * @return bool
 		 */
 		public function hasParam($parameter = null){
-			return isset($this->post_parameters[$parameter]) || isset($this->query_parameters[$parameter]);
+			if($parameter===null){
+				return !empty($this->post_parameters) || !empty($this->query_parameters) || $this->hasObject();
+			}
+			return isset($this->post_parameters[$parameter]) ||
+			       isset($this->query_parameters[$parameter]) ||
+			       $this->hasObjectParam($parameter);
 		}
 
 		/**
 		 * @param $key
+		 * @param null $default
 		 * @return mixed
 		 */
-		public function getQuery($key = null){
-			return isset($this->query_parameters[$key])?$this->query_parameters[$key]:null;
+		public function getQuery($key = null, $default = null){
+			return isset($this->query_parameters[$key])?$this->query_parameters[$key]:$default;
 		}
 
 		/**
@@ -234,13 +253,13 @@ namespace Jungle\Util\Communication\Http {
 		}
 
 
-
 		/**
 		 * @param $key
+		 * @param null $default
 		 * @return mixed
 		 */
-		public function getPost($key = null){
-			return isset($this->post_parameters[$key])?$this->post_parameters[$key]:null;
+		public function getPost($key = null, $default = null){
+			return isset($this->post_parameters[$key])?$this->post_parameters[$key]:$default;
 		}
 
 		/**
@@ -493,35 +512,47 @@ namespace Jungle\Util\Communication\Http {
 			return $this;
 		}
 
-		/**
-		 * @return mixed
-		 */
-		public function getScheme(){
-			// TODO: Implement getScheme() method.
-		}
 
 		/**
 		 * @return bool
 		 */
 		public function hasObject(){
-			// TODO: Implement hasObject() method.
+			$contentType = $this->getContentType();
+			return is_array($this->content) || strpos($contentType,'json')!==false || strpos($contentType,'xml')!==false || strpos($contentType,'soap')!==false;
 		}
 
 		/**
 		 * @return array|mixed|null
 		 */
 		public function getObject(){
-			// TODO: Implement getObject() method.
+			if(is_array($this->content)){
+				return $this->content;
+			}else{
+				$content = $this->getContent();
+				if(is_array($content)){
+					return $content;
+				}
+			}
+			return null;
 		}
 
 		/**
 		 * @param $key
-		 * @param null $filter
 		 * @param null $default
 		 * @return mixed|null
 		 */
-		public function getObjectParam($key, $filter = null, $default = null){
-			// TODO: Implement getObjectParam() method.
+		public function getObjectParam($key, $default = null){
+			if(is_array($this->content)){
+				if(isset($this->content[$key])){
+					return $this->content[$key];
+				}
+			}else{
+				$content = $this->getContent();
+				if(is_array($content) && isset($content[$key])){
+					return $content[$key];
+				}
+			}
+			return $default;
 		}
 
 		/**
@@ -529,7 +560,19 @@ namespace Jungle\Util\Communication\Http {
 		 * @return bool
 		 */
 		public function hasObjectParam($key){
-			// TODO: Implement hasObjectParam() method.
+			if(is_array($this->content)){
+				return isset($this->content[$key]);
+			}else{
+				return is_array(($content = $this->getContent())) && isset($content[$key]);
+			}
+		}
+
+
+		/**
+		 * @return mixed
+		 */
+		public function getScheme(){
+			return $this->scheme;
 		}
 
 		/**
@@ -537,7 +580,8 @@ namespace Jungle\Util\Communication\Http {
 		 * @return mixed
 		 */
 		public function setScheme($scheme = 'http'){
-			// TODO: Implement setScheme() method.
+			$this->scheme = $scheme;
+			return $this;
 		}
 	}
 }

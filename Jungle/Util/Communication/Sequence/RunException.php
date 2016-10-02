@@ -4,16 +4,12 @@
  * Author: Kutuzov Alexey Konstantinovich <lexus.1995@mail.ru>
  * Project: jungle
  * IDE: PhpStorm
- * Date: 01.07.2016
- * Time: 23:47
+ * Date: 02.10.2016
+ * Time: 19:57
  */
-namespace Jungle\Util\Communication\Http {
-
-	/**
-	 * Class Async
-	 * @package Jungle\Util\Communication\Http
-	 */
-	class Async{
+namespace Jungle\Util\Communication\Sequence {
+	
+	class RunException extends Exception{
 		
 	}
 }

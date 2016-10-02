@@ -22,6 +22,9 @@ namespace Jungle\Util\Communication\Http {
 		/** @var array  */
 		protected $languages = [];
 
+		/** @var  ProxyInterface|null */
+		protected $proxy;
+
 		/**
 		 * @return string
 		 */
@@ -68,22 +71,23 @@ namespace Jungle\Util\Communication\Http {
 		 * @param ProxyInterface $proxy
 		 * @return mixed
 		 */
-		public function setProxy(ProxyInterface $proxy){
-			// TODO: Implement setProxy() method.
+		public function setProxy(ProxyInterface $proxy = null){
+			$this->proxy = $proxy;
+			return $this;
 		}
 
 		/**
 		 * @return bool
 		 */
 		public function isProxied(){
-			// TODO: Implement isProxied() method.
+			return isset($this->proxy);
 		}
 
 		/**
 		 * @return ProxyInterface
 		 */
 		public function getProxy(){
-			// TODO: Implement getProxy() method.
+			return $this->proxy;
 		}
 	}
 }

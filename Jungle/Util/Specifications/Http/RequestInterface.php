@@ -99,9 +99,10 @@ namespace Jungle\Util\Specifications\Http {
 
 		/**
 		 * @param $parameter
+		 * @param null $default
 		 * @return mixed
 		 */
-		public function getParam($parameter = null);
+		public function getParam($parameter = null, $default = null);
 
 		/**
 		 * @param $parameter
@@ -111,9 +112,10 @@ namespace Jungle\Util\Specifications\Http {
 
 		/**
 		 * @param $key
+		 * @param null $default
 		 * @return mixed
 		 */
-		public function getQuery($key = null);
+		public function getQuery($key = null, $default = null);
 
 		/**
 		 * @param $key
@@ -128,9 +130,10 @@ namespace Jungle\Util\Specifications\Http {
 
 		/**
 		 * @param $key
+		 * @param null $default
 		 * @return mixed
 		 */
-		public function getPost($key = null);
+		public function getPost($key = null, $default = null);
 
 		/**
 		 * @return bool
@@ -144,11 +147,10 @@ namespace Jungle\Util\Specifications\Http {
 
 		/**
 		 * @param $key
-		 * @param null $filter
 		 * @param null $default
 		 * @return mixed|null
 		 */
-		public function getObjectParam($key, $filter = null, $default = null);
+		public function getObjectParam($key, $default = null);
 
 		/**
 		 * @param $key

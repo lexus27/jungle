@@ -58,9 +58,10 @@ namespace Jungle\Messenger\Mail\SMTP {
 		public function __construct(array $options = []){
 			parent::__construct(array_merge([
 				'charset'           => 'utf-8',
-				'url'               => null,
-				'timeout'           => 5,
+				'host'              => null,
+				'port'              => null,
 				'auth'              => null,
+				'timeout'           => 5,
 				'from'              => null,
 				'change_headers'    => null,
 				'extra_headers'     => null,
@@ -72,7 +73,6 @@ namespace Jungle\Messenger\Mail\SMTP {
 				'mailer_service'    => 'PHP Jungle.messager.SMTP',
 			],$options));
 			$this->options['auth']      = Auth::getAccessAuth($this->options['auth']);
-			$this->options['url']       = URL::getURL($this->options['url']);
 			$this->options['from']      = Contact::getContact($this->options['from']);
 		}
 
@@ -161,14 +161,16 @@ namespace Jungle\Messenger\Mail\SMTP {
 			 * @var Contact $from
 			 * @var Contact $author
 			 * @var \Jungle\User\AccessAuth\Pair $auth
-			 * @var URL $url
 			 * @var IMessage $m
 			 * @var IContact[] $destinations
 			 */
 			$from           = $this->options['from'];
-			$author         = $m->getAuthor()?:$from;
-			$url            = $this->options['url'];
 			$m              = $this->combination->getMessage();
+			$author         = $m->getAuthor()?:$from;
+			$auth           = $this->options['auth'];
+			$host           = $this->options['host'];
+			$port           = $this->options['port'];
+
 			$destinations   = [];
 
 
@@ -179,7 +181,7 @@ namespace Jungle\Messenger\Mail\SMTP {
 			$document->setHeader('X-Mailer',        $this->options['mailer_service']);
 			$document->setHeader('Reply-To',        $document->getHeader('From'));
 			$document->setHeader('X-Priority',      "3 (Normal)");
-			$document->setHeader('Message-ID',      "<172562218.".date("YmjHis")."@{$url->getHost()}>");
+			$document->setHeader('Message-ID',      "<172562218.".date("YmjHis")."@{$host}>");
 			$document->setHeader('Subject',         "{$this->prepareString($m->getSubject())}");
 			$document->setHeader('MIME-Version',    "1.0");
 
@@ -235,7 +237,11 @@ namespace Jungle\Messenger\Mail\SMTP {
 				}
 				$document->setBody($body);
 			}else{
-				$document->setHeader('Content-Type',"{$m->getType()}; charset={$this->options['charset']}");
+				$t = $m->getType();
+				if(!$t){
+					$t = 'text/plain';
+				}
+				$document->setHeader('Content-Type',"{$t}; charset={$this->options['charset']}");
 				$document->setHeader('Content-Transfer-Encoding',"8bit");
 				$document->setBody($m->getContent());
 			}
@@ -249,7 +255,7 @@ namespace Jungle\Messenger\Mail\SMTP {
 				],
 				'commands' => [
 					[
-						'EHLO '.$url->getHost(),[
+						'EHLO '.$host,[
 						'code' => 250, 'msg' => 'SMTP Hello error'
 					]
 					],[
@@ -300,7 +306,7 @@ namespace Jungle\Messenger\Mail\SMTP {
 			if(!$s){
 				$s = new Stream\Specification();
 				$s->setCodeRecognizer(function($d){return intval(substr($d,0,3));});
-				$s->setCommandStructureModifier(function($d){return $d . "\r\n";});
+				$s->setCommandConverter(function($d){return $d . "\r\n";});
 				$s->setReader(function($fp){
 					$data = "";
 					while($str = fgets($fp,515)){
@@ -321,7 +327,8 @@ namespace Jungle\Messenger\Mail\SMTP {
 			static $s;
 			if(!$s){
 				$s = $this->getSpecification()->openStream([
-					'url'       => $this->options['url'],
+					'host'       => $this->options['host'],
+					'port'       => $this->options['port'],
 					'timeout'   => isset($this->options['timeout'])?$this->options['timeout']:3,
 					'start'     => [
 						null, [

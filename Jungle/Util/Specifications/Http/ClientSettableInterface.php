@@ -19,7 +19,7 @@ namespace Jungle\Util\Specifications\Http {
 		 * @param ProxyInterface $proxy
 		 * @return mixed
 		 */
-		public function setProxy(ProxyInterface $proxy);
+		public function setProxy(ProxyInterface $proxy = null);
 
 	}
 }

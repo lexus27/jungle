@@ -40,6 +40,12 @@ namespace Jungle\Util\Communication\Http {
 		/** @var   */
 		protected $content;
 
+		/** @var  array|null */
+		protected $redirect;
+
+		/** @var bool  */
+		protected $sent = false;
+
 		/**
 		 * @return RequestInterface
 		 */
@@ -178,7 +184,8 @@ namespace Jungle\Util\Communication\Http {
 		 * @return mixed
 		 */
 		public function setContentDisposition($disposition){
-			// TODO: Implement setContentDisposition() method.
+			$this->setHeader('Content-Disposition', $disposition);
+			return $this;
 		}
 
 		/**
@@ -208,6 +215,23 @@ namespace Jungle\Util\Communication\Http {
 		 */
 		public function getCode(){
 			// TODO: Implement getCode() method.
+		}
+
+		/**
+		 * @param null $path
+		 * @param int $code
+		 */
+		public function sendRedirect($path = null, $code = 302){
+			// TODO: Implement sendRedirect() method.
+		}
+
+		/**
+		 * @param null $path
+		 * @param int $code
+		 * @return $this
+		 */
+		public function setRedirect($path = null, $code = 302){
+			// TODO: Implement setRedirect() method.
 		}
 	}
 }

@@ -285,7 +285,7 @@ namespace Jungle\Http {
 		 * @param null $default
 		 * @return mixed
 		 */
-		public function getPost($key = null, $filter = null, $default = null){
+		public function getPost($key = null, $default = null, $filter = null){
 			if($key === null){
 				return $_POST;
 			}
@@ -310,7 +310,7 @@ namespace Jungle\Http {
 		 * @param null $default
 		 * @return mixed
 		 */
-		public function getParam($parameter = null, $filter = null, $default = null){
+		public function getParam($parameter = null, $default = null, $filter = null){
 			if($parameter === null){
 				return $_REQUEST;
 			}
@@ -337,7 +337,7 @@ namespace Jungle\Http {
 		 * @param null $default
 		 * @return mixed
 		 */
-		public function getQuery($key = null, $filter = null, $default = null){
+		public function getQuery($key = null, $default = null, $filter = null){
 			if($key === null){
 				return $_GET;
 			}
@@ -449,7 +449,7 @@ namespace Jungle\Http {
 		 * @param null $default
 		 * @return mixed|null
 		 */
-		public function getObjectParam($key, $filter = null, $default = null){
+		public function getObjectParam($key, $default = null, $filter = null){
 			if(is_array($this->content)){
 				if(isset($this->content[$key])){
 					return $this->_handleValueFilter($this->content[$key], $filter);
