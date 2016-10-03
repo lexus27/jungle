@@ -27,6 +27,15 @@ namespace Jungle\Util\Communication\Connection\Stream {
 		}
 
 		/**
+		 * @param $length
+		 * @return mixed
+		 */
+		protected function _readLine($length){
+			return fgets($this->connection,$length);
+		}
+
+
+		/**
 		 * @param $data
 		 * @param null $length
 		 * @return int
@@ -41,6 +50,8 @@ namespace Jungle\Util\Communication\Connection\Stream {
 			return $s;
 		}
 
+
+
 		/**
 		 * @return resource
 		 */
@@ -51,15 +62,27 @@ namespace Jungle\Util\Communication\Connection\Stream {
 
 		/**
 		 * @return resource
-		 * @throws Exception
+		 * @throws Exception\ConfigException
+		 * @throws Exception\ConnectException
+		 * @throws \Exception
 		 */
 		protected function _connect(){
-			$to = $this->getOption('timeout',2);
+			$to = $this->getOption('timeout',$this->default_timeout);
 			$host = $this->getOption('host',null,true);
 			$port = $this->getOption('port',null,true);
-			$connection = fsockopen($port, $port, $errNo,$errStr, $to);
+			$scheme = $this->getOption('scheme',null,true);
+			$hostname = ($scheme?$scheme.'://':'') . $host;
+			$connection = @fsockopen($hostname, $port, $errNo,$errStr, $to);
 			if(!$connection){
-				throw new Exception\ConnectException('Error connect to "'.$host.':'.$port.'" message: "'.$errStr.'", number: "'.$errNo.'"');
+				$enc = mb_detect_encoding($errStr,['cp1251']);
+				if($enc){
+					$errStr = mb_convert_encoding($errStr,'utf-8',$enc);
+				}
+				$message = 'Error connect to "'.$hostname.':'.$port.'" message: "'.$errStr.'", code: "'.$errNo.'"';
+				if($errNo === 10060){
+					throw new Exception\TimeoutException($message, $errNo);
+				}
+				throw new Exception\ConnectException($message, $errNo);
 			}
 			stream_set_timeout($connection,$to);
 			return $connection;

@@ -44,12 +44,15 @@ namespace Jungle\Util\Communication {
 		 */
 		public function setSequence(array $sequence){
 			foreach($sequence as & $item){
+				if(!is_array($item)){
+					$item = [ 'name' => $item ];
+				}
 				$item = array_replace([
 					'name'          => null,
 					'params'        => null,
 					'aggregation'   => null,
 				],$item);
-				if(!isset($item['aggregation']) || !isset($item['params'])){
+				if(!isset($item['many']) || !isset($item['params'])){
 					$item['params'] = (array)$item['params'];
 				}
 				$item['command'] = $this->specification->getCommand($item['name']);
@@ -64,10 +67,11 @@ namespace Jungle\Util\Communication {
 
 		/**
 		 * @param array $config
+		 * @param bool $merge
 		 * @return $this
 		 */
-		public function setConfig(array $config){
-			$this->config = $config;
+		public function setConfig(array $config, $merge = true){
+			$this->config = $merge?array_replace($this->config, $config):$config;
 			return $this;
 		}
 
@@ -97,19 +101,36 @@ namespace Jungle\Util\Communication {
 
 
 		/**
+		 * @param array $config
+		 * @param bool $merge
 		 * @return ProcessSequenceInterface
+		 * @throws Exception
+		 * @throws Exception\ParamRequired
+		 * @throws FatalException
+		 * @throws RuleMessage
 		 */
-		public function run(){
+		public function run(array $config = null, $merge = false){
+
+			if($config!==null){
+				$this->setConfig($config, $merge);
+			}
+			unset($config,$merge);
+
 			$this->_reset();
 			$processSequence = new ProcessSequence($this);
-			$this->specification->beforeSequence($processSequence);
 			try{
+				$this->specification->beforeSequence($processSequence);
 				foreach($this->sequence as $item){
 					try{
 						/** @var CommandInterface $command */
 						$command = $item['command'];
-						if(isset($item['aggregation'])){
-							foreach($item['aggregation'] as $params){
+						if(isset($item['many'])){
+							if(is_callable($item['many'])){
+								$many = call_user_func($item['many'],$command, $processSequence);
+							}else{
+								$many = $item['many'];
+							}
+							foreach($many as $params){
 								$command->run($processSequence, $this->prepareParams($params) );
 							}
 						}else{
@@ -118,7 +139,6 @@ namespace Jungle\Util\Communication {
 					}catch(Exception\CanceledException $canceled){
 
 					}
-
 				}
 				$this->specification->afterSequence($processSequence);
 			}catch(Exception $e){
@@ -154,7 +174,7 @@ namespace Jungle\Util\Communication {
 
 			if($e instanceof Sequence\Exception\ParamRequired){
 				$process->setTask('required', $e);
-				return $sequence;
+				throw $e;
 			}
 
 			if($e instanceof FatalException){
@@ -164,7 +184,7 @@ namespace Jungle\Util\Communication {
 
 			if($e instanceof RuleMessage){
 				$process->setTask('rule', $e);
-				return $sequence;
+				throw $e;
 			}
 
 
@@ -181,6 +201,7 @@ namespace Jungle\Util\Communication {
 			return $this->connection->send($data);
 		}
 
+
 		/**
 		 * @param $length
 		 * @return string
@@ -189,6 +210,13 @@ namespace Jungle\Util\Communication {
 			return $this->connection->read($length);
 		}
 
+		/**
+		 * @param $length
+		 * @return mixed
+		 */
+		public function readLine($length){
+			return $this->connection->readLine($length);
+		}
 
 		/**
 		 *

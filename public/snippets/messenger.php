@@ -13,18 +13,25 @@ use Jungle\Messenger\Mail\Message;
 
 include './loader.php';
 $messenger = new \Jungle\Messenger\Mail\SMTP\SMTP([
-	'charset'           => 'utf-8',
+
 	'host'              => 'smtp.mail.ru',
-	'port'              => 587,
-	'timeout'           => 5,
+	'port'              => 465,
+	'scheme'            => 'ssl',
+
+
 	'auth'              => [
-		'login'     => 'lexus.1995@mail.ru',
-		'password'  => '@JungleTechLabs2016@'
+		'login'     => null, // what you login
+		'password'  => null // what you password
 	],
-	'from'              => 'Алексей Кутузов <lexus.1995@mail.ru>',
+
+
+	'from'              => 'You Name <your@mail.ru>',
+
 	'interval'          => 10,
 	'max_destinations'  => 30,
 	'mailer_service'    => 'Jungle PHP Messenger',
+
+	'charset'           => 'utf-8',
 ]);
 
 $combination = new Combination();

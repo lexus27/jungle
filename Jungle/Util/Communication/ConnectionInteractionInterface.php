@@ -27,6 +27,12 @@ namespace Jungle\Util\Communication {
 		 */
 		public function read($length);
 
+		/**
+		 * @param $length
+		 * @return mixed
+		 */
+		public function readLine($length);
+
 	}
 }
 

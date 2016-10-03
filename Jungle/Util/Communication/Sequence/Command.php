@@ -23,6 +23,9 @@ namespace Jungle\Util\Communication\Sequence {
 		/** @var  string */
 		protected $definition;
 
+		/** @var  callable|null  */
+		protected $aggregator;
+
 		/** @var  array  */
 		protected $params = [];
 
@@ -69,12 +72,28 @@ namespace Jungle\Util\Communication\Sequence {
 		}
 
 		/**
+		 * @param callable $aggregator
+		 * @return $this
+		 */
+		public function setAggregator(callable $aggregator){
+			$this->aggregator = $aggregator;
+			return $this;
+		}
+
+		/**
+		 * @return callable|null
+		 */
+		public function getAggregator(){
+			return $this->aggregator;
+		}
+
+		/**
 		 * @param ProcessSequenceInterface $processSequence
 		 * @param array $params
-		 * @return void
 		 * @throws Exception
+		 * @throws RuleMessage|null
 		 */
-		public function run(ProcessSequenceInterface $processSequence, array $params){
+		protected function _run_one(ProcessSequenceInterface $processSequence, array $params){
 			$process = new Process($this);
 			$sequence = $processSequence->getSequence();
 			try{
@@ -116,6 +135,30 @@ namespace Jungle\Util\Communication\Sequence {
 		}
 
 		/**
+		 * @param ProcessSequenceInterface $processSequence
+		 * @param array $params
+		 * @return void
+		 * @throws Exception
+		 */
+		public function run(ProcessSequenceInterface $processSequence, array $params){
+			if($this->aggregator && $this->definition){
+				$aggregation = call_user_func($this->aggregator, $params, $this);
+				if(!is_array($aggregation)){
+					throw new Exception('Aggregation is not valid returned value, must be each iteration params arrays');
+				}
+				if(!$aggregation){
+					$this->_run_one($processSequence,$params);
+				}else{
+					foreach($aggregation as $item){
+						$this->_run_one($processSequence, $item);
+					}
+				}
+			}else{
+				$this->_run_one($processSequence,$params);
+			}
+		}
+
+		/**
 		 * @param array $params
 		 * @return string
 		 */
@@ -128,11 +171,15 @@ namespace Jungle\Util\Communication\Sequence {
 		 * @return mixed
 		 */
 		protected function prepareDefinition(ProcessInterface $process){
-			return preg_replace_callback('\{\{(\w+)\}\}',function($m) use($process){
+			return preg_replace_callback('~\{\{(\w+)\}\}~',function($m) use($process){
 				if(!isset($process->{$m[1]})){
 					throw new Sequence\Exception\ParamRequired($m[1]);
 				}
-				return $process->{$m[1]};
+				$s = $process->{$m[1]};
+				if(!is_scalar($s)){
+					throw new Sequence\Exception\ParamRequired($m[1],'Is not a scalar');
+				}
+				return $s;
 			},$this->definition);
 		}
 

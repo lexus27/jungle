@@ -13,6 +13,7 @@ namespace Jungle\Messenger\Mail\SMTP {
 	use Jungle\Messenger\Mail\Contact;
 	use Jungle\Messenger\Mail\IMessage;
 	use Jungle\User\AccessAuth\Auth;
+	use Jungle\Util\Communication\SequenceInterface;
 	use Jungle\Util\Communication\Stream;
 	use Jungle\Util\Communication\URL;
 	use Jungle\Util\Specifications\TextTransfer\Body\Multipart;
@@ -57,12 +58,18 @@ namespace Jungle\Messenger\Mail\SMTP {
 		 */
 		public function __construct(array $options = []){
 			parent::__construct(array_merge([
-				'charset'           => 'utf-8',
+
 				'host'              => null,
 				'port'              => null,
+				'scheme'            => null,
+				'timeout'           => null,
+
 				'auth'              => null,
-				'timeout'           => 5,
+
+
 				'from'              => null,
+
+				'charset'           => 'utf-8',
 				'change_headers'    => null,
 				'extra_headers'     => null,
 
@@ -161,15 +168,21 @@ namespace Jungle\Messenger\Mail\SMTP {
 			 * @var Contact $from
 			 * @var Contact $author
 			 * @var \Jungle\User\AccessAuth\Pair $auth
-			 * @var IMessage $m
+			 * @var IMessage $messageObject
 			 * @var IContact[] $destinations
 			 */
-			$from           = $this->options['from'];
-			$m              = $this->combination->getMessage();
-			$author         = $m->getAuthor()?:$from;
-			$auth           = $this->options['auth'];
+
+			$messageObject  = $this->combination->getMessage();
+
 			$host           = $this->options['host'];
 			$port           = $this->options['port'];
+			$scheme         = $this->options['scheme'];
+
+
+			$auth           = $this->options['auth'];
+
+			$from           = $this->options['from'];
+			$author         = $messageObject->getAuthor()?:$from;
 
 			$destinations   = [];
 
@@ -182,7 +195,7 @@ namespace Jungle\Messenger\Mail\SMTP {
 			$document->setHeader('Reply-To',        $document->getHeader('From'));
 			$document->setHeader('X-Priority',      "3 (Normal)");
 			$document->setHeader('Message-ID',      "<172562218.".date("YmjHis")."@{$host}>");
-			$document->setHeader('Subject',         "{$this->prepareString($m->getSubject())}");
+			$document->setHeader('Subject',         "{$this->prepareString($messageObject->getSubject())}");
 			$document->setHeader('MIME-Version',    "1.0");
 
 
@@ -214,18 +227,18 @@ namespace Jungle\Messenger\Mail\SMTP {
 				$destinations[] = $d;
 			}
 			if($bcc) $document->setHeader('Bcc',implode('; ',$bcc));
-			if($m->hasAttachments()){
+			if($messageObject->hasAttachments()){
 
 				$body = new Multipart();
 
 				$main = new Document();
-				$main->setHeader('Content-Type',"{$m->getType()}; charset={$this->options['charset']}");
+				$main->setHeader('Content-Type',"{$messageObject->getType()}; charset={$this->options['charset']}");
 				$main->setHeader('Content-Transfer-Encoding',"8bit");
-				$main->setBody($m->getContent());
+				$main->setBody($messageObject->getContent());
 
 				$body->addPart($main);
 
-				foreach($m->getAttachments() as $attachment){
+				foreach($messageObject->getAttachments() as $attachment){
 					$a = new Document();
 					$a->setHeader('Content-Type',"{$attachment->getType()}; name=\"{$attachment->getName()}\"");
 					$a->setHeader('Content-Transfer-Encoding',"base64");
@@ -237,107 +250,66 @@ namespace Jungle\Messenger\Mail\SMTP {
 				}
 				$document->setBody($body);
 			}else{
-				$t = $m->getType();
+				$t = $messageObject->getType();
 				if(!$t){
 					$t = 'text/plain';
 				}
 				$document->setHeader('Content-Type',"{$t}; charset={$this->options['charset']}");
 				$document->setHeader('Content-Transfer-Encoding',"8bit");
-				$document->setBody($m->getContent());
+				$document->setBody($messageObject->getContent());
 			}
 			$message = $document->represent();
-			$stream = $this->getStream();
-			$stream->reset()->execute([
-				'defaults' => [
-					'rule' => [
-						'negated' => true
-					]
-				],
-				'commands' => [
-					[
-						'EHLO '.$host,[
-						'code' => 250, 'msg' => 'SMTP Hello error'
-					]
-					],[
-						'AUTH LOGIN',[
-							'code' => 334, 'msg' => 'Authentication error(START)'
-						]
-					],[
-						$auth->getBase64Login(),[
-							'code' => 334, 'msg' => 'Authentication error(login)'
-						]
-					],[
-						$auth->getBase64Password(),[
-							'code'=> 235, 'msg' => 'Authentication error(password)'
-						]
-					],[
-						"MAIL FROM:<{$from->getAddress()}> SIZE=".strlen($message),[
-							'code' => 250, 'msg' => 'Sender invalid'
-						]
-					],[
-						'collection' => $destinations,
-						'handler'    => function($index,IContact $destination){
-							return [
-								"RCPT TO:<{$destination->getAddress()}>",[
-									'code' => [250,220,251],
-									'msg' => "Ошибка, адрес {$destination->getAddress()} не может быть доступен",
-									'negated' => true
-								]
-							];
-						}
-					], [
-						'DATA',[
-						'code' => 354, 'msg' => 'DATA pre send error'
-						]
-					],[
-						"$message\r\n.",[
-							'code' => [220,250], 'msg' => 'SMTP server not accepted send data'
-						]
-					], 'QUIT'
-				]
-			])->reset();
+
+
+			$sequence = $this->getSequence();
+			$sequence->run([
+				'login'     => $auth->getBase64Login(),
+				'password'  => $auth->getBase64Password(),
+
+				'mail_from' => $from->getAddress(),
+				'recipient' => function() use($destinations) {
+					$a = [];
+					foreach($destinations as $contact){
+						$a[] = $contact->getAddress();
+					};
+					return $a;
+				},
+				'data' => $message,
+				'size' => strlen($message)
+			], true);
 		}
 
 		/**
-		 * @return Stream\Specification
+		 * @return SequenceInterface
 		 */
-		protected function getSpecification(){
-			static $s;
-			if(!$s){
-				$s = new Stream\Specification();
-				$s->setCodeRecognizer(function($d){return intval(substr($d,0,3));});
-				$s->setCommandConverter(function($d){return $d . "\r\n";});
-				$s->setReader(function($fp){
-					$data = "";
-					while($str = fgets($fp,515)){
-						$data .= $str;
-						if(substr($str,3,1) == " ") { break; }
-					}
-					return $data;
-				});
+		protected function getSequence(){
+			static $sequence;
+			if(!$sequence){
+				$specification = new \Jungle\Util\Communication\Sequence\Specification\Smtp();
+				$sequence = $specification->createSequence();
+				/** @var Auth $auth */
+				$auth = $this->options['auth'];
+				$sequence->setConfig([
+					'params_merge'  => true,
 
-			}
-			return $s;
-		}
-
-		/**
-		 * @return Stream
-		 */
-		protected function getStream(){
-			static $s;
-			if(!$s){
-				$s = $this->getSpecification()->openStream([
 					'host'       => $this->options['host'],
 					'port'       => $this->options['port'],
-					'timeout'   => isset($this->options['timeout'])?$this->options['timeout']:3,
-					'start'     => [
-						null, [
-							'code' => 220, 'msg' => 'Error connect to SMTP server', 'negated' => true
-						]
-					]
+					'scheme'     => $this->options['scheme'],
+					'timeout'    => isset($this->options['timeout'])?$this->options['timeout']:null,
+
+					'login'      => $auth->getBase64Login(),
+					'password'      => $auth->getBase64Login(),
+				]);
+
+				$sequence->setSequence([
+					'hello',
+					'auth',
+					'mail_from',
+					'recipient',
+					'data'
 				]);
 			}
-			return $s;
+			return $sequence;
 		}
 
 	}

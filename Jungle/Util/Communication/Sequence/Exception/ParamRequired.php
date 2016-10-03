@@ -30,6 +30,9 @@ namespace Jungle\Util\Communication\Sequence\Exception {
 		 */
 		public function __construct($paramName, $message = '', $code = 0, \Exception $previous = null){
 			$this->name = $paramName;
+
+			$message = 'Parameter "'.$paramName.'" must be specified. '.$message;
+
 			\Exception::__construct(
 				$message,
 				$code,

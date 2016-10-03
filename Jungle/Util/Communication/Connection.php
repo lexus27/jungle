@@ -21,6 +21,8 @@ namespace Jungle\Util\Communication {
 		/** @var  array */
 		protected $config = [];
 
+		/** @var int*/
+		protected $default_timeout = 2;
 
 		/**
 		 * Connection constructor.
@@ -36,9 +38,10 @@ namespace Jungle\Util\Communication {
 		 */
 		public function setConfig(array $config){
 			$this->config = array_replace([
-				'host' => null,
-				'port' => null,
-				'timeout' => 2,
+				'host'      => null,
+				'port'      => null,
+				'scheme'    => null,
+				'timeout'   => null,
 			], $config);
 			return $this;
 		}

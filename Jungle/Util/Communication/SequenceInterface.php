@@ -20,6 +20,18 @@ namespace Jungle\Util\Communication {
 
 
 		/**
+		 * @param array $config
+		 * @param bool $merge
+		 * @return $this
+		 */
+		public function setConfig(array $config, $merge = true);
+
+		/**
+		 * @return array
+		 */
+		public function getConfig();
+
+		/**
 		 * @param array $sequence
 		 * @throws Exception
 		 */
@@ -42,9 +54,11 @@ namespace Jungle\Util\Communication {
 
 
 		/**
+		 * @param array $config
+		 * @param bool $merge
 		 * @return ProcessSequenceInterface
 		 */
-		public function run();
+		public function run(array $config = null, $merge = false);
 
 	}
 }

@@ -28,58 +28,72 @@ namespace Jungle\Util\Communication\Sequence\Specification {
 		 */
 		public function __construct(){
 			$this->command('start',[
-				'rules' => [[
-					'check'     => [220],
-					'message'   => 'Error connect to SMTP server',
-					'negated'   => true
-				]]
+				'rules' => [
+					[ 'check' => [220], 'message' => 'Error connect to SMTP server', 'negate' => true ]
+				]
 			]);
 			$this->command('hello',[
-				'definition' => 'EHLO {host}',
-				'rules' => [[
-					'code' => 250,
-				    'message' => 'SMTP Hello error'
-				]]
+				'definition' => 'EHLO {{host}}',
+				'rules' => [
+					[ 'check' => 250, 'message' => 'SMTP Hello error', 'negate' => true ]
+				]
 			]);
 			$this->bundle('auth',[[
 				'definition' => 'AUTH LOGIN',
 				'rules' => [
-					['code' => 334, 'message' => 'Authentication error(START)']
+					['check' => 334, 'message' => 'Authentication error(START)', 'negate' => true]
 				]
 			],[
-				'definition' => '{login}',
+				'definition' => '{{login}}',
 				'rules' => [
-					['code' => 334, 'message' => 'Authentication error(login)']
+					['check' => 334, 'message' => 'Authentication error(login)', 'negate' => true]
 				]
 			],[
-				'definition' => '{password}',
+				'definition' => '{{password}}',
 				'rules' => [
-					['code'=> 235, 'message' => 'AuthenticationMissed']
+					['check'=> 235, 'message' => 'AuthenticationMissed', 'negate' => true]
 				]
 			]]);
 			$this->command('mail_from',[
-				'definition' => 'MAIL FROM:<{from}> SIZE={size}',
+				'definition' => 'MAIL FROM:<{{mail_from}}> SIZE={{size}}',
 				'rules' => [
-					['code' => 250, 'message' => 'Sender invalid']
+					['check' => 250, 'message' => 'Sender invalid','negate' => true]
 				]
 			]);
 			$this->command('recipient',[
-				'definition' => 'RCPT TO:<{destination}>',
+				'definition' => 'RCPT TO:<{{recipient}}>',
+				'aggregator' => function(array $params){
+					$a = [];
+					if(isset($params['recipient'])){
+						if(is_scalar($params['recipient'])){
+							$a[] = $params['recipient'];
+						}
+						if(is_callable($params['recipient'])){
+							$params['recipient'] = call_user_func($params['recipient']);
+						}
+						foreach($params['recipient'] as $recipient){
+							$a[] = [
+								'recipient' => $recipient
+							];
+						}
+					}
+					return $a;
+				},
 				'rules' => [[
-					'code' => [250,220,251],
+					'check'    => [250,220,251],
 					'message' => "Ошибка, адрес не может быть доступен",
-					'negated' => true
+					'negate'  => true
 				]]
 			]);
 			$this->bundle('data',[[
 				'definition' => 'DATA',
 				'rules' => [
-					['code' => 354, 'message' => 'DATA pre send error']
+					['check' => 354, 'message' => 'DATA pre send error','negate' => true]
 				]
 			],[
-				'definition' => "{data}\r\n.",
+				'definition' => "{{data}}\r\n.",
 				'rules' => [
-					'code' => [220,250], 'message' => 'SMTP server not accepted send data'
+					['check' => [220,250], 'message' => 'SMTP server not accepted send data','negate' => true]
 				]
 			]]);
 			$this->command('reset', [ 'definition' => 'RESET' ]);
@@ -117,7 +131,7 @@ namespace Jungle\Util\Communication\Sequence\Specification {
 		 */
 		public function read(ConnectionInteractionInterface $connection){
 			$data = "";$length = $this->getMaxLength();
-			while($str = $connection->read($length)){
+			while($str = $connection->readLine($length)){
 				$data .= $str;
 				if(substr($str,3,1) == " ") { break; }
 			}

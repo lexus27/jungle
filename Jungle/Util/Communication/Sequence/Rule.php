@@ -27,16 +27,17 @@ namespace Jungle\Util\Communication\Sequence {
 		public function __construct(array $config){
 			$this->config = array_replace([
 				'check'     => [],
-				'negate'    => false,
+				'negate'   => false,
 				'message'   => null,
 			],$config);
 		}
 
 		/**
 		 * @param ProcessInterface $process
+		 * @param ProcessSequenceInterface $processSequence
 		 * @return RuleMessage|null
 		 */
-		public function check(ProcessInterface $process){
+		public function check(ProcessInterface $process, ProcessSequenceInterface $processSequence){
 
 			/**
 			 * @var array $check
@@ -46,17 +47,27 @@ namespace Jungle\Util\Communication\Sequence {
 			extract($this->config);
 
 			$code = $process->getCode();
-
+			if(!is_array($check))$check = [$check];
 			if($negate){
 				if(!in_array($code,$check, true)){
 					return new RuleMessage($message);
 				}
 			}else{
+
 				if(in_array($code,$check, true)){
 					return new RuleMessage($message);
 				}
 			}
 			return null;
+		}
+
+		/**
+		 * @param ProcessInterface $process
+		 * @param ProcessSequenceInterface $processSequence
+		 * @return void
+		 */
+		public function onNotMessages(ProcessInterface $process, ProcessSequenceInterface $processSequence){
+			// TODO: Implement onNotMessages() method.
 		}
 	}
 }

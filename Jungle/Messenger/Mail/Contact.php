@@ -78,11 +78,15 @@ namespace Jungle\Messenger\Mail {
 		public static function getContact($contact){
 			if($contact instanceof IContact){
 				return $contact;
-			}elseif(is_string($contact) && preg_match('@(.+)?<(.+)>@',$contact,$m)){
-				$contact = new Contact();
-				$contact->setAddress(trim($m[2]));
-				if($m[1])$contact->setName(trim($m[1]));
-				return $contact;
+			}elseif(is_string($contact)){
+				$o = new Contact();
+				if(preg_match('@(.+)?<(.+)>@',$contact,$m)){
+					$o->setAddress(trim($m[2]));
+					if($m[1])$o->setName(trim($m[1]));
+				}else{
+					$o->setAddress($contact);
+				}
+				return $o;
 			}elseif(is_array($contact) && isset($contact['address']) && $contact['address']){
 				$contact = new Contact();
 				$contact->setAddress($contact['address']);

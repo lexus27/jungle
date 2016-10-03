@@ -55,7 +55,9 @@ namespace Jungle\Util\Communication\Sequence {
 		 */
 		public function addCommand(CommandInterface $command){
 			$this->commands[] = $command;
-			$command->setSpecification($this->specification);
+			if($this->specification){
+				$command->setSpecification($this->specification);
+			}
 			return $this;
 		}
 

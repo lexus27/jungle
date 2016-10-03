@@ -16,7 +16,24 @@ namespace Jungle\Util\Communication\Connection {
 	 * @package Jungle\Util\Communication\Connection
 	 */
 	abstract class Stream extends Connection{
-		
+		/**
+		 * @param $length
+		 * @return mixed
+		 */
+		public function readLine($length){
+			if(!$this->connection){
+				$this->connect();
+			}
+			return $this->_readLine($length);
+		}
+
+		/**
+		 * @param $length
+		 * @return mixed
+		 */
+		abstract protected function _readLine($length);
+
+
 		/**
 		 * @param $length
 		 * @return mixed

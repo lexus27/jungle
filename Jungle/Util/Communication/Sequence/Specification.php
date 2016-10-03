@@ -11,6 +11,7 @@ namespace Jungle\Util\Communication\Sequence {
 
 	use Jungle\Util\Communication\ConnectionInteractionInterface;
 	use Jungle\Util\Communication\Sequence;
+	use Jungle\Util\Communication\SequenceInterface;
 
 	/**
 	 * Class Specification
@@ -21,6 +22,9 @@ namespace Jungle\Util\Communication\Sequence {
 		/** @var  CommandInterface[]  */
 		protected $commands = [];
 
+		/** @var  SequenceInterface[] */
+		protected $sequences = [];
+
 		/**
 		 * @param $code
 		 * @return bool
@@ -28,6 +32,36 @@ namespace Jungle\Util\Communication\Sequence {
 		public function isFatalCode($code){
 			return $code >= 500;
 		}
+
+		/**
+		 * @return Sequence|SequenceInterface
+		 */
+		public function createSequence(){
+			$sequence = new Sequence();
+			$sequence->setSpecification($this);
+			return $sequence;
+		}
+
+		/**
+		 * @param $name
+		 * @param SequenceInterface $sequence
+		 * @return $this
+		 */
+		public function setSequence($name, SequenceInterface $sequence){
+			$this->sequences[$name] = $sequence;
+			$sequence->setSpecification($this);
+			return $this;
+		}
+
+		/**
+		 * @param $name
+		 * @return SequenceInterface|null
+		 */
+		public function getSequence($name){
+			return isset($this->sequences[$name])?$this->sequences[$name]:null;
+		}
+
+
 
 		/**
 		 * @param $name
@@ -73,6 +107,7 @@ namespace Jungle\Util\Communication\Sequence {
 			$properties = array_replace([
 				'definition'    => null,
 				'params'        => null,
+				'aggregator'    => null,
 				'rules'         => null
 			],$properties);
 
@@ -80,11 +115,15 @@ namespace Jungle\Util\Communication\Sequence {
 			 * @var string|null $definition
 			 * @var array|null $params
 			 * @var array|null $rules
+			 * @var callable|null $aggregator
 			 */
 			extract($properties);
 			$command = new Command($definition);
 			if(is_array($params)){
 				$command->setParams($properties['definition']);
+			}
+			if(is_callable($aggregator)){
+				$command->setAggregator($aggregator);
 			}
 			if(is_array($rules)){
 				foreach($rules as $rule){
