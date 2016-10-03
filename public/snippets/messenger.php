@@ -42,7 +42,7 @@ $message->setContent('Контент рассылки');
 
 $combination->setMessage($message);
 
-$contact = Contact::getContact('Алексей Кутузов<lexus27.khv@gmail.com>');
+$contact = Contact::getContact('Target Name <target@mail.ru>');
 $combination->addDestination($contact);
 
 
