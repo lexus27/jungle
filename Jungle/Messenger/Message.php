@@ -11,7 +11,7 @@ namespace Jungle\Messenger {
 	 * Class Message
 	 * @package Jungle\Messenger
 	 */
-	class Message implements IMessage{
+	class Message implements MessageInterface{
 
 		protected $content;
 

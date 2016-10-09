@@ -23,6 +23,16 @@ namespace Jungle\Util\Specifications\Http {
 		/**
 		 * @return string
 		 */
+		public function getDomain();
+
+		/**
+		 * @return string
+		 */
+		public function getDomainBase();
+
+		/**
+		 * @return string
+		 */
 		public function getHost();
 
 		/**

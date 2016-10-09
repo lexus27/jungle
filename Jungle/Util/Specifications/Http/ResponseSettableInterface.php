@@ -27,31 +27,18 @@ namespace Jungle\Util\Specifications\Http {
 		 */
 		public function setServer(ServerInterface $server);
 
-		/**
-		 * @param null $path
-		 * @param int $code
-		 */
-		public function sendRedirect($path = null, $code = 302);
 
 		/**
-		 * @param null $path
-		 * @param int $code
-		 * @return $this
-		 */
-		public function setRedirect($path = null, $code = 302);
-
-
-		/**
-		 * @param $key
+		 * @param array|string $key
 		 * @param $value
-		 * @param int $expire
+		 * @param int $expires
 		 * @param string $path
 		 * @param null $secure
 		 * @param null $httpOnly
-		 * @param null $host
+		 * @param null $domain
 		 * @return mixed
 		 */
-		public function setCookie($key, $value, $expire = null, $path = null, $secure = null, $httpOnly = null, $host = null);
+		public function setCookie($key, $value = null, $expires = null, $path = null, $secure = null, $httpOnly = null, $domain = null);
 
 		/**
 		 * @param $key

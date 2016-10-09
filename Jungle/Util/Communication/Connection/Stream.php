@@ -15,58 +15,65 @@ namespace Jungle\Util\Communication\Connection {
 	 * Class Stream
 	 * @package Jungle\Util\Communication\Connection
 	 */
-	abstract class Stream extends Connection{
-		/**
-		 * @param $length
-		 * @return mixed
-		 */
-		public function readLine($length){
-			if(!$this->connection){
-				$this->connect();
-			}
-			return $this->_readLine($length);
-		}
+	abstract class Stream extends Connection implements StreamInterface{
 
 		/**
 		 * @param $length
-		 * @return mixed
-		 */
-		abstract protected function _readLine($length);
-
-
-		/**
-		 * @param $length
-		 * @return mixed
+		 * @return string
 		 */
 		public function read($length){
-			if(!$this->connection){
-				$this->connect();
-			}
-			return $this->_read($length);
+			return fread($this->connection,$length);
 		}
 
 		/**
 		 * @param $length
 		 * @return mixed
 		 */
-		abstract protected function _read($length);
+		public function readLine($length = null){
+			if($length===null){
+				return fgets($this->connection);
+			}else{
+				return fgets($this->connection,$length);
+			}
+		}
+
 
 		/**
 		 * @param $data
 		 * @param null $length
-		 * @return mixed
+		 * @return int
+		 * @throws Exception
 		 */
-		public function send($data, $length = null){
-			if(!$this->connection) $this->connect();
-			return $this->_send($data,$length);
+		public function write($data, $length = null){
+			$l = $length!==null?$length:strlen($data);
+			$s = fwrite($this->connection,$data,$l);
+			if($s!==$l){
+				throw new Exception('Failure data send');
+			}
+			return $s;
+		}
+		/**
+		 * Close connection
+		 */
+		protected function _close(){
+			fclose($this->connection);
 		}
 
 		/**
-		 * @param $data
-		 * @param $length
+		 * @return bool
+		 */
+		public function isEof(){
+			return feof($this->connection);
+		}
+
+		/**
+		 * @param $offset
+		 * @param $whence
 		 * @return mixed
 		 */
-		abstract protected function _send($data, $length = null);
+		public function seek($offset, $whence = SEEK_SET){
+			return fseek($this->connection,$offset, $whence);
+		}
 
 	}
 }

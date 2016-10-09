@@ -27,14 +27,31 @@ namespace Jungle\Http {
 		/** @var string */
 		protected $platform;
 
+
+		/** @var  array */
+		protected $languages = [];
+
+		/** @var  array */
+		protected $media_types = [];
+
+		/** @var  Request */
+		protected $request;
+
 		/**
-		 * Browser constructor.
+		 * Client constructor.
+		 * @param \Jungle\Http\Request $request
 		 */
-		public function __construct(){
-			$processed = UserAgent::parse($_SERVER['HTTP_USER_AGENT']);
-			$this->browser = $processed['browser'];
-			$this->version = $processed['version'];
-			$this->platform = $processed['platform'];
+		public function __construct(Request $request){
+			$this->request = $request;
+			$this->languages = self::parseAcceptLanguage($request->getHeader('Accept-Language','en'));
+
+			if($ua = $this->getUserAgent()){
+				$processed = UserAgent::parse($ua);
+
+				$this->browser = $processed['browser'];
+				$this->version = $processed['version'];
+				$this->platform = $processed['platform'];
+			}
 		}
 
 		/**
@@ -62,7 +79,7 @@ namespace Jungle\Http {
 		 * @return string
 		 */
 		public function getUserAgent(){
-			return $_SERVER['HTTP_USER_AGENT'];
+			return isset($_SERVER['HTTP_USER_AGENT'])?$_SERVER['HTTP_USER_AGENT']:null;
 		}
 
 		/**
@@ -72,6 +89,70 @@ namespace Jungle\Http {
 			return preg_match('@android|ios|ipad|mobile|phone@i',$this->platform)>0;
 		}
 
+		/**
+		 * @return bool
+		 */
+		public function isUnknown(){
+			return $this->browser===null;
+		}
+
+
+		/**
+		 * @return string
+		 */
+		public function getBestLanguage(){
+			return !empty($this->languages)?$this->languages[0]:'en';
+		}
+
+		/**
+		 * @return string[]
+		 */
+		public function getDesiredLanguages(){
+			return $this->languages;
+		}
+
+
+		/**
+		 * @return mixed
+		 */
+		public function getBestMediaType(){
+			// TODO: Implement getBestMediaType() method.
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getDesiredMediaTypes(){
+			// TODO: Implement getDesiredMediaTypes() method.
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getBestCharset(){
+			// TODO: Implement getBestCharset() method.
+		}
+
+
+		/**
+		 * @param $subject
+		 * @return array
+		 */
+		public static function parseAcceptLanguage($subject){
+			$subject = explode(';',$subject);
+			$languages = [];
+			foreach($subject as $lang){
+				if(preg_match('/((([a-zA-Z]+)(-[a-zA-Z]+)?)|\*)/',$lang,$matches)){
+					if(isset($matches[3]) && $matches[3]){
+						$value = strtolower($matches[3]);
+						if(!in_array($value,$languages, true)){
+							$languages[] = $value;
+						}
+					}
+				}
+			}
+			return $languages;
+		}
 
 	}
 }

@@ -9,6 +9,7 @@
  */
 namespace Jungle\Util\Communication {
 
+	use Jungle\Util\Communication\Connection\Stream;
 	use Jungle\Util\Communication\Sequence\CommandInterface;
 	use Jungle\Util\Communication\Sequence\Exception;
 	use Jungle\Util\Communication\Sequence\Exception\FatalException;
@@ -34,7 +35,7 @@ namespace Jungle\Util\Communication {
 		/** @var  SpecificationInterface */
 		protected $specification;
 
-		/** @var  Connection */
+		/** @var  Stream */
 		protected $connection;
 
 
@@ -119,6 +120,7 @@ namespace Jungle\Util\Communication {
 			$this->_reset();
 			$processSequence = new ProcessSequence($this);
 			try{
+				$this->connection->connect();
 				$this->specification->beforeSequence($processSequence);
 				foreach($this->sequence as $item){
 					try{
@@ -195,10 +197,11 @@ namespace Jungle\Util\Communication {
 
 		/**
 		 * @param $data
+		 * @param null $length
 		 * @return int
 		 */
-		public function send($data){
-			return $this->connection->send($data);
+		public function write($data, $length = null){
+			return $this->connection->write($data, $length);
 		}
 
 
@@ -214,8 +217,25 @@ namespace Jungle\Util\Communication {
 		 * @param $length
 		 * @return mixed
 		 */
-		public function readLine($length){
+		public function readLine($length = null){
 			return $this->connection->readLine($length);
+		}
+
+
+		/**
+		 * @return mixed
+		 */
+		public function isEof(){
+			return $this->connection->isEof();
+		}
+
+		/**
+		 * @param $offset
+		 * @param $whence
+		 * @return mixed
+		 */
+		public function seek($offset, $whence = SEEK_SET){
+			return $this->connection->seek($offset, $whence);
 		}
 
 		/**

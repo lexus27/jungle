@@ -9,13 +9,13 @@
  */
 namespace Jungle\Util\Specifications\Http {
 
-	use Jungle\Util\Communication\URL;
+	use Jungle\Util\Specifications\Hypertext\HeaderRegistryInterface;
 
 	/**
 	 * Interface ResponseInterface
 	 * @package Jungle\Util\Specifications\Http
 	 */
-	interface ResponseInterface{
+	interface ResponseInterface extends HeaderRegistryInterface{
 
 		/**
 		 * @return RequestInterface
@@ -27,11 +27,17 @@ namespace Jungle\Util\Specifications\Http {
 		 */
 		public function getServer();
 
+
 		/**
-		 * @param $key
+		 * @param $code
 		 * @return mixed
 		 */
-		public function getHeader($key);
+		public function setCode($code);
+
+		/**
+		 * @return mixed
+		 */
+		public function getCode();
 
 		/**
 		 * @param $key
@@ -60,25 +66,20 @@ namespace Jungle\Util\Specifications\Http {
 		public function isRedirect();
 
 		/**
-		 * @return bool
-		 */
-		public function isTemporalRedirect();
-
-		/**
-		 * @return null|URL|string
+		 * @return null|string
 		 */
 		public function getRedirectUrl();
 
-		/**
-		 * @param $code
-		 * @return mixed
-		 */
-		public function setCode($code);
 
 		/**
 		 * @return mixed
 		 */
-		public function getCode();
+		public function isContentLocated();
+
+		/**
+		 * @return mixed
+		 */
+		public function getContentLocationUrl();
 
 	}
 }

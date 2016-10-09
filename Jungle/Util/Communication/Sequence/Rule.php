@@ -50,11 +50,16 @@ namespace Jungle\Util\Communication\Sequence {
 			if(!is_array($check))$check = [$check];
 			if($negate){
 				if(!in_array($code,$check, true)){
+					if($t = $process->getCommandText()){
+						$message .= '(COMMAND: '.$process->getCommandText().')';
+					}
 					return new RuleMessage($message);
 				}
 			}else{
-
 				if(in_array($code,$check, true)){
+					if($t = $process->getCommandText()){
+						$message .= '(COMMAND: '.$process->getCommandText().')';
+					}
 					return new RuleMessage($message);
 				}
 			}

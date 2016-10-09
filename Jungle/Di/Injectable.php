@@ -23,6 +23,7 @@ namespace Jungle\Di {
 	use Jungle\Util\Specifications\Http\CookieManagerInterface;
 	use Jungle\Util\Specifications\Http\RequestInterface;
 	use Jungle\Util\Specifications\Http\ResponseInterface;
+	use Jungle\Util\Specifications\Http\ResponseOnServerInterface;
 	use Jungle\Util\Specifications\Http\ResponseSettableInterface;
 
 	/**
@@ -33,7 +34,7 @@ namespace Jungle\Di {
 	 * @property Dispatcher $dispatcher
 	 * @property \Jungle\Application\RouterInterface|\Jungle\Application\Strategy\Http\Router $router
 	 * @property ApplicationRequestInterface|RequestInterface $request
-	 * @property ApplicationResponseInterface|ResponseInterface|ResponseSettableInterface $response
+	 * @property ApplicationResponseInterface|ResponseInterface|ResponseSettableInterface|ResponseOnServerInterface $response
 	 * @property $cache
 	 * @property $event
 	 *

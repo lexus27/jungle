@@ -9,6 +9,9 @@
  */
 namespace Jungle\Util\Communication\Http {
 	
+	use Jungle\Util\Communication\URL;
+	use Jungle\Util\Communication\URL\Host\IP;
+	use Jungle\Util\Specifications\Http\RequestSettableInterface;
 	use Jungle\Util\Specifications\Http\ServerInterface;
 	use Jungle\Util\Specifications\Http\ServerSettableInterface;
 
@@ -18,17 +21,27 @@ namespace Jungle\Util\Communication\Http {
 	 */
 	class Server implements ServerInterface, ServerSettableInterface{
 
+
 		/** @var  string */
 		protected $ip;
 
 		/** @var  string */
-		protected $host;
+		protected $domain;
+
+
+
 
 		/** @var  int */
 		protected $port;
 
+
+		/** @var  string */
+		protected $protocol;
+
 		/** @var   */
 		protected $engine;
+
+
 
 		/**
 		 * @param $ip
@@ -45,20 +58,57 @@ namespace Jungle\Util\Communication\Http {
 		public function getIp(){
 			return $this->ip;
 		}
+
+		/**
+		 * @param $domain
+		 * @return mixed
+		 */
+		public function setDomain($domain){
+			$this->domain = $domain;
+			return $this;
+		}
+
+		/**
+		 * @return string
+		 */
+		public function getDomain(){
+			if(!$this->domain && $this->ip){
+				return gethostbyaddr($this->ip);
+			}
+			return $this->domain;
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getDomainBase(){
+			return URL::getBaseDomain($this->getDomain());
+		}
+
+
 		/**
 		 * @param $host
 		 * @return mixed
 		 */
 		public function setHost($host){
-			$this->host = $host;
-			$this->ip = gethostbyname($host);
+			if(IP::isIPAddress($host)){
+				$this->ip = $host;
+			}else{
+				$this->domain = $host;
+			}
 			return $this;
 		}
+
 		/**
 		 * @return string
 		 */
 		public function getHost(){
-			return $this->host;
+			if($this->ip){
+				return $this->getIp();
+			}elseif($this->domain){
+				return $this->getDomain();
+			}
+			return $this->getDomain();
 		}
 
 		/**
@@ -109,13 +159,17 @@ namespace Jungle\Util\Communication\Http {
 		 * @return mixed
 		 */
 		public function setProtocol($protocol){
+			$this->protocol = $protocol;
 			return $this;
 		}
 		/**
 		 * @return string
 		 */
 		public function getProtocol(){
-			return null;
+			if(!$this->protocol){
+				return 'HTTP/1.1';
+			}
+			return $this->protocol;
 		}
 
 		/**
@@ -147,6 +201,15 @@ namespace Jungle\Util\Communication\Http {
 		public function getEngine(){
 			return $this->engine;
 		}
+
+		/**
+		 * @param RequestSettableInterface $request
+		 */
+		public function beforeRequestSend(RequestSettableInterface $request){
+			$request->setHeader('Host', $this->getHost());
+		}
+
+
 	}
 }
 

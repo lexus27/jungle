@@ -10,30 +10,40 @@
 namespace Jungle\Util\Communication\Http {
 	
 	use Jungle\User\AccessAuth\Auth;
+	use Jungle\Util\Communication\Http;
+	use Jungle\Util\Communication\URL;
+	use Jungle\Util\ContentsAwareInterface;
 	use Jungle\Util\Specifications\Http\BrowserInterface;
 	use Jungle\Util\Specifications\Http\ClientInterface;
 	use Jungle\Util\Specifications\Http\RequestInterface;
 	use Jungle\Util\Specifications\Http\RequestSettableInterface;
 	use Jungle\Util\Specifications\Http\ResponseInterface;
 	use Jungle\Util\Specifications\Http\ServerInterface;
+	use Jungle\Util\Specifications\Hypertext\Content\Multipart;
+	use Jungle\Util\Specifications\Hypertext\Document;
+	use Jungle\Util\Specifications\Hypertext\Document\ReadProcessor;
+	use Jungle\Util\Specifications\Hypertext\Document\WriteProcessor;
 
 	/**
 	 * Class Request
 	 * @package Jungle\Util\Communication\Http
 	 */
-	class Request implements RequestInterface, RequestSettableInterface{
+	class Request extends Document implements RequestInterface, RequestSettableInterface, \ArrayAccess{
 
 		/** @var  Response */
 		protected $response;
 
-		/** @var  BrowserInterface */
-		protected $browser;
-
 		/** @var  Server */
 		protected $server;
 
-		/** @var  Client */
+		/** @var  Agent */
+		protected $browser;
+
+		/** @var  ClientInterface */
 		protected $client;
+
+		/** @var bool  */
+		protected $cacheable = true;
 
 		/** @var  string */
 		protected $auth_type;
@@ -44,8 +54,18 @@ namespace Jungle\Util\Communication\Http {
 		/** @var  int|null */
 		protected $time;
 
+
 		/** @var  string */
-		protected $method;
+		protected $scheme = 'http';
+
+		/** @var  string */
+		protected $method = 'get';
+
+		/** @var  string */
+		protected $uri = '/';
+
+		/** @var  string */
+		protected $fragment;
 
 		/** @var  array  */
 		protected $query_parameters = [];
@@ -54,50 +74,62 @@ namespace Jungle\Util\Communication\Http {
 		protected $post_parameters = [];
 
 		/** @var  array  */
-		protected $headers = [];
-
-		/** @var  array  */
 		protected $cookies = [];
 
-		/** @var  string */
-		protected $scheme = 'http';
+		/** @var bool  */
+		protected $cookies_inserted = false;
 
-		/** @var  string */
-		protected $uri;
-
-		/** @var  bool  */
-		protected $secure = false;
-
-		/** @var  string|null */
-		protected $referrer;
-
-		/** @var  mixed */
-		protected $content;
-
-		/** @var array  */
+		/** @var  ContentsAwareInterface[]  */
 		protected $files = [];
 
+		/**
+		 * Request constructor.
+		 * @param string|null $url
+		 * @param null $method
+		 */
+		public function __construct($url = null, $method = null){
+			if($url!==null){
+				if(!is_string($url) && !is_array($url)){
+					throw new \InvalidArgumentException(__METHOD__. ' param $url, must be string or array');
+				}
+				$this->setUrl($url);
 
-		protected $onSuccess;
+				if($method !== null){
+					$this->setMethod($method);
+				}
 
-		protected $onFailure;
+			}
+			$this->time     = time();
+		}
 
 
-
+		/**
+		 * @return int
+		 */
+		public function getTime(){
+			return $this->time;
+		}
 
 
 		/**
 		 * @return ResponseInterface
 		 */
 		public function getResponse(){
+			if(!$this->response){
+				$this->response = new Response();
+				$this->response->setRequest($this);
+				$this->response->setServer($this->server);
+			}
 			return $this->response;
 		}
 
 		/**
-		 * @return BrowserInterface
+		 * @param ServerInterface $server
+		 * @return mixed
 		 */
-		public function getBrowser(){
-			return $this->browser;
+		public function setServer(ServerInterface $server){
+			$this->server = $server;
+			return $this;
 		}
 
 		/**
@@ -107,6 +139,30 @@ namespace Jungle\Util\Communication\Http {
 			return $this->server;
 		}
 
+
+		/**
+		 * @param BrowserInterface|Agent $browser
+		 * @return mixed
+		 */
+		public function setBrowser(BrowserInterface $browser){
+			$this->browser = $browser;
+			return $this;
+		}
+
+		/**
+		 * @return Agent
+		 */
+		public function getBrowser(){
+			return $this->browser;
+		}
+
+		/**
+		 * @return string
+		 */
+		public function getUserAgent(){
+			return $this->browser->getUserAgent();
+		}
+
 		/**
 		 * @return ClientInterface
 		 */
@@ -114,11 +170,14 @@ namespace Jungle\Util\Communication\Http {
 			return $this->client;
 		}
 
+
 		/**
-		 * @return string
+		 * @param Auth $auth
+		 * @return mixed
 		 */
-		public function getAuthType(){
-			return $this->auth_type;
+		public function setAuth(Auth $auth){
+			$this->auth = $auth;
+			return $this;
 		}
 
 		/**
@@ -131,15 +190,40 @@ namespace Jungle\Util\Communication\Http {
 		/**
 		 * @return string
 		 */
-		public function getUserAgent(){
-			return $this->browser->getUserAgent();
+		public function getAuthType(){
+			return $this->auth_type;
+		}
+
+
+
+		/**
+		 * @param bool|true $secure
+		 * @return $this
+		 */
+		public function setSecure($secure = true){
+			if($secure){
+				$this->setScheme('https');
+			}else{
+				$this->setScheme('http');
+			}
+			return $this;
 		}
 
 		/**
-		 * @return int
+		 * @return bool
 		 */
-		public function getTime(){
-			return $this->time;
+		public function isSecure(){
+			return $this->getScheme()==='https';
+		}
+
+
+		/**
+		 * @param $method
+		 * @return mixed
+		 */
+		public function setMethod($method){
+			$this->method = $method;
+			return $this;
 		}
 
 		/**
@@ -147,6 +231,23 @@ namespace Jungle\Util\Communication\Http {
 		 */
 		public function getMethod(){
 			return $this->method;
+		}
+
+
+
+		/**
+		 * @return bool
+		 */
+		public function isGet(){
+			return $this->method?stripos($this->method,'get')!==false:true;
+		}
+
+
+		/**
+		 * @return bool
+		 */
+		public function isPost(){
+			return stripos($this->method,'post')!==false;
 		}
 
 		/**
@@ -180,30 +281,58 @@ namespace Jungle\Util\Communication\Http {
 		/**
 		 * @return bool
 		 */
-		public function isGet(){
-			return stripos($this->method,'get')!==false;
-		}
-
-		/**
-		 * @return bool
-		 */
-		public function isPost(){
-			return stripos($this->method,'post')!==false;
-		}
-
-		/**
-		 * @return bool
-		 */
 		public function isPut(){
 			return stripos($this->method,'put')!==false;
 		}
 
 		/**
-		 * @return string
+		 * @return mixed
 		 */
-		public function getUri(){
-			return $this->uri;
+		public function isConnect(){
+			return stripos($this->method,'connect')!==false;
 		}
+
+		/**
+		 * @return mixed
+		 */
+		public function isTrace(){
+			return stripos($this->method,'trace')!==false;
+		}
+
+		/**
+		 * @param $headerKey
+		 * @return bool
+		 */
+		public function hasHeader($headerKey){
+			return isset($this->headers[$headerKey]);
+		}
+
+
+		/**
+		 * @return mixed
+		 */
+		public function getHeaders(){
+			if(!$this->cookies_inserted){
+				if($this->cookies){
+					$cookies = [];
+					foreach($this->cookies as $key => $value){
+						$cookies[] = $key.'='.$value;
+					}
+					$this->setHeader('Cookie', implode('; ',$cookies));
+				}
+				$this->cookies_inserted = true;
+			}
+			return $this->headers;
+		}
+
+
+
+
+
+
+
+
+
 
 		/**
 		 * @param $parameter
@@ -235,6 +364,27 @@ namespace Jungle\Util\Communication\Http {
 			       $this->hasObjectParam($parameter);
 		}
 
+
+		/**
+		 * @param array $queryParams
+		 * @param bool $merge
+		 * @return $this
+		 */
+		public function setQueryParams(array $queryParams, $merge = false){
+			$this->query_parameters = $merge?array_replace($this->query_parameters,$queryParams):$queryParams;
+			return $this;
+		}
+
+		/**
+		 * @param $name
+		 * @param $value
+		 * @return mixed
+		 */
+		public function setQuery($name, $value){
+			$this->query_parameters[$name] = $value;
+			return $this;
+		}
+
 		/**
 		 * @param $key
 		 * @param null $default
@@ -253,6 +403,36 @@ namespace Jungle\Util\Communication\Http {
 		}
 
 
+		/**
+		 * @param array $post
+		 * @param bool|false $merge
+		 * @return $this
+		 */
+		public function setPostParams(array $post, $merge = false){
+			$this->post_parameters = $merge?array_replace($this->post_parameters,$post):$post;
+			if($this->post_parameters){
+				$this->method = 'post';
+			}
+			return $this;
+		}
+
+		/**
+		 * @return array
+		 */
+		public function getPostParams(){
+			return $this->post_parameters;
+		}
+
+		/**
+		 * @param $name
+		 * @param $value
+		 * @return mixed
+		 */
+		public function setPost($name, $value){
+			$this->post_parameters[$name] = $value;
+			$this->method = 'post';
+			return $this;
+		}
 		/**
 		 * @param $key
 		 * @param null $default
@@ -290,27 +470,15 @@ namespace Jungle\Util\Communication\Http {
 
 
 
-		/**
-		 * @return string|null
-		 */
-		public function getReferrer(){
-			return $this->getHeader('Referrer');
-		}
+
 
 		/**
-		 * @param $headerKey
+		 * @param $requestedWith
 		 * @return mixed
 		 */
-		public function getHeader($headerKey){
-			return isset($this->headers[$headerKey])?$this->headers[$headerKey]:null;
-		}
-
-		/**
-		 * @param $headerKey
-		 * @return bool
-		 */
-		public function hasHeader($headerKey){
-			return isset($this->headers[$headerKey]);
+		public function setRequestedWith($requestedWith){
+			$this->setHeader('Requested-With',$requestedWith);
+			return $this;
 		}
 
 		/**
@@ -318,6 +486,20 @@ namespace Jungle\Util\Communication\Http {
 		 */
 		public function getRequestedWith(){
 			return $this->getHeader('Requested-With');
+		}
+
+
+
+
+		/**
+		 * @param $name
+		 * @param $value
+		 * @return mixed
+		 */
+		public function setCookie($name, $value){
+			$this->cookies[$name] = $value;
+			$this->cookies_inserted = false;
+			return $this;
 		}
 
 		/**
@@ -336,137 +518,6 @@ namespace Jungle\Util\Communication\Http {
 			return isset($this->cookies[$name]);
 		}
 
-		/**
-		 * @return bool
-		 */
-		public function isAjax(){
-			return stripos($this->getHeader('Requested-With'),'XmlHttpRequest')!==false;
-		}
-
-		/**
-		 * @return string
-		 */
-		public function getContentType(){
-			return $this->getHeader('Content-Type');
-		}
-
-		/**
-		 * @return mixed
-		 */
-		public function getContent(){
-			return $this->content;
-		}
-
-		/**
-		 * @return bool
-		 */
-		public function hasFiles(){
-			return !empty($this->files);
-		}
-
-		/**
-		 * @return array
-		 */
-		public function getFiles(){
-			return $this->files;
-		}
-
-		/**
-		 * @param BrowserInterface $browser
-		 * @return mixed
-		 */
-		public function setBrowser(BrowserInterface $browser){
-			$this->browser = $browser;
-			return $this;
-		}
-
-		/**
-		 * @param ServerInterface $server
-		 * @return mixed
-		 */
-		public function setServer(ServerInterface $server){
-			$this->server = $server;
-			return $this;
-		}
-
-		/**
-		 * @param $name
-		 * @param $value
-		 * @return mixed
-		 */
-		public function setHeader($name, $value){
-			$this->headers[$name] = $value;
-			return $this;
-		}
-
-		/**
-		 * @param $method
-		 * @return mixed
-		 */
-		public function setMethod($method){
-			$this->method = $method;
-			return $this;
-		}
-
-		/**
-		 * @param $name
-		 * @param $value
-		 * @return mixed
-		 */
-		public function setCookie($name, $value){
-			$this->cookies[$name] = $value;
-			return $this;
-		}
-
-		/**
-		 * @param $type
-		 * @return mixed
-		 */
-		public function setContentType($type){
-			$this->setHeader('Content-Type',$type);
-			return $this;
-		}
-
-		/**
-		 * @param null $content
-		 * @return mixed
-		 */
-		public function setContent($content = null){
-			$this->content = $content;
-		}
-
-		/**
-		 * @param $name
-		 * @param $value
-		 * @return mixed
-		 */
-		public function setPost($name, $value){
-			$this->post_parameters[$name] = $value;
-			return $this;
-		}
-
-		/**
-		 * @param $name
-		 * @param $value
-		 * @return mixed
-		 */
-		public function setQuery($name, $value){
-			$this->query_parameters[$name] = $value;
-			return $this;
-		}
-
-		/**
-		 * @param bool|true $secure
-		 * @return $this
-		 */
-		public function setSecure($secure = true){
-			$this->secure = $secure;
-			return $this;
-		}
-
-		public function isSecure(){
-			return $this->secure;
-		}
 
 		/**
 		 * @param $uri
@@ -478,12 +529,13 @@ namespace Jungle\Util\Communication\Http {
 		}
 
 		/**
-		 * @param Auth $auth
-		 * @return mixed
+		 * @return string
 		 */
-		public function setAuth(Auth $auth){
-			$this->auth = $auth;
-			return $this;
+		public function getUri(){
+			if(!$this->uri){
+				return '/';
+			}
+			return $this->uri;
 		}
 
 		/**
@@ -495,22 +547,116 @@ namespace Jungle\Util\Communication\Http {
 			return $this;
 		}
 
+
 		/**
-		 * @param $file
+		 * @return string|null
+		 */
+		public function getReferrer(){
+			return $this->getHeader('Referrer');
+		}
+
+
+
+
+
+		/**
+		 * @param $type
 		 * @return mixed
 		 */
-		public function addFile($file){
-			$this->files[] = $file;
+		public function setContentType($type){
+			$this->setHeader('Content-Type',$type);
+			return $this;
 		}
 
 		/**
-		 * @param $requestedWith
+		 * @return string
+		 */
+		public function getContentType(){
+			if($this->hasFiles()){
+				return 'multipart/form-data';
+			}elseif($this->isPost()){
+				return 'application/x-www-form-urlencoded';
+			}
+			return $this->getHeader('Content-Type');
+		}
+
+
+
+		/**
+		 * @return bool
+		 */
+		public function isAjax(){
+			return stripos($this->getHeader('Requested-With'),'XmlHttpRequest')!==false;
+		}
+
+
+
+		/**
+		 * @param null $content
 		 * @return mixed
 		 */
-		public function setRequestedWith($requestedWith){
-			$this->setHeader('Requested-With',$requestedWith);
+		public function setContent($content = null){
+			$this->content = $content;
+		}
+
+
+		/**
+		 * @return mixed
+		 */
+		public function getContent(){
+			return $this->content;
+		}
+
+
+		/**
+		 * @param ContentsAwareInterface[] $files
+		 * @param bool $merge
+		 * @return $this
+		 */
+		public function setFiles(array $files, $merge = false){
+			if(!$merge){
+				$this->files = [];
+			}
+			foreach($files as $key => $file){
+				if(is_int($key)){
+					$this->files[] = $file;
+				}else{
+					$this->files[$key] = $file;
+				}
+			}
+			$this->files = array_unique($this->files,SORT_ASC);
 			return $this;
 		}
+
+		/**
+		 * @param ContentsAwareInterface $file
+		 * @param null $name
+		 * @return $this
+		 */
+		public function setFile(ContentsAwareInterface $file, $name = null){
+			if($name===null){
+				$this->files[] = $file;
+			}else{
+				$this->files[$name] = $file;
+			}
+			return $this;
+		}
+
+		/**
+		 * @return bool
+		 */
+		public function hasFiles(){
+			return !empty($this->files);
+		}
+
+		/**
+		 * Files indexed or assoc
+		 * @return \Jungle\Util\ContentsAwareInterface[]
+		 */
+		public function getFiles(){
+			return $this->files;
+		}
+
 
 
 		/**
@@ -569,13 +715,6 @@ namespace Jungle\Util\Communication\Http {
 
 
 		/**
-		 * @return mixed
-		 */
-		public function getScheme(){
-			return $this->scheme;
-		}
-
-		/**
 		 * @param $scheme
 		 * @return mixed
 		 */
@@ -583,6 +722,188 @@ namespace Jungle\Util\Communication\Http {
 			$this->scheme = $scheme;
 			return $this;
 		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getScheme(){
+			if(!$this->scheme){
+				return 'http';
+			}
+			return $this->scheme;
+		}
+
+		/**
+		 * @param array|string $url
+		 * @return $this
+		 */
+		public function setUrl($url){
+			if(!is_array($url)){
+				$url = URL::parseUrl($url,true);
+			}
+			if(!$url['scheme']){
+				$url['scheme'] = 'http';
+			}
+			if($url['host']){
+				$server = new Server();
+				$server->setHost($url['host']);
+				$this->server = $server;
+			}
+			if(!$url['path']){
+				$url['path'] = '/';
+			}
+			if(!$url['query']){
+				$url['query'] = [];
+			}
+			$this->setScheme($url['scheme']);
+			$this->setUri($url['path']);
+			$this->setQueryParams($url['query']);
+			$this->setFragment($url['fragment']);
+			return $this;
+		}
+
+		/**
+		 * @return string
+		 */
+		public function getUrl(){
+			return URL::renderUrl([
+				'scheme'  => $this->getScheme()?:'http',
+				'host'    => $this->server->getHost(),
+				'path'    => $this->getUri(),
+				'query'   => $this->query_parameters,
+				'fragment'=> $this->fragment,
+			]);
+		}
+
+		/**
+		 * @return string
+		 */
+		public function getFullPath(){
+			return URL::renderUrl([
+				'path'    => $this->getUri(),
+				'query'   => $this->query_parameters,
+				'fragment'=> $this->fragment,
+			],true,false);
+		}
+
+		/**
+		 * @param $fragment
+		 * @return $this
+		 */
+		public function setFragment($fragment){
+			$this->fragment = $fragment;
+			return $this;
+		}
+
+		/**
+		 * @return string
+		 */
+		public function getFragment(){
+			return $this->fragment;
+		}
+
+		/**
+		 * @param WriteProcessor $writer
+		 * @return void
+		 */
+		public function beforeWrite(WriteProcessor $writer){
+			/** Host */
+			$this->setHeader('Host', $this->server->getHost());
+
+			/** Prepare Content */
+			if(!$this->content && (($hasFiles = !empty($this->files)) || $this->post_parameters)){
+
+				$this->method = 'post';
+
+				if(!$hasFiles){
+					$this->setHeader('Content-Type','application/x-www-form-urlencoded');
+					$content = URL::renderParams($this->post_parameters);
+				}else{
+					$content = new Multipart();
+					$content->setMultipartType('form-data');
+					if($this->post_parameters){
+						foreach($this->post_parameters as $key => $value){
+							$document = new Document();
+							$document->setHeader('Content-Disposition', [
+								'form-data', 'params' => [
+									'name' => $key
+								],
+							]);
+							$document->setContent($value);
+							$content->addPart($document);
+						}
+					}
+
+					if($this->files){
+						foreach($this->files as $key => $file){
+							$document = new Document();
+							if(!is_string($key)){
+								$key = 'file['.$key.']';
+							}
+							$document->setHeader('Content-Disposition',[
+								'form-data', 'params' => [
+									'name' => $key,
+									'filename' => $file->getBasename()
+								],
+							]);
+							$document->setHeader('Content-Transfer-Encoding',"base64");
+							$document->setHeader('Content-Type',$file->getMediaType());
+							$document->setContent($file->getContents());
+							$content->addPart($document);
+						}
+					}
+				}
+				$this->content = $content;
+			}
+			/** Meta Header Write */
+			$writer->write(strtoupper($this->method).' '.$this->getFullPath().' ' . "HTTP/1.1\r\n");
+		}
+
+		/**
+		 * @param ReadProcessor $reader
+		 */
+		public function onContentsRead(ReadProcessor $reader){
+			$this->cache = $reader->getBuffered();
+		}
+
+
+		/**
+		 * @param mixed $offset
+		 * @return mixed
+		 */
+		public function offsetExists($offset){
+			return $this->hasHeader($offset);
+		}
+
+		/**
+		 * @param mixed $offset
+		 * @return mixed
+		 */
+		public function offsetGet($offset){
+			return $this->getHeader($offset);
+		}
+
+		/**
+		 * @param mixed $offset
+		 * @param mixed $value
+		 * @return mixed
+		 */
+		public function offsetSet($offset, $value){
+			if(!$offset){
+				throw new \InvalidArgumentException(__METHOD__.' \ArrayAccess, is applicable to headers, empty offset is invalid');
+			}
+			$this->setHeader($offset, $value);
+		}
+
+		/**
+		 * @param mixed $offset
+		 * @return mixed
+		 */
+		public function offsetUnset($offset){
+			$this->removeHeader($offset);
+		}
+
+
 	}
 }
 

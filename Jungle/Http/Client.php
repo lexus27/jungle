@@ -23,41 +23,6 @@ namespace Jungle\Http {
 		/** @var  int */
 		protected $port;
 
-		/** @var  string[] */
-		protected $languages = [];
-
-		/** @var  Request */
-		protected $request;
-
-		/**
-		 * Client constructor.
-		 * @param \Jungle\Http\Request $request
-		 */
-		public function __construct(Request $request){
-			$this->request = $request;
-			$this->languages = self::parseAcceptLanguage($request->getHeader('Accept-Language','en'));
-		}
-
-		/**
-		 * @param $subject
-		 * @return array
-		 */
-		public static function parseAcceptLanguage($subject){
-			$subject = explode(';',$subject);
-			$languages = [];
-			foreach($subject as $lang){
-				if(preg_match('/((([a-zA-Z]+)(-[a-zA-Z]+)?)|\*)/',$lang,$matches)){
-					if(isset($matches[3]) && $matches[3]){
-						$value = strtolower($matches[3]);
-						if(!in_array($value,$languages, true)){
-							$languages[] = $value;
-						}
-					}
-				}
-			}
-			return $languages;
-		}
-
 		/**
 		 * @return string
 		 */
@@ -68,29 +33,23 @@ namespace Jungle\Http {
 		/**
 		 * @return string
 		 */
+		public function getDomain(){
+			return $_SERVER['REMOTE_HOST'];
+		}
+
+		/**
+		 * @return string
+		 */
 		public function getHost(){
 			return $_SERVER['REMOTE_HOST'];
 		}
+
 
 		/**
 		 * @return int
 		 */
 		public function getPort(){
 			return $_SERVER['REMOTE_PORT'];
-		}
-
-		/**
-		 * @return string
-		 */
-		public function getBestLanguage(){
-			return !empty($this->languages)?$this->languages[0]:'en';
-		}
-
-		/**
-		 * @return string[]
-		 */
-		public function getLanguages(){
-			return $this->languages;
 		}
 
 		public function isProxied(){

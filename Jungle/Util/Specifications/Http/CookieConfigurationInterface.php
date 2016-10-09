@@ -41,12 +41,18 @@ namespace Jungle\Util\Specifications\Http {
 		 * @param $hostname
 		 * @return mixed
 		 */
-		public function setHost($hostname = null);
+		public function setDomain($hostname = null);
 
 		/**
 		 * @return string|null
 		 */
-		public function getHost();
+		public function getDomain();
+
+		/**
+		 * @param $domain
+		 * @return bool
+		 */
+		public function checkDomain($domain);
 
 		/**
 		 * @param null $secure

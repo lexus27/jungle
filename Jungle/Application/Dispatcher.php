@@ -94,7 +94,9 @@ namespace Jungle\Application {
 					if(isset($error) && ($error['type'] & (E_ERROR | E_PARSE | E_COMPILE_ERROR | E_CORE_ERROR | E_USER_ERROR | E_CORE_ERROR | E_COMPILE_ERROR | E_RECOVERABLE_ERROR))){
 						$this->handleFatalError($error['type'], $error['message'], $error['file'], $error['line']);
 					}else{
-						ob_end_flush();
+						if(ob_get_level()){
+							ob_end_flush();
+						}
 					}
 				}
 			});
@@ -620,7 +622,6 @@ namespace Jungle\Application {
 				$response = $this->forward($this->error_reference,[
 					'exception' => new \ErrorException($message,0,$num, $filename,$line)
 				], $this->last_routing);
-
 			}else{
 				throw new \Jungle\Application\Exception('Initiator is not recognized!');
 			}
@@ -638,6 +639,7 @@ namespace Jungle\Application {
 			if(ob_get_level()) ob_end_clean();
 
 			if($this->last_process){
+				$this->process->setCanceled(true);
 				$response = $this->forward($this->error_reference,[
 					'exception' => $e
 				], $this->last_process);
@@ -706,6 +708,7 @@ namespace Jungle\Application {
 		 */
 		protected function onDispatchContinue(){
 
+			/**
 			$diChains = $this->getDi();
 			$diChains->restoreInjection('strategy');
 
@@ -717,6 +720,7 @@ namespace Jungle\Application {
 			$this->dispatching      = false;
 			$this->last_request     = null;
 			$this->last_process     = null;
+			 * */
 		}
 
 

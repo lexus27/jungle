@@ -11,7 +11,11 @@ namespace Jungle\Util {
 	 * Class ObservableInterface
 	 * @package Jungle\Basic
 	 */
-	abstract class Observable{use ObservableTrait;}
+	abstract class Observable{
+
+		use ObservableTrait;
+
+	}
 
 
 }

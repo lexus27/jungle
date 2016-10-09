@@ -9,7 +9,7 @@
  */
 namespace Jungle\Util\Communication\Sequence {
 
-	use Jungle\Util\Communication\ConnectionInteractionInterface;
+	use Jungle\Util\Communication\Connection\StreamInteractionInterface;
 	use Jungle\Util\Communication\Sequence;
 	use Jungle\Util\Communication\SequenceInterface;
 
@@ -100,6 +100,37 @@ namespace Jungle\Util\Communication\Sequence {
 		}
 
 		/**
+		 * @param $name
+		 * @return CommandInterface|null
+		 */
+		public function getCommand($name){
+			return isset($this->commands[$name])?$this->commands[$name]:null;
+		}
+
+
+		/**
+		 * @param StreamInteractionInterface $connection $sequence
+		 * @return mixed
+		 */
+		public function read(StreamInteractionInterface $connection){
+			return $connection->read($this->getMaxLength());
+		}
+
+		/**
+		 * @param StreamInteractionInterface $connection
+		 * @param $data
+		 * @return mixed
+		 */
+		public function send(StreamInteractionInterface $connection, $data){
+			$data = $this->convertBeforeSend($data);
+			return $connection->write($data);
+		}
+
+
+
+
+
+		/**
 		 * @param array $properties
 		 * @return Command
 		 */
@@ -134,33 +165,6 @@ namespace Jungle\Util\Communication\Sequence {
 				}
 			}
 			return $command;
-		}
-
-		/**
-		 * @param $name
-		 * @return CommandInterface|null
-		 */
-		public function getCommand($name){
-			return isset($this->commands[$name])?$this->commands[$name]:null;
-		}
-
-
-		/**
-		 * @param ConnectionInteractionInterface $connection $sequence
-		 * @return mixed
-		 */
-		public function read(ConnectionInteractionInterface $connection){
-			return $connection->read($this->getMaxLength());
-		}
-
-		/**
-		 * @param ConnectionInteractionInterface $connection
-		 * @param $data
-		 * @return mixed
-		 */
-		public function send(ConnectionInteractionInterface $connection, $data){
-			$data = $this->convertBeforeSend($data);
-			return $connection->send($data);
 		}
 
 	}

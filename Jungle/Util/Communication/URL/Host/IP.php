@@ -123,7 +123,7 @@ namespace Jungle\Util\Communication\URL\Host {
 		 * @return bool
 		 */
 		public static function match($ip){
-			return filter_var($ip,FILTER_VALIDATE_IP | FILTER_FLAG_IPV6);(bool) preg_match('@[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}@',trim(trim($ip,'.')));
+			return filter_var($ip,FILTER_VALIDATE_IP | FILTER_FLAG_IPV6);
 		}
 
 		/**

@@ -36,7 +36,7 @@ namespace Jungle\Util\Specifications\Http {
 		protected $expires;
 
 		/** @var  string */
-		protected $host;
+		protected $domain;
 
 		/** @var  string */
 		protected $path;
@@ -115,18 +115,38 @@ namespace Jungle\Util\Specifications\Http {
 		 * @param null $hostname
 		 * @return mixed
 		 */
-		public function setHost($hostname = null){
-			$this->host = $hostname;
+		public function setDomain($hostname = null){
+			$this->domain = $hostname;
 			return $this;
 		}
+
 		/**
 		 * @return string|null
 		 */
-		public function getHost(){
-			if($this->host === null && $this->cookie_manager){
-				return $this->cookie_manager->getHost();
+		public function getDomain(){
+			if($this->domain === null && $this->cookie_manager){
+				return $this->cookie_manager->getDomain();
 			}
-			return $this->host;
+			return $this->domain;
+		}
+
+		/**
+		 * @param $domain
+		 * @return bool
+		 */
+		public function checkDomain($domain){
+			$domain_allowed = $this->getDomain();
+			$domain = array_reverse(explode('.',$domain));
+			$domain_allowed = array_reverse(explode('.',$domain_allowed));
+			foreach($domain_allowed as $i => $item){
+				if(!$item){
+					return true;
+				}
+				if($item && (!isset($domain[$i]) || strcasecmp($item,$domain[$i])!==0)){
+					return false;
+				}
+			}
+			return true;
 		}
 
 		/**
@@ -146,6 +166,8 @@ namespace Jungle\Util\Specifications\Http {
 			}
 			return $this->secure;
 		}
+
+
 
 		/**
 		 * @param null $httpOnly
@@ -173,7 +195,7 @@ namespace Jungle\Util\Specifications\Http {
 			if($value instanceof CookieInterface){
 				return $value->getPath() === $this->getPath() &&
 				       $value->getExpires() === $this->getExpires() &&
-				       $value->getHost() === $this->getHost() &&
+				       $value->getDomain() === $this->getDomain() &&
 				       $value->getName() === $this->getName() &&
 				       $value->getValue() === $this->getValue();
 			}
@@ -185,6 +207,8 @@ namespace Jungle\Util\Specifications\Http {
 		 * @return mixed
 		 */
 		public function isOverdue(){
+			$expires = $this->getExpires();
+			if($expires===null)return false;
 			return time() >= $this->getExpires();
 		}
 	}

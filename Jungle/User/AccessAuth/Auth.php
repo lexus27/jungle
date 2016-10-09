@@ -114,9 +114,11 @@ namespace Jungle\User\AccessAuth {
 		 *                  'password'  => %Password%
 		 *                ]
 		 *      @string - {.}Login:Password
+		 *      @string - [.]Login:Password
 		 *      @string - [{.}Login:Password]
-		 *      @string - ({.}Login:Password)
 		 *      @string - {[.]Login:Password}
+		 *      @string - <[.]Login:Password>
+		 *      @string - <{.}Login:Password>
 		 * @return array
 		 */
 		protected static function parsePair($access_auth){
@@ -131,29 +133,39 @@ namespace Jungle\User\AccessAuth {
 			}elseif($access_auth instanceof Pair){
 				return [$access_auth->getLogin(),$access_auth->getPassword()];
 			}elseif(is_string($access_auth) && $access_auth){
+				/**
+				 * <[b]BlaBla:BlaBla>
+				 * <{b}BlaBla:BlaBla>
+				 * [{b}BlaBla:BlaBla]
+				 * {[b]BlaBla:BlaBla}
+				 * {b}BlaBla:BlaBla
+				 * [b]BlaBla:BlaBla
+				 */
 				if(preg_match('@
+					(\<(?:\{(.+)\})?([^:]*):(.*)\>) |
+					(\<(?:\[(.+)\])?([^:]*):(.*)\>) |
 					(\[(?:\{(.+)\})?([^:]*):(.*)\]) |
-					(\((?:\{(.+)\})?([^:]*):(.*)\)) |
 					(\{(?:\[(.+)\])?([^:]*):(.*)\}) |
-					((?:\{(.+)\})?([^:]*):(.*))
+					((?:\{(.+)\})?([^:]*):(.*)) |
+					((?:\[(.+)\])?([^:]*):(.*))
 				@xsm',$access_auth,$m)){
 					$l = null;
 					$p = null;
-					if($m[1]){
+					if(isset($m[1])){
 						$l = $m[3];
 						$p = $m[4];
 						if(strpos($m[2],'b')!==false){
 							$p = base64_decode($p);
 						}
 					}
-					if($m[5]){
+					if(isset($m[5])){
 						$l = $m[7];
 						$p = $m[8];
 						if(strpos($m[6],'b')!==false){
 							$p = base64_decode($p);
 						}
 					}
-					if($m[9]){
+					if(isset($m[9])){
 						$l = $m[11];
 						$p = $m[12];
 						if(strpos($m[10],'b')!==false){

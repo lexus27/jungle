@@ -17,7 +17,7 @@ namespace Jungle\Util;
 trait ServiceContainerTrait {
 
 	/** @var object[]|callable[]|string[]  */
-	protected $_ServiceContainerTrait_services = [];
+	protected $_srv_services = [];
 
 	/**
 	 * @param $alias
@@ -26,14 +26,14 @@ trait ServiceContainerTrait {
 	public function getService($alias){
 		if($this->hasService($alias)){
 			$service = null;
-			if(is_object($this->_ServiceContainerTrait_services[$alias]) && !$this->_ServiceContainerTrait_services[$alias] instanceof \Closure){
-				$service = $this->_ServiceContainerTrait_services[$alias];
-			}elseif(is_callable($this->_ServiceContainerTrait_services[$alias])){
-				$service = $this->_ServiceContainerTrait_services[$alias] = call_user_func($this->_ServiceContainerTrait_services[$alias]);
-			}elseif(is_string($this->_ServiceContainerTrait_services[$alias])){
-				$cName = $this->_ServiceContainerTrait_services[$alias];
+			if(is_object($this->_srv_services[$alias]) && !$this->_srv_services[$alias] instanceof \Closure){
+				$service = $this->_srv_services[$alias];
+			}elseif(is_callable($this->_srv_services[$alias])){
+				$service = $this->_srv_services[$alias] = call_user_func($this->_srv_services[$alias]);
+			}elseif(is_string($this->_srv_services[$alias])){
+				$cName = $this->_srv_services[$alias];
 				if(class_exists($cName,true)){
-					$service = $this->_ServiceContainerTrait_services[$alias] = new $cName();
+					$service = $this->_srv_services[$alias] = new $cName();
 				}else{
 					throw new \LogicException('Class "'.$cName.'" not found! for instantiate service "'.$alias.'"');
 				}
@@ -57,7 +57,7 @@ trait ServiceContainerTrait {
 	 * @return bool
 	 */
 	public function hasService($alias){
-		return isset($this->_ServiceContainerTrait_services[$alias]);
+		return isset($this->_srv_services[$alias]);
 	}
 
 	/**
@@ -71,7 +71,7 @@ trait ServiceContainerTrait {
 		if(!$alias){
 			throw new \InvalidArgumentException('Invalid passed alias for create service!');
 		}
-		$this->_ServiceContainerTrait_services[$alias] = $service;
+		$this->_srv_services[$alias] = $service;
 	}
 
 	/**
@@ -79,7 +79,7 @@ trait ServiceContainerTrait {
 	 */
 	public function rmService($alias){
 		if($this->hasService($alias)){
-			unset($this->_ServiceContainerTrait_services[$alias]);
+			unset($this->_srv_services[$alias]);
 		}
 	}
 

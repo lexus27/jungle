@@ -8,16 +8,14 @@
 namespace Jungle\Messenger\Mail\SMTP {
 
 	use Jungle\Messenger;
-	use Jungle\Messenger\ICombination;
-	use Jungle\Messenger\IContact;
+	use Jungle\Messenger\CombinationInterface;
+	use Jungle\Messenger\ContactInterface;
 	use Jungle\Messenger\Mail\Contact;
-	use Jungle\Messenger\Mail\IMessage;
+	use Jungle\Messenger\Mail\MessageInterface;
 	use Jungle\User\AccessAuth\Auth;
 	use Jungle\Util\Communication\SequenceInterface;
-	use Jungle\Util\Communication\Stream;
-	use Jungle\Util\Communication\URL;
-	use Jungle\Util\Specifications\TextTransfer\Body\Multipart;
-	use Jungle\Util\Specifications\TextTransfer\Document;
+	use Jungle\Util\Specifications\Hypertext\Content\Multipart;
+	use Jungle\Util\Specifications\Hypertext\Document;
 
 	/**
 	 * Class SMTP
@@ -31,22 +29,22 @@ namespace Jungle\Messenger\Mail\SMTP {
 		/** @var int */
 		protected $flushed = 0;
 
-		/** @var ICombination */
+		/** @var CombinationInterface */
 		protected $combination;
 
 		/** @Total for one send collection count $this->options['max_destinations'] */
 
-		/** @var IContact[] */
+		/** @var ContactInterface[] */
 		protected $to = [];
 
-		/** @var IContact[] */
+		/** @var ContactInterface[] */
 		protected $cc = [];
 
-		/** @var IContact[]*/
+		/** @var ContactInterface[]*/
 		protected $bcc = [];
 
 
-		/** @var  IContact[] */
+		/** @var  ContactInterface[] */
 		protected $_current_destinations = [];
 
 		/** @var array  */
@@ -57,19 +55,19 @@ namespace Jungle\Messenger\Mail\SMTP {
 		 * @param array $options
 		 */
 		public function __construct(array $options = []){
-			parent::__construct(array_merge([
+			$this->options = array_merge([
 
 				'host'              => null,
 				'port'              => null,
-				'scheme'            => null,
+				'transport'         => null,
 				'timeout'           => null,
 
 				'auth'              => null,
 
+				'sender_from_login'     => true,
+				'sender'              => null,
 
-				'from'              => null,
-
-				'charset'           => 'utf-8',
+				'charset'           => ini_get('default_charset'),
 				'change_headers'    => null,
 				'extra_headers'     => null,
 
@@ -77,17 +75,20 @@ namespace Jungle\Messenger\Mail\SMTP {
 
 				'interval'          => 10,
 				'max_destinations'  => 30,
-				'mailer_service'    => 'PHP Jungle.messager.SMTP',
-			],$options));
-			$this->options['auth']      = Auth::getAccessAuth($this->options['auth']);
-			$this->options['from']      = Contact::getContact($this->options['from']);
+				'agent'             => 'JungleFramework Messenger',
+			],$options);
+			$this->options['auth'] = $auth = Auth::getAccessAuth($this->options['auth']);
+			if(!$this->options['sender'] && $this->options['sender_from_login']){
+				$this->options['sender'] = $auth->getLogin();
+			}
+			$this->options['sender']      = Contact::getContact($this->options['sender']);
 		}
 
 		/**
-		 * @param ICombination $combination
+		 * @param CombinationInterface $combination
 		 * @return void
 		 */
-		protected function begin(ICombination $combination){
+		protected function begin(CombinationInterface $combination){
 			$this->combination = $combination;
 			$this->to = [];
 			$this->cc = [];
@@ -95,23 +96,23 @@ namespace Jungle\Messenger\Mail\SMTP {
 		}
 
 		/**
-		 * @param IContact $destination
+		 * @param ContactInterface $destination
 		 * @return void
 		 */
-		protected function registerDestination(IContact $destination){
-			if($destination instanceof Messenger\Mail\IContact){
+		protected function registerDestination(ContactInterface $destination){
+			if($destination instanceof Messenger\Mail\ContactInterface){
 				switch($destination->getType()){
-					case Messenger\Mail\IContact::TYPE_MAIN:
+					case Messenger\Mail\ContactInterface::TYPE_MAIN:
 						if(count($this->to) < 1){
 							$this->to[] = $destination;
 						}else{
 							$this->cc[] = $destination;
 						}
 						break;
-					case Messenger\Mail\IContact::TYPE_CC:
+					case Messenger\Mail\ContactInterface::TYPE_CC:
 						$this->cc[] = $destination;
 						break;
-					case Messenger\Mail\IContact::TYPE_BCC:
+					case Messenger\Mail\ContactInterface::TYPE_BCC:
 						$this->bcc[] = $destination;
 						break;
 				}
@@ -127,10 +128,10 @@ namespace Jungle\Messenger\Mail\SMTP {
 		}
 
 		/**
-		 * @param ICombination $combination
+		 * @param CombinationInterface $combination
 		 * @return void
 		 */
-		protected function complete(ICombination $combination){
+		protected function complete(CombinationInterface $combination){
 			$this->flushSend();
 		}
 
@@ -165,33 +166,33 @@ namespace Jungle\Messenger\Mail\SMTP {
 		protected function sendCollection(){
 			if(!$this->to) throw new \LogicException();
 			/**
-			 * @var Contact $from
+			 * @var Contact $sender
 			 * @var Contact $author
 			 * @var \Jungle\User\AccessAuth\Pair $auth
-			 * @var IMessage $messageObject
-			 * @var IContact[] $destinations
+			 * @var MessageInterface $messageObject
+			 * @var ContactInterface[] $destinations
 			 */
 
 			$messageObject  = $this->combination->getMessage();
 
 			$host           = $this->options['host'];
 			$port           = $this->options['port'];
-			$scheme         = $this->options['scheme'];
+			$transport      = $this->options['transport'];
+			$sender           = $this->options['sender'];
 
 
 			$auth           = $this->options['auth'];
 
-			$from           = $this->options['from'];
-			$author         = $messageObject->getAuthor()?:$from;
+			$author         = $messageObject->getAuthor()?:$sender;
 
 			$destinations   = [];
 
 
 			$document = new Document();
 			$document->setHeader('Date',            date("D, j M Y G:i:s")." +0{$this->options['timezone']}00");
-			$document->setHeader('From',            "{$this->prepareString($from->getName())} <{$from->getAddress()}>");
+			$document->setHeader('From',            "{$this->prepareString($sender->getName())} <{$sender->getAddress()}>");
 			$document->setHeader('Sender',          "{$this->prepareString($author->getName())} <{$author->getAddress()}>");
-			$document->setHeader('X-Mailer',        $this->options['mailer_service']);
+			$document->setHeader('X-Mailer',        $this->options['agent']);
 			$document->setHeader('Reply-To',        $document->getHeader('From'));
 			$document->setHeader('X-Priority',      "3 (Normal)");
 			$document->setHeader('Message-ID',      "<172562218.".date("YmjHis")."@{$host}>");
@@ -209,21 +210,21 @@ namespace Jungle\Messenger\Mail\SMTP {
 
 			$to = [];
 			foreach($this->to as $d){
-				$to[] = ($d instanceof Messenger\Mail\IContact && $d->getName()?$this->prepareString($d->getName()):'')." <{$d->getAddress()}>";
+				$to[] = ($d instanceof Messenger\Mail\ContactInterface && $d->getName()?$this->prepareString($d->getName()):'') . " <{$d->getAddress()}>";
 				$destinations[] = $d;
 			}
 			if($to) $document->setHeader('To',implode('; ',$to));
 
 			$cc = [];
 			foreach($this->cc as $d){
-				$cc[] = ($d instanceof Messenger\Mail\IContact && $d->getName()?$this->prepareString($d->getName()):'')." <{$d->getAddress()}>";
+				$cc[] = ($d instanceof Messenger\Mail\ContactInterface && $d->getName()?$this->prepareString($d->getName()):'') . " <{$d->getAddress()}>";
 				$destinations[] = $d;
 			}
 			if($cc) $document->setHeader('Cc',implode('; ',$cc));
 
 			$bcc = [];
 			foreach($this->bcc as $d){
-				$bcc[] = ($d instanceof Messenger\Mail\IContact && $d->getName()?$this->prepareString($d->getName()):'')." <{$d->getAddress()}>";
+				$bcc[] = ($d instanceof Messenger\Mail\ContactInterface && $d->getName()?$this->prepareString($d->getName()):'') . " <{$d->getAddress()}>";
 				$destinations[] = $d;
 			}
 			if($bcc) $document->setHeader('Bcc',implode('; ',$bcc));
@@ -234,7 +235,7 @@ namespace Jungle\Messenger\Mail\SMTP {
 				$main = new Document();
 				$main->setHeader('Content-Type',"{$messageObject->getType()}; charset={$this->options['charset']}");
 				$main->setHeader('Content-Transfer-Encoding',"8bit");
-				$main->setBody($messageObject->getContent());
+				$main->setContent($messageObject->getContent());
 
 				$body->addPart($main);
 
@@ -244,11 +245,11 @@ namespace Jungle\Messenger\Mail\SMTP {
 					$a->setHeader('Content-Transfer-Encoding',"base64");
 					$a->setHeader('Content-Disposition',"{$attachment->getDisposition()}; filename=\"{$attachment->getName()}\"");
 					$a->setHeaders($attachment->getHeaders(),false);
-					$a->setBody($attachment->getRaw());
+					$a->setContent($attachment->getRaw());
 
 					$body->addPart($a);
 				}
-				$document->setBody($body);
+				$document->setContent($body);
 			}else{
 				$t = $messageObject->getType();
 				if(!$t){
@@ -256,9 +257,9 @@ namespace Jungle\Messenger\Mail\SMTP {
 				}
 				$document->setHeader('Content-Type',"{$t}; charset={$this->options['charset']}");
 				$document->setHeader('Content-Transfer-Encoding',"8bit");
-				$document->setBody($messageObject->getContent());
+				$document->setContent($messageObject->getContent());
 			}
-			$message = $document->represent();
+			$message = (string)$document;
 
 
 			$sequence = $this->getSequence();
@@ -266,7 +267,7 @@ namespace Jungle\Messenger\Mail\SMTP {
 				'login'     => $auth->getBase64Login(),
 				'password'  => $auth->getBase64Password(),
 
-				'mail_from' => $from->getAddress(),
+				'mail_from' => $sender->getAddress(),
 				'recipient' => function() use($destinations) {
 					$a = [];
 					foreach($destinations as $contact){
@@ -294,7 +295,7 @@ namespace Jungle\Messenger\Mail\SMTP {
 
 					'host'       => $this->options['host'],
 					'port'       => $this->options['port'],
-					'scheme'     => $this->options['scheme'],
+					'transport'  => $this->options['transport'],
 					'timeout'    => isset($this->options['timeout'])?$this->options['timeout']:null,
 
 					'login'      => $auth->getBase64Login(),

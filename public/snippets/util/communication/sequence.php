@@ -7,10 +7,7 @@
  * Date: 03.10.2016
  * Time: 0:47
  */
-namespace sequence;
-
-use Jungle\Util\Communication\Sequence;
-use Jungle\Util\Communication\Sequence\Specification\Smtp;
+namespace Jungle\Util\Communication\Sequence;
 
 include '../../loader.php';
 
@@ -18,7 +15,7 @@ include '../../loader.php';
  * Example with Smtp (Jungle\Util\Communication\Sequence\Specification\Smtp)
  */
 
-$specification = new Smtp();
+$specification = new Specification\Smtp();
 $sequence = $specification->createSequence();
 $sequence->setSpecification($specification);
 $sequence->setConfig([

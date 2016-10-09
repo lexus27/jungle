@@ -21,24 +21,20 @@ namespace Jungle\Util\Specifications\Http {
 		public function getIp();
 
 		/**
-		 * @return int
+		 * @return string
 		 */
-		public function getPort();
+		public function getDomain();
 
 		/**
-		 * @return string
+		 * @return mixed
 		 */
 		public function getHost();
 
 		/**
-		 * @return string
+		 * @return int
 		 */
-		public function getBestLanguage();
+		public function getPort();
 
-		/**
-		 * @return string[]
-		 */
-		public function getLanguages();
 
 		/**
 		 * @return bool

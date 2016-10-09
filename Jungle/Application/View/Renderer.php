@@ -216,7 +216,7 @@ namespace Jungle\Application\View {
 		/**
 		 * @return bool
 		 */
-		public function cacheIsEnabled(){
+		public function isCacheable(){
 			return $this->options['cacheable'];
 		}
 		/**
@@ -231,19 +231,11 @@ namespace Jungle\Application\View {
 
 		/**
 		 * Enables cache in this object context.
+		 * @param bool $cacheable
 		 * @return $this
 		 */
-		public function cacheOn(){
-			$this->options['cacheable'] = true;
-			return $this;
-		}
-
-		/**
-		 * Disables cache in this object context.
-		 * @return $this
-		 */
-		public function cacheOff(){
-			$this->options['cacheable'] = false;
+		public function setCacheable($cacheable = true){
+			$this->options['cacheable'] = boolval($cacheable);
 			return $this;
 		}
 

@@ -22,10 +22,11 @@ namespace Jungle\Util\Specifications\Http {
 		public function setIp($ip);
 
 		/**
-		 * @param $host
+		 * @param $domain
 		 * @return mixed
 		 */
-		public function setHost($host);
+		public function setDomain($domain);
+
 
 		/**
 		 * @param $port
