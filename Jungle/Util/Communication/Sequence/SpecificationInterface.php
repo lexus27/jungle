@@ -9,7 +9,7 @@
  */
 namespace Jungle\Util\Communication\Sequence {
 
-	use Jungle\Util\Communication\ConnectionInteractionInterface;
+	use Jungle\Util\Communication\Connection\StreamInteractionInterface;
 	use Jungle\Util\Communication\ConnectionInterface;
 	use Jungle\Util\Communication\Sequence;
 
@@ -37,17 +37,17 @@ namespace Jungle\Util\Communication\Sequence {
 		public function convertBeforeSend($command);
 
 		/**
-		 * @param ConnectionInteractionInterface $connection
+		 * @param StreamInteractionInterface $connection
 		 * @return mixed
 		 */
-		public function read(ConnectionInteractionInterface $connection);
+		public function read(StreamInteractionInterface $connection);
 
 		/**
-		 * @param ConnectionInteractionInterface $connection
+		 * @param StreamInteractionInterface $connection
 		 * @param $data
 		 * @return mixed
 		 */
-		public function send(ConnectionInteractionInterface $connection, $data);
+		public function send(StreamInteractionInterface $connection, $data);
 
 		/**
 		 * @param $code

@@ -10,7 +10,7 @@
 namespace Jungle\Util\Communication\Sequence\Specification {
 	
 	use Jungle\Util\Communication\Connection\Stream\Socket;
-	use Jungle\Util\Communication\ConnectionInteractionInterface;
+	use Jungle\Util\Communication\Connection\StreamInteractionInterface;
 	use Jungle\Util\Communication\ConnectionInterface;
 	use Jungle\Util\Communication\Sequence;
 	use Jungle\Util\Communication\Sequence\ProcessSequenceInterface;
@@ -126,10 +126,10 @@ namespace Jungle\Util\Communication\Sequence\Specification {
 
 
 		/**
-		 * @param ConnectionInteractionInterface $connection
+		 * @param StreamInteractionInterface $connection
 		 * @return string
 		 */
-		public function read(ConnectionInteractionInterface $connection){
+		public function read(StreamInteractionInterface $connection){
 			$data = "";$length = $this->getMaxLength();
 			while($str = $connection->readLine($length)){
 				$data .= $str;

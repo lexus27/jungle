@@ -16,6 +16,18 @@ namespace Jungle\Util\Communication\Sequence {
 	interface ProcessInterface{
 
 		/**
+		 * @param $definition
+		 * @return $this
+		 */
+		public function setCommandText($definition);
+
+		/**
+		 * @return string
+		 */
+		public function getCommandText();
+
+
+		/**
 		 * @return CommandInterface
 		 */
 		public function getCommand();
@@ -43,7 +55,9 @@ namespace Jungle\Util\Communication\Sequence {
 		 */
 		public function getTask($name);
 
-
+		/**
+		 * @return mixed
+		 */
 		public function hasTasks();
 
 
