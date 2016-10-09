@@ -22,21 +22,16 @@ namespace Jungle\Util {
 		public function cacheClear();
 
 		/**
+		 * Enables cache in this object context.
+		 * @param bool $cacheable
+		 * @return $this
+		 */
+		public function setCacheable($cacheable = true);
+
+		/**
 		 * @return bool
 		 */
-		public function cacheIsEnabled();
-
-		/**
-		 * Enables cache in this object context.
-		 * @return $this
-		 */
-		public function cacheOn();
-
-		/**
-		 * Disables cache in this object context.
-		 * @return $this
-		 */
-		public function cacheOff();
+		public function isCacheable();
 
 	}
 }

@@ -8,12 +8,14 @@
 namespace Jungle\Util\Communication {
 
 	use Jungle\Util\Communication\Connection\Exception;
+	use Jungle\Util\Communication\Connection\Exception\ConfigException;
 
 	/**
 	 * Class Connection
 	 * @package Jungle\Util\Communication
 	 */
 	abstract class Connection implements ConnectionInterface{
+
 
 		/** @var resource|bool */
 		protected $connection;
@@ -37,12 +39,7 @@ namespace Jungle\Util\Communication {
 		 * @return $this
 		 */
 		public function setConfig(array $config){
-			$this->config = array_replace([
-				'host'      => null,
-				'port'      => null,
-				'scheme'    => null,
-				'timeout'   => null,
-			], $config);
+			$this->config = $config;
 			return $this;
 		}
 
@@ -58,16 +55,16 @@ namespace Jungle\Util\Communication {
 		 * @param $default
 		 * @param bool $required
 		 * @return null
-		 * @throws Exception\ConfigException
+		 * @throws ConfigException
 		 */
 		public function getOption($key, $default = null, $required = false){
 			if(isset($this->config[$key])){
 				return $this->config[$key];
 			}elseif($required!==false){
 				if(is_string($required)){
-					throw new Exception\ConfigException('Param "'.$key.'" required: "'.$required.'"');
+					throw new ConfigException('Param "'.$key.'" required: "'.$required.'"');
 				}else{
-					throw new Exception\ConfigException('Param "'.$key.'" required.');
+					throw new ConfigException('Param "'.$key.'" required.');
 				}
 			}else{
 				return $default;
@@ -87,8 +84,11 @@ namespace Jungle\Util\Communication {
 		 * @return $this
 		 */
 		public function connect(){
-			if(!$this->connection){
-				$this->connection = $this->_connect();
+			if($this->connection===null){
+				$r = $this->_connect();
+				if($this->connection === null){
+					$this->connection = $r;
+				}
 			}
 			return $this;
 		}
@@ -97,7 +97,7 @@ namespace Jungle\Util\Communication {
 		 * @return $this
 		 */
 		public function close(){
-			if($this->connection){
+			if($this->connection!==null){
 				$this->_close();
 				$this->connection = null;
 			}
@@ -130,7 +130,6 @@ namespace Jungle\Util\Communication {
 		public function getInternalConnection(){
 			return $this->connection;
 		}
-
 
 
 	}

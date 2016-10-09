@@ -12,7 +12,7 @@ namespace Jungle\Messenger {
 	 * Class Destination
 	 * @package Jungle\Messenger
 	 */
-	abstract class Contact implements IContact{
+	abstract class Contact implements ContactInterface{
 
 		/** @var  string */
 		protected $address;

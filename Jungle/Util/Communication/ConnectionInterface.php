@@ -13,7 +13,7 @@ namespace Jungle\Util\Communication {
 	 * Interface ConnectionInterface
 	 * @package Jungle\Util\Communication
 	 */
-	interface ConnectionInterface extends ConnectionInteractionInterface{
+	interface ConnectionInterface{
 
 		/**
 		 * @param array $config

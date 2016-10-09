@@ -198,17 +198,17 @@ namespace Jungle\Application\Dispatcher {
 		}
 
 		/**
-		 * @param array $required
-		 * @param bool $onlyRequired
+		 * @param array $required_names
+		 * @param bool $returnOnlyRequired
 		 * @return array
 		 * @throws NeedIntroduce
 		 */
-		public function getParams(array $required = null, $onlyRequired = false){
-			if($required!==null && !$this->rendering && $required !== array_intersect($required, array_keys($this->params))){
-				throw new NeedIntroduce();
+		public function getParams(array $required_names = null, $returnOnlyRequired = false){
+			if($required_names !== null && !$this->rendering && $required_names !== array_intersect($required_names, array_keys($this->params))){
+				throw new NeedIntroduce("Params ".implode(', ',(array)$required_names)." required");
 			}
-			if($required!==null && $onlyRequired){
-				return array_intersect_key(array_flip($required), $this->params);
+			if($required_names !== null && $returnOnlyRequired){
+				return array_intersect_key(array_flip($required_names), $this->params);
 			}
 			return $this->params;
 		}
@@ -220,6 +220,19 @@ namespace Jungle\Application\Dispatcher {
 		 */
 		public function getParam($key, $default = null){
 			return array_key_exists($key, $this->params)?$this->params[$key]:$default;
+		}
+
+		/**
+		 * @param $key
+		 * @param bool $allowNull
+		 * @throws NeedIntroduce
+		 */
+		public function requireParam($key, $allowNull = true){
+			if(array_key_exists($key,$this->params) && ($allowNull || isset($this->params[$key]))){
+				return $this->params[$key];
+			}else{
+				throw new NeedIntroduce("Param ".$key." required");
+			}
 		}
 
 		/**
@@ -532,6 +545,16 @@ namespace Jungle\Application\Dispatcher {
 		}
 
 		/**
+		 * @param $canceled
+		 * @return mixed
+		 */
+		public function setCanceled($canceled = true){
+			$this->canceled = $canceled;
+			return $this;
+		}
+
+
+		/**
 		 * @return bool
 		 */
 		public function isCanceled(){
@@ -640,6 +663,14 @@ namespace Jungle\Application\Dispatcher {
 			$this->canceled = true;
 			return $this;
 		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getTasks(){
+			return $this->tasks;
+		}
+
 
 		/**
 		 * @param $type

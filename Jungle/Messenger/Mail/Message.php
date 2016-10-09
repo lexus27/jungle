@@ -11,7 +11,7 @@ namespace Jungle\Messenger\Mail {
 	 * Class Message
 	 * @package Jungle\Messenger\Mail
 	 */
-	class Message extends \Jungle\Messenger\Message implements IMessage{
+	class Message extends \Jungle\Messenger\Message implements MessageInterface{
 
 		/** @var string */
 		protected $type;
@@ -19,10 +19,10 @@ namespace Jungle\Messenger\Mail {
 		/** @var string */
 		protected $subject;
 
-		/** @var \Jungle\Messenger\IContact|null */
+		/** @var \Jungle\Messenger\ContactInterface|null */
 		protected $author;
 
-		/** @var IAttachment[] */
+		/** @var AttachmentInterface[] */
 		protected $attachments = [];
 
 
@@ -53,7 +53,7 @@ namespace Jungle\Messenger\Mail {
 		}
 
 		/**
-		 * @return \Jungle\Messenger\IContact|null
+		 * @return \Jungle\Messenger\ContactInterface|null
 		 */
 		public function getAuthor(){
 			return $this->author;
@@ -76,10 +76,10 @@ namespace Jungle\Messenger\Mail {
 		}
 
 		/**
-		 * @param IAttachment $attachment
+		 * @param AttachmentInterface $attachment
 		 * @return $this
 		 */
-		public function addAttachment(IAttachment $attachment){
+		public function addAttachment(AttachmentInterface $attachment){
 			if($this->searchAttachment($attachment)===false){
 				$this->attachments[] = $attachment;
 			}
@@ -87,18 +87,18 @@ namespace Jungle\Messenger\Mail {
 		}
 
 		/**
-		 * @param IAttachment $attachment
+		 * @param AttachmentInterface $attachment
 		 * @return bool|int
 		 */
-		public function searchAttachment(IAttachment $attachment){
+		public function searchAttachment(AttachmentInterface $attachment){
 			return array_search($attachment,$this->attachments,true);
 		}
 
 		/**
-		 * @param IAttachment $attachment
+		 * @param AttachmentInterface $attachment
 		 * @return $this
 		 */
-		public function removeAttachment(IAttachment $attachment){
+		public function removeAttachment(AttachmentInterface $attachment){
 			if(($i = $this->searchAttachment($attachment))!==false){
 				array_splice($this->attachments,$i,1);
 			}
@@ -113,7 +113,7 @@ namespace Jungle\Messenger\Mail {
 		}
 
 		/**
-		 * @return IAttachment[]
+		 * @return AttachmentInterface[]
 		 */
 		public function getAttachments(){
 			return $this->attachments;

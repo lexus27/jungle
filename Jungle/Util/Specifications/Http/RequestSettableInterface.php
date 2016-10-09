@@ -10,6 +10,7 @@
 namespace Jungle\Util\Specifications\Http {
 
 	use Jungle\User\AccessAuth\Auth;
+	use Jungle\Util\ContentsAwareInterface;
 
 	/**
 	 * Interface RequestSettableInterface
@@ -100,10 +101,18 @@ namespace Jungle\Util\Specifications\Http {
 		public function setReferrer($referrer = null);
 
 		/**
-		 * @param $file
-		 * @return mixed
+		 * @param ContentsAwareInterface $file
+		 * @param null $name
+		 * @return $this
 		 */
-		public function addFile($file);
+		public function setFile(ContentsAwareInterface $file, $name = null);
+
+		/**
+		 * @param ContentsAwareInterface[] $files
+		 * @param bool|false $merge
+		 * @return $this
+		 */
+		public function setFiles(array $files, $merge = false);
 
 		/**
 		 * @param $requestedWith

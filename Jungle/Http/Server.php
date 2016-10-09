@@ -9,6 +9,7 @@
  */
 namespace Jungle\Http {
 	
+	use Jungle\Util\Communication\URL;
 	use Jungle\Util\Specifications\Http\ServerInterface;
 
 	/**
@@ -23,6 +24,21 @@ namespace Jungle\Http {
 		public function getIp(){
 			return $_SERVER['SERVER_ADDR'];
 		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getDomain(){
+			return $_SERVER['HTTP_HOST'];
+		}
+
+		/**
+		 * @return string
+		 */
+		public function getDomainBase(){
+			return URL::getBaseDomain($this->getDomain());
+		}
+
 
 		/**
 		 * @return string

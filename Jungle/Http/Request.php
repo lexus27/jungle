@@ -14,6 +14,7 @@ namespace Jungle\Http {
 	use Jungle\Util\Specifications\Http\BrowserInterface;
 	use Jungle\Util\Specifications\Http\ResponseInterface;
 	use Jungle\Util\Specifications\Http\ServerInterface;
+	use Jungle\Util\Specifications\Hypertext\HeaderRegistryTrait;
 	use Jungle\Util\Value;
 
 
@@ -23,6 +24,8 @@ namespace Jungle\Http {
 	 */
 	class Request implements \Jungle\Util\Specifications\Http\RequestInterface, RequestInterface{
 
+		use HeaderRegistryTrait;
+
 		const AUTH_DIGEST   = 'digest';
 		const AUTH_BASE     = 'base';
 
@@ -30,9 +33,6 @@ namespace Jungle\Http {
 		protected static $instance;
 
 		protected static $request_time;
-
-		/** @var  array */
-		protected $headers = [];
 
 		/** @var  Auth */
 		protected $auth;
@@ -69,13 +69,6 @@ namespace Jungle\Http {
 		}
 
 		/**
-		 *
-		 */
-		public function getUrl(){
-			return $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . urldecode($_SERVER['REQUEST_URI']);
-		}
-
-		/**
 		 * @return Request
 		 */
 		public static function getInstance(){
@@ -89,13 +82,13 @@ namespace Jungle\Http {
 		 * Request constructor.
 		 */
 		protected function __construct(){
-			$this->headers = getallheaders();
+			$this->setHeaders(getallheaders(),false,false);
 			if(isset($_SERVER['PHP_AUTH_USER']) && $_SERVER['PHP_AUTH_USER']){
 				$this->auth = Auth::getAccessAuth([$_SERVER['PHP_AUTH_USER'],$_SERVER['PHP_AUTH_PW']]);
 			}
-			$this->browser  = new Browser();
+			$this->browser  = new Browser($this);
 			$this->server   = new Server();
-			$this->client   = new Client($this);
+			$this->client   = new Client();
 			$this->response = new Response($this);
 			$this->content_type = isset($this->headers['Content-Type'])?$this->headers['Content-Type']:null;
 		}
@@ -173,6 +166,13 @@ namespace Jungle\Http {
 		/**
 		 * @return string
 		 */
+		public function getUrl(){
+			return $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . urldecode($_SERVER['REQUEST_URI']);
+		}
+
+		/**
+		 * @return string
+		 */
 		public function getMethod(){
 			return $_SERVER['REQUEST_METHOD'];
 		}
@@ -205,8 +205,7 @@ namespace Jungle\Http {
 		 */
 		public function getUri(){
 			if(is_null($this->uri)){
-				$arr = explode('?',$_SERVER['REQUEST_URI']);
-				$this->uri = urldecode($arr[0]);
+				$this->uri = urldecode(strstr($_SERVER['REQUEST_URI'], '?', true));
 			}
 			return $this->uri;
 		}
@@ -216,8 +215,7 @@ namespace Jungle\Http {
 		 */
 		public function getPath(){
 			if(is_null($this->uri)){
-				$arr = explode('?',$_SERVER['REQUEST_URI']);
-				$this->uri = urldecode($arr[0]);
+				$this->uri = urldecode(strstr($_SERVER['REQUEST_URI'], '?', true));
 			}
 			return $this->uri;
 		}
@@ -270,6 +268,21 @@ namespace Jungle\Http {
 		public function isPut(){
 			return stripos($_SERVER['REQUEST_METHOD'],'put')!==false;
 		}
+
+		/**
+		 * @return mixed
+		 */
+		public function isConnect(){
+			return stripos($_SERVER['REQUEST_METHOD'],'connect')!==false;
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function isTrace(){
+			return stripos($_SERVER['REQUEST_METHOD'],'trace')!==false;
+		}
+
 
 		/**
 		 * @return bool
@@ -360,26 +373,15 @@ namespace Jungle\Http {
 		 * @param $key
 		 * @return mixed
 		 */
-		public function getPut($key){
-
-		}
+		public function getPut($key){}
 
 		/**
 		 * @param $key
 		 * @return mixed
 		 */
-		public function hasPut($key){
+		public function hasPut($key){}
 
-		}
 
-		/**
-		 * @param $headerKey
-		 * @param null $default
-		 * @return mixed
-		 */
-		public function getHeader($headerKey, $default = null){
-			return isset($this->headers[$headerKey])?$this->headers[$headerKey]:$default;
-		}
 
 		/**
 		 * @return mixed
@@ -400,14 +402,6 @@ namespace Jungle\Http {
 		 */
 		public function getReferrer(){
 			return isset($_SERVER['HTTP_REFERRER'])?$_SERVER['HTTP_REFERRER']:null;
-		}
-
-		/**
-		 * @param $headerKey
-		 * @return bool
-		 */
-		public function hasHeader($headerKey){
-			return isset($this->headers[$headerKey]);
 		}
 
 		/**
@@ -563,7 +557,6 @@ namespace Jungle\Http {
 				return filter_var($value, $filter);
 			}
 		}
-
 
 	}
 }

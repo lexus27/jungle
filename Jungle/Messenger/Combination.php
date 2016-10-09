@@ -11,23 +11,23 @@ namespace Jungle\Messenger {
 	 * Class Combination
 	 * @package Jungle\Messenger\Mail
 	 */
-	class Combination implements ICombination{
+	class Combination implements CombinationInterface{
 
 		/**
-		 * @var IContact[]
+		 * @var ContactInterface[]
 		 */
 		protected $destinations = [];
 
 		/**
-		 * @var IMessage
+		 * @var MessageInterface
 		 */
 		protected $message;
 
 		/**
-		 * @param IContact $destination
+		 * @param ContactInterface $destination
 		 * @return $this
 		 */
-		public function addDestination(IContact $destination){
+		public function addDestination(ContactInterface $destination){
 			if($this->searchDestination($destination)===false){
 				$this->destinations[] = $destination;
 			}
@@ -35,18 +35,18 @@ namespace Jungle\Messenger {
 		}
 
 		/**
-		 * @param IContact $destination
+		 * @param ContactInterface $destination
 		 * @return int|bool
 		 */
-		public function searchDestination(IContact $destination){
+		public function searchDestination(ContactInterface $destination){
 			return array_search($destination,$this->destinations,true);
 		}
 
 		/**
-		 * @param IContact $destination
+		 * @param ContactInterface $destination
 		 * @return $this
 		 */
-		public function removeDestination(IContact $destination){
+		public function removeDestination(ContactInterface $destination){
 			if(($i = $this->searchDestination($destination))!==false){
 				array_splice($this->destinations,$i,1);
 			}
@@ -54,22 +54,22 @@ namespace Jungle\Messenger {
 		}
 
 		/**
-		 * @param IMessage $message
+		 * @param MessageInterface $message
 		 * @return $this
 		 */
-		public function setMessage(IMessage $message){
+		public function setMessage(MessageInterface $message){
 			$this->message = $message;
 		}
 
 		/**
-		 * @return IMessage
+		 * @return MessageInterface
 		 */
 		public function getMessage(){
 			return $this->message;
 		}
 
 		/**
-		 * @return IContact[]
+		 * @return ContactInterface[]
 		 */
 		public function getDestinations(){
 			return $this->destinations;

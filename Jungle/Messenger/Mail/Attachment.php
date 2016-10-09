@@ -11,36 +11,24 @@ namespace Jungle\Messenger\Mail {
 	 * Class Attachment
 	 * @package Jungle\Messenger\Mail
 	 */
-	class Attachment implements IAttachment{
+	class Attachment implements AttachmentInterface{
 
-		/**
-		 * @var string
-		 */
+		/** @var string */
 		protected $type = self::TYPE_DEFAULT;
 
-		/**
-		 * @var string
-		 */
+		/** @var string */
 		protected $disposition = self::DISPOSITION_DEFAULT;
 
-		/**
-		 * @var string
-		 */
+		/** @var string */
 		protected $raw;
 
-		/**
-		 * @var string
-		 */
+		/** @var string */
 		protected $src;
 
-		/**
-		 * @var string|null
-		 */
+		/** @var string|null */
 		protected $name;
 
-		/**
-		 * @var array
-		 */
+		/** @var array */
 		protected $headers = [];
 
 		/**

@@ -38,13 +38,33 @@ namespace Jungle\Application\View\Renderer {
 		 * @return mixed
 		 */
 		public function extractData(ProcessInterface $process,array $variables = []){
-			$o = [];
-			$result = $process->getResult();
+			$o = [
+				'success'   => !$process->isCanceled(),
+				'tasks'     => [],
+				'result'    => $process->getResult(),
+			];
+			if($process->hasTasks()){
+				foreach($process->getTasks() as $key => $task){
+					if(is_object($task)){
+						if($task instanceof \Exception){
+							$o['tasks'][$key] = $task->getMessage();
+						}else{
+							$o['tasks'][$key] = true;
+						}
+					}else{
+						$o['tasks'][$key] = (string)$task;
+					}
+
+				}
+			}
+
+			/*
 			if(!is_array($result)){
 				$o['object'] = $result;
 			}else{
 				$o = $result;
 			}
+			*/
 			if(isset($variables['global_data']) && is_array($variables['global_data'])){
 				return array_replace($variables['global_data'], $o);
 			}

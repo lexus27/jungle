@@ -10,12 +10,13 @@
 namespace Jungle\Util\Specifications\Http {
 
 	use Jungle\User\AccessAuth\Auth;
+	use Jungle\Util\Specifications\Hypertext\HeaderRegistryInterface;
 
 	/**
 	 * Interface RequestInterface
 	 * @package Jungle\Util\Specifications\Http
 	 */
-	interface RequestInterface{
+	interface RequestInterface extends HeaderRegistryInterface{
 
 		/**
 		 * @return ResponseInterface
@@ -57,10 +58,21 @@ namespace Jungle\Util\Specifications\Http {
 		 */
 		public function getTime();
 
+
 		/**
 		 * @return string
 		 */
 		public function getMethod();
+
+		/**
+		 * @return bool
+		 */
+		public function isPost();
+
+		/**
+		 * @return bool
+		 */
+		public function isGet();
 
 		/**
 		 * @return bool
@@ -81,6 +93,17 @@ namespace Jungle\Util\Specifications\Http {
 		 * @return bool
 		 */
 		public function isOptions();
+
+		/**
+		 * @return bool
+		 */
+		public function isConnect();
+
+		/**
+		 * @return bool
+		 */
+		public function isTrace();
+
 
 		/**
 		 * @return mixed
@@ -124,11 +147,6 @@ namespace Jungle\Util\Specifications\Http {
 		public function hasQuery($key = null);
 
 		/**
-		 * @return bool
-		 */
-		public function isGet();
-
-		/**
 		 * @param $key
 		 * @param null $default
 		 * @return mixed
@@ -165,11 +183,6 @@ namespace Jungle\Util\Specifications\Http {
 		public function hasPost($key = null);
 
 		/**
-		 * @return bool
-		 */
-		public function isPost();
-
-		/**
 		 * @param $key
 		 * @return mixed
 		 */
@@ -190,18 +203,6 @@ namespace Jungle\Util\Specifications\Http {
 		 * @return string|null
 		 */
 		public function getReferrer();
-
-		/**
-		 * @param $headerKey
-		 * @return mixed
-		 */
-		public function getHeader($headerKey);
-
-		/**
-		 * @param $headerKey
-		 * @return bool
-		 */
-		public function hasHeader($headerKey);
 
 		/**
 		 * @return mixed

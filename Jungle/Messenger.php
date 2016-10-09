@@ -8,8 +8,8 @@
 namespace Jungle {
 
 	use Jungle\Messenger\Combination;
-	use Jungle\Messenger\ICombination;
-	use Jungle\Messenger\IContact;
+	use Jungle\Messenger\CombinationInterface;
+	use Jungle\Messenger\ContactInterface;
 
 	/**
 	 * Class Messenger
@@ -39,22 +39,22 @@ namespace Jungle {
 		}
 
 		/**
-		 * @param ICombination $combination
+		 * @param CombinationInterface $combination
 		 * @return void
 		 */
-		abstract protected function begin(ICombination $combination);
+		abstract protected function begin(CombinationInterface $combination);
 
 		/**
-		 * @param IContact $destination
+		 * @param ContactInterface $destination
 		 * @return void
 		 */
-		abstract protected function registerDestination(IContact $destination);
+		abstract protected function registerDestination(ContactInterface $destination);
 
 		/**
-		 * @param ICombination $combination
+		 * @param CombinationInterface $combination
 		 * @return void
 		 */
-		abstract protected function complete(ICombination $combination);
+		abstract protected function complete(CombinationInterface $combination);
 
 	}
 }

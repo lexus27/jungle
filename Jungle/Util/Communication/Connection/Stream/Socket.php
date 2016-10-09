@@ -17,12 +17,20 @@ namespace Jungle\Util\Communication\Connection\Stream {
 	 * @package Jungle\Util\Communication\Connection
 	 */
 	class Socket extends Stream{
+		public function setConfig(array $config){
+			$this->config = array_replace([
+				'host'          => null,
+				'port'          => null,
+				'transport'     => null,
+				'timeout'       => null,
+			], $config);
+		}
 
 		/**
 		 * @param $length
 		 * @return string
 		 */
-		protected function _read($length){
+		public function read($length){
 			return fread($this->connection,$length);
 		}
 
@@ -30,8 +38,12 @@ namespace Jungle\Util\Communication\Connection\Stream {
 		 * @param $length
 		 * @return mixed
 		 */
-		protected function _readLine($length){
-			return fgets($this->connection,$length);
+		public function readLine($length = null){
+			if($length===null){
+				return fgets($this->connection);
+			}else{
+				return fgets($this->connection,$length);
+			}
 		}
 
 
@@ -41,7 +53,7 @@ namespace Jungle\Util\Communication\Connection\Stream {
 		 * @return int
 		 * @throws Exception
 		 */
-		protected function _send($data, $length = null){
+		public function write($data, $length = null){
 			$l = $length!==null?$length:strlen($data);
 			$s = fwrite($this->connection,$data,$l);
 			if($s!==$l){
@@ -67,12 +79,17 @@ namespace Jungle\Util\Communication\Connection\Stream {
 		 * @throws \Exception
 		 */
 		protected function _connect(){
-			$to = $this->getOption('timeout',$this->default_timeout);
+			$timeout = $this->getOption('timeout',$this->default_timeout);
+
 			$host = $this->getOption('host',null,true);
 			$port = $this->getOption('port',null,true);
-			$scheme = $this->getOption('scheme',null,true);
-			$hostname = ($scheme?$scheme.'://':'') . $host;
-			$connection = @fsockopen($hostname, $port, $errNo,$errStr, $to);
+
+			$transport = $this->getOption('transport',null);
+			$hostname = ($transport?$transport.'://':'') . $host;
+
+
+
+			$connection = @fsockopen($hostname, $port, $errNo,$errStr, $timeout);
 			if(!$connection){
 				$enc = mb_detect_encoding($errStr,['cp1251']);
 				if($enc){
@@ -84,7 +101,7 @@ namespace Jungle\Util\Communication\Connection\Stream {
 				}
 				throw new Exception\ConnectException($message, $errNo);
 			}
-			stream_set_timeout($connection,$to);
+			stream_set_timeout($connection,$timeout);
 			return $connection;
 		}
 
@@ -95,6 +112,21 @@ namespace Jungle\Util\Communication\Connection\Stream {
 			fclose($this->connection);
 		}
 
+		/**
+		 * @return bool
+		 */
+		public function isEof(){
+			return feof($this->connection);
+		}
+
+		/**
+		 * @param $offset
+		 * @param $whence
+		 * @return mixed
+		 */
+		public function seek($offset, $whence = SEEK_SET){
+			return fseek($this->connection,$offset, $whence);
+		}
 	}
 }
 

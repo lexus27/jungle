@@ -9,6 +9,7 @@
  */
 namespace Jungle\Util\Communication {
 
+	use Jungle\Util\Communication\Connection\StreamInteractionInterface;
 	use Jungle\Util\Communication\Sequence\ProcessSequenceInterface;
 	use Jungle\Util\Communication\Sequence\SpecificationInterface;
 
@@ -16,7 +17,7 @@ namespace Jungle\Util\Communication {
 	 * Interface SequenceInterface
 	 * @package Jungle\Util\Communication
 	 */
-	interface SequenceInterface extends ConnectionInteractionInterface{
+	interface SequenceInterface extends StreamInteractionInterface{
 
 
 		/**

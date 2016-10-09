@@ -21,6 +21,25 @@ namespace Jungle\Util\Specifications\Http {
 		 */
 		public function setUserAgent($userAgent);
 
+
+		/**
+		 * @param array $languages
+		 * @return mixed
+		 */
+		public function setDesiredLanguages(array $languages);
+
+		/**
+		 * @param array $media_types
+		 * @return mixed
+		 */
+		public function setDesiredMediaTypes(array $media_types);
+
+		/**
+		 * @param $charset
+		 * @return mixed
+		 */
+		public function setBestCharset($charset);
+
 	}
 }
 

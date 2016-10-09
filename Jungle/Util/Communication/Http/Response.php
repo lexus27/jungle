@@ -8,19 +8,23 @@
  * Time: 18:44
  */
 namespace Jungle\Util\Communication\Http {
-	
+
+	use Jungle\Util\Communication\Http;
 	use Jungle\Util\Communication\URL;
 	use Jungle\Util\Specifications\Http\Cookie;
 	use Jungle\Util\Specifications\Http\RequestInterface;
 	use Jungle\Util\Specifications\Http\ResponseInterface;
+	use Jungle\Util\Specifications\Http\ResponseOnClientInterface;
 	use Jungle\Util\Specifications\Http\ResponseSettableInterface;
 	use Jungle\Util\Specifications\Http\ServerInterface;
+	use Jungle\Util\Specifications\Hypertext\Document;
+	use Jungle\Util\Specifications\Hypertext\Document\ReadProcessor;
 
 	/**
 	 * Class Response
 	 * @package Jungle\Util\Communication\Http
 	 */
-	class Response implements ResponseInterface,ResponseSettableInterface{
+	class Response extends Document implements ResponseInterface,ResponseSettableInterface, ResponseOnClientInterface{
 
 		/** @var  Server */
 		protected $server;
@@ -28,23 +32,28 @@ namespace Jungle\Util\Communication\Http {
 		/** @var  Request */
 		protected $request;
 
+		/** @var  string */
+		protected $plain_response;
+
+		/** @var  string */
+		protected $plain_request;
+
 		/** @var  int */
 		protected $code;
 
+		/** @var  string */
+		protected $message;
+
 		/** @var  Cookie[]  */
 		protected $cookies = [];
-
-		/** @var  array  */
-		protected $headers = [];
-
-		/** @var   */
-		protected $content;
 
 		/** @var  array|null */
 		protected $redirect;
 
 		/** @var bool  */
 		protected $sent = false;
+
+
 
 		/**
 		 * @return RequestInterface
@@ -60,20 +69,37 @@ namespace Jungle\Util\Communication\Http {
 			return $this->server;
 		}
 
+
 		/**
-		 * @param $key
+		 * @param $code
 		 * @return mixed
 		 */
-		public function getHeader($key){
-			return isset($this->headers[$key])?$this->headers[$key]:null;
+		public function setCode($code){
+			$this->code = $code;
 		}
 
 		/**
-		 * @param $key
-		 * @return Cookie
+		 * @return mixed
 		 */
-		public function getCookie($key){
-			return isset($this->cookies[$key])?$this->cookies[$key]:null;
+		public function getCode(){
+			return $this->code;
+		}
+
+
+		/**
+		 * @param string $message
+		 * @return $this
+		 */
+		public function setMessage($message){
+			$this->message = $message;
+			return $this;
+		}
+
+		/**
+		 * @return string
+		 */
+		public function getMessage(){
+			return $this->message;
 		}
 
 		/**
@@ -105,18 +131,42 @@ namespace Jungle\Util\Communication\Http {
 		}
 
 		/**
-		 * @return bool
+		 * @param bool $asArray
+		 * @return null|string
 		 */
-		public function isTemporalRedirect(){
-			return $this->code === 302;
+		public function getRedirectUrl($asArray = false){
+			if(isset($this->headers['Location'])){
+				return URL::absoluteUrl($this->getHeader('Location'), [
+					'host'      => $this->getServer()->getHost(),
+					'scheme'    => $this->getRequest()->getScheme(),
+					'path'      => $this->getRequest()->getUri()
+				],$asArray);
+			}
+			return null;
 		}
 
 		/**
-		 * @return null|URL|string
+		 * @return mixed
 		 */
-		public function getRedirectUrl(){
-			return isset($this->headers['Location'])?$this->headers['Location']:null;
+		public function isContentLocated(){
+			return isset($this->headers['Content-Location']);
 		}
+
+		/**
+		 * @param bool $asArray
+		 * @return mixed
+		 */
+		public function getContentLocationUrl($asArray = false){
+			if(isset($this->headers['Content-Location'])){
+				return URL::absoluteUrl($this->getHeader('Content-Location'), [
+					'host'      => $this->getServer()->getHost(),
+					'scheme'    => $this->getRequest()->getScheme(),
+					'path'      => $this->getRequest()->getUri()
+				],$asArray);
+			}
+			return null;
+		}
+
 
 		/**
 		 * @param RequestInterface $request
@@ -137,36 +187,67 @@ namespace Jungle\Util\Communication\Http {
 		}
 
 		/**
-		 * @param $key
+		 * @param array|string $key
 		 * @param $value
-		 * @param int $expire
+		 * @param int $expires
 		 * @param string $path
 		 * @param null $secure
 		 * @param null $httpOnly
-		 * @param null $host
+		 * @param null $domain
 		 * @return mixed
 		 */
 		public function setCookie(
-			$key, $value, $expire = null, $path = null, $secure = null, $httpOnly = null, $host = null
+			$key, $value = null, $expires = null, $path = null, $secure = null, $httpOnly = null, $domain = null
 		){
-			// TODO: Implement setCookie() method.
+			if(is_array($key)){
+				$key = array_replace([
+					'key'       => null,
+					'value'     => null,
+					'domain'     => null,
+					'expires'   => null,
+					'path'      => null,
+					'secure'    => null,
+					'httpOnly'  => null,
+				],$key);
+				extract($key,EXTR_OVERWRITE);
+			}
+
+			if(!$domain){
+				$domain = $this->request->getServer()->getDomain();
+			}
+
+			$cookie = new Cookie();
+			$cookie->setName($key);
+			$cookie->setValue($value);
+			$cookie->setExpires($expires);
+			$cookie->setPath($path);
+			$cookie->setSecure($secure);
+			$cookie->setHttpOnly($httpOnly);
+			$cookie->setDomain($domain);
+			$this->cookies[$key] = $cookie;
 		}
+
 
 		/**
 		 * @param $key
-		 * @param $value
-		 * @return mixed
+		 * @return Cookie
 		 */
-		public function setHeader($key, $value){
-			$this->headers[$key] = $value;
-			return $this;
+		public function getCookie($key){
+			return isset($this->cookies[$key])?$this->cookies[$key]:null;
+		}
+
+		/**
+		 * @return \Jungle\Util\Specifications\Http\Cookie[]
+		 */
+		public function getCookies(){
+			return $this->cookies;
 		}
 
 		/**
 		 * @param $content
 		 * @return mixed
 		 */
-		public function setContent($content){
+		public function setContent($content = null){
 			$this->content = $content;
 			return $this;
 		}
@@ -176,7 +257,8 @@ namespace Jungle\Util\Communication\Http {
 		 * @return mixed
 		 */
 		public function setContentType($type){
-			// TODO: Implement setContentType() method.
+			$this->setHeader('Content-Type', $type);
+			return $this;
 		}
 
 		/**
@@ -192,47 +274,63 @@ namespace Jungle\Util\Communication\Http {
 		 * @return bool
 		 */
 		public function isSent(){
-			// TODO: Implement isSent() method.
+			return $this->sent;
 		}
 
 		/**
 		 * @return void
 		 */
 		public function send(){
-			// TODO: Implement send() method.
+			$this->sent = true;
 		}
 
+
 		/**
-		 * @param $code
+		 * @param Document\ReadProcessor $reader
 		 * @return mixed
 		 */
-		public function setCode($code){
-			// TODO: Implement setCode() method.
+		public function onHeadersRead(Document\ReadProcessor $reader){
+			$collection = $this->getHeaderCollection('Set-Cookie');
+			foreach($collection as $cookieString){
+				$cookie = Http::parseCookieString($cookieString);
+				$this->setCookie($cookie);
+			}
+
+			/** @var Agent $browser */
+			$browser = $this->getRequest()->getBrowser();
+			$browser->onResponseHeadersLoaded($this);
+
 		}
 
 		/**
-		 * @return mixed
+		 * @param ReadProcessor $reader
 		 */
-		public function getCode(){
-			// TODO: Implement getCode() method.
+		public function onContentsRead(ReadProcessor $reader){
+			$this->cache = $reader->getBuffered();
+			/** @var Agent $browser */
+			$browser = $this->getRequest()->getBrowser();
+			$browser->onResponseContentsLoaded($this);
 		}
 
-		/**
-		 * @param null $path
-		 * @param int $code
-		 */
-		public function sendRedirect($path = null, $code = 302){
-			// TODO: Implement sendRedirect() method.
-		}
+
 
 		/**
-		 * @param null $path
-		 * @param int $code
-		 * @return $this
+		 * @param $data
+		 * @param $readingIndex
+		 * @return mixed|void
 		 */
-		public function setRedirect($path = null, $code = 302){
-			// TODO: Implement setRedirect() method.
+		public function beforeHeaderRead($data, $readingIndex){
+			/** Meta Header Read */
+			if($readingIndex===0){
+				list($protocol, $code, $message) = explode(' ',$data,3);
+				$this->code = intval($code);
+				$this->message = $message;
+				return false;
+			}
+			return null;
 		}
+
+
 	}
 }
 

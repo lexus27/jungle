@@ -4,8 +4,8 @@
  * Author: Kutuzov Alexey Konstantinovich <lexus.1995@mail.ru>
  * Project: jungle
  * IDE: PhpStorm
- * Date: 02.10.2016
- * Time: 12:30
+ * Date: 03.10.2016
+ * Time: 16:04
  */
 namespace Jungle\Util\Communication\Integrator {
 
@@ -16,10 +16,20 @@ namespace Jungle\Util\Communication\Integrator {
 	interface MethodInterface{
 
 		/**
-		 * @param $data
-		 * @return mixed
+		 * @param SpecificationInterface $specification
+		 * @return $this
 		 */
-		public function __invoke($data);
+		public function setSpecification(SpecificationInterface $specification);
+
+		/**
+		 * @return SpecificationInterface
+		 */
+		public function getSpecification();
+
+		/**
+		 * @return void
+		 */
+		public function execute();
 
 	}
 }

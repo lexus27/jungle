@@ -242,7 +242,7 @@ abstract class Keyword implements TransientInterface , \Serializable{
 	public function toArray(){
 		return [
 			'identifier' => $this->getIdentifier(),
-			'options' => $this->_OptionContainerTrait_options
+			'options' => $this->_srv_options
 		];
 	}
 

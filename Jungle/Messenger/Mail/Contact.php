@@ -12,7 +12,7 @@ namespace Jungle\Messenger\Mail {
 	 * Class Destination
 	 * @package Jungle\Messenger\Mail
 	 */
-	class Contact implements IContact{
+	class Contact implements ContactInterface{
 
 		/** @var  int */
 		protected $type = self::TYPE_MAIN;
@@ -76,7 +76,7 @@ namespace Jungle\Messenger\Mail {
 		 * @return Contact
 		 */
 		public static function getContact($contact){
-			if($contact instanceof IContact){
+			if($contact instanceof ContactInterface){
 				return $contact;
 			}elseif(is_string($contact)){
 				$o = new Contact();

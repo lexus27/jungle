@@ -10,6 +10,7 @@
 namespace Jungle\Application\Dispatcher {
 
 	use Jungle\Application\Dispatcher;
+	use Jungle\Application\Notification\Responsible\NeedIntroduce;
 	use Jungle\Application\Router\RoutingInterface;
 
 	/**
@@ -96,6 +97,13 @@ namespace Jungle\Application\Dispatcher {
 		 * @return mixed
 		 */
 		public function getParam($key, $default = null);
+
+		/**
+		 * @param $key
+		 * @param bool $allowNull
+		 * @throws NeedIntroduce
+		 */
+		public function requireParam($key, $allowNull = true);
 
 		/**
 		 * @param $key
@@ -215,6 +223,17 @@ namespace Jungle\Application\Dispatcher {
 		public function __unset($key);
 
 		/**
+		 * @param $canceled
+		 * @return mixed
+		 */
+		public function setCanceled($canceled);
+
+		/**
+		 * @return bool
+		 */
+		public function isCanceled();
+
+		/**
 		 * @return bool
 		 */
 		public function isCompleted();
@@ -308,6 +327,11 @@ namespace Jungle\Application\Dispatcher {
 		public function setTask($key, $task);
 
 		/**
+		 * @return array[]
+		 */
+		public function getTasks();
+
+		/**
 		 * @param bool|true $rendering
 		 * @return $this
 		 */
@@ -317,6 +341,9 @@ namespace Jungle\Application\Dispatcher {
 		 * @return bool
 		 */
 		public function isRendering();
+
+
+
 
 	}
 }

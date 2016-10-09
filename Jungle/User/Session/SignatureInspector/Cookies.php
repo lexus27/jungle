@@ -24,10 +24,10 @@ namespace Jungle\User\Session\SignatureInspector {
 		protected $http_only;
 
 		/** @var  bool|null */
-		protected $https;
+		protected $secure;
 
 		/** @var  string|null */
-		protected $hostname;
+		protected $domain;
 
 		/** @var  string|null */
 		protected $uri;
@@ -65,9 +65,9 @@ namespace Jungle\User\Session\SignatureInspector {
 				$signature,
 				$this->getExpires($lifetime),
 				$this->uri,
-				$this->https,
+				$this->secure,
 				$this->http_only,
-				$this->hostname
+				$this->domain
 			);
 			return $this;
 		}
