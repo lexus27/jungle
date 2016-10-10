@@ -91,14 +91,22 @@ namespace Jungle\Util\Specifications\Hypertext {
 			if(is_string($this->cache) && $this->cacheable){
 				return $this->cache;
 			}else{
-				$writer = $this->getWriteProcessor();
-				$writer->setDocument($this);
-				$source = $writer->process('');
-				if($this->cacheable){
-					$this->cache = (string)$source;
-				}
-				return $source;
+				return $this->render();
 			}
+		}
+
+		/**
+		 * @return StreamInteractionInterface|StreamInterface|string
+		 * @throws \Exception
+		 */
+		protected function render(){
+			$writer = $this->getWriteProcessor();
+			$writer->setDocument($this);
+			$source = $writer->process('');
+			if($this->cacheable){
+				$this->cache = (string)$source;
+			}
+			return $source;
 		}
 
 

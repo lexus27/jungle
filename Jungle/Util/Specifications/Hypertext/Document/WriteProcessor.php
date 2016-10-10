@@ -57,25 +57,27 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 			}
 			$generated = !$source;
 			$this->source = !$source?'':$source;
-
-			$this->sourceBeforeProcess($generated);
-			$this->beforeProcess();
-
-			$this->beforeHeaders();
-			$this->headers();
-			$this->afterHeaders();
-
-			$this->beforeContents();
-			$this->contents();
-			$this->afterContents();
-
-			$this->afterProcess();
-			$this->sourceAfterProcess($generated);
-
-			$this->completed = true;
-			return $this->source;
+			try{
+				$this->sourceBeforeProcess($generated);
+				$this->beforeProcess();
+				$this->beforeHeaders();
+				if($this->completed === false){
+					$this->headers();
+					$this->afterHeaders();
+					$this->beforeContents();
+					if($this->completed === false){
+						$this->contents();
+					}
+					$this->afterContents();
+				}
+				$this->afterProcess();
+				$this->sourceAfterProcess($generated);
+				$this->completed = true;
+				return $this->source;
+			}finally{
+				$this->continueProcess();
+			}
 		}
-
 		/**
 		 * @param $contents
 		 * @return $this
@@ -149,16 +151,6 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 		}
 
 		/**
-		 *
-		 */
-		protected function afterHeaders(){ }
-
-		/**
-		 *
-		 */
-		protected function beforeContents(){ }
-
-		/**
 		 * @return string
 		 */
 		protected function contents(){
@@ -178,11 +170,6 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 			}
 			return $content_string;
 		}
-
-		/**
-		 *
-		 */
-		protected function afterContents(){}
 
 
 

@@ -9,6 +9,7 @@
  */
 namespace Jungle\Http {
 	
+	use Jungle\Application\Strategy\Http;
 	use Jungle\Util\Specifications\Http\BrowserInterface;
 	use Jungle\Util\Value\UserAgent;
 
@@ -37,13 +38,24 @@ namespace Jungle\Http {
 		/** @var  Request */
 		protected $request;
 
+
+
+		protected $desired_media_types;
+
+		protected $desired_languages;
+
+		protected $desired_charsets;
+
+
+
+
+
 		/**
 		 * Client constructor.
 		 * @param \Jungle\Http\Request $request
 		 */
 		public function __construct(Request $request){
 			$this->request = $request;
-			$this->languages = self::parseAcceptLanguage($request->getHeader('Accept-Language','en'));
 
 			if($ua = $this->getUserAgent()){
 				$processed = UserAgent::parse($ua);
@@ -98,60 +110,67 @@ namespace Jungle\Http {
 
 
 		/**
-		 * @return string
+		 * @return string|null
 		 */
 		public function getBestLanguage(){
-			return !empty($this->languages)?$this->languages[0]:'en';
+			$items = $this->getDesiredLanguages();
+			return !empty($items)?$items[0]:null;
 		}
 
 		/**
-		 * @return string[]
-		 */
-		public function getDesiredLanguages(){
-			return $this->languages;
-		}
-
-
-		/**
-		 * @return mixed
-		 */
-		public function getBestMediaType(){
-			// TODO: Implement getBestMediaType() method.
-		}
-
-		/**
-		 * @return mixed
-		 */
-		public function getDesiredMediaTypes(){
-			// TODO: Implement getDesiredMediaTypes() method.
-		}
-
-		/**
-		 * @return mixed
-		 */
-		public function getBestCharset(){
-			// TODO: Implement getBestCharset() method.
-		}
-
-
-		/**
-		 * @param $subject
 		 * @return array
 		 */
-		public static function parseAcceptLanguage($subject){
-			$subject = explode(';',$subject);
-			$languages = [];
-			foreach($subject as $lang){
-				if(preg_match('/((([a-zA-Z]+)(-[a-zA-Z]+)?)|\*)/',$lang,$matches)){
-					if(isset($matches[3]) && $matches[3]){
-						$value = strtolower($matches[3]);
-						if(!in_array($value,$languages, true)){
-							$languages[] = $value;
-						}
-					}
+		public function getDesiredLanguages(){
+			if($this->desired_languages === null){
+				if(!$_SERVER['HTTP_ACCEPT_LANGUAGE']){
+					return null;
 				}
+				$this->desired_languages = \Jungle\Util\Communication\Http::parseAccept($_SERVER['HTTP_ACCEPT_LANGUAGE']);
 			}
-			return $languages;
+			return $this->desired_languages;
+		}
+
+
+		/**
+		 * @return string|null
+		 */
+		public function getBestMediaType(){
+			$items = $this->getDesiredMediaTypes();
+			return !empty($items)?$items[0]:null;
+		}
+
+		/**
+		 * @return array
+		 */
+		public function getDesiredMediaTypes(){
+			if($this->desired_media_types === null){
+				if(!$_SERVER['HTTP_ACCEPT']){
+					return null;
+				}
+				$this->desired_media_types = \Jungle\Util\Communication\Http::parseAccept($_SERVER['HTTP_ACCEPT']);
+			}
+			return $this->desired_media_types;
+		}
+
+		/**
+		 * @return string|null
+		 */
+		public function getBestCharset(){
+			$items = $this->getDesiredCharsets();
+			return !empty($items)?$items[0]:null;
+		}
+
+		/**
+		 * @return array
+		 */
+		public function getDesiredCharsets(){
+			if($this->desired_charsets === null){
+				if(!$_SERVER['HTTP_ACCEPT_CHARSET']){
+					return null;
+				}
+				$this->desired_charsets = \Jungle\Util\Communication\Http::parseAccept($_SERVER['HTTP_ACCEPT_CHARSET']);
+			}
+			return $this->desired_charsets;
 		}
 
 	}

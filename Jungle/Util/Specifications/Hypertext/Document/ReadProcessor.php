@@ -66,30 +66,34 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 			}else{
 				$this->document->setContent(null);
 			}
+			try{
+				$this->sourceBeforeProcess($generated);
 
-			$this->sourceBeforeProcess($generated);
-			$this->beforeProcess();
+				$this->beforeProcess();
+				$this->beforeHeaders();
+				if($this->completed === false){
+					$this->headers();
+					$this->afterHeaders();
+					$this->beforeContents();
+					if($this->completed === false){
+						$contents = $this->contents();
+						if($contents){
+							$contents = $this->decodeContents($contents);
+							$this->handleContents($contents);
+						}else{
+							$this->handleContents(null);
+						}
+						$this->afterContents();
+					}
+					$this->afterProcess();
+				}
+				$this->sourceAfterProcess($generated);
 
-
-			$this->beforeHeaders();
-			$this->headers();
-			$this->afterHeaders();
-
-			$this->beforeContents();
-			$contents = $this->contents();
-			if($contents){
-				$contents = $this->decodeContents($contents);
-				$this->handleContents($contents);
-			}else{
-				$this->handleContents(null);
+				$this->completed = true;
+				return $this->document;
+			}finally{
+				$this->continueProcess();
 			}
-			$this->afterContents();
-
-			$this->afterProcess();
-			$this->sourceAfterProcess($generated);
-
-			$this->completed = true;
-			return $this->document;
 		}
 
 		/**
@@ -99,30 +103,6 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 			$this->document->beforeRead($this);
 		}
 
-		/**
-		 * @param $data
-		 * @param $i
-		 */
-		protected function handleLine($data, $i){
-			$data = rtrim($data,"\r\n");
-			if($data){
-				if($this->beforeHeaderSet($data,$i)!==false){
-					if($data = Header::parseHeaderRow($data)){
-						$this->document->setHeader($data[0],$data[1],false);
-					}
-				}
-			}else{
-				$this->process_headers = false;
-			}
-		}
-
-
-
-
-		/**
-		 *
-		 */
-		protected function beforeHeaders(){ }
 
 
 		/**
@@ -145,6 +125,32 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 		}
 
 		/**
+		 * @param $data
+		 * @param $i
+		 */
+		protected function handleLine($data, $i){
+			$data = rtrim($data,"\r\n");
+			if($data){
+				if($this->beforeHeaderRead($data,$i) !== false){
+					if($data = Header::parseHeaderRow($data)){
+						$this->document->setHeader($data[0],$data[1],false);
+					}
+				}
+			}else{
+				$this->process_headers = false;
+			}
+		}
+
+		/**
+		 * @param $data
+		 * @param $i
+		 * @return bool|void
+		 */
+		protected function beforeHeaderRead($data, $i){
+			return $this->document->beforeHeaderRead($data,$i);
+		}
+
+		/**
 		 *
 		 */
 		protected function afterHeaders(){
@@ -152,30 +158,21 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 		}
 
 		/**
-		 *
-		 */
-		protected function beforeContents(){ }
-
-		/**
 		 * @return string
 		 * @throws ConnectionClosed
 		 */
 		protected function contents(){
-			if(!$this->document->haveHeader('Transfer-Encoding','chunked')){
-				$length = $this->document->getHeader('Content-Length',null);
-				if($length!==null){
-					$length = intval($length);
-				}
-			}else{
-				$length = null;
+			$length = $this->document->getHeader('Content-Length',null);
+			if($length !== null){
+				$length = intval($length);
 			}
+
 			$content = '';
 			if($length === null && $this->source instanceof Memory){
 				$content = $this->source->read(-1);
 				if($content === false){
 					throw new ConnectionClosed('The server closed the connection');
 				}
-				$this->buffer($content);
 			}else{
 				$block_size = 4072;
 				while(!$this->source->isEof()){
@@ -184,7 +181,6 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 						if($data === false){
 							throw new ConnectionClosed('The server closed the connection');
 						}
-						$this->buffer($data);
 						$length = hexdec(trim($data));
 					}elseif($length > 0){
 						$read_length = $length > $block_size ? $block_size : $length;
@@ -193,7 +189,6 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 						if($data === false){
 							throw new ConnectionClosed('The server closed the connection');
 						}
-						$this->buffer($data);
 						$content.= $data;
 						if ($length <= 0) {
 							$this->source->seek(2,SEEK_CUR);
@@ -204,8 +199,7 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 					}
 				}
 			}
-
-
+			$this->buffer($content);
 			return $content;
 		}
 
@@ -228,11 +222,22 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 			$this->document->setContent($contents);
 		}
 
+		/**
+		 *
+		 */
 		protected function afterContents(){
 			$this->document->onContentsRead($this);
 		}
 
-		protected function beforeHeaderSet($data, $i){ }
+		/**
+		 *
+		 */
+		protected function afterProcess(){}
+
+
+
+
+
 
 
 	}

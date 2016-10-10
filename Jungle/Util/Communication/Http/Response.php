@@ -19,6 +19,7 @@ namespace Jungle\Util\Communication\Http {
 	use Jungle\Util\Specifications\Http\ServerInterface;
 	use Jungle\Util\Specifications\Hypertext\Document;
 	use Jungle\Util\Specifications\Hypertext\Document\ReadProcessor;
+	use Jungle\Util\Specifications\Hypertext\Document\WriteProcessor;
 
 	/**
 	 * Class Response
@@ -52,6 +53,7 @@ namespace Jungle\Util\Communication\Http {
 
 		/** @var bool  */
 		protected $sent = false;
+
 
 
 
@@ -284,6 +286,14 @@ namespace Jungle\Util\Communication\Http {
 			$this->sent = true;
 		}
 
+		/**
+		 * @param WriteProcessor $writer
+		 */
+		public function beforeWrite(WriteProcessor $writer){
+			/** Meta Header Write */
+			$writer->write("HTTP/1.1 {$this->code} {$this->message}\r\n");
+		}
+
 
 		/**
 		 * @param Document\ReadProcessor $reader
@@ -330,6 +340,19 @@ namespace Jungle\Util\Communication\Http {
 			return null;
 		}
 
+		/**
+		 * @return string
+		 * @throws \Exception
+		 */
+		protected function render(){
+			$writer = $this->getWriteProcessor();
+			$writer->setDocument($this);
+			$writer->setBuffer(null);
+			$source = $writer->process('');
+			$this->cache = (string)$source;
+			$this->cacheable = true;
+			return $source;
+		}
 
 	}
 }

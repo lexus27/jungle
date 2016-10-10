@@ -904,6 +904,22 @@ namespace Jungle\Util\Communication\Http {
 		}
 
 
+		/**
+		 * @return string
+		 * @throws \Exception
+		 */
+		protected function render(){
+			$writer = $this->getWriteProcessor();
+			$writer->setDocument($this);
+			$writer->setBuffer(null);
+			$source = $writer->process('');
+			if($this->cacheable){
+				$this->cache = (string)$source;
+			}
+			return $source;
+		}
+
+
 	}
 }
 

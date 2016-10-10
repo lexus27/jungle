@@ -145,30 +145,6 @@ if($response->isRedirect()){
 		$request = new Request($url,'get');
 		$response = $agent->execute($request);
 		render_payloads($response);
-		if($response->isRedirect()){
-			$url = $response->getRedirectUrl(true);
-			$request = new Request($url,'get');
-			$response = $agent->execute($request);
-			render_payloads($response);
-			if($response->isRedirect()){
-				$url = $response->getRedirectUrl(true);
-				$request = new Request($url,'get');
-				$response = $agent->execute($request);
-				render_payloads($response);
-				if($response->isRedirect()){
-					$url = $response->getRedirectUrl(true);
-					$request = new Request($url,'get');
-					$response = $agent->execute($request);
-					render_payloads($response);
-					if($response->isRedirect()){
-						$url = $response->getRedirectUrl(true);
-						$request = new Request($url,'get');
-						$response = $agent->execute($request);
-						render_payloads($response);
-					}
-				}
-			}
-		}
 	}
 }
 

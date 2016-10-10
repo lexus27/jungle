@@ -10,6 +10,7 @@
 namespace Jungle\Util\Communication\Http {
 	
 	use Jungle\Util\Communication\Connection\Stream\Socket;
+	use Jungle\Util\Communication\Http;
 	use Jungle\Util\ContentsAwareInterface;
 	use Jungle\Util\Specifications\Http\BrowserInterface;
 	use Jungle\Util\Specifications\Http\ClientInterface;
@@ -44,7 +45,7 @@ namespace Jungle\Util\Communication\Http {
 		protected $desired_languages = ['ru-RU','ru','en-US','en'];
 
 		/** @var  string */
-		protected $desired_charset = 'utf-8';
+		protected $desired_charsets = ['utf-8'];
 
 		/** @var  array */
 		protected $cookies_cache = [];
@@ -52,8 +53,20 @@ namespace Jungle\Util\Communication\Http {
 		/** @var array  */
 		protected $default_headers = [];
 
+
+		/** @var  bool  */
+		protected $support_referrer = false;
+
+		/** @var  bool */
+		protected $follow_location = false;
+
+		/** @var  bool  */
+		protected $follow_content_location = false;
+
+
 		/** @var  WriteProcessor */
 		protected $_write_processor;
+
 		/** @var  ReadProcessor */
 		protected $_read_processor;
 
@@ -63,28 +76,14 @@ namespace Jungle\Util\Communication\Http {
 		 * @param null $user_agent
 		 */
 		public function __construct($user_agent = null){
-			$this->desired_charset = ini_get('default_charset');
+			$this->desired_charsets = [ini_get('default_charset')];
 			$this->user_agent = $user_agent;
 			if($this->user_agent){
-				$a = UserAgent::parse($user_agent);
-				$this->platform = $a['platform'];
-				$this->browser  = $a['browser'];
-				$this->version  = $a['version'];
+				$this->setUserAgent($user_agent);
 			}
 		}
 
-		/**
-		 * @param null $user_agent
-		 */
-		public function setUserAgent($user_agent = null){
-			$this->user_agent = $user_agent;
-			if($this->user_agent){
-				$a = UserAgent::parse($user_agent);
-				$this->platform = $a['platform'];
-				$this->browser  = $a['browser'];
-				$this->version  = $a['version'];
-			}
-		}
+
 
 		/**
 		 * @return string
@@ -122,18 +121,32 @@ namespace Jungle\Util\Communication\Http {
 		}
 
 		/**
+		 * @param null $user_agent
+		 */
+		public function setUserAgent($user_agent = null){
+			$this->user_agent = $user_agent;
+			if($this->user_agent){
+				$a = UserAgent::parse($user_agent);
+				$this->platform = $a['platform'];
+				$this->browser  = $a['browser'];
+				$this->version  = $a['version'];
+			}
+		}
+
+		/**
 		 * @return string
 		 */
 		public function getUserAgent(){
 			return $this->user_agent;
 		}
 
-
 		/**
 		 * @param array $languages
+		 * @return $this
 		 */
 		public function setDesiredLanguages(array $languages){
 			$this->desired_languages = $languages;
+			return $this;
 		}
 
 		/**
@@ -174,11 +187,16 @@ namespace Jungle\Util\Communication\Http {
 		 * @return string|null
 		 */
 		public function getBestCharset(){
-			if(!$this->desired_charset){
-				return 'utf-8';
-			}
-			return $this->desired_charset;
+			return current($this->desired_charsets);
 		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getDesiredCharsets(){
+			return $this->desired_charsets;
+		}
+
 
 		/**
 		 * @param array $headers
@@ -214,7 +232,7 @@ namespace Jungle\Util\Communication\Http {
 		 * @return mixed
 		 */
 		public function getHost(){
-			return $_SERVER['SERVER_ADDR'];
+			return $_SERVER['HTTP_HOST'];
 		}
 
 		/**
@@ -255,7 +273,7 @@ namespace Jungle\Util\Communication\Http {
 		 * @return Response|ResponseInterface|Document
 		 */
 		public function post($url, array $params = null, array $files = null){
-			$request = new Request($url,'get');
+			$request = new Request($url,'post');
 			$request->setBrowser($this);
 			if($params){
 				$request->setPostParams($params);
@@ -303,39 +321,31 @@ namespace Jungle\Util\Communication\Http {
 
 			$socket->connect();
 
-			$this->onRequestPrepare($request);
+			$this->prepareRequest($request);
 
-			/** Request Sending... */
+			/** Request sending... */
 			$socket = $this->_getWriterFor($request)->process($socket);
 
 			/** Response reading... */
 			$response = $request->getResponse();
 			$response = $this->_getReaderFor($response)->process($socket);
 
-			$socket->close();
 
-			return $response;
-		}
+			$this->onResponse($response);
+			if($response->isRedirect()){
 
-		/**
-		 * @return string
-		 */
-		public function getAcceptLanguage(){
-			$languages = $this->getDesiredLanguages();
-			$languages = array_reverse($languages, false);
-			$count = count($languages);
-			$q = [];
-			foreach($languages as $i => $lang){
-				$p = round((((100 / $count) * ($i+1)) / 100),1);
-				$q[] =  $lang . ($p<1?(';q='.$p):'');
+
+
 			}
-			return implode(',', array_reverse($q));
+
+			$socket->close();
+			return $response;
 		}
 
 		/**
 		 * @param Request $request
 		 */
-		public function onRequestPrepare(Request $request){
+		public function prepareRequest(Request $request){
 			if($this->default_headers){
 				foreach($this->default_headers as $k => $h){
 					if(!$request->hasHeader($k)){
@@ -347,18 +357,44 @@ namespace Jungle\Util\Communication\Http {
 				$request->setHeader('User-Agent', $this->getUserAgent());
 			}
 			if(!$request->hasHeader('Accept-Language')){
-				$request->setHeader('Accept-Language', $this->getAcceptLanguage());
+				$request->setHeader('Accept-Language', Http::renderAccept($this->getDesiredLanguages()));
 			}
 			if(!$request->hasHeader('Accept-Charset')){
 				$request->setHeader('Accept-Charset', $this->getBestCharset());
 			}
-			$this->insertCookies($request);
+			$this->_insertCookies($request);
 		}
+
+
+		/**
+		 * @param Response $response
+		 */
+		public function onResponseHeadersLoaded(Response $response){
+			$cookies = $response->getCookies();
+			$domain_base = $response->getRequest()->getServer()->getDomainBase();
+			foreach($cookies as $cookie){
+				$this->cookies_cache[$domain_base][$cookie->getName()] = $cookie;
+			}
+		}
+
+		/**
+		 * @param Response $response
+		 */
+		public function onResponseContentsLoaded(Response $response){
+
+		}
+
+		/**
+		 * @param Response $response
+		 */
+		public function onResponse(Response $response){}
+
+
 
 		/**
 		 * @param Request $request
 		 */
-		protected function insertCookies(Request $request){
+		protected function _insertCookies(Request $request){
 			$server = $request->getServer();
 			$domain_base = $server->getDomainBase();
 			$domain = $server->getDomain();
@@ -393,32 +429,12 @@ namespace Jungle\Util\Communication\Http {
 		}
 
 		/**
-		 * @param Response $response
-		 */
-		public function onResponseHeadersLoaded(Response $response){
-			$cookies = $response->getCookies();
-			$domain_base = $response->getRequest()->getServer()->getDomainBase();
-			foreach($cookies as $cookie){
-				$this->cookies_cache[$domain_base][$cookie->getName()] = $cookie;
-			}
-		}
-
-		/**
-		 * @param Response $response
-		 */
-		public function onResponseContentsLoaded(Response $response){
-
-		}
-
-
-		/**
 		 * @param DocumentInterface $document
 		 * @return ReadProcessor
 		 */
 		protected function _getReaderFor(DocumentInterface $document){
 			if(!$this->_read_processor){
-				$this->_read_processor = new Document\ReadProcessor();
-				$this->_read_processor->setBufferToString();
+				$this->_read_processor = new Document\ReadProcessor(null,false,false,'');
 			}
 			return $this->_read_processor->setDocument($document);
 		}
@@ -429,8 +445,7 @@ namespace Jungle\Util\Communication\Http {
 		 */
 		protected function _getWriterFor(DocumentInterface $document){
 			if(!$this->_write_processor){
-				$this->_write_processor = new Document\WriteProcessor();
-				$this->_write_processor->setBufferToString();
+				$this->_write_processor = new Document\WriteProcessor(null,false,false,'');
 			}
 			return $this->_write_processor->setDocument($document);
 		}

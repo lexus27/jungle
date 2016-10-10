@@ -346,34 +346,26 @@ namespace Jungle\Util\Communication {
 
 
 		/**
-		 * @param string $uri
+		 * @param string $path
 		 * @param bool $decode
 		 * @param string $separator
 		 * @return array
 		 */
-		public static function parseUri($uri, $decode = false, $separator = '/'){
-			$uri = explode($separator,$uri);
-			if($decode){
-				foreach($uri as &$c){
-					$c = urldecode($c);
-				}
-			}
-			return array_filter($uri);
+		public static function parsePathArray($path, $decode = false, $separator = '/'){
+			$path = explode($separator,$path);
+			if($decode) foreach($path as &$c) $c = urldecode($c);
+			return array_filter($path);
 		}
 
 		/**
-		 * @param array $uri
+		 * @param array $path
 		 * @param bool|false $encode
 		 * @param string $separator
 		 * @return string
 		 */
-		public static function renderPath(array $uri, $encode = false,$separator = '/'){
-			if($encode){
-				foreach($uri as &$chunk){
-					$chunk = urlencode($chunk);
-				}
-			}
-			return implode($separator,$uri);
+		public static function renderPath(array $path, $encode = false,$separator = '/'){
+			if($encode) foreach($path as &$c) $c = urlencode($c);
+			return implode($separator,$path);
 		}
 
 		/**
