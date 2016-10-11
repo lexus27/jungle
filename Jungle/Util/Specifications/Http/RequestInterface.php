@@ -10,13 +10,13 @@
 namespace Jungle\Util\Specifications\Http {
 
 	use Jungle\User\AccessAuth\Auth;
-	use Jungle\Util\Specifications\Hypertext\HeaderRegistryInterface;
+	use Jungle\Util\Specifications\Hypertext\HeaderRegistryReadInterface;
 
 	/**
 	 * Interface RequestInterface
 	 * @package Jungle\Util\Specifications\Http
 	 */
-	interface RequestInterface extends HeaderRegistryInterface{
+	interface RequestInterface extends HeaderRegistryReadInterface{
 
 		/**
 		 * @return ResponseInterface

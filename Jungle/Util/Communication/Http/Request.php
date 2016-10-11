@@ -21,6 +21,7 @@ namespace Jungle\Util\Communication\Http {
 	use Jungle\Util\Specifications\Http\ServerInterface;
 	use Jungle\Util\Specifications\Hypertext\Content\Multipart;
 	use Jungle\Util\Specifications\Hypertext\Document;
+	use Jungle\Util\Specifications\Hypertext\Document\Processor;
 	use Jungle\Util\Specifications\Hypertext\Document\ReadProcessor;
 	use Jungle\Util\Specifications\Hypertext\Document\WriteProcessor;
 
@@ -44,6 +45,9 @@ namespace Jungle\Util\Communication\Http {
 
 		/** @var bool  */
 		protected $cacheable = true;
+
+		/** @var bool  */
+		protected $loading = false;
 
 		/** @var  string */
 		protected $auth_type;
@@ -82,12 +86,36 @@ namespace Jungle\Util\Communication\Http {
 		/** @var  ContentsAwareInterface[]  */
 		protected $files = [];
 
+		/** @var array  */
+		protected $options = [];
+		protected $host;
+
+		/**
+		 * @param bool|true $loading
+		 * @return $this
+		 */
+		public function setLoading($loading = true){
+			$this->loading = $loading;
+			return $this;
+		}
+
+		/**
+		 * @return bool
+		 */
+		public function isLoading(){
+			return $this->loading;
+		}
+
 		/**
 		 * Request constructor.
+		 * @param Agent $agent
 		 * @param string|null $url
 		 * @param null $method
 		 */
-		public function __construct($url = null, $method = null){
+		public function __construct(Agent $agent, $url = null, $method = null){
+
+			$this->setAgent($agent);
+
 			if($url!==null){
 				if(!is_string($url) && !is_array($url)){
 					throw new \InvalidArgumentException(__METHOD__. ' param $url, must be string or array');
@@ -102,6 +130,43 @@ namespace Jungle\Util\Communication\Http {
 			$this->time     = time();
 		}
 
+		/**
+		 * @param $key
+		 * @param $value
+		 * @return $this
+		 */
+		public function setOption($key, $value){
+			$this->options[$key] = $value;
+			return $this;
+		}
+
+		/**
+		 * @param $key
+		 * @param $default
+		 * @return mixed
+		 */
+		public function getOption($key, $default=null){
+			return isset($this->options[$key])?$this->options[$key]:$default;
+		}
+
+		/**
+		 * @param $key
+		 * @return $this
+		 */
+		public function removeOption($key){
+			unset($this->options[$key]);
+			return $this;
+		}
+
+		/**
+		 * @param array $options
+		 * @param bool|false $merge
+		 * @return $this
+		 */
+		public function setOptions(array $options = [ ], $merge = false){
+			$this->options = $merge?array_merge($this->options, $options):$options;
+			return $this;
+		}
 
 		/**
 		 * @return int
@@ -112,32 +177,25 @@ namespace Jungle\Util\Communication\Http {
 
 
 		/**
-		 * @return ResponseInterface
+		 * @return Response|ResponseInterface
 		 */
 		public function getResponse(){
 			if(!$this->response){
 				$this->response = new Response();
 				$this->response->setRequest($this);
-				$this->response->setServer($this->server);
 			}
 			return $this->response;
 		}
 
 		/**
-		 * @param ServerInterface $server
-		 * @return mixed
-		 */
-		public function setServer(ServerInterface $server){
-			$this->server = $server;
-			return $this;
-		}
-
-		/**
-		 * @return ServerInterface
+		 * @return Server|ServerInterface
 		 */
 		public function getServer(){
 			return $this->server;
 		}
+
+
+
 
 
 		/**
@@ -157,10 +215,12 @@ namespace Jungle\Util\Communication\Http {
 		}
 
 		/**
-		 * @return string
+		 * @param ClientInterface $client
+		 * @return $this
 		 */
-		public function getUserAgent(){
-			return $this->browser->getUserAgent();
+		public function setClient(ClientInterface $client){
+			$this->client = $client;
+			return $this;
 		}
 
 		/**
@@ -170,6 +230,28 @@ namespace Jungle\Util\Communication\Http {
 			return $this->client;
 		}
 
+		/**
+		 * @param Agent $agent
+		 */
+		public function setAgent(Agent $agent){
+			$this->client = $agent;
+			$this->browser = $agent;
+		}
+
+		/**
+		 * @return Agent
+		 */
+		public function getAgent(){
+			return $this->browser;
+		}
+
+
+		/**
+		 * @return string
+		 */
+		public function getUserAgent(){
+			return $this->browser->getUserAgent();
+		}
 
 		/**
 		 * @param Auth $auth
@@ -738,16 +820,9 @@ namespace Jungle\Util\Communication\Http {
 		 * @return $this
 		 */
 		public function setUrl($url){
-			if(!is_array($url)){
-				$url = URL::parseUrl($url,true);
-			}
+			$url = URL::parseUrl($url,true);
 			if(!$url['scheme']){
 				$url['scheme'] = 'http';
-			}
-			if($url['host']){
-				$server = new Server();
-				$server->setHost($url['host']);
-				$this->server = $server;
 			}
 			if(!$url['path']){
 				$url['path'] = '/';
@@ -755,6 +830,8 @@ namespace Jungle\Util\Communication\Http {
 			if(!$url['query']){
 				$url['query'] = [];
 			}
+
+			$this->host = $url['host'];
 			$this->setScheme($url['scheme']);
 			$this->setUri($url['path']);
 			$this->setQueryParams($url['query']);
@@ -768,7 +845,7 @@ namespace Jungle\Util\Communication\Http {
 		public function getUrl(){
 			return URL::renderUrl([
 				'scheme'  => $this->getScheme()?:'http',
-				'host'    => $this->server->getHost(),
+				'host'    => $this->host,
 				'path'    => $this->getUri(),
 				'query'   => $this->query_parameters,
 				'fragment'=> $this->fragment,
@@ -803,68 +880,95 @@ namespace Jungle\Util\Communication\Http {
 		}
 
 		/**
+		 * @param Processor $processor
+		 * @return mixed|void
+		 */
+		public function beforeProcessStart(Processor $processor){
+
+			if($processor instanceof WriteProcessor){
+				/** Propagation */
+				$this->getAgent()->beforeRequest($this, $processor);
+
+
+
+				/** Prepare Content */
+				if(!$this->content && (($hasFiles = !empty($this->files)) || $this->post_parameters)){
+
+					$this->method = 'post';
+
+					if(!$hasFiles){
+						$this->setHeader('Content-Type','application/x-www-form-urlencoded');
+						$content = URL::renderParams($this->post_parameters);
+					}else{
+						$content = new Multipart();
+						$content->setMultipartType('form-data');
+						if($this->post_parameters){
+							foreach($this->post_parameters as $key => $value){
+								$document = new Document();
+								$document->setHeader('Content-Disposition', [
+									'form-data', 'params' => [
+										'name' => $key
+									],
+								]);
+								$document->setContent($value);
+								$content->addPart($document);
+							}
+						}
+
+						if($this->files){
+							foreach($this->files as $key => $file){
+								$document = new Document();
+								if(!is_string($key)){
+									$key = 'file['.$key.']';
+								}
+								$document->setHeader('Content-Disposition',[
+									'form-data', 'params' => [
+										'name' => $key,
+										'filename' => $file->getBasename()
+									],
+								]);
+								$document->setHeader('Content-Transfer-Encoding',"base64");
+								$document->setHeader('Content-Type',$file->getMediaType());
+								$document->setContent($file->getContents());
+								$content->addPart($document);
+							}
+						}
+					}
+					$this->content = $content;
+
+				}
+				/** Propagation */
+				$this->getAgent()->checkCache($this);
+			}
+		}
+
+
+		/**
 		 * @param WriteProcessor $writer
 		 * @return void
 		 */
 		public function beforeWrite(WriteProcessor $writer){
-			/** Host */
-			$this->setHeader('Host', $this->server->getHost());
-
-			/** Prepare Content */
-			if(!$this->content && (($hasFiles = !empty($this->files)) || $this->post_parameters)){
-
-				$this->method = 'post';
-
-				if(!$hasFiles){
-					$this->setHeader('Content-Type','application/x-www-form-urlencoded');
-					$content = URL::renderParams($this->post_parameters);
-				}else{
-					$content = new Multipart();
-					$content->setMultipartType('form-data');
-					if($this->post_parameters){
-						foreach($this->post_parameters as $key => $value){
-							$document = new Document();
-							$document->setHeader('Content-Disposition', [
-								'form-data', 'params' => [
-									'name' => $key
-								],
-							]);
-							$document->setContent($value);
-							$content->addPart($document);
-						}
-					}
-
-					if($this->files){
-						foreach($this->files as $key => $file){
-							$document = new Document();
-							if(!is_string($key)){
-								$key = 'file['.$key.']';
-							}
-							$document->setHeader('Content-Disposition',[
-								'form-data', 'params' => [
-									'name' => $key,
-									'filename' => $file->getBasename()
-								],
-							]);
-							$document->setHeader('Content-Transfer-Encoding',"base64");
-							$document->setHeader('Content-Type',$file->getMediaType());
-							$document->setContent($file->getContents());
-							$content->addPart($document);
-						}
-					}
-				}
-				$this->content = $content;
-			}
+			$this->server->beforeRequest($this, $writer);
 			/** Meta Header Write */
-			$writer->write(strtoupper($this->method).' '.$this->getFullPath().' ' . "HTTP/1.1\r\n");
+			$writer->write(strtoupper($this->method).' '.$this->getFullPath().' ' . "{$this->server->getProtocol()}\r\n");
+		}
+
+		/**
+		 * @param WriteProcessor $writer
+		 * @return mixed|void
+		 */
+		public function continueWrite(WriteProcessor $writer){
+			$this->loading = false;
 		}
 
 		/**
 		 * @param ReadProcessor $reader
 		 */
-		public function onContentsRead(ReadProcessor $reader){
+		public function afterRead(ReadProcessor $reader){
 			$this->cache = $reader->getBuffered();
 		}
+
+
 
 
 		/**
@@ -917,6 +1021,31 @@ namespace Jungle\Util\Communication\Http {
 				$this->cache = (string)$source;
 			}
 			return $source;
+		}
+
+		protected $response_reused = false;
+
+		/**
+		 * @return bool
+		 */
+		public function isReusedResponse(){
+			return $this->response_reused;
+		}
+
+		/**
+		 * @param bool|true $reused
+		 * @return $this
+		 */
+		public function setReusedResponse($reused = true){
+			$this->response_reused = $reused;
+			return $this;
+		}
+
+		/**
+		 * @return bool
+		 */
+		public function isSent(){
+			return isset($this->options[Agent::EXECUTION_STREAM]);
 		}
 
 

@@ -67,8 +67,8 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 				$this->document->setContent(null);
 			}
 			try{
+				$this->checkBeforeStart();
 				$this->sourceBeforeProcess($generated);
-
 				$this->beforeProcess();
 				$this->beforeHeaders();
 				if($this->completed === false){
@@ -91,10 +91,15 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 
 				$this->completed = true;
 				return $this->document;
+			}catch(Document\Exception\EarlyException $e){
+				$this->completed = true;
+				return $this->document;
 			}finally{
 				$this->continueProcess();
 			}
 		}
+
+
 
 		/**
 		 *
@@ -162,6 +167,7 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 		 * @throws ConnectionClosed
 		 */
 		protected function contents(){
+			$chunked = $this->document->haveHeader('Transfer-Encoding','chunked');
 			$length = $this->document->getHeader('Content-Length',null);
 			if($length !== null){
 				$length = intval($length);
@@ -191,7 +197,9 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 						}
 						$content.= $data;
 						if ($length <= 0) {
-							$this->source->seek(2,SEEK_CUR);
+							if($chunked){
+								$this->source->seek(2,SEEK_CUR);
+							}
 							$length = false;
 						}
 					}else{
@@ -226,16 +234,21 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 		 *
 		 */
 		protected function afterContents(){
-			$this->document->onContentsRead($this);
+			$this->document->afterRead($this);
 		}
 
 		/**
 		 *
 		 */
+		protected function continueProcess(){
+			$this->document->continueRead($this);
+		}
+
+
+		/**
+		 *
+		 */
 		protected function afterProcess(){}
-
-
-
 
 
 

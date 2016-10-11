@@ -8,14 +8,29 @@
  * Time: 14:41
  */
 namespace Jungle\Util\Communication\Http\Agent {
-	
-	use Jungle\Util\Communication\Connection\Stream\Socket;
-	use Jungle\Util\Communication\Connection\StreamInterface;
+
 	use Jungle\Util\Communication\Http\Agent;
 	use Jungle\Util\Communication\Http\Request;
 	use Jungle\Util\Communication\Http\Response;
 
 	/**
+	 * Это единица обращения.
+	 * В обращения складываются цепочки запросов-ответов из Редиректов.
+	 * Обращение важно с точки зрения "истории" и навигации "вперед" / "назад"
+	 *
+	 * Поток не обязательно закрывать между запросами,
+	 * если поток подключен к одному и тому же адресу с портом, то закрытие и открытие между запросами, увеличит время выполнения
+	 *
+	 * Treatment Призван группировать серию запрос-ответ
+	 *
+	 * Где между запросом и конечным ответом есть дополнительные цепочки.
+	 *
+	 * Запрос - Ответ(Location)
+	 * Запрос - Ответ(Location)
+	 * Запрос - Ответ (Result)
+	 *
+	 * Между каждой серией Браузер должен сохранять куки и кешировать ответы, которые требуется кешировать
+	 *
 	 * Class Treatment
 	 * @package Jungle\Util\Communication\Http
 	 */
@@ -27,20 +42,14 @@ namespace Jungle\Util\Communication\Http\Agent {
 		/** @var  Request */
 		protected $request;
 
-		/** @var  StreamInterface */
-		protected $stream;
-
-
 		/**
 		 * Treatment constructor.
 		 * @param Agent $agent
 		 * @param Request|null $request
-		 * @param StreamInterface|null $stream
 		 */
-		public function __construct(Agent $agent, Request $request = null, StreamInterface $stream = null){
-			$this->request = $request;
-			$this->stream = $stream;
+		public function __construct(Agent $agent, Request $request = null){
 			$this->agent = $agent;
+			$this->request = $request;
 		}
 
 		/**
@@ -59,41 +68,9 @@ namespace Jungle\Util\Communication\Http\Agent {
 		}
 
 
-		/**
-		 * @param StreamInterface $stream
-		 * @return $this
-		 */
-		public function setStream(StreamInterface $stream){
-			$this->stream = $stream;
-			return $this;
-		}
-		/**
-		 * @return StreamInterface
-		 */
-		public function getStream(){
-			return $this->stream;
-		}
-
-
-
-
-
 
 		public function execute(){
 			$request = $this->request;
-			if(!$this->stream){
-				$this->stream = new Socket([
-					'host'          => $request->getServer()->getHost(),
-					'port'          => $request->isSecure()?443:$request->getServer()->getPort(),
-					'transport'     => $request->isSecure()?'ssl':null,
-					'timeout'       => null,
-				]);
-			}
-
-			$this->stream->connect();
-
-
-
 
 
 
@@ -106,6 +83,32 @@ namespace Jungle\Util\Communication\Http\Agent {
 		 * @param Response $response
 		 */
 		public function onResponse(Response $response){
+
+		}
+
+		/**
+		 * @param Request $request
+		 */
+		protected function _series(Request $request){
+			$this->agent->normalizeRequest($request);
+			$streamer = $this->agent->getNetworkManager();
+			$this->agent->execute();
+			$stream = $streamer->prepareStream($request->getServer()->getIp(),$request->isSecure());
+			$stream->connect();
+			$response = $this->agent->process($request, $stream);
+			$this->agent->onResponse($response);
+		}
+
+
+		protected function successTreatment(){
+
+		}
+
+		protected function failureTreatment(){
+
+		}
+
+		protected function continueTreatment(){
 
 		}
 

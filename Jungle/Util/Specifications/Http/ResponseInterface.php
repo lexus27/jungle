@@ -9,13 +9,13 @@
  */
 namespace Jungle\Util\Specifications\Http {
 
-	use Jungle\Util\Specifications\Hypertext\HeaderRegistryInterface;
+	use Jungle\Util\Specifications\Hypertext\HeaderRegistryReadInterface;
 
 	/**
 	 * Interface ResponseInterface
 	 * @package Jungle\Util\Specifications\Http
 	 */
-	interface ResponseInterface extends HeaderRegistryInterface{
+	interface ResponseInterface extends HeaderRegistryReadInterface{
 
 		/**
 		 * @return RequestInterface

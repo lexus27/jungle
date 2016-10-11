@@ -4,46 +4,12 @@
  * Author: Kutuzov Alexey Konstantinovich <lexus.1995@mail.ru>
  * Project: jungle
  * IDE: PhpStorm
- * Date: 05.10.2016
- * Time: 0:06
+ * Date: 11.10.2016
+ * Time: 19:30
  */
 namespace Jungle\Util\Specifications\Hypertext {
-
-	/**
-	 * Interface HeaderRegistryInterface
-	 * @package Jungle\Util\Specifications\Hypertext
-	 */
-	interface HeaderRegistryInterface extends HeaderRegistryReadInterface, HeaderRegistryWriteInterface{
-
-		/**
-		 * @param $key
-		 * @param $value
-		 * @param bool|false $reset
-		 * @return $this
-		 */
-		public function setHeader($key, $value, $reset = false);
-
-		/**
-		 * @param $key
-		 * @param $value
-		 * @param bool $reset
-		 * @return $this
-		 */
-		public function mergeHeader($key, array $value, $reset = false);
-
-		/**
-		 * @param $key
-		 * @param $value
-		 * @return $this
-		 */
-		public function appendHeader($key, $value);
-
-		/**
-		 * @param $key
-		 * @param $value
-		 * @return $this
-		 */
-		public function prependHeader($key, $value);
+	
+	interface HeaderRegistryReadInterface{
 
 		/**
 		 * @param $key
@@ -86,25 +52,7 @@ namespace Jungle\Util\Specifications\Hypertext {
 		 */
 		public function countHeader($key);
 
-		/**
-		 * @param $key
-		 * @return $this
-		 */
-		public function removeHeader($key);
 
-		/**
-		 * @param $key
-		 * @param null $default
-		 * @return mixed
-		 */
-		public function shiftHeader($key, $default = null);
-
-		/**
-		 * @param $key
-		 * @param null $default
-		 * @return mixed
-		 */
-		public function popHeader($key, $default = null);
 
 		/**
 		 * @param $key
@@ -121,14 +69,6 @@ namespace Jungle\Util\Specifications\Hypertext {
 		public function getHeaderLast($key, $default = null);
 
 		/**
-		 * @param array $headers
-		 * @param bool $merge
-		 * @param bool $pairs
-		 * @return $this
-		 */
-		public function setHeaders(array $headers, $merge = false, $pairs = false);
-
-		/**
 		 * @return array
 		 */
 		public function getHeaders();
@@ -137,6 +77,7 @@ namespace Jungle\Util\Specifications\Hypertext {
 		 * @return array
 		 */
 		public function getHeaderPairs();
+
 
 	}
 }

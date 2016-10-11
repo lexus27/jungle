@@ -211,6 +211,10 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 			}
 		}
 
+		protected function checkBeforeStart(){
+			$this->document->beforeProcessStart($this);
+		}
+
 		protected function beforeProcess(){}
 
 		protected function afterHeaders(){}

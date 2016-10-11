@@ -293,15 +293,6 @@ namespace Jungle\Http {
 		}
 
 		/**
-		 * @param ServerInterface $server
-		 * @return mixed
-		 * @throws \Exception
-		 */
-		public function setServer(ServerInterface $server){
-			throw new \Exception('Not effect');
-		}
-
-		/**
 		 * @return ServerInterface
 		 */
 		public function getServer(){

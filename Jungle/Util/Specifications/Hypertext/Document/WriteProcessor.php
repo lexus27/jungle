@@ -58,6 +58,7 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 			$generated = !$source;
 			$this->source = !$source?'':$source;
 			try{
+				$this->checkBeforeStart();
 				$this->sourceBeforeProcess($generated);
 				$this->beforeProcess();
 				$this->beforeHeaders();
@@ -74,10 +75,21 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 				$this->sourceAfterProcess($generated);
 				$this->completed = true;
 				return $this->source;
+			}catch(Document\Exception\EarlyException $e){
+				$this->completed = true;
+				return $this->source;
 			}finally{
 				$this->continueProcess();
 			}
 		}
+
+		/**
+		 *
+		 */
+		protected function continueProcess(){
+			$this->document->continueWrite($this);
+		}
+
 		/**
 		 * @param $contents
 		 * @return $this
@@ -136,6 +148,12 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 			$this->write("\r\n");
 		}
 
+		/**
+		 *
+		 */
+		protected function afterHeaders(){
+			$this->document->onHeadersWrite($this);
+		}
 		/**
 		 * @param $key
 		 * @param $value

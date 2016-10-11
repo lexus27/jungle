@@ -485,9 +485,6 @@ namespace Jungle\Util\Communication {
 			if($chunks[self::V_HOST]){
 				$url.=$chunks[self::V_HOST];
 			}
-			if($chunks[self::V_HOST]){
-				$url.=$chunks[self::V_HOST];
-			}
 			if($chunks[self::V_PORT]){
 				$url.=':'.$chunks[self::V_PORT];
 			}

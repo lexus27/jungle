@@ -17,6 +17,11 @@ namespace Jungle\Util\Communication\Connection\Stream {
 	 * @package Jungle\Util\Communication\Connection
 	 */
 	class Socket extends Stream{
+
+		/**
+		 * @param array $config
+		 * @return $this
+		 */
 		public function setConfig(array $config){
 			$this->config = array_replace([
 				'host'          => null,
@@ -24,6 +29,7 @@ namespace Jungle\Util\Communication\Connection\Stream {
 				'transport'     => null,
 				'timeout'       => null,
 			], $config);
+			return $this;
 		}
 
 		/**
