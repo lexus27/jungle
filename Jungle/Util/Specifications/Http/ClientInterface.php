@@ -36,16 +36,6 @@ namespace Jungle\Util\Specifications\Http {
 		public function getPort();
 
 
-		/**
-		 * @return bool
-		 */
-		public function isProxied();
-
-		/**
-		 * @return ProxyInterface
-		 */
-		public function getProxy();
-
 	}
 }
 

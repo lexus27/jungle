@@ -19,6 +19,7 @@ namespace Jungle\Util\Communication\Http {
 	use Jungle\Util\Specifications\Http\ServerInterface;
 	use Jungle\Util\Specifications\Hypertext\Document;
 	use Jungle\Util\Specifications\Hypertext\Document\ReadProcessor;
+	use Jungle\Util\Specifications\Hypertext\Document\WriteProcessor;
 
 	/**
 	 * Class Response
@@ -26,17 +27,8 @@ namespace Jungle\Util\Communication\Http {
 	 */
 	class Response extends Document implements ResponseInterface,ResponseSettableInterface, ResponseOnClientInterface{
 
-		/** @var  Server */
-		protected $server;
-
 		/** @var  Request */
 		protected $request;
-
-		/** @var  string */
-		protected $plain_response;
-
-		/** @var  string */
-		protected $plain_request;
 
 		/** @var  int */
 		protected $code;
@@ -47,39 +39,57 @@ namespace Jungle\Util\Communication\Http {
 		/** @var  Cookie[]  */
 		protected $cookies = [];
 
-		/** @var  array|null */
-		protected $redirect;
+		/** @var  bool  */
+		protected $accepted = false;
 
-		/** @var bool  */
-		protected $sent = false;
+		/** @var  bool  */
+		protected $reused = false;
 
+		/** @var  bool  */
+		protected $loading = false;
 
 
 		/**
-		 * @return RequestInterface
+		 * @return Request|RequestInterface
 		 */
 		public function getRequest(){
 			return $this->request;
 		}
 
 		/**
-		 * @return ServerInterface
+		 * @return Server|ServerInterface
 		 */
 		public function getServer(){
-			return $this->server;
+			return $this->request->getServer();
 		}
 
+		/**
+		 * @param bool|true $loading
+		 * @return $this
+		 */
+		public function setLoading($loading = true){
+			$this->loading = $loading;
+			return $this;
+		}
 
 		/**
-		 * @param $code
-		 * @return mixed
+		 * @return bool
+		 */
+		public function isLoading(){
+			return $this->loading;
+		}
+
+		/**
+		 * @param int $code
+		 * @return $this
 		 */
 		public function setCode($code){
 			$this->code = $code;
+			return $this;
 		}
 
 		/**
-		 * @return mixed
+		 * @return int
 		 */
 		public function getCode(){
 			return $this->code;
@@ -100,13 +110,6 @@ namespace Jungle\Util\Communication\Http {
 		 */
 		public function getMessage(){
 			return $this->message;
-		}
-
-		/**
-		 * @return mixed
-		 */
-		public function getContent(){
-			return $this->content;
 		}
 
 		/**
@@ -178,15 +181,6 @@ namespace Jungle\Util\Communication\Http {
 		}
 
 		/**
-		 * @param ServerInterface $server
-		 * @return mixed
-		 */
-		public function setServer(ServerInterface $server){
-			$this->server = $server;
-			return $this;
-		}
-
-		/**
 		 * @param array|string $key
 		 * @param $value
 		 * @param int $expires
@@ -244,15 +238,6 @@ namespace Jungle\Util\Communication\Http {
 		}
 
 		/**
-		 * @param $content
-		 * @return mixed
-		 */
-		public function setContent($content = null){
-			$this->content = $content;
-			return $this;
-		}
-
-		/**
 		 * @param $type
 		 * @return mixed
 		 */
@@ -270,18 +255,13 @@ namespace Jungle\Util\Communication\Http {
 			return $this;
 		}
 
-		/**
-		 * @return bool
-		 */
-		public function isSent(){
-			return $this->sent;
-		}
 
 		/**
-		 * @return void
+		 * @param WriteProcessor $writer
 		 */
-		public function send(){
-			$this->sent = true;
+		public function beforeWrite(WriteProcessor $writer){
+			/** Meta Header Write */
+			$writer->write("HTTP/1.1 {$this->code} {$this->message}\r\n");
 		}
 
 
@@ -290,6 +270,7 @@ namespace Jungle\Util\Communication\Http {
 		 * @return mixed
 		 */
 		public function onHeadersRead(Document\ReadProcessor $reader){
+			$this->accepted = true;
 			$collection = $this->getHeaderCollection('Set-Cookie');
 			foreach($collection as $cookieString){
 				$cookie = Http::parseCookieString($cookieString);
@@ -297,21 +278,33 @@ namespace Jungle\Util\Communication\Http {
 			}
 
 			/** @var Agent $browser */
-			$browser = $this->getRequest()->getBrowser();
-			$browser->onResponseHeadersLoaded($this);
-
+			$request = $this->request;
+			$agent = $request->getAgent();
+			$agent->onResponseHeadersLoaded($this,$request);
+			$agent->updateCacheHeaders($this,$request);
 		}
 
 		/**
 		 * @param ReadProcessor $reader
 		 */
-		public function onContentsRead(ReadProcessor $reader){
-			$this->cache = $reader->getBuffered();
-			/** @var Agent $browser */
-			$browser = $this->getRequest()->getBrowser();
-			$browser->onResponseContentsLoaded($this);
+		public function afterRead(ReadProcessor $reader){
+			/** Accept response and pass stream */
+			$request = $this->request;
+
+			$request->getServer()->onResponse($this, $request);
+			$agent = $request->getAgent();
+			$agent->onResponse($this, $request);
+			$agent->updateCache($this, $request);
+
 		}
 
+		/**
+		 * @param ReadProcessor $writer
+		 * @return mixed|void
+		 */
+		public function continueRead(ReadProcessor $writer){
+			$this->loading = false;
+		}
 
 
 		/**
@@ -330,6 +323,64 @@ namespace Jungle\Util\Communication\Http {
 			return null;
 		}
 
+		/**
+		 * @return string
+		 * @throws \Exception
+		 */
+		public function render(){
+			$writer = $this->getWriteProcessor();
+			$writer->setDocument($this);
+			$writer->setBuffer(null);
+			$source = $writer->process('');
+			$this->cache = (string)$source;
+			$this->cacheable = true;
+			return $source;
+		}
+
+
+		/**
+		 * @return bool
+		 */
+		public function isSent(){
+			return $this->accepted;
+		}
+
+		/**
+		 * @return void
+		 */
+		public function send(){
+			$this->accepted = true;
+		}
+
+
+		/**
+		 * @param Response $response
+		 * @param bool $onValidate
+		 * @return $this
+		 */
+		public function reuse(Response $response, $onValidate = false){
+			if($onValidate){
+				$content = $response->getContent();
+				$this->setContent($content);
+				$this->setContentType($response->getContentType());
+				$this->setHeader('Content-Length', $response->getHeader('Content-Length'));
+			}else{
+				$this->setCode($response->getCode());
+				$this->setMessage($response->getMessage());
+				$this->setHeaders($response->getHeaders());
+				$this->setContent($response->getContent());
+			}
+			$this->reused = true;
+			$this->request->setReusedResponse(true);
+			return $this;
+		}
+
+		/**
+		 * @return bool
+		 */
+		public function isReused(){
+			return $this->reused;
+		}
 
 	}
 }

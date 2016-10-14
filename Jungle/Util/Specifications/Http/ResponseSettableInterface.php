@@ -9,24 +9,19 @@
  */
 namespace Jungle\Util\Specifications\Http {
 
+	use Jungle\Util\Specifications\Hypertext\HeaderRegistryWriteInterface;
+
 	/**
 	 * Interface ResponseSettableInterface
 	 * @package Jungle\Util\Specifications\Http
 	 */
-	interface ResponseSettableInterface{
+	interface ResponseSettableInterface extends HeaderRegistryWriteInterface{
 
 		/**
 		 * @param RequestInterface $request
 		 * @return mixed
 		 */
 		public function setRequest(RequestInterface $request);
-
-		/**
-		 * @param ServerInterface $server
-		 * @return mixed
-		 */
-		public function setServer(ServerInterface $server);
-
 
 		/**
 		 * @param array|string $key
@@ -39,13 +34,6 @@ namespace Jungle\Util\Specifications\Http {
 		 * @return mixed
 		 */
 		public function setCookie($key, $value = null, $expires = null, $path = null, $secure = null, $httpOnly = null, $domain = null);
-
-		/**
-		 * @param $key
-		 * @param $value
-		 * @return mixed
-		 */
-		public function setHeader($key, $value);
 
 		/**
 		 * @param $content

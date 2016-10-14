@@ -7,13 +7,13 @@
  * Date: 30.06.2016
  * Time: 22:01
  */
-namespace Jungle\Util\Specifications\Http {
+namespace Jungle\Util\Specifications\Http\Cookie {
 
 	/**
-	 * Interface CookieConfigurationInterface
+	 * Interface ConfigurationInterface
 	 * @package Jungle\Util\Specifications\Http
 	 */
-	interface CookieConfigurationInterface{
+	interface ConfigurationInterface{
 
 		/**
 		 * @param null $expires

@@ -57,23 +57,37 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 			}
 			$generated = !$source;
 			$this->source = !$source?'':$source;
+			try{
+				$this->checkBeforeStart();
+				$this->sourceBeforeProcess($generated);
+				$this->beforeProcess();
+				$this->beforeHeaders();
+				if($this->completed === false){
+					$this->headers();
+					$this->afterHeaders();
+					$this->beforeContents();
+					if($this->completed === false){
+						$this->contents();
+					}
+					$this->afterContents();
+				}
+				$this->afterProcess();
+				$this->sourceAfterProcess($generated);
+				$this->completed = true;
+				return $this->source;
+			}catch(Document\Exception\EarlyException $e){
+				$this->completed = true;
+				return $this->source;
+			}finally{
+				$this->continueProcess();
+			}
+		}
 
-			$this->sourceBeforeProcess($generated);
-			$this->beforeProcess();
-
-			$this->beforeHeaders();
-			$this->headers();
-			$this->afterHeaders();
-
-			$this->beforeContents();
-			$this->contents();
-			$this->afterContents();
-
-			$this->afterProcess();
-			$this->sourceAfterProcess($generated);
-
-			$this->completed = true;
-			return $this->source;
+		/**
+		 *
+		 */
+		protected function continueProcess(){
+			$this->document->continueWrite($this);
 		}
 
 		/**
@@ -135,6 +149,12 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 		}
 
 		/**
+		 *
+		 */
+		protected function afterHeaders(){
+			$this->document->onHeadersWrite($this);
+		}
+		/**
 		 * @param $key
 		 * @param $value
 		 * @return string
@@ -147,16 +167,6 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 			}
 
 		}
-
-		/**
-		 *
-		 */
-		protected function afterHeaders(){ }
-
-		/**
-		 *
-		 */
-		protected function beforeContents(){ }
 
 		/**
 		 * @return string
@@ -178,11 +188,6 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 			}
 			return $content_string;
 		}
-
-		/**
-		 *
-		 */
-		protected function afterContents(){}
 
 
 

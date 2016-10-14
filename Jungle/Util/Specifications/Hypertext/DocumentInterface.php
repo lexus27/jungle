@@ -9,6 +9,7 @@
  */
 namespace Jungle\Util\Specifications\Hypertext {
 
+	use Jungle\Util\Specifications\Hypertext\Document\Processor;
 	use Jungle\Util\Specifications\Hypertext\Document\ReadProcessor;
 	use Jungle\Util\Specifications\Hypertext\Document\WriteProcessor;
 
@@ -32,17 +33,42 @@ namespace Jungle\Util\Specifications\Hypertext {
 		public function decodeContents($contents);
 
 		/**
+		 * @param Processor $processor
+		 * @return mixed
+		 */
+		public function beforeProcessStart(Processor $processor);
+
+		/**
 		 * @param WriteProcessor $writer
 		 * @return void
 		 */
 		public function beforeWrite(WriteProcessor $writer);
 
 		/**
+		 * @param WriteProcessor $writer
+		 * @return mixed
+		 */
+		public function onHeadersWrite(WriteProcessor $writer);
+
+		/**
+		 * @param WriteProcessor $writer
+		 * @return mixed
+		 */
+		public function afterWrite(WriteProcessor $writer);
+
+		/**
+		 * @param WriteProcessor $writer
+		 * @return mixed
+		 */
+		public function continueWrite(WriteProcessor $writer);
+
+
+
+		/**
 		 * @param ReadProcessor $reader
 		 * @return void
 		 */
 		public function beforeRead(ReadProcessor $reader);
-
 
 		/**
 		 * @param $data
@@ -61,9 +87,13 @@ namespace Jungle\Util\Specifications\Hypertext {
 		 * @param ReadProcessor $reader
 		 * @return void
 		 */
-		public function onContentsRead(ReadProcessor $reader);
+		public function afterRead(ReadProcessor $reader);
 
-
+		/**
+		 * @param ReadProcessor $writer
+		 * @return mixed
+		 */
+		public function continueRead(ReadProcessor $writer);
 
 
 		/**

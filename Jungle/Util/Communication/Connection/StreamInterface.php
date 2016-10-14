@@ -15,7 +15,9 @@ namespace Jungle\Util\Communication\Connection {
 	 * Interface StreamInterface
 	 * @package Jungle\Util\Communication
 	 */
-	interface StreamInterface extends ConnectionInterface, StreamInteractionInterface{}
+	interface StreamInterface extends ConnectionInterface, StreamInteractionInterface{
+
+	}
 
 }
 

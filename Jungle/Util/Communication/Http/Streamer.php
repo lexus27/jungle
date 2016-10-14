@@ -4,24 +4,22 @@
  * Author: Kutuzov Alexey Konstantinovich <lexus.1995@mail.ru>
  * Project: jungle
  * IDE: PhpStorm
- * Date: 02.07.2016
- * Time: 18:09
+ * Date: 12.10.2016
+ * Time: 18:32
  */
 namespace Jungle\Util\Communication\Http {
-	
+
 	use Jungle\Util\Communication\Connection\Stream\Socket;
 	use Jungle\Util\Communication\Connection\StreamInterface;
 	use Jungle\Util\Communication\URL;
 	use Jungle\Util\Communication\URL\Host\IP;
-	use Jungle\Util\Specifications\Http\ServerInterface;
-	use Jungle\Util\Specifications\Http\ServerSettableInterface;
 	use Jungle\Util\Specifications\Hypertext\Document\WriteProcessor;
 
 	/**
-	 * Class Server
+	 * Class Streamer
 	 * @package Jungle\Util\Communication\Http
 	 */
-	class Server implements ServerInterface, ServerSettableInterface{
+	abstract class Streamer{
 
 		/** @var  NetworkManager */
 		protected $network_manager;
@@ -35,12 +33,6 @@ namespace Jungle\Util\Communication\Http {
 		/** @var  int */
 		protected $port;
 
-
-		/** @var  string */
-		protected $protocol = 'HTTP/1.1';
-
-		/** @var  string */
-		protected $engine;
 
 		/** @var  StreamInterface[] */
 		protected $streams_closed = [];
@@ -103,7 +95,6 @@ namespace Jungle\Util\Communication\Http {
 			return URL::getBaseDomain($this->domain);
 		}
 
-
 		/**
 		 * @param $host
 		 * @return mixed
@@ -146,88 +137,10 @@ namespace Jungle\Util\Communication\Http {
 		}
 
 		/**
-		 * @param $gateway
-		 * @return mixed
-		 */
-		public function setGateway($gateway){
-			return $this;
-		}
-		/**
-		 * @return string
-		 */
-		public function getGateway(){
-			return '';
-		}
-
-		/**
-		 * @param $software
-		 * @return $this
-		 */
-		public function setSoftware($software){
-			return $this;
-		}
-
-		/**
-		 * @return string
-		 */
-		public function getSoftware(){
-			return '';
-		}
-
-		/**
-		 * @param $protocol
-		 * @return mixed
-		 */
-		public function setProtocol($protocol){
-			$this->protocol = $protocol;
-			return $this;
-		}
-		/**
-		 * @return string
-		 */
-		public function getProtocol(){
-			if(!$this->protocol){
-				return 'HTTP/1.1';
-			}
-			return $this->protocol;
-		}
-
-		/**
-		 * @param $timeZone
-		 * @return mixed
-		 */
-		public function setTimeZone($timeZone){
-			return $this;
-		}
-
-		/**
-		 * @return string
-		 */
-		public function getTimeZone(){
-			return null;
-		}
-
-		/**
-		 * @param $engine
-		 * @return $this
-		 */
-		public function setEngine($engine){
-			$this->engine = $engine;
-			return $this;
-		}
-		/**
-		 * @return string
-		 */
-		public function getEngine(){
-			return $this->engine;
-		}
-
-		/**
 		 * @param Request $request
 		 * @param WriteProcessor $writer
 		 */
 		public function beforeRequest(Request $request, WriteProcessor $writer){
-
 			/** Set the EXECUTION_STREAM */
 			$source = $writer->getSource();
 			if($source instanceof StreamInterface){
@@ -251,9 +164,6 @@ namespace Jungle\Util\Communication\Http {
 					$stream->close();
 				}
 				$this->passStream($stream);
-			}
-			if($this->engine===null){
-				$this->engine = $response->getHeader('Server');
 			}
 		}
 
@@ -310,9 +220,11 @@ namespace Jungle\Util\Communication\Http {
 			}elseif(!empty($this->streams_closed)){
 				$stream = array_shift($this->streams_closed);
 				$stream = $this->_configureStream($stream);
+				$stream->connect();
 			}else{
 				$stream = $this->_createStream();
 				$stream = $this->_configureStream($stream);
+				$stream->connect();
 			}
 			$this->streams_pending[] = $stream;
 			return $stream;
@@ -379,6 +291,7 @@ namespace Jungle\Util\Communication\Http {
 		public static function getTransportProtoByPort($port){
 			return $port===443?'ssl':'tcp';
 		}
+
 
 	}
 }

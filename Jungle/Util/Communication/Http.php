@@ -59,6 +59,66 @@ namespace Jungle\Util\Communication {
 		}
 
 
+		/**
+		 * @param $accept
+		 * @return array
+		 */
+		public static function parseAccept($accept){
+			$accept = explode(',', $accept);
+			$q = [];
+			foreach($accept as $i => $item){
+				if(!isset($q[$i])){
+					$q[$i] = [];
+				}
+				$item = explode(';',trim($item));
+				foreach($item as $value){
+					if(stripos($value,'=')!==false){
+						list($key,$value) = array_replace([null,null],explode('=',trim($value),2));
+						$q[$i][trim($key)] = trim($value);
+					}else{
+						$q[$i][] = trim($value);
+					}
+				}
+			}
+			unset($accept,$i,$item,$key,$value);
+
+			$a = [];
+			foreach($q as $value){
+				if(isset($value['q'])){
+					$priority = $value['q'];
+					unset($value['q']);
+					$a[$priority] = isset($a[$priority])?array_merge($a[$priority], $value):$value;
+				}else{
+					$a['1'] = isset($a['1'])?array_merge($a['1'], $value):$value;
+				}
+			}
+			unset($q,$priority, $value);
+			krsort($a);
+			$accept = [];
+			foreach($a as $q){
+				foreach($q as $item){
+					$accept[] = $item;
+				}
+			}
+			return $accept;
+		}
+
+		/**
+		 * @param array $accept
+		 * @return string
+		 */
+		public static function renderAccept(array $accept){
+			$accept = array_reverse($accept, false);
+			$count = count($accept);
+			$q = [];
+			foreach($accept as $i => $item){
+				$p = round((((100 / $count) * ($i+1)) / 100),1);
+				$q[] =  $item . ($p<1?(';q='.$p):'');
+			}
+			return implode(',', array_reverse($q));
+		}
+
+
 
 	}
 }

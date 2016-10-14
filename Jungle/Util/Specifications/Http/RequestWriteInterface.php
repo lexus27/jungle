@@ -11,31 +11,13 @@ namespace Jungle\Util\Specifications\Http {
 
 	use Jungle\User\AccessAuth\Auth;
 	use Jungle\Util\ContentsAwareInterface;
+	use Jungle\Util\Specifications\Hypertext\HeaderRegistryWriteInterface;
 
 	/**
-	 * Interface RequestSettableInterface
+	 * Interface RequestWriteInterface
 	 * @package Jungle\Util\Specifications\Http
 	 */
-	interface RequestSettableInterface{
-
-		/**
-		 * @param BrowserInterface $browser
-		 * @return mixed
-		 */
-		public function setBrowser(BrowserInterface $browser);
-
-		/**
-		 * @param ServerInterface $server
-		 * @return mixed
-		 */
-		public function setServer(ServerInterface $server);
-
-		/**
-		 * @param $name
-		 * @param $value
-		 * @return mixed
-		 */
-		public function setHeader($name, $value);
+	interface RequestWriteInterface extends HeaderRegistryWriteInterface{
 
 		/**
 		 * @param $method

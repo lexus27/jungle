@@ -52,14 +52,6 @@ namespace Jungle\Http {
 			return $_SERVER['REMOTE_PORT'];
 		}
 
-		public function isProxied(){
-			// TODO: Implement isProxied() method.
-		}
-
-		public function getProxy(){
-			// TODO: Implement getProxy() method.
-		}
-
 	}
 }
 

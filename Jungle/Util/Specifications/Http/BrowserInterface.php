@@ -64,6 +64,10 @@ namespace Jungle\Util\Specifications\Http {
 		 */
 		public function getBestCharset();
 
+		/**
+		 * @return array
+		 */
+		public function getDesiredCharsets();
 
 		/**
 		 * Методы на медиа-тип целесообразны в контексте запроса нежели глобально.

@@ -9,6 +9,7 @@ namespace Jungle\Util\Specifications\Hypertext {
 
 	use Jungle\Util\Communication\Connection\StreamInteractionInterface;
 	use Jungle\Util\Communication\Connection\StreamInterface;
+	use Jungle\Util\Specifications\Hypertext\Document\Processor;
 	use Jungle\Util\Specifications\Hypertext\Document\ReadProcessor;
 	use Jungle\Util\Specifications\Hypertext\Document\WriteProcessor;
 	use Jungle\Util\Specifications\Hypertext\Header\Pool;
@@ -91,14 +92,22 @@ namespace Jungle\Util\Specifications\Hypertext {
 			if(is_string($this->cache) && $this->cacheable){
 				return $this->cache;
 			}else{
-				$writer = $this->getWriteProcessor();
-				$writer->setDocument($this);
-				$source = $writer->process('');
-				if($this->cacheable){
-					$this->cache = (string)$source;
-				}
-				return $source;
+				return $this->render();
 			}
+		}
+
+		/**
+		 * @return StreamInteractionInterface|StreamInterface|string
+		 * @throws \Exception
+		 */
+		public function render(){
+			$writer = $this->getWriteProcessor();
+			$writer->setDocument($this);
+			$source = $writer->process('');
+			if(!$this->cacheable){
+				$this->cache = (string)$source;
+			}
+			return $source;
 		}
 
 
@@ -245,10 +254,36 @@ namespace Jungle\Util\Specifications\Hypertext {
 		}
 
 		/**
+		 * @param Processor $processor
+		 * @return mixed
+		 */
+		public function beforeProcessStart(Processor $processor){}
+
+
+		/**
 		 * @param WriteProcessor $writer
 		 * @return void
 		 */
 		public function beforeWrite(WriteProcessor $writer){}
+
+		/**
+		 * @param WriteProcessor $writer
+		 * @return mixed
+		 */
+		public function onHeadersWrite(WriteProcessor $writer){}
+
+		/**
+		 * @param WriteProcessor $writer
+		 * @return mixed|void
+		 */
+		public function afterWrite(WriteProcessor $writer){}
+
+		/**
+		 * @param WriteProcessor $writer
+		 * @return mixed|void
+		 */
+		public function continueWrite(WriteProcessor $writer){}
+
 
 		/**
 		 * @param ReadProcessor $reader
@@ -274,7 +309,13 @@ namespace Jungle\Util\Specifications\Hypertext {
 		 * @param ReadProcessor $reader
 		 * @return void
 		 */
-		public function onContentsRead(ReadProcessor $reader){}
+		public function afterRead(ReadProcessor $reader){}
+
+		/**
+		 * @param ReadProcessor $writer
+		 * @return mixed
+		 */
+		public function continueRead(ReadProcessor $writer){}
 
 
 	}

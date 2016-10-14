@@ -29,7 +29,7 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 			'completed',
 			'config',
 			'auto_close',
-			'auto_reset'
+			'auto_connect'
 		];
 
 		/** @var array  */
@@ -58,11 +58,12 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 
 		/**
 		 * Reader constructor.
-		 * @param DocumentInterface $document
-		 * @param null $auto_connect
-		 * @param null $auto_close
+		 * @param DocumentInterface|null $document
+		 * @param bool|null $auto_connect
+		 * @param bool|null $auto_close
+		 * @param BufferInterface|string|null $buffer
 		 */
-		public function __construct(DocumentInterface $document = null, $auto_connect = null, $auto_close = null){
+		public function __construct(DocumentInterface $document = null, $auto_connect = null, $auto_close = null, $buffer = null){
 			$this->default_process_properties = array_diff_key(get_object_vars($this), array_flip(self::$service_properties) );
 			$this->document = $document;
 			if(is_bool($auto_close)){
@@ -70,6 +71,9 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 			}
 			if(is_bool($auto_connect)){
 				$this->auto_connect = $auto_connect;
+			}
+			if($buffer !== null){
+				$this->buffer = $buffer;
 			}
 		}
 
@@ -158,6 +162,15 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 		}
 
 		/**
+		 * @param bool|false $completed
+		 * @return $this
+		 */
+		public function setCompleted($completed = false){
+			$this->completed = $completed;
+			return $this;
+		}
+
+		/**
 		 * @return bool
 		 */
 		public function isCompleted(){
@@ -198,17 +211,20 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 			}
 		}
 
+		protected function checkBeforeStart(){
+			$this->document->beforeProcessStart($this);
+		}
 
-		/**
-		 *
-		 */
 		protected function beforeProcess(){}
 
-		/**
-		 *
-		 */
-		protected function afterProcess(){}
+		protected function afterHeaders(){}
+		protected function beforeHeaders(){}
 
+		protected function beforeContents(){}
+		protected function afterContents(){}
+
+		protected function afterProcess(){}
+		protected function continueProcess(){ }
 
 		/**
 		 * @param bool $generated

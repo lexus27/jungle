@@ -133,7 +133,7 @@ namespace Jungle\Http {
 		 * @param null $secure
 		 * @param null $httpOnly
 		 * @param null $domain
-		 * @return CookieInterface
+		 * @return Interface
 		 */
 		public function setCookie($key, $value = null, $expires = null, $path = null, $secure = null, $httpOnly = null, $domain = null){
 			if(is_array($key)){
@@ -171,7 +171,7 @@ namespace Jungle\Http {
 		}
 
 		/**
-		 * @return \Jungle\Util\Specifications\Http\CookieInterface[]
+		 * @return \Jungle\Util\Specifications\Http\Interface[]
 		 */
 		public function getCookies(){
 			return $this->cookies;
@@ -290,15 +290,6 @@ namespace Jungle\Http {
 		 */
 		public function getRequest(){
 			return $this->request;
-		}
-
-		/**
-		 * @param ServerInterface $server
-		 * @return mixed
-		 * @throws \Exception
-		 */
-		public function setServer(ServerInterface $server){
-			throw new \Exception('Not effect');
 		}
 
 		/**

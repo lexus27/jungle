@@ -51,6 +51,14 @@ namespace Jungle\Util\Communication {
 		}
 
 		/**
+		 * @return bool
+		 */
+		public function isConnected(){
+			return $this->connection !== null;
+		}
+
+
+		/**
 		 * @param $key
 		 * @param $default
 		 * @param bool $required

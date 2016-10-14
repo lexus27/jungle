@@ -93,6 +93,13 @@ namespace Jungle\Http {
 			$this->content_type = isset($this->headers['Content-Type'])?$this->headers['Content-Type']:null;
 		}
 
+		/**
+		 * @return string
+		 */
+		public function getFullPath(){
+			return urldecode($_SERVER['REQUEST_URI']);
+		}
+
 		protected function __clone(){}
 
 
@@ -205,7 +212,8 @@ namespace Jungle\Http {
 		 */
 		public function getUri(){
 			if(is_null($this->uri)){
-				$this->uri = urldecode(strstr($_SERVER['REQUEST_URI'], '?', true));
+				$arr = explode('?',$_SERVER['REQUEST_URI']);
+				$this->uri = urldecode($arr[0]);
 			}
 			return $this->uri;
 		}
@@ -215,7 +223,8 @@ namespace Jungle\Http {
 		 */
 		public function getPath(){
 			if(is_null($this->uri)){
-				$this->uri = urldecode(strstr($_SERVER['REQUEST_URI'], '?', true));
+				$arr = explode('?',$_SERVER['REQUEST_URI']);
+				$this->uri = urldecode($arr[0]);
 			}
 			return $this->uri;
 		}

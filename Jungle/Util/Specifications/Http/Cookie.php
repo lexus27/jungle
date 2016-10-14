@@ -10,6 +10,7 @@
 namespace Jungle\Util\Specifications\Http {
 
 	use Jungle\Util\Smart\Value\IValue;
+	use Jungle\Util\Specifications\Http\Cookie\ManagerInterface;
 
 	/**
 	 * Class Cookie
@@ -17,7 +18,7 @@ namespace Jungle\Util\Specifications\Http {
 	 */
 	class Cookie implements CookieInterface{
 
-		/** @var  CookieManagerInterface */
+		/** @var  ManagerInterface */
 		protected $cookie_manager;
 
 		/** @var  string */

@@ -27,6 +27,11 @@ namespace Jungle\Util\Communication {
 		public function getConfig();
 
 		/**
+		 * @return bool
+		 */
+		public function isConnected();
+
+		/**
 		 * @return $this
 		 */
 		public function reconnect();
@@ -45,6 +50,8 @@ namespace Jungle\Util\Communication {
 		 * @return mixed
 		 */
 		public function getInternalConnection();
+
+
 
 	}
 }
