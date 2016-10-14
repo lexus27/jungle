@@ -10,6 +10,7 @@
 namespace Jungle\Util\Specifications\Http {
 
 	use Jungle\User\AccessAuth\Auth;
+	use Jungle\Util\Communication\URL;
 	use Jungle\Util\Specifications\Hypertext\HeaderRegistryReadInterface;
 
 	/**
@@ -63,6 +64,16 @@ namespace Jungle\Util\Specifications\Http {
 		 * @return string
 		 */
 		public function getMethod();
+
+		/**
+		 * @return string
+		 */
+		public function getUrl();
+
+		/**
+		 * @return string
+		 */
+		public function getFullPath();
 
 		/**
 		 * @return bool

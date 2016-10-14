@@ -12,12 +12,13 @@ namespace Jungle\Util\Specifications\Http {
 	use Jungle\Util\NamedInterface;
 	use Jungle\Util\Smart\Value\IValue;
 	use Jungle\Util\Smart\Value\IValueSettable;
+	use Jungle\Util\Specifications\Http\Cookie\ConfigurationInterface;
 	
 	/**
 	 * Interface CookieInterface
 	 * @package Jungle\Util\Specifications\Http
 	 */
-	interface CookieInterface extends CookieConfigurationInterface, IValue, IValueSettable, NamedInterface{
+	interface CookieInterface extends ConfigurationInterface, IValue, IValueSettable, NamedInterface{
 
 		/**
 		 * @return mixed

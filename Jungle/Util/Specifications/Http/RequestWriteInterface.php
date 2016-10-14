@@ -14,10 +14,10 @@ namespace Jungle\Util\Specifications\Http {
 	use Jungle\Util\Specifications\Hypertext\HeaderRegistryWriteInterface;
 
 	/**
-	 * Interface RequestSettableInterface
+	 * Interface RequestWriteInterface
 	 * @package Jungle\Util\Specifications\Http
 	 */
-	interface RequestSettableInterface extends HeaderRegistryWriteInterface{
+	interface RequestWriteInterface extends HeaderRegistryWriteInterface{
 
 		/**
 		 * @param $method

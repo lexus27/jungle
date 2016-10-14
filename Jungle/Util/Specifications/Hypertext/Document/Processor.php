@@ -29,7 +29,7 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 			'completed',
 			'config',
 			'auto_close',
-			'auto_reset'
+			'auto_connect'
 		];
 
 		/** @var array  */

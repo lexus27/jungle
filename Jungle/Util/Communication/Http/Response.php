@@ -39,13 +39,13 @@ namespace Jungle\Util\Communication\Http {
 		/** @var  Cookie[]  */
 		protected $cookies = [];
 
-		/** @var bool  */
+		/** @var  bool  */
 		protected $accepted = false;
 
-		/** @var bool  */
+		/** @var  bool  */
 		protected $reused = false;
 
-		/** @var bool  */
+		/** @var  bool  */
 		protected $loading = false;
 
 
@@ -327,7 +327,7 @@ namespace Jungle\Util\Communication\Http {
 		 * @return string
 		 * @throws \Exception
 		 */
-		protected function render(){
+		public function render(){
 			$writer = $this->getWriteProcessor();
 			$writer->setDocument($this);
 			$writer->setBuffer(null);

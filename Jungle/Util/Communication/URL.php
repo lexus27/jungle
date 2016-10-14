@@ -497,7 +497,7 @@ namespace Jungle\Util\Communication {
 			}
 			if($chunks[self::V_QUERY]){
 				if(is_array($chunks[self::V_QUERY])){
-					$url.= '?'.self::renderParams($chunks[self::V_QUERY],$encode);
+					$url.= http_build_query($chunks[self::V_QUERY],null,null,$encode?PHP_QUERY_RFC1738:PHP_URL_QUERY);
 				}else{
 					$url.= '?'.$chunks[self::V_QUERY];
 				}

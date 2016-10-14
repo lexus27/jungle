@@ -100,11 +100,11 @@ namespace Jungle\Util\Specifications\Hypertext {
 		 * @return StreamInteractionInterface|StreamInterface|string
 		 * @throws \Exception
 		 */
-		protected function render(){
+		public function render(){
 			$writer = $this->getWriteProcessor();
 			$writer->setDocument($this);
 			$source = $writer->process('');
-			if($this->cacheable){
+			if(!$this->cacheable){
 				$this->cache = (string)$source;
 			}
 			return $source;

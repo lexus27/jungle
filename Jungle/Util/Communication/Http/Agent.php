@@ -239,20 +239,6 @@ namespace Jungle\Util\Communication\Http {
 		}
 
 		/**
-		 * @return bool
-		 */
-		public function isProxied(){
-			// TODO: Implement isProxied() method.
-		}
-
-		/**
-		 * @return ProxyInterface
-		 */
-		public function getProxy(){
-			// TODO: Implement getProxy() method.
-		}
-
-		/**
 		 * @param $url
 		 * @return Request
 		 */
@@ -348,14 +334,12 @@ namespace Jungle\Util\Communication\Http {
 			$server = $request->getServer();
 			$stream = $server->takeStream();
 			/** Request sending... */
-			$request->setLoading(true);
-			$this->_getWriterFor($request)->process($stream);
+			$this->_getWriterFor($request->setLoading(true))->process($stream);
 
 			/** Response reading... */
 			$response = $request->getResponse();
 			if(!$response->isReused()){
-				$response->setLoading(true);
-				$response = $this->_getReaderFor($response)->process($stream);
+				$response = $this->_getReaderFor($response->setLoading(true))->process($stream);
 			}
 			return $response;
 		}

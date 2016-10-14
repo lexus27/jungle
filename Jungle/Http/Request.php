@@ -93,6 +93,13 @@ namespace Jungle\Http {
 			$this->content_type = isset($this->headers['Content-Type'])?$this->headers['Content-Type']:null;
 		}
 
+		/**
+		 * @return string
+		 */
+		public function getFullPath(){
+			return urldecode($_SERVER['REQUEST_URI']);
+		}
+
 		protected function __clone(){}
 
 
