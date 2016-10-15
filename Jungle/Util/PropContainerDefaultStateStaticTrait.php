@@ -10,27 +10,25 @@
 namespace Jungle\Util {
 
 	/**
-	 * Class InternalPropertyStateTrait
+	 * Class PropContainerDefaultStateStaticTrait
 	 * @package Jungle\Util
 	 */
-	trait InternalPropertyStateTrait{
-
+	trait PropContainerDefaultStateStaticTrait{
 
 		/** @var array  */
-		protected static $exclude_default_properties = [
-			'default_properties'
-		];
-
-		/** @var  array */
-		protected $default_properties = [];
+		protected static $_exclude_default_properties = [];
 
 		/**
 		 * Store current object property values to $default_properties
 		 */
 		protected function _initializeDefaultPropertiesState(){
-			$excluded = static::$exclude_default_properties;
-			$excluded[] = 'default_properties';
-			$this->default_properties = array_diff_key(get_object_vars($this), array_flip($excluded));
+			if(!isset(static::$_exclude_default_properties['default_properties'])){
+				$configuration = [
+					'excluded_properties' => static::$_exclude_default_properties,
+					'default_properties' => array_diff_key(get_object_vars($this), array_flip(static::$_exclude_default_properties))
+				];
+				static::$_exclude_default_properties = $configuration;
+			}
 		}
 
 
@@ -38,7 +36,7 @@ namespace Jungle\Util {
 		 * Reset each $default_properties to this->{$property_name}
 		 */
 		protected function _restoreDefaultPropertiesState(){
-			foreach($this->default_properties as $k => $v){
+			foreach(static::$_exclude_default_properties['default_properties'] as $k => $v){
 				$this->{$k} = $v;
 			}
 		}
