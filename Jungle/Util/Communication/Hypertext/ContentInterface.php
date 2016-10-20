@@ -5,9 +5,9 @@
  * Date: 08.01.2016
  * Time: 16:24
  */
-namespace Jungle\Util\Specifications\Hypertext {
+namespace Jungle\Util\Communication\Hypertext {
 
-	use Jungle\Util\Specifications\Hypertext\Document\WriteProcessor;
+	use Jungle\Util\Communication\Hypertext\Document\WriteProcessor;
 
 	/**
 	 * Interface ContentInterface

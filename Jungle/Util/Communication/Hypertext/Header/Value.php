@@ -5,7 +5,7 @@
  * Date: 09.01.2016
  * Time: 22:33
  */
-namespace Jungle\Util\Specifications\Hypertext\Header {
+namespace Jungle\Util\Communication\Hypertext\Header {
 
 	use Jungle\Util\Smart\Value\IValue;
 	use Jungle\Util\Smart\Value\IValueSettable;

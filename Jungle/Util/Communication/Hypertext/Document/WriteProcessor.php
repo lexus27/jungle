@@ -7,16 +7,16 @@
  * Date: 05.10.2016
  * Time: 19:17
  */
-namespace Jungle\Util\Specifications\Hypertext\Document {
+namespace Jungle\Util\Communication\Hypertext\Document {
 
-	use Jungle\Util\Communication\Connection\StreamInteractionInterface;
-	use Jungle\Util\Communication\Connection\StreamInterface;
-	use Jungle\Util\Specifications\Hypertext\ContentInterface;
-	use Jungle\Util\Specifications\Hypertext\Document;
+	use Jungle\Util\Communication\Net\ConnectionInterface;
+	use Jungle\Util\Communication\Stream\StreamInteractionInterface;
+	use Jungle\Util\Communication\Hypertext\ContentInterface;
+	use Jungle\Util\Communication\Hypertext\Document;
 
 	/**
 	 * Class WriteProcessor
-	 * @package Jungle\Util\Specifications\Hypertext\Document
+	 * @package Jungle\Util\Communication\Hypertext\Document
 	 */
 	class WriteProcessor extends Processor{
 
@@ -47,7 +47,7 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 
 		/**
 		 * @param $source
-		 * @return string|StreamInteractionInterface|StreamInterface
+		 * @return string|StreamInteractionInterface|ConnectionInterface
 		 * @throws \Exception
 		 */
 		public function process($source = null){
@@ -75,7 +75,7 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 				$this->sourceAfterProcess($generated);
 				$this->completed = true;
 				return $this->source;
-			}catch(Document\Exception\EarlyException $e){
+			}catch(Document\Exception\ProcessorEarlyException $e){
 				$this->completed = true;
 				return $this->source;
 			}finally{

@@ -7,11 +7,11 @@
  * Date: 13.10.2016
  * Time: 9:38
  */
-namespace Jungle\Util\Specifications\Hypertext\Document {
+namespace Jungle\Util\Communication\Hypertext\Document {
 
 	/**
 	 * Class Exception
-	 * @package Jungle\Util\Specifications\Hypertext\Document
+	 * @package Jungle\Util\Communication\Hypertext\Document
 	 */
 	class Exception extends \Exception{
 		

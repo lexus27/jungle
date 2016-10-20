@@ -7,16 +7,16 @@
  * Date: 05.10.2016
  * Time: 19:10
  */
-namespace Jungle\Util\Specifications\Hypertext\Document {
+namespace Jungle\Util\Communication\Hypertext\Document {
 
-	use Jungle\Util\BufferInterface;
-	use Jungle\Util\Communication\Connection\StreamInteractionInterface;
-	use Jungle\Util\Communication\ConnectionInterface;
-	use Jungle\Util\Specifications\Hypertext\DocumentInterface;
+	use Jungle\Util\Buffer\BufferInterface;
+	use Jungle\Util\Communication\Stream\StreamInteractionInterface;
+	use Jungle\Util\Communication\Net\ConnectionInterface;
+	use Jungle\Util\Communication\Hypertext\DocumentInterface;
 
 	/**
 	 * Class Processor
-	 * @package Jungle\Util\Specifications\Hypertext\Document
+	 * @package Jungle\Util\Communication\Hypertext\Document
 	 */
 	abstract class Processor implements ProcessorInterface{
 
@@ -41,7 +41,7 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 		/** @var  BufferInterface|string|null */
 		protected $buffer;
 
-		/** @var  StreamInteractionInterface */
+		/** @var  \Jungle\Util\Communication\Stream\StreamInteractionInterface */
 		protected $source;
 
 		/** @var  bool  */
@@ -61,7 +61,7 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 		 * @param DocumentInterface|null $document
 		 * @param bool|null $auto_connect
 		 * @param bool|null $auto_close
-		 * @param BufferInterface|string|null $buffer
+		 * @param \Jungle\Util\Buffer\BufferInterface|string|null $buffer
 		 */
 		public function __construct(DocumentInterface $document = null, $auto_connect = null, $auto_close = null, $buffer = null){
 			$this->default_process_properties = array_diff_key(get_object_vars($this), array_flip(self::$service_properties) );
@@ -137,14 +137,14 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 		}
 
 		/**
-		 * @param BufferInterface $buffer
+		 * @param \Jungle\Util\Buffer\BufferInterface $buffer
 		 */
 		public function setBuffer(BufferInterface $buffer = null){
 			$this->buffer = $buffer;
 		}
 
 		/**
-		 * @return string|BufferInterface|null
+		 * @return string|\Jungle\Util\Buffer\BufferInterface|null
 		 */
 		public function getBuffer(){
 			return $this->buffer;
@@ -242,7 +242,7 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 		protected function sourceAfterProcess($generated = false){
 			$source = $this->source;
 			if($source instanceof ConnectionInterface && ((!$generated && $this->auto_close) || $generated)){
-				$source->connect();
+				$source->close();
 			}
 		}
 

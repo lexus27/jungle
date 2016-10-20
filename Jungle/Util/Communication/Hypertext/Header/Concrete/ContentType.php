@@ -5,16 +5,16 @@
  * Date: 11.01.2016
  * Time: 1:25
  */
-namespace Jungle\Util\Specifications\Hypertext\Header\Concrete {
+namespace Jungle\Util\Communication\Hypertext\Header\Concrete {
 
-	use Jungle\Util\Specifications\Hypertext\Content\Multipart;
-	use Jungle\Util\Specifications\Hypertext\Header;
-	use Jungle\Util\Specifications\Hypertext\Header\Value;
-	use Jungle\Util\Specifications\Hypertext\HeaderRegistryInterface;
+	use Jungle\Util\Communication\Hypertext\Content\Multipart;
+	use Jungle\Util\Communication\Hypertext\Header;
+	use Jungle\Util\Communication\Hypertext\Header\Value;
+	use Jungle\Util\Communication\Hypertext\HeaderRegistryInterface;
 
 	/**
 	 * Class ContentType
-	 * @package Jungle\Util\Specifications\Hypertext\Header\Concrete
+	 * @package Jungle\Util\Communication\Hypertext\Header\Concrete
 	 */
 	class ContentType extends Header{
 

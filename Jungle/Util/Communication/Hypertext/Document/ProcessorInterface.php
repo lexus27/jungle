@@ -7,15 +7,15 @@
  * Date: 05.10.2016
  * Time: 19:11
  */
-namespace Jungle\Util\Specifications\Hypertext\Document {
+namespace Jungle\Util\Communication\Hypertext\Document {
 
-	use Jungle\Util\BufferInterface;
-	use Jungle\Util\Communication\Connection\StreamInteractionInterface;
-	use Jungle\Util\Specifications\Hypertext\DocumentInterface;
+	use Jungle\Util\Buffer\BufferInterface;
+	use Jungle\Util\Communication\Stream\StreamInteractionInterface;
+	use Jungle\Util\Communication\Hypertext\DocumentInterface;
 
 	/**
 	 * Interface ProcessorInterface
-	 * @package Jungle\Util\Specifications\Hypertext\Document
+	 * @package Jungle\Util\Communication\Hypertext\Document
 	 */
 	interface ProcessorInterface{
 
@@ -91,12 +91,12 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 		public function setBufferToString();
 
 		/**
-		 * @param BufferInterface $buffer
+		 * @param \Jungle\Util\Buffer\BufferInterface $buffer
 		 */
 		public function setBuffer(BufferInterface $buffer = null);
 
 		/**
-		 * @return string|\Jungle\Util\BufferInterface|null
+		 * @return string|\Jungle\Util\Buffer\BufferInterface|null
 		 */
 		public function getBuffer();
 

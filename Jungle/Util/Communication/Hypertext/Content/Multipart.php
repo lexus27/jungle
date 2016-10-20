@@ -5,14 +5,14 @@
  * Date: 08.01.2016
  * Time: 16:18
  */
-namespace Jungle\Util\Specifications\Hypertext\Content {
+namespace Jungle\Util\Communication\Hypertext\Content {
 
 	use Jungle\Util\Communication\Connection\Stream\Memory;
-	use Jungle\Util\Specifications\Hypertext\ContentInterface;
-	use Jungle\Util\Specifications\Hypertext\Document;
-	use Jungle\Util\Specifications\Hypertext\DocumentInterface;
-	use Jungle\Util\Specifications\Hypertext\Header;
-	use Jungle\Util\Specifications\Hypertext\HeaderRegistryInterface;
+	use Jungle\Util\Communication\Hypertext\ContentInterface;
+	use Jungle\Util\Communication\Hypertext\Document;
+	use Jungle\Util\Communication\Hypertext\DocumentInterface;
+	use Jungle\Util\Communication\Hypertext\Header;
+	use Jungle\Util\Communication\Hypertext\HeaderRegistryInterface;
 	use Jungle\Util\Value\String;
 
 	/**

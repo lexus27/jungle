@@ -7,7 +7,7 @@
  * Date: 07.10.2016
  * Time: 13:11
  */
-namespace Jungle\Util\Specifications\Hypertext {
+namespace Jungle\Util\Communication\Hypertext {
 	
 	class Media{
 

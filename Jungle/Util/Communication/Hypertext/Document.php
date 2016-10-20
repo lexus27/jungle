@@ -5,14 +5,13 @@
  * Date: 08.01.2016
  * Time: 15:58
  */
-namespace Jungle\Util\Specifications\Hypertext {
+namespace Jungle\Util\Communication\Hypertext {
 
-	use Jungle\Util\Communication\Connection\StreamInteractionInterface;
-	use Jungle\Util\Communication\Connection\StreamInterface;
-	use Jungle\Util\Specifications\Hypertext\Document\Processor;
-	use Jungle\Util\Specifications\Hypertext\Document\ReadProcessor;
-	use Jungle\Util\Specifications\Hypertext\Document\WriteProcessor;
-	use Jungle\Util\Specifications\Hypertext\Header\Pool;
+	use Jungle\Util\Communication\Stream\StreamInteractionInterface;
+	use Jungle\Util\Communication\Hypertext\Document\Processor;
+	use Jungle\Util\Communication\Hypertext\Document\ReadProcessor;
+	use Jungle\Util\Communication\Hypertext\Document\WriteProcessor;
+	use Jungle\Util\Communication\Hypertext\Header\Pool;
 
 	/**
 	 * Class Document
@@ -42,7 +41,7 @@ namespace Jungle\Util\Specifications\Hypertext {
 
 		/**
 		 * Document constructor.
-		 * @param null|string|StreamInteractionInterface|StreamInterface $definition
+		 * @param null|string|StreamInteractionInterface $definition
 		 */
 		public function __construct($definition = null){
 			if(!is_null($definition)){
@@ -51,7 +50,7 @@ namespace Jungle\Util\Specifications\Hypertext {
 		}
 
 		/**
-		 * @param string|StreamInteractionInterface|StreamInterface $source
+		 * @param string|\Jungle\Util\Communication\Stream\StreamInteractionInterface $source
 		 * @return $this
 		 */
 		public function structure($source){
@@ -97,14 +96,14 @@ namespace Jungle\Util\Specifications\Hypertext {
 		}
 
 		/**
-		 * @return StreamInteractionInterface|StreamInterface|string
+		 * @return \Jungle\Util\Communication\Stream\StreamInteractionInterface|string
 		 * @throws \Exception
 		 */
 		public function render(){
 			$writer = $this->getWriteProcessor();
 			$writer->setDocument($this);
 			$source = $writer->process('');
-			if(!$this->cacheable){
+			if($this->cacheable){
 				$this->cache = (string)$source;
 			}
 			return $source;
@@ -268,19 +267,19 @@ namespace Jungle\Util\Specifications\Hypertext {
 
 		/**
 		 * @param WriteProcessor $writer
-		 * @return mixed
+		 * @return void
 		 */
 		public function onHeadersWrite(WriteProcessor $writer){}
 
 		/**
 		 * @param WriteProcessor $writer
-		 * @return mixed|void
+		 * @return void
 		 */
 		public function afterWrite(WriteProcessor $writer){}
 
 		/**
 		 * @param WriteProcessor $writer
-		 * @return mixed|void
+		 * @return void
 		 */
 		public function continueWrite(WriteProcessor $writer){}
 

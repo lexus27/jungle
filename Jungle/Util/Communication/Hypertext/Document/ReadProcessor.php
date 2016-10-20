@@ -7,22 +7,21 @@
  * Date: 05.10.2016
  * Time: 19:17
  */
-namespace Jungle\Util\Specifications\Hypertext\Document {
+namespace Jungle\Util\Communication\Hypertext\Document {
 
-	use Jungle\Util\Communication\Connection\Exception\ConnectionClosed;
-	use Jungle\Util\Communication\Connection\Stream\Memory;
-	use Jungle\Util\Communication\Connection\StreamInteractionInterface;
-	use Jungle\Util\Communication\Connection\StreamInterface;
-	use Jungle\Util\Specifications\Hypertext\Document;
-	use Jungle\Util\Specifications\Hypertext\DocumentInterface;
-	use Jungle\Util\Specifications\Hypertext\Header;
+	use Jungle\Util\Communication\Stream\Memory;
+	use Jungle\Util\Communication\Stream\StreamInteractionInterface;
+	use Jungle\Util\Communication\Hypertext\Document;
+	use Jungle\Util\Communication\Hypertext\DocumentInterface;
+	use Jungle\Util\Communication\Hypertext\Header;
 
 	/**
 	 * Class ReadProcessor
-	 * @package Jungle\Util\Specifications\Hypertext\Document
+	 * @package Jungle\Util\Communication\Hypertext\Document
 	 */
 	class ReadProcessor extends Processor{
 
+		/** @var  ReadProcessor */
 		protected static $default;
 
 		/** @var  bool */
@@ -46,7 +45,7 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 		}
 
 		/**
-		 * @param null|string|StreamInteractionInterface|StreamInterface $source
+		 * @param null|string|StreamInteractionInterface $source
 		 * @return DocumentInterface
 		 * @throws \Exception
 		 */
@@ -91,7 +90,7 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 
 				$this->completed = true;
 				return $this->document;
-			}catch(Document\Exception\EarlyException $e){
+			}catch(Document\Exception\ProcessorEarlyException $e){
 				$this->completed = true;
 				return $this->document;
 			}finally{
@@ -100,26 +99,14 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 		}
 
 
-
-		/**
-		 *
-		 */
 		protected function beforeProcess(){
 			$this->document->beforeRead($this);
 		}
 
-
-
-		/**
-		 * @throws ConnectionClosed
-		 */
 		protected function headers(){
 			$i = 0;
 			while(!$this->source->isEof()){
 				$data = $this->source->readLine();
-				if($data === false){
-					throw new ConnectionClosed('The server closed the connection');
-				}
 				$this->buffer($data);
 				$this->handleLine($data,$i);
 				if(!$this->process_headers){
@@ -164,37 +151,31 @@ namespace Jungle\Util\Specifications\Hypertext\Document {
 
 		/**
 		 * @return string
-		 * @throws ConnectionClosed
 		 */
 		protected function contents(){
 			$chunked = $this->document->haveHeader('Transfer-Encoding','chunked');
 			$length = $this->document->getHeader('Content-Length',null);
 			if($length !== null){
 				$length = intval($length);
+			}elseif(!$chunked){
+				$length = true;
 			}
 
 			$content = '';
 			if($length === null && $this->source instanceof Memory){
 				$content = $this->source->read(-1);
-				if($content === false){
-					throw new ConnectionClosed('The server closed the connection');
-				}
 			}else{
 				$block_size = 4072;
 				while(!$this->source->isEof()){
 					if($length === null){
 						$data = $this->source->readLine(128);
-						if($data === false){
-							throw new ConnectionClosed('The server closed the connection');
-						}
 						$length = hexdec(trim($data));
+					}elseif($length === true){
+						$content.= $this->source->read($block_size);
 					}elseif($length > 0){
 						$read_length = $length > $block_size ? $block_size : $length;
 						$length -= $read_length;
 						$data = $this->source->read($read_length);
-						if($data === false){
-							throw new ConnectionClosed('The server closed the connection');
-						}
 						$content.= $data;
 						if ($length <= 0) {
 							if($chunked){

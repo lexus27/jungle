@@ -5,11 +5,11 @@
  * Date: 10.01.2016
  * Time: 1:27
  */
-namespace Jungle\Util\Specifications\Hypertext\Header\Concrete {
+namespace Jungle\Util\Communication\Hypertext\Header\Concrete {
 
-	use Jungle\Util\Specifications\Hypertext\Header;
-	use Jungle\Util\Specifications\Hypertext\Header\Value;
-	use Jungle\Util\Specifications\Hypertext\HeaderRegistryInterface;
+	use Jungle\Util\Communication\Hypertext\Header;
+	use Jungle\Util\Communication\Hypertext\Header\Value;
+	use Jungle\Util\Communication\Hypertext\HeaderRegistryInterface;
 
 	/**
 	 * Class ContentTransferEncoding

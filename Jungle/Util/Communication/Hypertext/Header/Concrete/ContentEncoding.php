@@ -7,15 +7,15 @@
  * Date: 12.10.2016
  * Time: 16:15
  */
-namespace Jungle\Util\Specifications\Hypertext\Header\Concrete {
+namespace Jungle\Util\Communication\Hypertext\Header\Concrete {
 
-	use Jungle\Util\Specifications\Hypertext\Header;
-	use Jungle\Util\Specifications\Hypertext\Header\Value;
-	use Jungle\Util\Specifications\Hypertext\HeaderRegistryInterface;
+	use Jungle\Util\Communication\Hypertext\Header;
+	use Jungle\Util\Communication\Hypertext\Header\Value;
+	use Jungle\Util\Communication\Hypertext\HeaderRegistryInterface;
 
 	/**
 	 * Class ContentEncoding
-	 * @package Jungle\Util\Specifications\Hypertext\Header\Concrete
+	 * @package Jungle\Util\Communication\Hypertext\Header\Concrete
 	 */
 	class ContentEncoding extends Header{
 

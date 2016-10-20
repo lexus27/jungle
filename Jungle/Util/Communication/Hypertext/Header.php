@@ -5,10 +5,10 @@
  * Date: 09.01.2016
  * Time: 22:33
  */
-namespace Jungle\Util\Specifications\Hypertext {
+namespace Jungle\Util\Communication\Hypertext {
 
 	use Jungle\Util\Smart\Keyword\Keyword;
-	use Jungle\Util\Specifications\Hypertext\Header\Value;
+	use Jungle\Util\Communication\Hypertext\Header\Value;
 
 	/**
 	 * Class Header

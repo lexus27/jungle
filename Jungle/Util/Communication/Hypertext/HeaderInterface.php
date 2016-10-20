@@ -7,11 +7,11 @@
  * Date: 30.06.2016
  * Time: 13:10
  */
-namespace Jungle\Util\Specifications\Hypertext {
+namespace Jungle\Util\Communication\Hypertext {
 
 	/**
 	 * Interface HeaderInterface
-	 * @package Jungle\Util\Specifications\Hypertext
+	 * @package Jungle\Util\Communication\Hypertext
 	 */
 	interface HeaderInterface{
 

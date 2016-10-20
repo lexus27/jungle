@@ -7,11 +7,11 @@
  * Date: 05.10.2016
  * Time: 0:06
  */
-namespace Jungle\Util\Specifications\Hypertext {
+namespace Jungle\Util\Communication\Hypertext {
 
 	/**
 	 * Interface HeaderRegistryInterface
-	 * @package Jungle\Util\Specifications\Hypertext
+	 * @package Jungle\Util\Communication\Hypertext
 	 */
 	interface HeaderRegistryInterface extends HeaderRegistryReadInterface, HeaderRegistryWriteInterface{
 

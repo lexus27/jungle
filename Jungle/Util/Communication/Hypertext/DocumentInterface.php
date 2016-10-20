@@ -7,16 +7,16 @@
  * Date: 05.10.2016
  * Time: 0:35
  */
-namespace Jungle\Util\Specifications\Hypertext {
+namespace Jungle\Util\Communication\Hypertext {
 
-	use Jungle\Util\Specifications\Hypertext\Document\Processor;
-	use Jungle\Util\Specifications\Hypertext\Document\ReadProcessor;
-	use Jungle\Util\Specifications\Hypertext\Document\WriteProcessor;
+	use Jungle\Util\Communication\Hypertext\Document\Processor;
+	use Jungle\Util\Communication\Hypertext\Document\ReadProcessor;
+	use Jungle\Util\Communication\Hypertext\Document\WriteProcessor;
 
 
 	/**
 	 * Interface DocumentInterface
-	 * @package Jungle\Util\Specifications\Hypertext
+	 * @package Jungle\Util\Communication\Hypertext
 	 */
 	interface DocumentInterface extends HeaderRegistryInterface, ContentAwareInterface{
 
@@ -58,7 +58,7 @@ namespace Jungle\Util\Specifications\Hypertext {
 
 		/**
 		 * @param WriteProcessor $writer
-		 * @return mixed
+		 * @return void
 		 */
 		public function continueWrite(WriteProcessor $writer);
 

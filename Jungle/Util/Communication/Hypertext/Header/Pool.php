@@ -5,12 +5,12 @@
  * Date: 10.01.2016
  * Time: 0:22
  */
-namespace Jungle\Util\Specifications\Hypertext\Header {
+namespace Jungle\Util\Communication\Hypertext\Header {
 
 	use Jungle\Util\Smart\Keyword\Factory;
 	use Jungle\Util\Smart\Keyword\Pool as KeyPool;
 	use Jungle\Util\Smart\Keyword\Storage\Dummy;
-	use Jungle\Util\Specifications\Hypertext\Header;
+	use Jungle\Util\Communication\Hypertext\Header;
 	use Jungle\Util\Value\String;
 
 	/**
