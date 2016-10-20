@@ -7,24 +7,13 @@
  * Date: 02.10.2016
  * Time: 23:14
  */
-namespace Jungle\Util\Communication {
+namespace Jungle\Util\Communication\Net {
 
 	/**
 	 * Interface ConnectionInterface
 	 * @package Jungle\Util\Communication
 	 */
 	interface ConnectionInterface{
-
-		/**
-		 * @param array $config
-		 * @return mixed
-		 */
-		public function setConfig(array $config);
-
-		/**
-		 * @return array
-		 */
-		public function getConfig();
 
 		/**
 		 * @return bool
@@ -49,9 +38,7 @@ namespace Jungle\Util\Communication {
 		/**
 		 * @return mixed
 		 */
-		public function getInternalConnection();
-
-
+		public function getResource();
 
 	}
 }
