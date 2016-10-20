@@ -450,9 +450,9 @@ namespace Jungle\Util\Communication {
 				}
 			}elseif(is_array($url)){
 				if($full){
-					return array_replace($url, array_intersect_key($url, array_flip(self::$default_value)));
+					return array_replace($url, array_intersect_key($url, self::$default_value));
 				}else{
-					return array_intersect_key($url, array_flip(self::$default_value));
+					return array_intersect_key($url, self::$default_value);
 				}
 			}
 			return false;
@@ -497,7 +497,7 @@ namespace Jungle\Util\Communication {
 			}
 			if($chunks[self::V_QUERY]){
 				if(is_array($chunks[self::V_QUERY])){
-					$url.= http_build_query($chunks[self::V_QUERY],null,null,$encode?PHP_QUERY_RFC1738:PHP_URL_QUERY);
+					$url.= '?'.http_build_query($chunks[self::V_QUERY]);
 				}else{
 					$url.= '?'.$chunks[self::V_QUERY];
 				}
