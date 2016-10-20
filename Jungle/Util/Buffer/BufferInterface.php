@@ -7,11 +7,11 @@
  * Date: 05.10.2016
  * Time: 12:42
  */
-namespace Jungle\Util {
+namespace Jungle\Util\Buffer {
 
 	/**
 	 * Interface BufferInterface
-	 * @package Jungle\Util\Specifications\Hypertext
+	 * @package Jungle\Util\Communication\Hypertext
 	 */
 	interface BufferInterface{
 

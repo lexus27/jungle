@@ -8,14 +8,13 @@
  * Time: 13:22
  */
 namespace Jungle\Util\Buffer {
-	
-	use Jungle\Util\Buffer;
+
 
 	/**
-	 * Class Simple
+	 * Class Buffer
 	 * @package Jungle\Util\Buffer
 	 */
-	class Simple extends Buffer{
+	class Buffer implements BufferInterface{
 
 		/** @var  string */
 		protected $data;
@@ -25,7 +24,7 @@ namespace Jungle\Util\Buffer {
 		 * @return mixed
 		 */
 		public function write($string){
-			$this->data.=$string;
+			$this->data .= $string;
 		}
 
 		/**
