@@ -7,14 +7,14 @@
  * Date: 30.06.2016
  * Time: 21:53
  */
-namespace Jungle\Util\Specifications\Http {
+namespace Jungle\Util\Communication\HttpFoundation {
 
 	use Jungle\Util\Smart\Value\IValue;
-	use Jungle\Util\Specifications\Http\Cookie\ManagerInterface;
+	use Jungle\Util\Communication\HttpFoundation\Cookie\ManagerInterface;
 
 	/**
 	 * Class Cookie
-	 * @package Jungle\Util\Specifications\Http
+	 * @package Jungle\Util\Communication\HttpFoundation
 	 */
 	class Cookie implements CookieInterface{
 

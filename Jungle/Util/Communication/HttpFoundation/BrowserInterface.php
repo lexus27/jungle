@@ -7,11 +7,11 @@
  * Date: 02.07.2016
  * Time: 14:25
  */
-namespace Jungle\Util\Specifications\Http {
+namespace Jungle\Util\Communication\HttpFoundation {
 
 	/**
 	 * Interface BrowserInterface
-	 * @package Jungle\Util\Specifications\Http
+	 * @package Jungle\Util\Communication\HttpFoundation
 	 */
 	interface BrowserInterface{
 

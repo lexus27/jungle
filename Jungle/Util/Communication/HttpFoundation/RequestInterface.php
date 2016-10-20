@@ -7,15 +7,15 @@
  * Date: 30.06.2016
  * Time: 13:34
  */
-namespace Jungle\Util\Specifications\Http {
+namespace Jungle\Util\Communication\HttpFoundation {
 
 	use Jungle\User\AccessAuth\Auth;
 	use Jungle\Util\Communication\URL;
-	use Jungle\Util\Specifications\Hypertext\HeaderRegistryReadInterface;
+	use Jungle\Util\Communication\Hypertext\HeaderRegistryReadInterface;
 
 	/**
 	 * Interface RequestInterface
-	 * @package Jungle\Util\Specifications\Http
+	 * @package Jungle\Util\Communication\HttpFoundation
 	 */
 	interface RequestInterface extends HeaderRegistryReadInterface{
 
@@ -192,18 +192,6 @@ namespace Jungle\Util\Specifications\Http {
 		 * @return mixed
 		 */
 		public function hasPost($key = null);
-
-		/**
-		 * @param $key
-		 * @return mixed
-		 */
-		public function getPut($key);
-
-		/**
-		 * @param $key
-		 * @return mixed
-		 */
-		public function hasPut($key);
 
 		/**
 		 * @return bool

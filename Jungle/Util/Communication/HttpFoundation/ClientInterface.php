@@ -7,11 +7,11 @@
  * Date: 02.07.2016
  * Time: 16:53
  */
-namespace Jungle\Util\Specifications\Http {
+namespace Jungle\Util\Communication\HttpFoundation {
 
 	/**
 	 * Interface ClientInterface
-	 * @package Jungle\Util\Specifications\Http
+	 * @package Jungle\Util\Communication\HttpFoundation
 	 */
 	interface ClientInterface{
 

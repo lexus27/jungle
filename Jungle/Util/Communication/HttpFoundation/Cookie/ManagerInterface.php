@@ -7,14 +7,14 @@
  * Date: 30.06.2016
  * Time: 15:39
  */
-namespace Jungle\Util\Specifications\Http\Cookie {
+namespace Jungle\Util\Communication\HttpFoundation\Cookie {
 
-	use Jungle\Util\Specifications\Http\RequestInterface;
-	use Jungle\Util\Specifications\Http\ResponseInterface;
+	use Jungle\Util\Communication\HttpFoundation\RequestInterface;
+	use Jungle\Util\Communication\HttpFoundation\ResponseInterface;
 
 	/**
 	 * Interface ManagerInterface
-	 * @package Jungle\Util\Specifications\Http
+	 * @package Jungle\Util\Communication\HttpFoundation
 	 */
 	interface ManagerInterface extends ConfigurationInterface{
 

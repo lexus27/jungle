@@ -7,13 +7,13 @@
  * Date: 02.07.2016
  * Time: 15:59
  */
-namespace Jungle\Util\Specifications\Http {
+namespace Jungle\Util\Communication\HttpFoundation {
 
-	use Jungle\Util\Specifications\Hypertext\HeaderRegistryWriteInterface;
+	use Jungle\Util\Communication\Hypertext\HeaderRegistryWriteInterface;
 
 	/**
 	 * Interface ResponseSettableInterface
-	 * @package Jungle\Util\Specifications\Http
+	 * @package Jungle\Util\Communication\HttpFoundation
 	 */
 	interface ResponseSettableInterface extends HeaderRegistryWriteInterface{
 
@@ -53,15 +53,6 @@ namespace Jungle\Util\Specifications\Http {
 		 */
 		public function setContentDisposition($disposition);
 
-		/**
-		 * @return bool
-		 */
-		public function isSent();
-
-		/**
-		 * @return void
-		 */
-		public function send();
 	}
 }
 

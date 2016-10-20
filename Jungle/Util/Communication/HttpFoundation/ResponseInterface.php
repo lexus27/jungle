@@ -7,13 +7,13 @@
  * Date: 30.06.2016
  * Time: 13:34
  */
-namespace Jungle\Util\Specifications\Http {
+namespace Jungle\Util\Communication\HttpFoundation {
 
-	use Jungle\Util\Specifications\Hypertext\HeaderRegistryReadInterface;
+	use Jungle\Util\Communication\Hypertext\HeaderRegistryReadInterface;
 
 	/**
 	 * Interface ResponseInterface
-	 * @package Jungle\Util\Specifications\Http
+	 * @package Jungle\Util\Communication\HttpFoundation
 	 */
 	interface ResponseInterface extends HeaderRegistryReadInterface{
 

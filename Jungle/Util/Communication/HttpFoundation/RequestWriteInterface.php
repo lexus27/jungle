@@ -7,15 +7,15 @@
  * Date: 02.07.2016
  * Time: 16:02
  */
-namespace Jungle\Util\Specifications\Http {
+namespace Jungle\Util\Communication\HttpFoundation {
 
 	use Jungle\User\AccessAuth\Auth;
 	use Jungle\Util\ContentsAwareInterface;
-	use Jungle\Util\Specifications\Hypertext\HeaderRegistryWriteInterface;
+	use Jungle\Util\Communication\Hypertext\HeaderRegistryWriteInterface;
 
 	/**
 	 * Interface RequestWriteInterface
-	 * @package Jungle\Util\Specifications\Http
+	 * @package Jungle\Util\Communication\HttpFoundation
 	 */
 	interface RequestWriteInterface extends HeaderRegistryWriteInterface{
 
