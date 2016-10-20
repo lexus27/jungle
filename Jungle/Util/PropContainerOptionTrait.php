@@ -7,15 +7,16 @@
  */
 
 namespace Jungle\Util;
+use Jungle\Util\Exception\RequiredServiceParam;
 
 /**
- * Class OptionContainerTrait
+ * Class PropContainerOptionTrait
  * @package Jungle\Basic\Collection
  *
  * Трейт реализующий хранение опций и настроек
  *
  */
-trait OptionContainerTrait {
+trait PropContainerOptionTrait {
 
 	/** @var array  */
 	protected $_srv_options = [];
@@ -24,29 +25,45 @@ trait OptionContainerTrait {
 	/**
 	 * @param $key
 	 * @param null $default
+	 * @param bool $createLinkIfDefault
 	 * @return null
 	 */
-	public function &getOption($key,$default = null){
+	public function &getOption($key,$default = null, $createLinkIfDefault = false){
 		if($this->hasOption($key)){
 			return $this->_srv_options[$key];
 		}else{
+			if($createLinkIfDefault){
+				$this->_srv_options[$key] = $default;
+				return $this->_srv_options[$key];
+			}
 			$d = $default;
 			return $d;
 		}
 	}
 
+	/**
+	 * @param $key
+	 * @param $value
+	 */
 	public function setOption($key,$value){
-		if(!isset($this->_srv_options[$key]) || $this->_srv_options[$key] !== $value){
+		$old = null;
+		if(!isset($this->_srv_options[$key]) || ($old = $this->_srv_options[$key]) !== $value){
 			$this->_srv_options[$key] = $value;
-			$this->_srv_onOptionChanged($key);
+			$this->_srv_onOptionChanged($key,$old);
 		}
 	}
 
 	/**
 	 * @param $key
+	 * @return mixed
+	 * @throws RequiredServiceParam
 	 */
 	public function requireOption($key){
-
+		if(isset($this->_srv_options[$key])){
+			return $this->_srv_options[$key];
+		}else{
+			throw new RequiredServiceParam($key, 'option');
+		}
 	}
 
 	public function hasOption($key){
@@ -57,7 +74,7 @@ trait OptionContainerTrait {
 		unset($this->_srv_options[$key]);
 	}
 
-	protected function _srv_onOptionChanged($key){}
+	protected function _srv_onOptionChanged($key,$old){}
 
 
 }
