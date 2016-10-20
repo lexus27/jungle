@@ -7,24 +7,28 @@
  * Date: 02.07.2016
  * Time: 18:09
  */
-namespace Jungle\Util\Communication\Http {
-	
-	use Jungle\Util\Communication\Connection\Stream\Socket;
-	use Jungle\Util\Communication\Connection\StreamInterface;
+namespace Jungle\Util\Communication\HttpClient {
+
+	use Jungle\Util\Communication\Net\ConnectionInterface;
+	use Jungle\Util\Communication\Net\Stream;
+	use Jungle\Util\Communication\Stream\StreamInteractionInterface;
 	use Jungle\Util\Communication\URL;
-	use Jungle\Util\Communication\URL\Host\IP;
-	use Jungle\Util\Specifications\Http\ServerInterface;
-	use Jungle\Util\Specifications\Http\ServerSettableInterface;
-	use Jungle\Util\Specifications\Hypertext\Document\WriteProcessor;
+	use Jungle\Util\Communication\HttpFoundation\ServerInterface;
+	use Jungle\Util\Communication\HttpFoundation\ServerSettableInterface;
+	use Jungle\Util\Communication\Hypertext\Document\WriteProcessor;
 
 	/**
 	 * Class Server
-	 * @package Jungle\Util\Communication\Http
+	 * @package Jungle\Util\Communication\HttpClient
 	 */
 	class Server implements ServerInterface, ServerSettableInterface{
 
-		/** @var  NetworkManager */
-		protected $network_manager;
+		/** Constant for request option key */
+		const EXECUTION_STREAM = 'execution_stream';
+
+		/** @var  Network */
+		protected $network;
+
 
 		/** @var  string */
 		protected $ip;
@@ -42,24 +46,16 @@ namespace Jungle\Util\Communication\Http {
 		/** @var  string */
 		protected $engine;
 
-		/** @var  StreamInterface[] */
-		protected $streams_closed = [];
-
-		/** @var  StreamInterface[] */
-		protected $streams_idle = [];
-
-		/** @var  StreamInterface[] */
-		protected $streams_pending = [];
-
 		/** @var  int */
 		protected $last_touch_time;
 
+
 		/**
 		 * Server constructor.
-		 * @param NetworkManager $manager
+		 * @param Network $network
 		 */
-		public function __construct(NetworkManager $manager){
-			$this->network_manager = $manager;
+		public function __construct(Network $network){
+			$this->network = $network;
 		}
 
 		/**
@@ -109,7 +105,7 @@ namespace Jungle\Util\Communication\Http {
 		 * @return mixed
 		 */
 		public function setHost($host){
-			if(IP::isIPAddress($host)){
+			if(@inet_pton($host)){
 				$this->setIp($host);
 			}else{
 				$this->setDomain($host);
@@ -228,12 +224,18 @@ namespace Jungle\Util\Communication\Http {
 		 */
 		public function beforeRequest(Request $request, WriteProcessor $writer){
 
-			/** Set the EXECUTION_STREAM */
+			// Set the EXECUTION_STREAM
 			$source = $writer->getSource();
-			if($source instanceof StreamInterface){
-				$request->setOption(Agent::EXECUTION_STREAM, $source);
+			if($source instanceof StreamInteractionInterface){
+				if($source instanceof ConnectionInterface){
+					//Auto reconnect if keep_alive timeout is overdue
+					$expired = $source->getOption('server::keep_alive_expired');
+					if($expired && ($request->getTime() >= $expired)){
+						$source->reconnect();
+					}
+				}
+				$request->setOption(Server::EXECUTION_STREAM, $source);
 			}
-
 			$this->last_touch_time = time();
 			$request->setHeader('Host', $this->getHost());
 		}
@@ -244,13 +246,19 @@ namespace Jungle\Util\Communication\Http {
 		 * @param Request $request
 		 */
 		public function onResponse(Response $response, Request $request){
-			$stream = $request->getOption(Agent::EXECUTION_STREAM);
-			if($stream instanceof StreamInterface){
-				$request->removeOption(Agent::EXECUTION_STREAM);
+			$stream = $request->getOption(Server::EXECUTION_STREAM);
+			if($stream instanceof ConnectionInterface){
+				$request->rmOption(Server::EXECUTION_STREAM);
 				if($response->haveHeader('Connection','close')){
 					$stream->close();
+				}elseif($keepAlive = $response->getHeader('Keep-Alive')){
+					// Initialize Options for reanimate connection
+					$keepAlive = $this->_decompositeKeepAliveParams($keepAlive);
+					if(isset($keepAlive['timeout']) && $stream instanceof Stream){
+						$stream->setOption('server::keep_alive_expired', $request->getTime() + intval($keepAlive['timeout']));
+					}
 				}
-				$this->passStream($stream);
+				$this->network->pass($stream);
 			}
 			if($this->engine===null){
 				$this->engine = $response->getHeader('Server');
@@ -258,126 +266,17 @@ namespace Jungle\Util\Communication\Http {
 		}
 
 		/**
-		 * @return string
+		 * @param $keepAliveValue
+		 * @return array
 		 */
-		public function getId(){
-			return $this->getIp().':'.$this->getPort();
-		}
-
-		/**
-		 * @return string
-		 */
-		public function __toString(){
-			return $this->getIp().':'.$this->getPort();
-		}
-
-
-		/**
-		 * @return bool
-		 */
-		public function hasActiveStreams(){
-			return !empty($this->streams_pending) || !empty($this->streams_idle);
-		}
-
-		/**
-		 * @return bool
-		 */
-		public function hasClosedStreams(){
-			return !empty($this->streams_closed);
-		}
-
-
-		/**
-		 * @return bool
-		 */
-		public function hasIdleStreams(){
-			return !empty($this->streams_idle);
-		}
-
-		/**
-		 * @return bool
-		 */
-		public function hasPendingStreams(){
-			return !empty($this->streams_pending);
-		}
-
-		/**
-		 * @return StreamInterface
-		 */
-		public function takeStream(){
-			if(!empty($this->streams_idle)){
-				$stream = array_shift($this->streams_idle);
-			}elseif(!empty($this->streams_closed)){
-				$stream = array_shift($this->streams_closed);
-				$stream = $this->_configureStream($stream);
-			}else{
-				$stream = $this->_createStream();
-				$stream = $this->_configureStream($stream);
+		protected function _decompositeKeepAliveParams($keepAliveValue){
+			$keepAlive = explode(',', $keepAliveValue);
+			$b = [];
+			foreach($keepAlive as $v){
+				list($k,$v) = explode('=',trim($v));
+				$b[trim(strtolower($k))] = trim(strtolower($v));
 			}
-			$this->streams_pending[] = $stream;
-			return $stream;
-		}
-
-		/**
-		 * @param StreamInterface $stream
-		 * @return $this
-		 */
-		public function passStream(StreamInterface $stream){
-			if($stream->isConnected()){
-				$this->streams_idle[] = $stream;
-			}else{
-				$this->streams_closed[] = $stream;
-			}
-			$i = array_search($stream,$this->streams_pending, true);
-			if($i!==false){
-				array_splice($this->streams_pending,$i,1);
-			}
-			return $this;
-		}
-
-		/**
-		 * @return int
-		 */
-		public function getLastTouchTime(){
-			return $this->last_touch_time;
-		}
-
-
-		/**
-		 * @return StreamInterface|Socket
-		 */
-		protected function _createStream(){
-			return new Socket([]);
-		}
-
-
-		/**
-		 * @param StreamInterface $stream
-		 * @return StreamInterface|Socket
-		 */
-		protected function _configureStream(StreamInterface $stream){
-			$stream->setConfig([
-				'host'      => $this->getHost(),
-				'port'      => $this->getPort(),
-				'transport' => $this->getTransportProtocol()
-			]);
-			return $stream;
-		}
-
-		/**
-		 * @return string
-		 */
-		public function getTransportProtocol(){
-			return $this->port===443?'ssl':'tcp';
-		}
-
-
-		/**
-		 * @param $port
-		 * @return string
-		 */
-		public static function getTransportProtoByPort($port){
-			return $port===443?'ssl':'tcp';
+			return $b;
 		}
 
 	}

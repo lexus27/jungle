@@ -7,35 +7,35 @@
  * Date: 01.07.2016
  * Time: 23:45
  */
-namespace Jungle\Util\Communication\Http {
+namespace Jungle\Util\Communication\HttpClient {
 	
 	use Jungle\User\AccessAuth\Auth;
-	use Jungle\Util\Communication\Http;
+	use Jungle\Util\Communication\HttpClient;
 	use Jungle\Util\Communication\URL;
 	use Jungle\Util\ContentsAwareInterface;
-	use Jungle\Util\Specifications\Http\BrowserInterface;
-	use Jungle\Util\Specifications\Http\ClientInterface;
-	use Jungle\Util\Specifications\Http\RequestInterface;
-	use Jungle\Util\Specifications\Http\RequestWriteInterface;
-	use Jungle\Util\Specifications\Http\ResponseInterface;
-	use Jungle\Util\Specifications\Http\ServerInterface;
-	use Jungle\Util\Specifications\Hypertext\Content\Multipart;
-	use Jungle\Util\Specifications\Hypertext\Document;
-	use Jungle\Util\Specifications\Hypertext\Document\Processor;
-	use Jungle\Util\Specifications\Hypertext\Document\ReadProcessor;
-	use Jungle\Util\Specifications\Hypertext\Document\WriteProcessor;
+	use Jungle\Util\PropContainerOptionTrait;
+	use Jungle\Util\Communication\HttpFoundation\BrowserInterface;
+	use Jungle\Util\Communication\HttpFoundation\ClientInterface;
+	use Jungle\Util\Communication\HttpFoundation\RequestInterface;
+	use Jungle\Util\Communication\HttpFoundation\RequestWriteInterface;
+	use Jungle\Util\Communication\HttpFoundation\ResponseInterface;
+	use Jungle\Util\Communication\HttpFoundation\ServerInterface;
+	use Jungle\Util\Communication\Hypertext\Content\Multipart;
+	use Jungle\Util\Communication\Hypertext\Document;
+	use Jungle\Util\Communication\Hypertext\Document\Processor;
+	use Jungle\Util\Communication\Hypertext\Document\ReadProcessor;
+	use Jungle\Util\Communication\Hypertext\Document\WriteProcessor;
 
 	/**
 	 * Class Request
-	 * @package Jungle\Util\Communication\Http
+	 * @package Jungle\Util\Communication\HttpClient
 	 */
 	class Request extends Document implements RequestInterface, RequestWriteInterface, \ArrayAccess{
 
+		use PropContainerOptionTrait;
+
 		/** @var  Response */
 		protected $response;
-
-		/** @var bool  */
-		protected $response_reused = false;
 
 		/** @var  Server */
 		protected $server;
@@ -69,6 +69,9 @@ namespace Jungle\Util\Communication\Http {
 		protected $_url;
 
 		/** @var  string */
+		protected $_full_path;
+
+		/** @var  string */
 		protected $scheme = 'http';
 
 		/** @var  string */
@@ -98,12 +101,6 @@ namespace Jungle\Util\Communication\Http {
 		/** @var  ContentsAwareInterface[]  */
 		protected $files = [];
 
-		/** @var array  */
-		protected $options = [];
-
-
-
-
 		/**
 		 * Request constructor.
 		 * @param Agent $agent
@@ -123,47 +120,6 @@ namespace Jungle\Util\Communication\Http {
 			}
 			$this->time     = time();
 		}
-
-		/**
-		 * @param $key
-		 * @param $value
-		 * @return $this
-		 */
-		public function setOption($key, $value){
-			$this->options[$key] = $value;
-			return $this;
-		}
-
-		/**
-		 * @param array $options
-		 * @param bool|false $merge
-		 * @return $this
-		 */
-		public function setOptions(array $options = [ ], $merge = false){
-			$this->options = $merge?array_merge($this->options, $options):$options;
-			return $this;
-		}
-
-		/**
-		 * @param $key
-		 * @param $default
-		 * @return mixed
-		 */
-		public function getOption($key, $default=null){
-			return isset($this->options[$key])?$this->options[$key]:$default;
-		}
-
-		/**
-		 * @param $key
-		 * @return $this
-		 */
-		public function removeOption($key){
-			unset($this->options[$key]);
-			return $this;
-		}
-
-
-
 
 		/**
 		 * @return int
@@ -201,19 +157,10 @@ namespace Jungle\Util\Communication\Http {
 		}
 
 		/**
-		 * @param bool|true $reused
-		 * @return $this
-		 */
-		public function setReusedResponse($reused = true){
-			$this->response_reused = $reused;
-			return $this;
-		}
-
-		/**
 		 * @return bool
 		 */
 		public function isReusedResponse(){
-			return $this->response_reused;
+			return $this->response->isReused();
 		}
 
 		/**
@@ -225,7 +172,7 @@ namespace Jungle\Util\Communication\Http {
 				if(!$this->host){
 					throw new \Exception('Host is not defined in request');
 				}
-				$server = $this->agent->needServer($this->host, $this->scheme);
+				$server = $this->agent->getServer($this->host, $this->scheme);
 				$this->server = $server;
 			}
 			return $this->server;
@@ -449,6 +396,7 @@ namespace Jungle\Util\Communication\Http {
 			if($this->scheme!==$scheme){
 				$this->scheme = $scheme;
 				$this->server = null;
+				$this->_url = null;
 			}
 			return $this;
 		}
@@ -467,7 +415,7 @@ namespace Jungle\Util\Communication\Http {
 		public function setHost($host){
 			if($this->host !== $host){
 				$this->host = $host;
-				$this->server = null;
+				$this->_onServerCorrupted();
 			}
 			return $this;
 		}
@@ -488,7 +436,7 @@ namespace Jungle\Util\Communication\Http {
 		public function setUri($uri){
 			if($this->uri !== $uri){
 				$this->uri = $uri?:'/';
-				$this->server = null;
+				$this->_onUrlCorrupt();
 			}
 			return $this;
 		}
@@ -509,7 +457,7 @@ namespace Jungle\Util\Communication\Http {
 		 */
 		public function setQueryParams(array $queryParams, $merge = false){
 			$this->query_parameters = $merge?array_replace($this->query_parameters,$queryParams):$queryParams;
-			$this->server = null;
+			$this->_onUrlCorrupt();
 			return $this;
 		}
 
@@ -520,7 +468,7 @@ namespace Jungle\Util\Communication\Http {
 		 */
 		public function setQuery($name, $value){
 			$this->query_parameters[$name] = $value;
-			$this->server = null;
+			$this->_onUrlCorrupt();
 			return $this;
 		}
 
@@ -548,6 +496,7 @@ namespace Jungle\Util\Communication\Http {
 		 */
 		public function setFragment($fragment){
 			$this->fragment = $fragment;
+			$this->_onUrlCorrupt();
 			return $this;
 		}
 
@@ -580,24 +529,31 @@ namespace Jungle\Util\Communication\Http {
 		 * @return string
 		 */
 		public function getUrl(){
-			return URL::renderUrl([
-				'scheme'  => $this->getScheme()?:'http',
-				'host'    => $this->host,
-				'path'    => $this->getUri(),
-				'query'   => $this->query_parameters,
-				'fragment'=> $this->fragment,
-			]);
+			if(!$this->_url){
+				$this->_url = URL::renderUrl([
+					'scheme'  => $this->getScheme()?:'http',
+					'host'    => $this->host,
+					'path'    => $this->uri,
+					'query'   => $this->query_parameters,
+					'fragment'=> $this->fragment,
+				]);
+			}
+			return $this->_url;
 		}
+
 
 		/**
 		 * @return string
 		 */
 		public function getFullPath(){
-			return URL::renderUrl([
-				'path'    => $this->getUri(),
-				'query'   => $this->query_parameters,
-				'fragment'=> $this->fragment,
-			],true,false);
+			if(!$this->_full_path){
+				$this->_full_path = URL::renderUrl([
+					'path'    => $this->uri,
+					'query'   => $this->query_parameters,
+					'fragment'=> $this->fragment,
+				],true,false);
+			}
+			return $this->_full_path;
 		}
 
 
@@ -846,23 +802,6 @@ namespace Jungle\Util\Communication\Http {
 		}
 
 		/**
-		 * @param $key
-		 * @return mixed
-		 */
-		public function getPut($key){
-			// TODO: Implement getPut() method.
-		}
-
-		/**
-		 * @param $key
-		 * @return mixed
-		 */
-		public function hasPut($key){
-			// TODO: Implement hasPut() method.
-		}
-
-
-		/**
 		 * @return bool
 		 */
 		public function hasObject(){
@@ -942,14 +881,17 @@ namespace Jungle\Util\Communication\Http {
 		 * @return void
 		 */
 		public function beforeWrite(WriteProcessor $writer){
-			$this->server->beforeRequest($this, $writer);
+			if($this->loading){
+				$this->time = time();
+				$this->server->beforeRequest($this, $writer);
+			}
 			/** Meta Header Write */
 			$writer->write(strtoupper($this->method).' '.$this->getFullPath().' ' . "{$this->server->getProtocol()}\r\n");
 		}
 
 		/**
 		 * @param WriteProcessor $writer
-		 * @return mixed|void
+		 * @return void
 		 */
 		public function continueWrite(WriteProcessor $writer){
 			$this->loading = false;
@@ -962,29 +904,11 @@ namespace Jungle\Util\Communication\Http {
 			$this->cache = $reader->getBuffered();
 		}
 
-
-		/**
-		 * @return string
-		 * @throws \Exception
-		 */
-		public function render(){
-			$writer = $this->getWriteProcessor();
-			$writer->setDocument($this);
-			$writer->setBuffer(null);
-			$source = $writer->process('');
-			if($this->cacheable){
-				$this->cache = (string)$source;
-			}
-			return $source;
-		}
-
-
-
 		/**
 		 * @return bool
 		 */
 		public function isSent(){
-			return isset($this->options[Agent::EXECUTION_STREAM]);
+			return $this->hasOption(Agent::EXECUTION_STREAM);
 		}
 
 
@@ -1026,9 +950,16 @@ namespace Jungle\Util\Communication\Http {
 		}
 
 
+		protected function _onServerCorrupted(){
+			$this->server       = null;
+			$this->_url         = null;
+			$this->_full_path   = null;
+		}
 
-
-
+		protected function _onUrlCorrupt(){
+			$this->_url         = null;
+			$this->_full_path   = null;
+		}
 
 		/**
 		 * fresh content..
@@ -1080,6 +1011,7 @@ namespace Jungle\Util\Communication\Http {
 				$this->content = $content;
 			}
 		}
+
 
 
 	}

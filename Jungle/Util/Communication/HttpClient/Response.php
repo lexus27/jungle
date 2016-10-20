@@ -7,25 +7,28 @@
  * Date: 02.07.2016
  * Time: 18:44
  */
-namespace Jungle\Util\Communication\Http {
+namespace Jungle\Util\Communication\HttpClient {
 
 	use Jungle\Util\Communication\Http;
 	use Jungle\Util\Communication\URL;
-	use Jungle\Util\Specifications\Http\Cookie;
-	use Jungle\Util\Specifications\Http\RequestInterface;
-	use Jungle\Util\Specifications\Http\ResponseInterface;
-	use Jungle\Util\Specifications\Http\ResponseOnClientInterface;
-	use Jungle\Util\Specifications\Http\ResponseSettableInterface;
-	use Jungle\Util\Specifications\Http\ServerInterface;
-	use Jungle\Util\Specifications\Hypertext\Document;
-	use Jungle\Util\Specifications\Hypertext\Document\ReadProcessor;
-	use Jungle\Util\Specifications\Hypertext\Document\WriteProcessor;
+	use Jungle\Util\PropContainerOptionTrait;
+	use Jungle\Util\Communication\HttpFoundation\Cookie;
+	use Jungle\Util\Communication\HttpFoundation\RequestInterface;
+	use Jungle\Util\Communication\HttpFoundation\ResponseInterface;
+	use Jungle\Util\Communication\HttpFoundation\ResponseOnClientInterface;
+	use Jungle\Util\Communication\HttpFoundation\ResponseSettableInterface;
+	use Jungle\Util\Communication\HttpFoundation\ServerInterface;
+	use Jungle\Util\Communication\Hypertext\Document;
+	use Jungle\Util\Communication\Hypertext\Document\ReadProcessor;
+	use Jungle\Util\Communication\Hypertext\Document\WriteProcessor;
 
 	/**
 	 * Class Response
-	 * @package Jungle\Util\Communication\Http
+	 * @package Jungle\Util\Communication\HttpClient
 	 */
 	class Response extends Document implements ResponseInterface,ResponseSettableInterface, ResponseOnClientInterface{
+
+		use PropContainerOptionTrait;
 
 		/** @var  Request */
 		protected $request;
@@ -38,9 +41,6 @@ namespace Jungle\Util\Communication\Http {
 
 		/** @var  Cookie[]  */
 		protected $cookies = [];
-
-		/** @var  bool  */
-		protected $accepted = false;
 
 		/** @var  bool  */
 		protected $reused = false;
@@ -149,6 +149,18 @@ namespace Jungle\Util\Communication\Http {
 		}
 
 		/**
+		 * @return Request
+		 */
+		public function getRedirectRequest(){
+			$url = $this->getRedirectUrl();
+			$method = $this->request->getMethod();
+			if($this->getCode() === 303){
+				$method = 'get';
+			}
+			return $this->request->getAgent()->createRequest($url, $method);
+		}
+
+		/**
 		 * @return mixed
 		 */
 		public function isContentLocated(){
@@ -231,7 +243,7 @@ namespace Jungle\Util\Communication\Http {
 		}
 
 		/**
-		 * @return \Jungle\Util\Specifications\Http\Cookie[]
+		 * @return \Jungle\Util\Communication\HttpFoundation\Cookie[]
 		 */
 		public function getCookies(){
 			return $this->cookies;
@@ -270,7 +282,6 @@ namespace Jungle\Util\Communication\Http {
 		 * @return mixed
 		 */
 		public function onHeadersRead(Document\ReadProcessor $reader){
-			$this->accepted = true;
 			$collection = $this->getHeaderCollection('Set-Cookie');
 			foreach($collection as $cookieString){
 				$cookie = Http::parseCookieString($cookieString);
@@ -328,30 +339,9 @@ namespace Jungle\Util\Communication\Http {
 		 * @throws \Exception
 		 */
 		public function render(){
-			$writer = $this->getWriteProcessor();
-			$writer->setDocument($this);
-			$writer->setBuffer(null);
-			$source = $writer->process('');
-			$this->cache = (string)$source;
 			$this->cacheable = true;
-			return $source;
+			return parent::render();
 		}
-
-
-		/**
-		 * @return bool
-		 */
-		public function isSent(){
-			return $this->accepted;
-		}
-
-		/**
-		 * @return void
-		 */
-		public function send(){
-			$this->accepted = true;
-		}
-
 
 		/**
 		 * @param Response $response
@@ -371,7 +361,6 @@ namespace Jungle\Util\Communication\Http {
 				$this->setContent($response->getContent());
 			}
 			$this->reused = true;
-			$this->request->setReusedResponse(true);
 			return $this;
 		}
 

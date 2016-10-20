@@ -7,40 +7,21 @@
  * Date: 12.10.2016
  * Time: 18:42
  */
-namespace Jungle\Util\Communication\Http {
+namespace Jungle\Util\Communication\HttpClient\CacheManager {
 
-	use Jungle\Util\Communication\Http\CacheManager\Record;
-	use Jungle\Util\Communication\Http\CacheManager\Resource;
-	use Jungle\Util\Specifications\Hypertext\Document\Exception\EarlyException;
-	use Jungle\Util\Specifications\Hypertext\Header;
+	use Jungle\Util\Communication\HttpClient\Request;
+	use Jungle\Util\Communication\HttpClient\Response;
+	use Jungle\Util\Communication\Hypertext\Document\Exception\ProcessorEarlyException;
+	use Jungle\Util\Communication\Hypertext\Header;
 
 	/**
 	 * Class CacheManager
-	 * @package Jungle\Util\Communication\Http
+	 * @package Jungle\Util\Communication\HttpClient
 	 */
 	class CacheManager{
 
-		/** @var  CacheManager\Resource[] */
+		/** @var  CacheResourceInterface[] */
 		protected $resources = [];
-
-		/** @var bool  */
-		protected $active = false;
-
-		/**
-		 * @param bool|true $active
-		 * @return $this
-		 */
-		public function setActive($active = true){
-			$this->active = $active;
-			return $this;
-		}
-
-		/**
-		 * @return bool
-		 */
-		public function isActive(){
-			return $this->active;
-		}
 
 		/**
 		 *
@@ -49,72 +30,37 @@ namespace Jungle\Util\Communication\Http {
 			$this->resources = [];
 		}
 
-		/**
-		 * @param Request $request
-		 * @param array $vary
-		 * @return string
-		 */
-		public function getCacheKey(Request $request, array $vary = null){
-			$url = $request->getUrl();
-			if($vary!==null){
-				$vary_values = [];
-				foreach($vary as $name){
-					$vary_values[] = $name.': '.implode(', ',$request->getHeaderCollection($vary));
-				}
-				$vary_values = implode("\r\n");
-				return md5($url . ($vary_values?"\r\n".$vary_values:''));
-			}
-			return md5($url);
-		}
-
-
-		/**
-		 * @param $maxAge
-		 * @param $requestTime
-		 * @param null $now
-		 * @return bool
-		 */
-		public function maxAgeIsOverdue($maxAge, $requestTime, $now = null){
-			if($now===null)$now = time();
-			return $now > $requestTime + $maxAge;
-		}
-
-		/**
-		 * @param $expires
-		 * @param null $now
-		 * @return bool
-		 */
-		public function expiresIsOverdue($expires, $now = null){
-			$expires = strtotime($expires);
-			if($now===null)$now = time();
-			return $now > $expires;
-		}
 
 		/**
 		 * @param Request $request
-		 * @throws EarlyException
+		 * @throws ProcessorEarlyException
 		 */
 		public function checkRequest(Request $request){
 			$url = $request->getUrl();
-			$resource = $this->_loadResource($url);
+			$resource = $this->loadResource($url);
 			if($resource!==null){
 				$signature = $resource->makeSignature($request);
 				$request->setOption('cache_manager::signature', $signature);
-				$record = $resource->getRecord($signature);
+				$record = $resource->getEntry($signature);
 				if($record){
 					if(!$record->no_cache){
 						if($record->must_revalidate){
-
-							if(isset($record->max_age) && !$this->maxAgeIsOverdue($record->max_age, $record->time)){
-								$request->setOption('cache_manager::from_cache', true);
-								$response = $request->getResponse();
-								$response->reuse($record->response);
+							if(isset($record->max_age)){
+								if(!$this->maxAgeIsOverdue($record->max_age, $record->time)){
+									$request->setOption('cache_manager::from_cache', true);
+									$response = $request->getResponse();
+									$response->reuse($record->response);
+									throw new ProcessorEarlyException();
+								}
 							}
 
-							if(isset($record->expired) && !isset($record->max_age) && !$this->expiresIsOverdue($record->expired, $record->time)){
-								$request->setOption('cache_manager::from_cache', true);
-								$response = $request->getResponse();
-								$response->reuse($record->response);
+							if(isset($record->expired) && !isset($record->max_age)){
+								if(!$this->expiresIsOverdue($record->expired, $record->time)){
+									$request->setOption('cache_manager::from_cache', true);
+									$response = $request->getResponse();
+									$response->reuse($record->response);
+									throw new ProcessorEarlyException();
+								}
 							}
 
 						}else{
@@ -124,7 +70,7 @@ namespace Jungle\Util\Communication\Http {
 									$request->setOption('cache_manager::from_cache', true);
 									$response = $request->getResponse();
 									$response->reuse($record->response);
-									throw new EarlyException();
+									throw new ProcessorEarlyException();
 								}
 							}
 
@@ -133,7 +79,7 @@ namespace Jungle\Util\Communication\Http {
 									$request->setOption('cache_manager::from_cache', true);
 									$response = $request->getResponse();
 									$response->reuse($record->response);
-									throw new EarlyException();
+									throw new ProcessorEarlyException();
 								}
 							}
 						}
@@ -157,28 +103,26 @@ namespace Jungle\Util\Communication\Http {
 		/**
 		 * @param Response $response
 		 * @param Request $request
-		 * @throws EarlyException
+		 * @throws ProcessorEarlyException
 		 */
 		public function onResponseHeaders(Response $response, Request $request){
 			if($response->getCode() === 304){
+				$signature = $resource = $record = null;
 				$url = $request->getUrl();
-				$signature = false;
-				$resource = null;
-				$record = null;
-				if(isset($this->resources[$url])){
-					$resource = $this->resources[$url];
+				$resource = $this->loadResource($url);
+				if($resource){
 					$signature = $request->getOption('cache_manager::signature');
-					if($signature!==false){
-						if( ($record = $resource->getRecord($signature)) ){
+					if($signature!==null){
+						if( ($record = $resource->getEntry($signature)) ){
 							if($request->getOption('cache_manager::validate')){
 								$response->reuse($record->response, true);
 							}
 						}
 					}
 				}
-				$this->_updateRecord($url,$request,$response,$signature,$resource,$record);
+				$this->updateResource($url,$request,$response,$resource,$signature,$record);
 				if($response->isReused()){
-					throw new EarlyException();
+					throw new ProcessorEarlyException();
 				}
 			}
 		}
@@ -190,14 +134,12 @@ namespace Jungle\Util\Communication\Http {
 		public function onResponse(Response $response, Request $request){
 			if($response->getCode()!==304){
 				$url = $request->getUrl();
-				$signature = false;
-				$resource = null;
-				$record = null;
-				$resource = $this->_loadResource($url);
+				$signature = $record = null;
+				$resource = $this->loadResource($url);
 				if($resource!==null){
-					$signature = $request->getOption('cache_manager::signature', false);
-					if($signature!==false){
-						if( ($record = $resource->getRecord($signature)) ){
+					$signature = $request->getOption('cache_manager::signature');
+					if($signature!==null){
+						if( ($record = $resource->getEntry($signature)) ){
 							if($request->getOption('cache_manager::validation')){
 								if($response->getCode() === 304){
 									$response->reuse($record->response, true);
@@ -206,7 +148,7 @@ namespace Jungle\Util\Communication\Http {
 						}
 					}
 				}
-				$this->_updateRecord($url,$request,$response,$signature,$resource,$record);
+				$this->updateResource($url,$request,$response,$resource, $signature, $record);
 			}
 		}
 
@@ -215,11 +157,11 @@ namespace Jungle\Util\Communication\Http {
 		 * @param $url
 		 * @param Request $request
 		 * @param Response $response
+		 * @param CacheResourceInterface $resource
 		 * @param bool $signature
-		 * @param CacheManager\Resource $resource
-		 * @param Record $record
+		 * @param CacheEntry $entry
 		 */
-		protected function _updateRecord($url, Request $request, Response $response, $signature = false, Resource $resource = null, Record $record = null){
+		protected function updateResource($url, Request $request, Response $response, CacheResourceInterface $resource = null, $signature = null, CacheEntry $entry = null){
 			$request_time = $request->getTime();
 
 			$allowed = true;
@@ -273,47 +215,54 @@ namespace Jungle\Util\Communication\Http {
 						$vary = null;
 					}
 
-					$created_resource = false;
-					if(!$resource){
-						$created_resource = true;
-						$resource = new Resource();
+					if(is_null($resource)){
+						$resource = $this->createResource();
 					}
+
 					$resource->setVary($vary);
-					if($signature===false){
+
+					if(is_null($signature)){
 						$signature = $resource->makeSignature($request);
 					}
 
-					if(!$record){
-						$record = new Record();
-						$record->time = $request_time;
-						$record->response = $response;
+					if(!$entry){
+						$entry = $resource->createEntry();
+						$entry->time = $request_time;
+						$entry->response = $response;
 					}
 
 					foreach($tokens as $itm){
 						if($itm === 'public'){
-							$record->private = false;
+							$entry->private = false;
 						}elseif($itm === 'private'){
-							$record->private = true;
-						}elseif(property_exists($record,$itm)){
-							$record->{$itm} = true;
+							$entry->private = true;
+						}elseif(property_exists($entry,$itm)){
+							$entry->{$itm} = true;
 						}
 					}
-					foreach($a as $k => $v) $record->{$k} = $v;
 
-					$resource->setRecord($signature, $record);
-
-					if($created_resource){
-						$this->_setResource($url, $resource);
+					foreach($a as $k => $v){
+						$entry->{$k} = $v;
 					}
+
+					$resource->updateEntry($signature, $entry);
+					$this->bindResource($url, $resource);
 				}
 			}
 		}
 
 		/**
-		 * @param $value
-		 * @return null
+		 * @return Resource
 		 */
-		public function decompositeHeaderValue($value){
+		protected function createResource(){
+			return new CacheResource();
+		}
+
+		/**
+		 * @param $value
+		 * @return array|null
+		 */
+		protected function decompositeHeaderValue($value){
 			if($value){
 				$elements = [];
 				$value = explode(',',trim($value," \r\n,"));
@@ -342,19 +291,61 @@ namespace Jungle\Util\Communication\Http {
 			}
 		}
 
+
+		/**
+		 * @param Request $request
+		 * @param array $vary
+		 * @return string
+		 */
+		protected function getCacheKey(Request $request, array $vary = null){
+			$url = $request->getUrl();
+			if($vary!==null){
+				$vary_values = [];
+				foreach($vary as $name){
+					$vary_values[] = $name.': '.implode(', ',$request->getHeaderCollection($vary));
+				}
+				$vary_values = implode("\r\n");
+				return md5($url . ($vary_values?"\r\n".$vary_values:''));
+			}
+			return md5($url);
+		}
+
+
+		/**
+		 * @param $maxAge
+		 * @param $requestTime
+		 * @param null $now
+		 * @return bool
+		 */
+		protected function maxAgeIsOverdue($maxAge, $requestTime, $now = null){
+			if($now===null)$now = time();
+			return $now > $requestTime + $maxAge;
+		}
+
+		/**
+		 * @param $expires
+		 * @param null $now
+		 * @return bool
+		 */
+		protected function expiresIsOverdue($expires, $now = null){
+			$expires = strtotime($expires);
+			if($now===null)$now = time();
+			return $now > $expires;
+		}
+
 		/**
 		 * @param $url
-		 * @return CacheManager\Resource|null
+		 * @return CacheResourceInterface|null
 		 */
-		protected function _loadResource($url){
+		protected function loadResource($url){
 			return isset($this->resources[$url])?$this->resources[$url]:null;
 		}
 
 		/**
 		 * @param $url
-		 * @param CacheManager\Resource $resource
+		 * @param CacheResourceInterface $resource
 		 */
-		protected function _setResource($url, CacheManager\Resource $resource){
+		protected function bindResource($url, CacheResourceInterface $resource){
 			$this->resources[$url] = $resource;
 		}
 
