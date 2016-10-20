@@ -4,63 +4,33 @@
  * Author: Kutuzov Alexey Konstantinovich <lexus.1995@mail.ru>
  * Project: jungle
  * IDE: PhpStorm
- * Date: 05.10.2016
- * Time: 17:02
+ * Date: 18.10.2016
+ * Time: 0:14
  */
-namespace Jungle\Util\Communication\Connection\Stream {
-	
-	use Jungle\Util\Communication\Connection\Stream;
+namespace Jungle\Util\Communication\Stream {
 
 	/**
 	 * Class Memory
-	 * @package Jungle\Util\Communication\Connection\Stream
+	 * @package Jungle\Util\Communication\Stream
 	 */
-	class Memory extends Stream{
+	class Memory implements StreamInteractionInterface{
 
-		/** @var   */
-		protected $position;
+		/** @var  int */
+		protected $position = 0;
 
-		/** @var   */
+		/** @var  int */
 		protected $length;
+
+		/** @var string  */
+		protected $text;
 
 		/**
 		 * Memory constructor.
 		 * @param string $string
 		 */
 		public function __construct($string){
-			$this->setConfig([
-				'string' => $string
-			]);
-		}
-
-		/**
-		 * @param array $config
-		 * @return $this
-		 */
-		public function setConfig(array $config){
-			$this->config = array_replace([
-				'string' => '',
-			], $config);
-			return $this;
-		}
-
-		/**
-		 * Open connection
-		 * @return resource|bool
-		 */
-		protected function _connect(){
-			$string = $this->getOption('string', '');
+			$this->text = $string;
 			$this->length = strlen($string);
-			$this->position = 0;
-			return $string;
-		}
-
-		/**
-		 * Close connection
-		 */
-		protected function _close(){
-			$this->length = null;
-			$this->position = null;
 		}
 
 		/**
@@ -76,7 +46,7 @@ namespace Jungle\Util\Communication\Connection\Stream {
 			while(true){
 				if($length > $i){
 					$char = $data{$i};
-					$this->connection{$this->position} = $char;
+					$this->text{$this->position} = $char;
 					$this->position++;
 					if($this->length <= $this->position){
 						$this->length++;
@@ -98,10 +68,10 @@ namespace Jungle\Util\Communication\Connection\Stream {
 				return false;
 			}
 			if($length === -1){
-				$a = substr($this->connection,$this->position);
+				$a = substr($this->text,$this->position);
 				$this->position = $this->length;
 			}else{
-				$a = substr($this->connection,$this->position, $length);
+				$a = substr($this->text,$this->position, $length);
 				$this->position+= $length;
 			}
 
@@ -114,18 +84,18 @@ namespace Jungle\Util\Communication\Connection\Stream {
 		 */
 		public function readLine($length = null){
 			$len = strlen("\r\n");
-			$pos = strpos($this->connection,"\r\n",$this->position);
+			$pos = strpos($this->text,"\r\n",$this->position);
 			if($pos!==false){
 				$nextPos = $pos+$len;
 				$readLen = $nextPos - $this->position;
 				if($length!==null && $readLen > $length){
 					$readLen = $length;
 				}
-				$str = substr($this->connection,$this->position,$readLen);
+				$str = substr($this->text,$this->position,$readLen);
 				$this->position = $nextPos;
 				return $str;
 			}else{
-				$str = substr($this->connection,$this->position);
+				$str = substr($this->text,$this->position);
 				$this->position = $this->length;
 				return $str;
 			}
@@ -157,7 +127,6 @@ namespace Jungle\Util\Communication\Connection\Stream {
 				}
 			}
 		}
-
 
 	}
 }

@@ -7,7 +7,7 @@
  * Date: 04.10.2016
  * Time: 18:12
  */
-namespace Jungle\Util\Communication\Connection {
+namespace Jungle\Util\Communication\Stream {
 
 	/**
 	 * Interface StreamInteractionInterface
