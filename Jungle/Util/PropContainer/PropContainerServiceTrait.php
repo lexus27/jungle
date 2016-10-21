@@ -6,15 +6,15 @@
  * Time: 13:21
  */
 
-namespace Jungle\Util;
+namespace Jungle\Util\PropContainer;
 
 /**
- * Class ServiceContainerTrait
+ * Class PropContainerServiceTrait
  * @package Jungle\Basic\Collection
  * Трейт реализующий хранение инициализаторов объектов
  *
  */
-trait ServiceContainerTrait {
+trait PropContainerServiceTrait {
 
 	/** @var object[]|callable[]|string[]  */
 	protected $_srv_services = [];
