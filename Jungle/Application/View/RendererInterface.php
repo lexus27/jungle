@@ -12,7 +12,7 @@ namespace Jungle\Application\View {
 	use Jungle\Application\Dispatcher\ProcessInterface;
 	use Jungle\Application\ViewInterface;
 	use Jungle\Util\CacheableInterface;
-	use Jungle\Util\NamedReadInterface;
+	use Jungle\Util\Named\NamedReadInterface;
 
 	/**
 	 * Class RendererInterface

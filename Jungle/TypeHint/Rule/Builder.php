@@ -9,7 +9,7 @@ namespace Jungle\TypeHint\Rule {
 
 	use Jungle\TypeHint;
 	use Jungle\TypeHint\Rule;
-	use Jungle\Util\NamedInterface;
+	use Jungle\Util\Named\NamedInterface;
 
 	/**
 	 * Class Builder

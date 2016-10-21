@@ -6,7 +6,7 @@
  * Time: 17:19
  */
 
-namespace Jungle\Util {
+namespace Jungle\Util\Named {
 
 	/**
 	 * Interface INamedBase

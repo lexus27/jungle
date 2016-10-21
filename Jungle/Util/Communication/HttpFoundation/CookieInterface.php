@@ -9,10 +9,10 @@
  */
 namespace Jungle\Util\Communication\HttpFoundation {
 
-	use Jungle\Util\NamedInterface;
+	use Jungle\Util\Communication\HttpFoundation\Cookie\ConfigurationInterface;
+	use Jungle\Util\Named\NamedInterface;
 	use Jungle\Util\Smart\Value\IValue;
 	use Jungle\Util\Smart\Value\IValueSettable;
-	use Jungle\Util\Communication\HttpFoundation\Cookie\ConfigurationInterface;
 	
 	/**
 	 * Interface CookieInterface

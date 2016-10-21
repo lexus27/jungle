@@ -8,7 +8,7 @@
 
 namespace Jungle\Util\Smart\WorkSpace {
 
-	use Jungle\Util\NamedInterface;
+	use Jungle\Util\Named\NamedInterface;
 
 	/**
 	 * Class NaSpace

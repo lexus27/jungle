@@ -9,7 +9,7 @@
  */
 namespace Jungle\Util\Data\Schema\Indexed {
 
-	use Jungle\Util\NamedInterface;
+	use Jungle\Util\Named\NamedInterface;
 
 	/**
 	 * Class Index

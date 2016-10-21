@@ -7,7 +7,7 @@
  * Date: 25.04.2016
  * Time: 7:47
  */
-namespace Jungle\Util {
+namespace Jungle\Util\Named {
 
 	/**
 	 * Interface NamedAlternatesInterface

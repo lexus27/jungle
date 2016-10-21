@@ -8,7 +8,7 @@
 
 namespace Jungle\Util\Smart\Value\Measure {
 
-	use Jungle\Util\NamedInterface;
+	use Jungle\Util\Named\NamedInterface;
 
 	/**
 	 * Тип единицы измерения или же то что измеряет единица измерения в данном типе (Скорость,Растояние,Объем,Деньги, и т.д)

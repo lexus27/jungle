@@ -8,7 +8,7 @@
 
 namespace Jungle\Util\Smart\Value\Measure {
 
-	use Jungle\Util\NamedInterface;
+	use Jungle\Util\Named\NamedInterface;
 
 	/**
 	 * Единица измерения

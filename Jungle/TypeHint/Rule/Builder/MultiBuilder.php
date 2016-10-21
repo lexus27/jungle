@@ -58,7 +58,7 @@ namespace Jungle\TypeHint\Rule\Builder {
 
 		/**
 		 * @param $name
-		 * @return \Jungle\Util\NamedInterface|null
+		 * @return \Jungle\Util\Named\NamedInterface|null
 		 */
 		public function getBuilder($name){
 			return Massive::getNamed($this->builders,$name,'strcasecmp');

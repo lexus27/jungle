@@ -10,7 +10,7 @@ namespace Jungle\Data\Storage\Db\Structure\Column {
 	use Jungle\Data\Storage\Db\Structure\Column;
 	use Jungle\Data\Storage\Db\Structure\StructureObject;
 	use Jungle\Data\Storage\Db\Structure\Table;
-	use Jungle\Util\NamedInterface;
+	use Jungle\Util\Named\NamedInterface;
 
 	/**
 	 * Class ForeignKey

@@ -5,7 +5,7 @@
  * Date: 19.11.2015
  * Time: 11:31
  */
-namespace Jungle\Util {
+namespace Jungle\Util\Named {
 
 	/**
 	 * Interface NamedReadInterface

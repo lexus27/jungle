@@ -9,7 +9,7 @@ namespace Jungle\Util\Value {
 
 	use Jungle\Util\Data\Cmp;
 	use Jungle\Util\Data\Schema\OuterInteraction\ValueAccessor;
-	use Jungle\Util\NamedInterface;
+	use Jungle\Util\Named\NamedInterface;
 	use Jungle\Util\Value\Cmp as UtilCmp;
 
 	/**
@@ -224,10 +224,10 @@ namespace Jungle\Util\Value {
 		}
 
 		/**
-		 * @param \Jungle\Util\NamedInterface[] $array
+		 * @param \Jungle\Util\Named\NamedInterface[] $array
 		 * @param $name
 		 * @param callable $cmp
-		 * @return \Jungle\Util\NamedInterface[]
+		 * @return \Jungle\Util\Named\NamedInterface[]
 		 */
 		public static function collectNames(array $array, $name,callable $cmp = null){
 			if($cmp===null)$cmp = 'strcmp';
@@ -244,10 +244,10 @@ namespace Jungle\Util\Value {
 		}
 
 		/**
-		 * @param NamedInterface[] $array
+		 * @param \Jungle\Util\Named\NamedInterface[] $array
 		 * @param $name
 		 * @param callable $cmp
-		 * @return \Jungle\Util\NamedInterface[]
+		 * @return \Jungle\Util\Named\NamedInterface[]
 		 */
 		public static function filterNamed(array $array, $name,callable $cmp = null){
 			if($cmp===null)$cmp = 'strcmp';
@@ -268,7 +268,7 @@ namespace Jungle\Util\Value {
 
 		/**
 		 * @param NamedInterface[] $array
-		 * @param \Jungle\Util\NamedInterface $name
+		 * @param \Jungle\Util\Named\NamedInterface $name
 		 * @param callable $cmp
 		 * @param null $modeExists
 		 */
@@ -300,7 +300,7 @@ namespace Jungle\Util\Value {
 		}
 
 		/**
-		 * @param \Jungle\Util\NamedInterface[] $array
+		 * @param \Jungle\Util\Named\NamedInterface[] $array
 		 * @param string $name
 		 * @param callable $cmp
 		 * @return bool|int

@@ -5,7 +5,7 @@
  * Date: 19.11.2015
  * Time: 11:30
  */
-namespace Jungle\Util {
+namespace Jungle\Util\Named {
 
 	/**
 	 * Interface NamedWriteInterface

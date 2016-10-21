@@ -8,7 +8,7 @@
 namespace Jungle\Data\Storage\Db\Structure\Column {
 
 	use Jungle\Data\Storage\Db\Structure\Column;
-	use Jungle\Util\NamedInterface;
+	use Jungle\Util\Named\NamedInterface;
 	use Jungle\Util\Smart\Keyword\Keyword;
 
 	/**

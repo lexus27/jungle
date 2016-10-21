@@ -9,7 +9,7 @@
  */
 namespace Jungle\Event {
 
-	use Jungle\Util\NamedInterface;
+	use Jungle\Util\Named\NamedInterface;
 
 	/**
 	 * Interface EventInterface
