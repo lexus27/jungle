@@ -26,10 +26,6 @@ namespace Jungle\Application {
 		 */
 		public function setContent($content);
 
-		/**
-		 * @return mixed
-		 */
-		public function send();
 
 	}
 }

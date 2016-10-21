@@ -9,7 +9,7 @@
  */
 namespace Jungle\Http {
 
-	use Jungle\Util\Specifications\Http\ClientInterface;
+	use Jungle\Util\Communication\HttpFoundation\ClientInterface;
 
 	/**
 	 * Class Client

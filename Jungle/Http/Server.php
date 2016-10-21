@@ -9,8 +9,8 @@
  */
 namespace Jungle\Http {
 	
+	use Jungle\Util\Communication\HttpFoundation\ServerInterface;
 	use Jungle\Util\Communication\URL;
-	use Jungle\Util\Specifications\Http\ServerInterface;
 
 	/**
 	 * Class Server

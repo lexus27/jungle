@@ -20,11 +20,11 @@ namespace Jungle\Di {
 	use Jungle\Messenger;
 	use Jungle\User\Account;
 	use Jungle\User\SessionManager;
-	use Jungle\Util\Specifications\Http\Cookie\ManagerInterface;
-	use Jungle\Util\Specifications\Http\RequestInterface;
-	use Jungle\Util\Specifications\Http\ResponseInterface;
-	use Jungle\Util\Specifications\Http\ResponseOnServerInterface;
-	use Jungle\Util\Specifications\Http\ResponseSettableInterface;
+	use Jungle\Util\Communication\HttpFoundation\Cookie\ManagerInterface;
+	use Jungle\Util\Communication\HttpFoundation\RequestInterface;
+	use Jungle\Util\Communication\HttpFoundation\ResponseInterface;
+	use Jungle\Util\Communication\HttpFoundation\ResponseOnServerInterface;
+	use Jungle\Util\Communication\HttpFoundation\ResponseSettableInterface;
 
 	/**
 	 * Class Injectable
@@ -50,7 +50,7 @@ namespace Jungle\Di {
 	 * @property Account $account
 	 * @property $access
 	 * @property SessionManager $session
-	 * @property \Jungle\Util\Specifications\Http\Cookie\ManagerInterface $cookie
+	 * @property ManagerInterface $cookie
 	 * @property Messenger $messenger
 	 */
 	abstract class Injectable implements InjectionAwareInterface{
