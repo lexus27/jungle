@@ -247,7 +247,7 @@ namespace Jungle\Util\Communication\ApiInteractingHttp {
 		protected function check(){
 			$this->api->validateProcess($this->process);
 			if(is_callable($this->validator)){
-				call_user_func($this->validator, $this);
+				call_user_func($this->validator, $this->process);
 			}
 		}
 
