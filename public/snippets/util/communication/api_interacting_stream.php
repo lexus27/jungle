@@ -9,18 +9,18 @@
  */
 namespace Jungle\Util\Communication\Sequence;
 
+use Jungle\Util\Communication\ApiInteractingStream\ExtraCombination;
+use Jungle\Util\Communication\ApiInteractingStream\SmtpApi;
+
 include '../../loader.php';
 
 /**
  * Example with Smtp (Jungle\Util\Communication\Sequence\Specification\Smtp)
  */
 
-$specification = new Specification\Smtp();
-$sequence = $specification->createSequence();
-$sequence->setSpecification($specification);
-$sequence->setConfig([
-	'params_merge' => true,
-
+$api = new SmtpApi();
+$combination = new ExtraCombination($api);
+$combination->setDefaultParams([
 	'scheme'       => 'ssl',
 	'host'         => 'smtp.mail.ru',
 	'port'         => 465,
@@ -34,11 +34,11 @@ $sequence->setConfig([
 	'data'         => null,
 	'size'         => null,
 ]);
-$sequence->setSequence([
+$combination->setList([
 	'hello',
 	'auth',
 	'mail_from',
 	'recipient',
 	'data'
 ]);
-$sequence->run();
+$combination->run();

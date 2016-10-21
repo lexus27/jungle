@@ -7,8 +7,8 @@
  * Date: 13.10.2016
  * Time: 14:22
  */
-include '../../../loader.php';
-use Jungle\Util\Specifications\Hypertext\Header;
+include '../../../../loader.php';
+use Jungle\Util\Communication\Hypertext\Header;
 
 $socks_servers = [
 	[ '188.120.236.14', 80 , ['4','5'] ],
@@ -24,6 +24,8 @@ Host: jungle
 
 HTTP
 );
+
+
 echo '<pre>';
 echo htmlspecialchars(read($stream));
 echo '</pre>';
@@ -122,7 +124,7 @@ function socks5($ip,$port, $to_host,$to_port){
 	}else {
 		//Connection failed.
 		throw new \Exception(
-			"The SOCKS server failed to connect to the specificed host and port. ( ".$to_host.":".$to_port." )"
+			"The SOCKS server failed to connect to the specified host and port. ( ".$to_host.":".$to_port." )"
 		);
 	}
 
@@ -132,8 +134,6 @@ function socks5($ip,$port, $to_host,$to_port){
 	}
 	return null;
 }
-
-
 
 /*
 if( $ch = curl_init())

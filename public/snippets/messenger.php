@@ -22,9 +22,9 @@ $messenger = new Messenger\Mail\SMTP\SMTP([
 
 	'host'              => 'smtp.mail.ru',
 	'port'              => 465,
-	'transport'         => 'ssl',
+	'secure'            => true,
 
-	'auth'              => '<LOGIN:PASS>',
+	'auth'              => '<LOGIN:PASSWORD>',
 	'sender'            => 'NAME <EMAIL>',
 
 	'agent'             => 'JF-Messenger/1.0',
