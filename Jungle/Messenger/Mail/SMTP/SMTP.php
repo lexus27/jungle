@@ -13,9 +13,10 @@ namespace Jungle\Messenger\Mail\SMTP {
 	use Jungle\Messenger\Mail\Contact;
 	use Jungle\Messenger\Mail\MessageInterface;
 	use Jungle\User\AccessAuth\Auth;
-	use Jungle\Util\Communication\SequenceInterface;
-	use Jungle\Util\Specifications\Hypertext\Content\Multipart;
-	use Jungle\Util\Specifications\Hypertext\Document;
+	use Jungle\Util\Communication\ApiInteractingStream\ExtraCombination;
+	use Jungle\Util\Communication\ApiInteractingStream\SmtpApi;
+	use Jungle\Util\Communication\Hypertext\Content\Multipart;
+	use Jungle\Util\Communication\Hypertext\Document;
 
 	/**
 	 * Class SMTP
@@ -57,18 +58,20 @@ namespace Jungle\Messenger\Mail\SMTP {
 		public function __construct(array $options = []){
 			$this->options = array_merge([
 
+				'connector'         => null,
+				'secure_connector'  => null,
+
 				'host'              => null,
 				'port'              => null,
-				'transport'         => null,
+				'secure'            => false,
 				'timeout'           => null,
 
 				'auth'              => null,
 
-				'sender_from_login'     => true,
-				'sender'              => null,
+				'sender_from_login' => true,
+				'sender'            => null,
 
 				'charset'           => ini_get('default_charset'),
-				'change_headers'    => null,
 				'extra_headers'     => null,
 
 				'timezone'          => 3,
@@ -175,17 +178,11 @@ namespace Jungle\Messenger\Mail\SMTP {
 
 			$messageObject  = $this->combination->getMessage();
 
-			$host           = $this->options['host'];
-			$port           = $this->options['port'];
-			$transport      = $this->options['transport'];
-			$sender           = $this->options['sender'];
-
-
-			$auth           = $this->options['auth'];
-
-			$author         = $messageObject->getAuthor()?:$sender;
-
-			$destinations   = [];
+			$host = $this->options['host'];
+			$sender = $this->options['sender'];
+			$auth = $this->options['auth'];
+			$author = $messageObject->getAuthor()?:$sender;
+			$destinations = [];
 
 
 			$document = new Document();
@@ -199,13 +196,8 @@ namespace Jungle\Messenger\Mail\SMTP {
 			$document->setHeader('Subject',         "{$this->prepareString($messageObject->getSubject())}");
 			$document->setHeader('MIME-Version',    "1.0");
 
-
-			if(is_array($this->options['change_headers'])){
-				$document->setHeaders($this->options['change_headers'],true);
-			}
-
 			if(is_array($this->options['extra_headers'])){
-				$document->setHeaders($this->options['extra_headers'],false);
+				$document->setHeaders($this->options['extra_headers'],true);
 			}
 
 			$to = [];
@@ -260,10 +252,8 @@ namespace Jungle\Messenger\Mail\SMTP {
 				$document->setContent($messageObject->getContent());
 			}
 			$message = (string)$document;
-
-
-			$sequence = $this->getSequence();
-			$sequence->run([
+			$apiCombination = $this->getApiCombination();
+			$apiCombination->run([
 				'login'     => $auth->getBase64Login(),
 				'password'  => $auth->getBase64Password(),
 
@@ -276,33 +266,33 @@ namespace Jungle\Messenger\Mail\SMTP {
 					return $a;
 				},
 				'data' => $message,
-				'size' => strlen($message)
-			], true);
+				'size' => strlen($message),
+
+				'connector'         => $this->options['connector'],
+				'secure_connector'  => $this->options['secure_connector'],
+			]);
 		}
 
 		/**
-		 * @return SequenceInterface
+		 * @return ExtraCombination
 		 */
-		protected function getSequence(){
-			static $sequence;
-			if(!$sequence){
-				$specification = new \Jungle\Util\Communication\Sequence\Specification\Smtp();
-				$sequence = $specification->createSequence();
+		protected function getApiCombination(){
+			static $combination;
+			if(!$combination){
+				$combination = new ExtraCombination(new SmtpApi());
 				/** @var Auth $auth */
 				$auth = $this->options['auth'];
-				$sequence->setConfig([
-					'params_merge'  => true,
-
+				$combination->setDefaultParams([
 					'host'       => $this->options['host'],
 					'port'       => $this->options['port'],
-					'transport'  => $this->options['transport'],
+					'secure'     => $this->options['secure'],
 					'timeout'    => isset($this->options['timeout'])?$this->options['timeout']:null,
 
 					'login'      => $auth->getBase64Login(),
-					'password'      => $auth->getBase64Login(),
+					'password'   => $auth->getBase64Login(),
 				]);
 
-				$sequence->setSequence([
+				$combination->setList([
 					'hello',
 					'auth',
 					'mail_from',
@@ -310,7 +300,7 @@ namespace Jungle\Messenger\Mail\SMTP {
 					'data'
 				]);
 			}
-			return $sequence;
+			return $combination;
 		}
 
 	}
