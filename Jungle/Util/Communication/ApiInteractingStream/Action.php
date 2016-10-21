@@ -57,7 +57,7 @@ namespace Jungle\Util\Communication\ApiInteractingStream {
 				if(!$combination instanceof Combination){
 					throw new \InvalidArgumentException('Argument $combination must be instance of stream specify Combination');
 				}
-				$process = $this->process = $this->createProcess();
+				$process = $this->process = $this->createProcess($params);
 				$stream = $combination->getStream();
 				if($this->definition){
 					$command = $this->resolveCommand();
@@ -74,11 +74,15 @@ namespace Jungle\Util\Communication\ApiInteractingStream {
 				$this->combination = null;
 			}
 		}
+
 		/**
+		 * @param array $params
 		 * @return Process
 		 */
-		protected function createProcess(){
-			return new Process($this);
+		protected function createProcess(array $params = []){
+			$process = new Process($this);
+			$process->setParams($params);
+			return $process;
 		}
 		/**
 		 * @return string
@@ -101,7 +105,7 @@ namespace Jungle\Util\Communication\ApiInteractingStream {
 		protected function check(){
 			$this->api->validateProcess($this->process);
 			if($this->validator){
-				call_user_func($this->validator, $this);
+				call_user_func($this->validator, $this->process);
 			}
 		}
 

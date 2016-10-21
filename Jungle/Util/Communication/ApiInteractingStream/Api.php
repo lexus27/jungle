@@ -9,6 +9,8 @@
  */
 namespace Jungle\Util\Communication\ApiInteractingStream {
 
+	use Jungle\Util\Communication\ApiInteracting\Combination as baseCombination;
+	use Jungle\Util\Communication\Net\ConnectionInterface;
 	use Jungle\Util\Communication\Stream\StreamInteractionInterface;
 	use Jungle\Util\Replacer\Replacer;
 	use Jungle\Util\Replacer\ReplacerInterface;
@@ -34,6 +36,17 @@ namespace Jungle\Util\Communication\ApiInteractingStream {
 			}
 			return $this->replacer;
 		}
+
+		/**
+		 * @param Combination|baseCombination $combination
+		 */
+		public function before(baseCombination $combination){
+			$stream = $combination->getStream();
+			if($stream instanceof ConnectionInterface){
+				$stream->connect();
+			}
+		}
+
 
 		/**
 		 * @param $answer

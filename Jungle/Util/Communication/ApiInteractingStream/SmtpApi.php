@@ -9,6 +9,7 @@
  */
 namespace Jungle\Util\Communication\ApiInteractingStream {
 
+	use Jungle\Util\Communication\ApiInteracting\Combination;
 	use Jungle\Util\Communication\Stream\StreamInteractionInterface;
 
 	/**
@@ -104,6 +105,15 @@ namespace Jungle\Util\Communication\ApiInteractingStream {
 			$this->setAction('reset', new Action($this, 'RESET'));
 			$this->setAction('quit',new Action($this, 'QUIT'));
 		}
+
+		/**
+		 * @param Combination $combination
+		 */
+		public function before(Combination $combination){
+			parent::before($combination);
+			$this->executeAction($this->getAction('start'), $combination);
+		}
+
 
 		/**
 		 * @param StreamInteractionInterface $stream

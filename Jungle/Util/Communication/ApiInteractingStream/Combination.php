@@ -20,6 +20,9 @@ namespace Jungle\Util\Communication\ApiInteractingStream {
 		/** @var  StreamInteractionInterface */
 		protected $stream;
 
+		/** @var array  */
+		protected $default_params = [];
+
 		/**
 		 * Combination constructor.
 		 * @param StreamInteractionInterface $stream
@@ -43,6 +46,7 @@ namespace Jungle\Util\Communication\ApiInteractingStream {
 		public function getStream(){
 			return $this->stream;
 		}
+
 
 	}
 }
