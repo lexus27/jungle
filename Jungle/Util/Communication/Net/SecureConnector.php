@@ -89,6 +89,18 @@ namespace Jungle\Util\Communication\Net {
 			return $this->connector->getAncestors() + [$this->connector];
 		}
 
+		protected static $default;
+
+		/**
+		 * @return SecureConnector
+		 */
+		public static function onceDefault(){
+			if(!self::$default){
+				self::$default = new self(TcpConnector::onceDefault());
+			}
+			return self::$default;
+		}
+
 	}
 }
 

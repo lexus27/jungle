@@ -9,7 +9,6 @@
  */
 namespace Jungle\Util\Communication\Net {
 
-	use Jungle\Util\Communication\Net\ConnectionInterface;
 	use Jungle\Util\Communication\Stream\StreamInteraction;
 	use Jungle\Util\Communication\Stream\StreamInteractionInterface;
 	use Jungle\Util\PropContainerOptionTrait;
@@ -60,9 +59,9 @@ namespace Jungle\Util\Communication\Net {
 			if($this->resource !== null){
 				throw new \Exception('Reinitialize error: This stream already is liaises with "'."{$this->host}:{$this->port}".'" (please close before)');
 			}
-			$this->host         = $host;
-			$this->port         = $port;
-			$this->connector    = $connector?:new TcpConnector();
+			$this->host         = $host?:$this->host;
+			$this->port         = $port?:$this->port;
+			$this->connector    = $connector?:$this->connector;
 			$this->slug           = null;
 			return $this;
 		}
@@ -84,6 +83,13 @@ namespace Jungle\Util\Communication\Net {
 		 */
 		public function getResource(){
 			return $this->resource;
+		}
+
+		/**
+		 * @return ConnectorInterface|TcpConnector
+		 */
+		public function getConnector(){
+			return $this->connector;
 		}
 
 		/**
