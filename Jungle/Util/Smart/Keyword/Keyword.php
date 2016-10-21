@@ -18,7 +18,7 @@ use Jungle\Util\TransientInterface;
  */
 abstract class Keyword implements TransientInterface , \Serializable{
 
-	use \Jungle\Util\PropContainerOptionTrait{
+	use \Jungle\Util\PropContainer\PropContainerOptionTrait{
 		setOption as protected _setOption;
 	}
 

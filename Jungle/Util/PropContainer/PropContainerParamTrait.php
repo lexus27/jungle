@@ -7,7 +7,7 @@
  * Date: 17.10.2016
  * Time: 15:51
  */
-namespace Jungle\Util {
+namespace Jungle\Util\PropContainer {
 
 	use Jungle\Util\Exception\RequiredServiceParam;
 

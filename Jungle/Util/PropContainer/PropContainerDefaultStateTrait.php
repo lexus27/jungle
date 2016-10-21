@@ -7,7 +7,7 @@
  * Date: 07.10.2016
  * Time: 1:03
  */
-namespace Jungle\Util {
+namespace Jungle\Util\PropContainer {
 
 	/**
 	 * Class PropContainerDefaultStateTrait

@@ -11,7 +11,6 @@ namespace Jungle\Util\Communication\Net {
 
 	use Jungle\Util\Communication\Stream\StreamInteraction;
 	use Jungle\Util\Communication\Stream\StreamInteractionInterface;
-	use Jungle\Util\PropContainerOptionTrait;
 
 	/**
 	 * Class Stream
@@ -19,7 +18,7 @@ namespace Jungle\Util\Communication\Net {
 	 */
 	class Stream extends StreamInteraction implements ConnectionInterface, StreamInteractionInterface{
 
-		use PropContainerOptionTrait;
+		use \Jungle\Util\PropContainer\PropContainerOptionTrait;
 
 		/** @var  null|string */
 		protected $slug;

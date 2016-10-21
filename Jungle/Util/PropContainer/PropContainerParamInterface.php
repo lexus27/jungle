@@ -4,18 +4,18 @@
  * Author: Kutuzov Alexey Konstantinovich <lexus.1995@mail.ru>
  * Project: jungle
  * IDE: PhpStorm
- * Date: 15.10.2016
- * Time: 19:07
+ * Date: 17.10.2016
+ * Time: 15:51
  */
-namespace Jungle\Util {
-	
+namespace Jungle\Util\PropContainer {
+
 	use Jungle\Util\Exception\RequiredServiceParam;
 
 	/**
-	 * Interface PropContainerOptionInterface
+	 * Interface PropContainerParamInterface
 	 * @package Jungle\Util
 	 */
-	interface PropContainerOptionInterface{
+	interface PropContainerParamInterface{
 
 		/**
 		 * @param $key
@@ -49,7 +49,6 @@ namespace Jungle\Util {
 		 * @return mixed
 		 */
 		public function rmOption($key);
-
 
 	}
 }

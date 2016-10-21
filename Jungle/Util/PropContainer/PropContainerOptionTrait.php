@@ -6,7 +6,7 @@
  * Time: 13:54
  */
 
-namespace Jungle\Util;
+namespace Jungle\Util\PropContainer;
 use Jungle\Util\Exception\RequiredServiceParam;
 
 /**

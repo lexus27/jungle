@@ -10,8 +10,6 @@
 namespace Jungle\Util\Communication\HttpClient {
 
 	use Jungle\Util\Communication\Http;
-	use Jungle\Util\Communication\URL;
-	use Jungle\Util\PropContainerOptionTrait;
 	use Jungle\Util\Communication\HttpFoundation\Cookie;
 	use Jungle\Util\Communication\HttpFoundation\RequestInterface;
 	use Jungle\Util\Communication\HttpFoundation\ResponseInterface;
@@ -21,6 +19,7 @@ namespace Jungle\Util\Communication\HttpClient {
 	use Jungle\Util\Communication\Hypertext\Document;
 	use Jungle\Util\Communication\Hypertext\Document\ReadProcessor;
 	use Jungle\Util\Communication\Hypertext\Document\WriteProcessor;
+	use Jungle\Util\Communication\URL;
 
 	/**
 	 * Class Response
@@ -28,7 +27,7 @@ namespace Jungle\Util\Communication\HttpClient {
 	 */
 	class Response extends Document implements ResponseInterface,ResponseSettableInterface, ResponseOnClientInterface{
 
-		use PropContainerOptionTrait;
+		use \Jungle\Util\PropContainer\PropContainerOptionTrait;
 
 		/** @var  Request */
 		protected $request;
