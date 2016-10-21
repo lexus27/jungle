@@ -9,7 +9,6 @@
  */
 namespace Jungle\Util\Communication\HttpClient {
 
-	use Jungle\Util\Communication\HttpClient\Agent;
 	use Jungle\Util\Communication\Net\Broker;
 
 	/**

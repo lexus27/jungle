@@ -9,8 +9,8 @@
  */
 namespace Jungle\Util\Communication\HttpFoundation {
 
-	use Jungle\Util\Smart\Value\IValue;
 	use Jungle\Util\Communication\HttpFoundation\Cookie\ManagerInterface;
+	use Jungle\Util\Smart\Value\IValue;
 
 	/**
 	 * Class Cookie

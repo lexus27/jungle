@@ -10,8 +10,8 @@
 namespace Jungle\Util\Communication\HttpFoundation {
 
 	use Jungle\User\AccessAuth\Auth;
-	use Jungle\Util\Communication\URL;
 	use Jungle\Util\Communication\Hypertext\HeaderRegistryReadInterface;
+	use Jungle\Util\Communication\URL;
 
 	/**
 	 * Interface RequestInterface

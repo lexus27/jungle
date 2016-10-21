@@ -9,10 +9,10 @@
  */
 namespace Jungle\Util\Communication\Hypertext\Document {
 
-	use Jungle\Util\Communication\Net\ConnectionInterface;
-	use Jungle\Util\Communication\Stream\StreamInteractionInterface;
 	use Jungle\Util\Communication\Hypertext\ContentInterface;
 	use Jungle\Util\Communication\Hypertext\Document;
+	use Jungle\Util\Communication\Net\ConnectionInterface;
+	use Jungle\Util\Communication\Stream\StreamInteractionInterface;
 
 	/**
 	 * Class WriteProcessor

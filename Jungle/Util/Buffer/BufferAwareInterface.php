@@ -9,8 +9,6 @@
  */
 namespace Jungle\Util\Buffer {
 
-	use Jungle\Util\Buffer\BufferInterface;
-
 	/**
 	 * Interface BufferAwareInterface
 	 * @package Jungle\Util\Communication\Hypertext

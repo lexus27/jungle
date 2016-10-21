@@ -7,10 +7,10 @@
  */
 namespace Jungle\Util\Communication\Hypertext\Header {
 
+	use Jungle\Util\Communication\Hypertext\Header;
 	use Jungle\Util\Smart\Keyword\Factory;
 	use Jungle\Util\Smart\Keyword\Pool as KeyPool;
 	use Jungle\Util\Smart\Keyword\Storage\Dummy;
-	use Jungle\Util\Communication\Hypertext\Header;
 	use Jungle\Util\Value\String;
 
 	/**

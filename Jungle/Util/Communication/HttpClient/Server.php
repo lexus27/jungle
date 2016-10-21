@@ -9,13 +9,13 @@
  */
 namespace Jungle\Util\Communication\HttpClient {
 
+	use Jungle\Util\Communication\HttpFoundation\ServerInterface;
+	use Jungle\Util\Communication\HttpFoundation\ServerSettableInterface;
+	use Jungle\Util\Communication\Hypertext\Document\WriteProcessor;
 	use Jungle\Util\Communication\Net\ConnectionInterface;
 	use Jungle\Util\Communication\Net\Stream;
 	use Jungle\Util\Communication\Stream\StreamInteractionInterface;
 	use Jungle\Util\Communication\URL;
-	use Jungle\Util\Communication\HttpFoundation\ServerInterface;
-	use Jungle\Util\Communication\HttpFoundation\ServerSettableInterface;
-	use Jungle\Util\Communication\Hypertext\Document\WriteProcessor;
 
 	/**
 	 * Class Server

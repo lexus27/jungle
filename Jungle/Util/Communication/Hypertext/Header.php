@@ -7,8 +7,8 @@
  */
 namespace Jungle\Util\Communication\Hypertext {
 
-	use Jungle\Util\Smart\Keyword\Keyword;
 	use Jungle\Util\Communication\Hypertext\Header\Value;
+	use Jungle\Util\Smart\Keyword\Keyword;
 
 	/**
 	 * Class Header

@@ -9,11 +9,11 @@
  */
 namespace Jungle\Util\Communication\Hypertext\Document {
 
-	use Jungle\Util\Communication\Stream\Memory;
-	use Jungle\Util\Communication\Stream\StreamInteractionInterface;
 	use Jungle\Util\Communication\Hypertext\Document;
 	use Jungle\Util\Communication\Hypertext\DocumentInterface;
 	use Jungle\Util\Communication\Hypertext\Header;
+	use Jungle\Util\Communication\Stream\Memory;
+	use Jungle\Util\Communication\Stream\StreamInteractionInterface;
 
 	/**
 	 * Class ReadProcessor

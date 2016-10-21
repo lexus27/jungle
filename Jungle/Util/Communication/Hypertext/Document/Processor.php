@@ -10,9 +10,9 @@
 namespace Jungle\Util\Communication\Hypertext\Document {
 
 	use Jungle\Util\Buffer\BufferInterface;
-	use Jungle\Util\Communication\Stream\StreamInteractionInterface;
-	use Jungle\Util\Communication\Net\ConnectionInterface;
 	use Jungle\Util\Communication\Hypertext\DocumentInterface;
+	use Jungle\Util\Communication\Net\ConnectionInterface;
+	use Jungle\Util\Communication\Stream\StreamInteractionInterface;
 
 	/**
 	 * Class Processor

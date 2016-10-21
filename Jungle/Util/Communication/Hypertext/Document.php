@@ -7,11 +7,11 @@
  */
 namespace Jungle\Util\Communication\Hypertext {
 
-	use Jungle\Util\Communication\Stream\StreamInteractionInterface;
 	use Jungle\Util\Communication\Hypertext\Document\Processor;
 	use Jungle\Util\Communication\Hypertext\Document\ReadProcessor;
 	use Jungle\Util\Communication\Hypertext\Document\WriteProcessor;
 	use Jungle\Util\Communication\Hypertext\Header\Pool;
+	use Jungle\Util\Communication\Stream\StreamInteractionInterface;
 
 	/**
 	 * Class Document
