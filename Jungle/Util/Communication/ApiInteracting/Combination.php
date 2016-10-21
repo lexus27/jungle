@@ -27,8 +27,26 @@ namespace Jungle\Util\Communication\ApiInteracting {
 		/** @var array  */
 		protected $actions_params = [];
 
+		/** @var array  */
+		protected $default_params = [];
+
 		/** @var int  */
 		protected $index = 0;
+
+		/** @var bool  */
+		protected $combined = false;
+
+		/**
+		 * @param array $action_order
+		 * @return $this
+		 */
+		public function setList(array $action_order){
+			foreach($action_order as $name){
+				$this->sequence[] = $name;
+				$this->actions_params[] = [];
+			}
+			return $this;
+		}
 
 		/**
 		 * @param $action_name
@@ -45,7 +63,19 @@ namespace Jungle\Util\Communication\ApiInteracting {
 		 * @return array
 		 */
 		public function getPassedParams(){
-			return $this->actions_params[$this->index]?$this->actions_params[$this->index]:[];
+			$params = $this->actions_params[$this->index]?$this->actions_params[$this->index]:[];
+			return array_replace($this->default_params, $params);
+		}
+
+
+		/**
+		 * @param array $params
+		 * @param bool|false $merge
+		 * @return $this
+		 */
+		public function setDefaultParams(array $params, $merge = false){
+			$this->default_params = $merge?array_replace($this->default_params, $params):$params;
+			return $this;
 		}
 
 		/**
@@ -71,6 +101,7 @@ namespace Jungle\Util\Communication\ApiInteracting {
 			$combination = clone $this;
 			$combination->api = $api;
 			$combination->collector = $collector;
+			$combination->combined = true;
 			return $combination;
 		}
 
@@ -173,6 +204,13 @@ namespace Jungle\Util\Communication\ApiInteracting {
 				}
 			}
 			return $this;
+		}
+
+		/**
+		 *
+		 */
+		public function complete(){
+
 		}
 
 	}

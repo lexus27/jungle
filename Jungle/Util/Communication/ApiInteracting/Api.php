@@ -31,11 +31,18 @@ namespace Jungle\Util\Communication\ApiInteracting {
 		 */
 		public function interact(CombinatorInterface $combinator){
 			$combination = $combinator->combine($this,$this->createCollector());
+			$this->before($combination);
 			foreach($combination as $action){
 				$this->executeAction($action, $combination);
 			}
+			$this->after($combination);
+			$combination->complete();
 			return $combination->getCollector();
 		}
+
+		public function before(Combination $combination){}
+
+		public function after(Combination $combination){}
 
 		/**
 		 * @param $name
