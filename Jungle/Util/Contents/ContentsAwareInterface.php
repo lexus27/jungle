@@ -7,7 +7,7 @@
  * Date: 03.10.2016
  * Time: 23:13
  */
-namespace Jungle\Util {
+namespace Jungle\Util\Contents {
 
 	/**
 	 * Interface ContentsAwareInterface

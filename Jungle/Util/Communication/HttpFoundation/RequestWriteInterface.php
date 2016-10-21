@@ -10,8 +10,8 @@
 namespace Jungle\Util\Communication\HttpFoundation {
 
 	use Jungle\User\AccessAuth\Auth;
-	use Jungle\Util\ContentsAwareInterface;
 	use Jungle\Util\Communication\Hypertext\HeaderRegistryWriteInterface;
+	use Jungle\Util\Contents\ContentsAwareInterface;
 
 	/**
 	 * Interface RequestWriteInterface
@@ -83,14 +83,14 @@ namespace Jungle\Util\Communication\HttpFoundation {
 		public function setReferrer($referrer = null);
 
 		/**
-		 * @param ContentsAwareInterface $file
+		 * @param \Jungle\Util\Contents\ContentsAwareInterface $file
 		 * @param null $name
 		 * @return $this
 		 */
 		public function setFile(ContentsAwareInterface $file, $name = null);
 
 		/**
-		 * @param ContentsAwareInterface[] $files
+		 * @param \Jungle\Util\Contents\ContentsAwareInterface[] $files
 		 * @param bool|false $merge
 		 * @return $this
 		 */

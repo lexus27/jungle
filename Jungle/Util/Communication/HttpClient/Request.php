@@ -23,7 +23,7 @@ namespace Jungle\Util\Communication\HttpClient {
 	use Jungle\Util\Communication\Hypertext\Document\ReadProcessor;
 	use Jungle\Util\Communication\Hypertext\Document\WriteProcessor;
 	use Jungle\Util\Communication\URL;
-	use Jungle\Util\ContentsAwareInterface;
+	use Jungle\Util\Contents\ContentsAwareInterface;
 
 	/**
 	 * Class Request
@@ -746,7 +746,7 @@ namespace Jungle\Util\Communication\HttpClient {
 
 
 		/**
-		 * @param ContentsAwareInterface[] $files
+		 * @param \Jungle\Util\Contents\ContentsAwareInterface[] $files
 		 * @param bool $merge
 		 * @return $this
 		 */
@@ -769,7 +769,7 @@ namespace Jungle\Util\Communication\HttpClient {
 		}
 
 		/**
-		 * @param ContentsAwareInterface $file
+		 * @param \Jungle\Util\Contents\ContentsAwareInterface $file
 		 * @param null $name
 		 * @return $this
 		 */
@@ -794,7 +794,7 @@ namespace Jungle\Util\Communication\HttpClient {
 
 		/**
 		 * Files indexed or assoc
-		 * @return \Jungle\Util\ContentsAwareInterface[]
+		 * @return \Jungle\Util\Contents\ContentsAwareInterface[]
 		 */
 		public function getFiles(){
 			return $this->files;

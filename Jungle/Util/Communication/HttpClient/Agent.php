@@ -13,12 +13,12 @@ namespace Jungle\Util\Communication\HttpClient {
 	use Jungle\Util\Communication\HttpClient;
 	use Jungle\Util\Communication\HttpClient\CacheManager\CacheManager;
 	use Jungle\Util\Communication\HttpClient\CookiesManager\CookiesManagerInterface;
-	use Jungle\Util\ContentsAwareInterface;
 	use Jungle\Util\Communication\HttpFoundation\BrowserInterface;
 	use Jungle\Util\Communication\HttpFoundation\ClientInterface;
 	use Jungle\Util\Communication\HttpFoundation\Cookie;
 	use Jungle\Util\Communication\Hypertext\Document;
 	use Jungle\Util\Communication\Hypertext\Document\WriteProcessor;
+	use Jungle\Util\Contents\ContentsAwareInterface;
 	use Jungle\Util\Value\UserAgent;
 
 	/**
