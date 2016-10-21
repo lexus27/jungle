@@ -9,8 +9,6 @@
  */
 namespace Jungle\Util\PropContainer {
 	
-	use Jungle\Util\Exception\RequiredServiceParam;
-
 	/**
 	 * Interface PropContainerConfigInterface
 	 * @package Jungle\Util
@@ -34,7 +32,7 @@ namespace Jungle\Util\PropContainer {
 		/**
 		 * @param $key
 		 * @return mixed
-		 * @throws RequiredServiceParam
+		 * @throws RequiredPropException
 		 */
 		public function requireConfig($key);
 

@@ -9,8 +9,6 @@
  */
 namespace Jungle\Util\PropContainer {
 
-	use Jungle\Util\Exception\RequiredServiceParam;
-
 	/**
 	 * Class PropContainerParamTrait
 	 * @package Jungle\Util
@@ -55,13 +53,13 @@ namespace Jungle\Util\PropContainer {
 		/**
 		 * @param $key
 		 * @return mixed
-		 * @throws RequiredServiceParam
+		 * @throws RequiredPropException
 		 */
 		public function requireOption($key){
 			if(isset($this->_srv_params[$key])){
 				return $this->_srv_params[$key];
 			}else{
-				throw new RequiredServiceParam($key, 'option');
+				throw new RequiredPropException($key, 'option');
 			}
 		}
 

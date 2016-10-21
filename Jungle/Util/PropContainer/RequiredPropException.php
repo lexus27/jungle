@@ -7,22 +7,22 @@
  * Date: 15.10.2016
  * Time: 18:57
  */
-namespace Jungle\Util\Exception {
+namespace Jungle\Util\PropContainer {
 
 	use Exception;
 
 	/**
-	 * Class RequiredServiceParam
+	 * Class RequiredPropException
 	 * @package Jungle\Util\Exception
 	 */
-	class RequiredServiceParam extends \Exception{
+	class RequiredPropException extends \Exception{
 
 		protected $key;
 
 		protected $type;
 
 		/**
-		 * RequiredServiceParam constructor.
+		 * RequiredPropException constructor.
 		 * @param string $param_name
 		 * @param string $type
 		 * @param string $message
