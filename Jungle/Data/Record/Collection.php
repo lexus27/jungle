@@ -993,7 +993,7 @@ namespace Jungle\Data\Record {
 		}
 
 		/**
-		 * Synchronize state
+		 * SynchronizeException state
 		 */
 		public function synchronize(){
 			foreach($this->items as $item){
@@ -1001,7 +1001,7 @@ namespace Jungle\Data\Record {
 					$this->getRoot()->_removeItem($item);
 				}elseif($item->hasChangesProperty()){
 					if(!$item->save()){
-						throw new Record\Collection\Exception\Synchronize('Error save');
+						throw new Collection\SynchronizeException('Error save');
 					}
 				}
 			}
@@ -1341,7 +1341,7 @@ namespace Jungle\Data\Record {
 		}
 
 		/**
-		 * @throws Collection\Exception\Synchronize
+		 * @throws \Jungle\Data\Record\Collection\SynchronizeException
 		 */
 		public function __destruct(){
 			$this->in_destructing = true;

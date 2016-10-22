@@ -7,16 +7,12 @@
  * Date: 10.06.2016
  * Time: 22:54
  */
-namespace Jungle\Data\Record\Collection\Exception {
+namespace Jungle\Data\Record\Collection {
 	
-	use Jungle\Data\Record\Collection\Exception;
-
 	/**
-	 * Class Synchronize
+	 * Class SynchronizeException
 	 * @package Jungle\Data\Record\Collection\Exception
 	 */
-	class Synchronize extends Exception{
-		
-	}
+	class SynchronizeException extends Exception{}
 }
 

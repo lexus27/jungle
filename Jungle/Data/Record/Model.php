@@ -11,7 +11,6 @@ namespace Jungle\Data\Record {
 
 	use App\Model\Usergroup;
 	use Jungle\Data\Record;
-	use Jungle\Data\Record\Collection\Relationship;
 	use Jungle\Data\Record\Head\Field;
 	use Jungle\Data\Record\Head\ModelSchema;
 	use Jungle\Data\Record\Head\SchemaManager;
@@ -84,14 +83,6 @@ namespace Jungle\Data\Record {
 			/** @var Model $name */
 			$name = get_called_class();
 			return SchemaManager::getDefault()->getSchema($name);
-		}
-
-		/**
-		 * @param $classname
-		 * @return bool
-		 */
-		public static function isRealModel($classname){
-			return !in_array($classname,[Model::class], true);
 		}
 
 		/**

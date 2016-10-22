@@ -29,8 +29,8 @@ namespace Jungle\Data\Storage\Db\Structure\Column {
 		 */
 		public function __construct($alias,Storage $storage=null){
 			parent::__construct('column_type_manager',$storage===null?new Storage\ArrayFile([
-				'directory' => __DIR__ . DIRECTORY_SEPARATOR . 'Types' . DIRECTORY_SEPARATOR,
-				'extension' => '.key.php'
+				'directory' => __DIR__ . DIRECTORY_SEPARATOR . 'types' . DIRECTORY_SEPARATOR,
+				'extension' => '.php'
 			]):$storage);
 		}
 

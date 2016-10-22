@@ -11,7 +11,6 @@ namespace Jungle\Data\Record\Collection {
 
 	use Jungle\Data\Record;
 	use Jungle\Data\Record\Collection;
-	use Jungle\Data\Record\Collection\Exception\Synchronize;
 	use Jungle\Data\Record\Head\Field\Relation;
 	use Jungle\Data\Record\Head\Schema;
 	use Jungle\Exception;
@@ -65,7 +64,7 @@ namespace Jungle\Data\Record\Collection {
 		protected $as_checkpoint = true;
 
 		/**
-		 * @throws Synchronize
+		 * @throws SynchronizeException
 		 */
 		public function synchronize(){
 			$this->dirty_capturing = false;

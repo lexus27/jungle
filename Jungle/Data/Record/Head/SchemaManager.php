@@ -26,6 +26,28 @@ namespace Jungle\Data\Record\Head {
 		/** @var  Schema */
 		protected $initializing_schema;
 
+		/** @var  SchemaManager */
+		protected static $default_schema_manager;
+
+		/**
+		 * @return SchemaManager
+		 */
+		public static function getDefault(){
+			if(!self::$default_schema_manager){
+				self::$default_schema_manager = new self();
+			}
+			return self::$default_schema_manager;
+		}
+
+		/**
+		 * @param SchemaManager $manager
+		 */
+		public static function setDefault(SchemaManager $manager){
+			self::$default_schema_manager = $manager;
+		}
+
+
+
 		/**
 		 * @param $schema
 		 * @return $this
@@ -96,26 +118,6 @@ namespace Jungle\Data\Record\Head {
 			return Di::getDefault()->get($storage);
 		}
 
-		/** @var  SchemaManager */
-		protected static $default_schema_manager;
-
-		/**
-		 * @return SchemaManager
-		 */
-		public static function getDefault(){
-			if(!self::$default_schema_manager){
-				self::$default_schema_manager = new self();
-			}
-			return self::$default_schema_manager;
-		}
-
-		/**
-		 * @param SchemaManager $manager
-		 */
-		public static function setDefault(SchemaManager $manager){
-			self::$default_schema_manager = $manager;
-		}
-
 		/**
 		 * @param Model $schemaName
 		 * @return Schema
@@ -136,7 +138,7 @@ namespace Jungle\Data\Record\Head {
 			}else{
 				$ancestorSchema = null;
 				$ancestorName = get_parent_class($schemaName);
-				if(Model::isRealModel($ancestorName)){
+				if(!in_array($ancestorName,[Model::class], true)){
 					$ancestorSchema = $this->getSchema($ancestorName);
 				}
 				if($ancestorSchema){
@@ -160,7 +162,7 @@ namespace Jungle\Data\Record\Head {
 		public function initializeFromConstructor($schemaName, Record $record){
 			$ancestorSchema = null;
 			$ancestorName = get_parent_class($schemaName);
-			if(Model::isRealModel($ancestorName)){
+			if(!in_array($ancestorName,[Model::class], true)){
 				$ancestorSchema = $this->getSchema($ancestorName);
 			}
 			if($ancestorSchema){

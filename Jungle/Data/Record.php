@@ -60,30 +60,15 @@ namespace Jungle\Data {
 		
 		/** @var  int */
 		private $_property_iterator_count = 0;
-		
-		
-		
-		/** @var bool  */
-		protected $_set_property_dirty_applied = false;
-		
-		/** @var bool  */
-		protected $_set_property_relation_applied_in_new = false;
-		
-		/** @var bool  */
-		protected $_set_property_relation_applied_in_old = false;
-		
+
 		/** @var bool  */
 		protected static $properties_changes_restrict_level = 0;
-
-
 
 		/** @var  int */
 		protected $_internalIdentifier;
 
 		/** @var bool */
 		protected $_initialized = false;
-
-
 
 		/** @var  \Jungle\Data\Record\Head\Schema */
 		protected $_schema;
@@ -882,6 +867,7 @@ namespace Jungle\Data {
 		}
 
 
+
 		/**
 		 *
 		 */
@@ -902,6 +888,7 @@ namespace Jungle\Data {
 		public static function disableAllChangesMode(){
 			self::$properties_changes_restrict_level = 0;
 		}
+
 
 		/**
 		 * @return Validation|null
@@ -1104,7 +1091,6 @@ namespace Jungle\Data {
 		}
 
 		/**
-		 * TODO
 		 * @return bool
 		 * @throws ValidationCollector
 		 */
