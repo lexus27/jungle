@@ -7,7 +7,7 @@
  */
 
 namespace Jungle\ExoCode\LogicConstruction;
-use Jungle\Util\NamedInterface;
+use Jungle\Util\Named\NamedInterface;
 use Jungle\Util\Value\Massive;
 use Jungle\Util\Value\String;
 

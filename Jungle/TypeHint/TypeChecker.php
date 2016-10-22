@@ -8,7 +8,7 @@
 namespace Jungle\TypeHint {
 
 	use Jungle\TypeHint;
-	use Jungle\Util\NamedInterface;
+	use Jungle\Util\Named\NamedInterface;
 	use Jungle\Util\Value\String;
 
 	/**

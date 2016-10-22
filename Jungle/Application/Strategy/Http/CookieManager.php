@@ -13,18 +13,18 @@ namespace Jungle\Application\Strategy\Http {
 	use Jungle\Di\DiInterface;
 	use Jungle\Http\Request;
 	use Jungle\Http\Response;
+	use Jungle\Util\Communication\HttpFoundation\Cookie\ManagerInterface;
+	use Jungle\Util\Communication\HttpFoundation\RequestInterface;
+	use Jungle\Util\Communication\HttpFoundation\ResponseInterface;
 	use Jungle\Util\Communication\URL;
-	use Jungle\Util\Specifications\Http\Cookie\ManagerInterface;
-	use Jungle\Util\Specifications\Http\RequestInterface;
-	use Jungle\Util\Specifications\Http\ResponseInterface;
 
 	/**
-	 * Class Manager
+	 * Class CookieManager
 	 * @package Jungle\Application\Strategy\Http
 	 */
-	class Manager extends Component implements ManagerInterface{
+	class CookieManager extends Component implements ManagerInterface{
 
-		/** @var  Manager */
+		/** @var  CookieManager */
 		protected $parent;
 
 
@@ -50,10 +50,10 @@ namespace Jungle\Application\Strategy\Http {
 		protected $default_http_only;
 
 		/**
-		 * Manager constructor.
-		 * @param Manager|null $parent
+		 * CookieManager constructor.
+		 * @param CookieManager|null $parent
 		 */
-		public function __construct(Manager $parent = null){
+		public function __construct(CookieManager $parent = null){
 			$this->parent = $parent;
 			if($parent){
 				if(!$parent->_dependency_injection){
@@ -221,7 +221,7 @@ namespace Jungle\Application\Strategy\Http {
 
 		/**
 		 * @param $name
-		 * @return \Jungle\Util\Specifications\Http\Cookie
+		 * @return \Jungle\Util\Communication\HttpFoundation\Cookie
 		 */
 		public function getCookieObject($name){
 			return $this->getResponse()->getCookie($name);

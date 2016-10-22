@@ -8,7 +8,7 @@
  * Time: 21:31
  */
 
-namespace Jungle\Util\Specifications\Hypertext;
+namespace Jungle\Util\Communication\Hypertext;
 
 include '../../loader.php';
 

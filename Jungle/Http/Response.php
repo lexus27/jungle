@@ -9,15 +9,15 @@
  */
 namespace Jungle\Http {
 	
-	use Jungle\Util\Specifications\Http\Cookie;
-	use Jungle\Util\Specifications\Http\CookieInterface;
-	use Jungle\Util\Specifications\Http\RequestInterface;
-	use Jungle\Util\Specifications\Http\ResponseInterface;
-	use Jungle\Util\Specifications\Http\ResponseOnServerInterface;
-	use Jungle\Util\Specifications\Http\ResponsePointerInterface;
-	use Jungle\Util\Specifications\Http\ResponseSettableInterface;
-	use Jungle\Util\Specifications\Http\ServerInterface;
-	use Jungle\Util\Specifications\Hypertext\HeaderRegistryTrait;
+	use Jungle\Util\Communication\HttpFoundation\Cookie;
+	use Jungle\Util\Communication\HttpFoundation\CookieInterface;
+	use Jungle\Util\Communication\HttpFoundation\RequestInterface;
+	use Jungle\Util\Communication\HttpFoundation\ResponseInterface;
+	use Jungle\Util\Communication\HttpFoundation\ResponseOnServerInterface;
+	use Jungle\Util\Communication\HttpFoundation\ResponsePointerInterface;
+	use Jungle\Util\Communication\HttpFoundation\ResponseSettableInterface;
+	use Jungle\Util\Communication\HttpFoundation\ServerInterface;
+	use Jungle\Util\Communication\Hypertext\HeaderRegistryTrait;
 
 	/**
 	 * Class Response
@@ -171,7 +171,7 @@ namespace Jungle\Http {
 		}
 
 		/**
-		 * @return \Jungle\Util\Specifications\Http\Interface[]
+		 * @return \Jungle\Util\Communication\HttpFoundation\Interface[]
 		 */
 		public function getCookies(){
 			return $this->cookies;

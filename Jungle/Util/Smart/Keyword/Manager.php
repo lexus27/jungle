@@ -15,7 +15,7 @@ namespace Jungle\Util\Smart\Keyword {
 	 */
 	class Manager{
 
-		use \Jungle\Util\OptionContainerTrait;
+		use \Jungle\Util\PropContainer\PropContainerOptionTrait;
 
 		/** @var array */
 		protected $pools = [];

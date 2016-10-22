@@ -11,10 +11,10 @@ namespace Jungle\Http {
 	
 	use Jungle\Application\RequestInterface;
 	use Jungle\User\AccessAuth\Auth;
-	use Jungle\Util\Specifications\Http\BrowserInterface;
-	use Jungle\Util\Specifications\Http\ResponseInterface;
-	use Jungle\Util\Specifications\Http\ServerInterface;
-	use Jungle\Util\Specifications\Hypertext\HeaderRegistryTrait;
+	use Jungle\Util\Communication\HttpFoundation\BrowserInterface;
+	use Jungle\Util\Communication\HttpFoundation\ResponseInterface;
+	use Jungle\Util\Communication\HttpFoundation\ServerInterface;
+	use Jungle\Util\Communication\Hypertext\HeaderRegistryTrait;
 	use Jungle\Util\Value;
 
 
@@ -22,7 +22,7 @@ namespace Jungle\Http {
 	 * Class Request
 	 * @package Jungle\Http\Request
 	 */
-	class Request implements \Jungle\Util\Specifications\Http\RequestInterface, RequestInterface{
+	class Request implements \Jungle\Util\Communication\HttpFoundation\RequestInterface, RequestInterface{
 
 		use HeaderRegistryTrait;
 

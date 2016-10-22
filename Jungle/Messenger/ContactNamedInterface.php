@@ -7,7 +7,7 @@
  */
 namespace Jungle\Messenger {
 
-	use Jungle\Util\NamedInterface;
+	use Jungle\Util\Named\NamedInterface;
 
 	/**
 	 * Interface ContactNamedInterface

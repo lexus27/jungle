@@ -11,7 +11,7 @@ namespace Jungle\Data\Storage\Db\Structure {
 	use Jungle\Data\Storage\Db\Dialect;
 	use Jungle\Data\Storage\Db\Structure\Column\ForeignKey;
 	use Jungle\Data\Storage\Db\Structure\Column\Index;
-	use Jungle\Util\NamedInterface;
+	use Jungle\Util\Named\NamedInterface;
 
 	/**
 	 * Class TargetTable

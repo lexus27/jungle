@@ -9,7 +9,7 @@
  */
 namespace Jungle\Application\Strategy\Http\Router {
 
-	use Jungle\Util\Specifications\Http\RequestInterface;
+	use Jungle\Util\Communication\HttpFoundation\RequestInterface;
 	use Jungle\Util\Value\String;
 
 	/**

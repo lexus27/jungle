@@ -9,8 +9,6 @@
  */
 namespace Jungle\Util\Contents {
 	
-	use Jungle\Util\ContentsAwareInterface;
-
 	/**
 	 * Class Memory
 	 * @package Jungle\Util\Contents

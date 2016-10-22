@@ -8,7 +8,7 @@
 
 namespace Jungle\Util\Smart\Keyword;
 
-use Jungle\Util\NamedInterface;
+use Jungle\Util\Named\NamedInterface;
 use Jungle\Util\Smart\Keyword\Storage;
 use Jungle\Util\TransientInterface;
 

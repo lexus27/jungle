@@ -10,7 +10,7 @@
 namespace Jungle\Application {
 
 	use Jungle\Di\DiInterface;
-	use Jungle\Util\NamedInterface;
+	use Jungle\Util\Named\NamedInterface;
 
 	/**
 	 * Interface StrategyInterface

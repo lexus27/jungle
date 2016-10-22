@@ -10,7 +10,7 @@
 namespace Jungle\Http {
 	
 	use Jungle\Application\Strategy\Http;
-	use Jungle\Util\Specifications\Http\BrowserInterface;
+	use Jungle\Util\Communication\HttpFoundation\BrowserInterface;
 	use Jungle\Util\Value\UserAgent;
 
 	/**

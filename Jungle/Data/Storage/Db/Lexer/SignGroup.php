@@ -7,7 +7,7 @@
  */
 namespace Jungle\Data\Storage\Db\Lexer {
 
-	use Jungle\Util\NamedInterface;
+	use Jungle\Util\Named\NamedInterface;
 
 	/**
 	 * Class SignGroup

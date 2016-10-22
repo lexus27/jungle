@@ -8,7 +8,7 @@
 
 namespace Jungle\Util\Smart\Value {
 
-	use Jungle\Util\NamedInterface;
+	use Jungle\Util\Named\NamedInterface;
 
 	/**
 	 * Interface IColorType
