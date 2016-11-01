@@ -5,16 +5,14 @@
  * Date: 15.02.2016
  * Time: 0:03
  */
-namespace Jungle\User\AccessControl {
+namespace Jungle\User\AccessControl\Matchable {
 
-	use Jungle\User\AccessControl\Context;
+	use Jungle\User\AccessControl\Context\ContextInterface;
 	use Jungle\User\AccessControl\Matchable\Aggregator;
-	use Jungle\User\AccessControl\Matchable\Result;
-	use Jungle\User\AccessControl\Matchable\Target;
 
 	/**
 	 * Class Matchable
-	 * @package Jungle\User\AccessControl\Matchable
+	 * @package Jungle\User\AccessControl\Matchable\Matchable
 	 *
 	 * beforeInvoked(Matchable $this, $result, Context $context)
 	 * invoked(Matchable $this, $result, Context $context)
@@ -197,7 +195,7 @@ namespace Jungle\User\AccessControl {
 		}
 
 		/**
-		 * @param ContextInterface $context
+		 * @param \Jungle\User\AccessControl\Context\ContextInterface $context
 		 * @param Aggregator $aggregator
 		 * @return Result
 		 */

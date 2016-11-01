@@ -7,8 +7,6 @@
  */
 namespace Jungle\User\AccessControl\Matchable\Aggregator {
 
-	use Jungle\User\AccessControl\Context;
-	use Jungle\User\AccessControl\Matchable;
 	use Jungle\User\AccessControl\Matchable\Aggregator;
 
 	/**

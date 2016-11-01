@@ -19,7 +19,7 @@ namespace Jungle\User\AccessControl\Context {
 	 *
 	 *
 	 * Class Substitute
-	 * @package Jungle\User\AccessControl\Context
+	 * @package Jungle\User\AccessControl\Context\Context
 	 */
 	class Substitute implements SubstituteInterface{
 
@@ -55,7 +55,7 @@ namespace Jungle\User\AccessControl\Context {
 		 * @return string|null
 		 */
 		public function getClass(){
-			return $this->value_defined?get_class($this->value):$this->class;
+			return $this->value_defined && is_object($this->value)?get_class($this->value):$this->class;
 		}
 
 

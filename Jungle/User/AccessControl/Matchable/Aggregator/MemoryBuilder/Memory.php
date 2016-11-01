@@ -5,12 +5,12 @@
  * Date: 19.02.2016
  * Time: 2:29
  */
-namespace Jungle\User\AccessControl\Adapter\PolicyAdater {
+namespace Jungle\User\AccessControl\Matchable\Aggregator\MemoryBuilder {
 
-	use Jungle\User\AccessControl\Matchable;
 	use Jungle\User\AccessControl\Matchable\Aggregator;
 	use Jungle\User\AccessControl\Matchable\Aggregator\Policy;
 	use Jungle\User\AccessControl\Matchable\Aggregator\PolicyGroup;
+	use Jungle\User\AccessControl\Matchable\Matchable;
 	use Jungle\User\AccessControl\Matchable\Rule;
 	use Jungle\User\AccessControl\Matchable\Target;
 
@@ -85,6 +85,9 @@ namespace Jungle\User\AccessControl\Adapter\PolicyAdater {
 				if(isset($definition['name'])){
 					$name = $definition['name'];
 					$rule->setName($definition['name']);
+				}
+				if(isset($definition['target'])){
+					$rule->setTarget($this->_requireTarget($definition['target']));
 				}
 				if(isset($definition['effect'])){
 					$rule->setEffect(Matchable::friendlyEffect($definition['effect']));

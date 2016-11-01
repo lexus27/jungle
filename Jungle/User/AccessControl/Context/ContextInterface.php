@@ -7,7 +7,9 @@
  * Date: 26.09.2016
  * Time: 20:19
  */
-namespace Jungle\User\AccessControl {
+namespace Jungle\User\AccessControl\Context {
+
+	use Jungle\User\AccessControl\Manager;
 
 	/**
 	 * Interface ContextInterface

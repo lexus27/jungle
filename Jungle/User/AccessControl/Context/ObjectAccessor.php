@@ -17,7 +17,7 @@ namespace Jungle\User\AccessControl\Context {
 	 * Класс реализует доступ к сервисам которые получат объект|объекты по определенному предикату
 	 * Типо Делегирование куда-то WhereClause выборки
 	 * Class ObjectAccessor
-	 * @package Jungle\User\AccessControl\Context
+	 * @package Jungle\User\AccessControl\Context\Context
 	 */
 	class ObjectAccessor extends Substitute{
 

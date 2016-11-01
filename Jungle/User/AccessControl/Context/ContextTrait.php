@@ -7,7 +7,9 @@
  * Date: 29.09.2016
  * Time: 16:27
  */
-namespace Jungle\User\AccessControl {
+namespace Jungle\User\AccessControl\Context {
+
+	use Jungle\User\AccessControl\Manager;
 
 	/**
 	 * Class ContextTrait

@@ -7,11 +7,10 @@
  * Date: 26.09.2016
  * Time: 20:17
  */
-namespace Jungle\User\AccessControl {
+namespace Jungle\User\AccessControl\Matchable {
 	
+	use Jungle\User\AccessControl\Context\ContextInterface;
 	use Jungle\User\AccessControl\Matchable\Aggregator;
-	use Jungle\User\AccessControl\Matchable\Result;
-	use Jungle\User\AccessControl\Matchable\Target;
 	use Jungle\Util\Named\NamedInterface;
 
 	/**
@@ -93,7 +92,7 @@ namespace Jungle\User\AccessControl {
 		public function getRequirement();
 
 		/**
-		 * @param ContextInterface $context
+		 * @param \Jungle\User\AccessControl\Context\ContextInterface $context
 		 * @param Aggregator $aggregator
 		 * @return Result
 		 */

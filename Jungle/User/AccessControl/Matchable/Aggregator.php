@@ -7,10 +7,8 @@
  */
 namespace Jungle\User\AccessControl\Matchable {
 
-	use Jungle\User\AccessControl\Context;
-	use Jungle\User\AccessControl\ContextInterface;
+	use Jungle\User\AccessControl\Context\ContextInterface;
 	use Jungle\User\AccessControl\Exception;
-	use Jungle\User\AccessControl\Matchable;
 
 	/**
 	 *

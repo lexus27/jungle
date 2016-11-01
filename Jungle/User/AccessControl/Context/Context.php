@@ -7,14 +7,14 @@
  * Date: 26.09.2016
  * Time: 21:17
  */
-namespace Jungle\User\AccessControl {
+namespace Jungle\User\AccessControl\Context {
 
 	/**
 	 * Class ContextNew
 	 * @package Jungle\User\AccessControl
 	 */
 	class Context implements ContextInterface{
-		use ContextTrait;
+		use \Jungle\User\AccessControl\Context\ContextTrait;
 	}
 }
 

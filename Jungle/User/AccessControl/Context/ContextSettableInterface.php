@@ -7,7 +7,7 @@
  * Date: 26.09.2016
  * Time: 21:30
  */
-namespace Jungle\User\AccessControl {
+namespace Jungle\User\AccessControl\Context {
 
 	/**
 	 * Interface ContextSettableInterface

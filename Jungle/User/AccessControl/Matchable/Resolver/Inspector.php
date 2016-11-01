@@ -9,17 +9,16 @@
  */
 namespace Jungle\User\AccessControl\Matchable\Resolver {
 	
-	use Jungle\User\AccessControl\Context;
-	use Jungle\User\AccessControl\ContextInterface;
+	use Jungle\User\AccessControl\Context\ContextInterface;
 	use Jungle\User\AccessControl\Matchable\Result;
 
 	/**
 	 * Class Inspector
-	 * @package Jungle\User\AccessControl\Matchable\Resolver
+	 * @package Jungle\User\AccessControl\Matchable\Matchable\Resolver
 	 */
 	abstract class Inspector{
 
-		/** @var  Context */
+		/** @var  \Jungle\User\AccessControl\Context\Context */
 		protected $context;
 
 		/** @var  Result */
@@ -57,7 +56,7 @@ namespace Jungle\User\AccessControl\Matchable\Resolver {
 		}
 
 		/**
-		 * @param ContextInterface $context
+		 * @param \Jungle\User\AccessControl\Context\ContextInterface $context
 		 * @param Result $result
 		 * @param $expression
 		 * @return $this
