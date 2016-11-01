@@ -2,19 +2,23 @@
 /**
  * Created by Kutuzov Alexey Konstantinovich <lexus.1995@mail.ru>.
  * Author: Kutuzov Alexey Konstantinovich <lexus.1995@mail.ru>
- * Project: b2c-pay
+ * Project: jungle
  * IDE: PhpStorm
- * Date: 05.08.2016
- * Time: 19:44
+ * Date: 27.10.2016
+ * Time: 11:58
  */
 namespace Jungle\User\Verification {
 
 	/**
-	 * Class TokenProvider
+	 * Interface HintInterface
 	 * @package Jungle\User\Verification
 	 */
-	class TokenProvider implements TokenProviderInterface{
-		
+	interface HintInterface{
+
+		public function getScopeKey();
+
+		public function getVerificationKey();
+
 	}
 }
 
