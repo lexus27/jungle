@@ -25,7 +25,7 @@ namespace Jungle\Di\HolderChains {
 		 * @param null $priority
 		 * @return mixed
 		 */
-		public function insertHolder($alias, DiInterface $di, $priority = null);
+		public function insertInjection($alias, DiInterface $di, $priority = null);
 
 		/**
 		 * @param $alias
