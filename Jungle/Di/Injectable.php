@@ -11,11 +11,13 @@ namespace Jungle\Di {
 
 	use Jungle\Application;
 	use Jungle\Application\Dispatcher;
+	use Jungle\Application\Dispatcher\Process;
 	use Jungle\Application\RequestInterface as ApplicationRequestInterface;
 	use Jungle\Application\ResponseInterface as ApplicationResponseInterface;
 	use Jungle\Application\View\ViewStrategyInterface;
 	use Jungle\Application\ViewInterface;
 	use Jungle\Data\Record\Head\SchemaManager;
+	use Jungle\EventManager\EventManager;
 	use Jungle\Loader;
 	use Jungle\Messenger;
 	use Jungle\User\Account;
@@ -37,6 +39,7 @@ namespace Jungle\Di {
 	 * @property ApplicationResponseInterface|ResponseInterface|ResponseSettableInterface|ResponseOnServerInterface $response
 	 * @property $cache
 	 * @property $event
+	 * @property EventManager $event_manager
 	 *
 	 * @property ViewInterface $view
 	 * @property ViewStrategyInterface $view_strategy
@@ -48,10 +51,11 @@ namespace Jungle\Di {
 	 * @property Loader $loader
 	 *
 	 * @property Account $account
-	 * @property $access
+	 * @property \Jungle\User\AccessControl\Manager $access
 	 * @property SessionManager $session
 	 * @property ManagerInterface $cookie
 	 * @property Messenger $messenger
+	 * @property Process process
 	 */
 	abstract class Injectable implements InjectionAwareInterface{
 

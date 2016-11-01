@@ -1,11 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * Project: MobileCasino
- * Date: 18.03.2015
- * Time: 14:46
- */
-
 namespace Jungle\Util\Smart\Value;
 
 /**

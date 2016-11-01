@@ -11,7 +11,7 @@ namespace Jungle\User\AccessControl\Matchable\Resolver\ConditionResolver\Excepti
 
 	/**
 	 * Class Query
-	 * @package Jungle\User\AccessControl\Matchable\Resolver\ConditionResolver\Exception
+	 * @package Jungle\User\AccessControl\Matchable\Matchable\Resolver\ConditionResolver\Exception
 	 */
 	class Query extends Exception{
 

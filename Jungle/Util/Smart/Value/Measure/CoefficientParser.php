@@ -10,7 +10,7 @@ namespace Jungle\Util\Smart\Value\Measure {
 	abstract class CoefficientParser{
 
 		/** @var  string */
-		protected $regex = '@(?<factor>[\d]+\.?[\d]+)\s?((?<main>[\w]+)/?(?<second>[\w]+)?)@';
+		protected $regex = '@(?<factor>[\d]+(?:\.[\d]+)?)\s?((?<main>[\w]+)/?(?<second>[\w]+)?)@';
 
 		/**
 		 * @param string|null $regex

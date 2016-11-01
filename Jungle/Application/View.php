@@ -249,7 +249,7 @@ namespace Jungle\Application {
 			$renderer->initialize();
 			$this->last_renderer = $renderer;
 			$this->last_renderer_alias = $alias;
-			$process->setRendering(true);
+			$process->setStage($process::STAGE_RENDERING);
 			$rendered = $viewStrategy->preRender($alias, $renderer, $process, $this);
 			$rendered.= $viewStrategy->render($alias, $this, $renderer, $process,
 				array_replace($this->variables,$variables),

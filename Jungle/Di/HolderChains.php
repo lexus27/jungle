@@ -45,7 +45,7 @@ namespace Jungle\Di {
 		 * @return $this
 		 * @throws Exception
 		 */
-		public function insertHolder($alias, DiInterface $di, $priority = null){
+		public function insertInjection($alias, DiInterface $di, $priority = null){
 			if($priority!==null) $priority = floatval($priority);
 
 			if(

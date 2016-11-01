@@ -7,8 +7,7 @@
  */
 namespace Jungle\User\AccessControl\Matchable {
 
-	use Jungle\User\AccessControl\Context;
-	use Jungle\User\AccessControl\ContextInterface;
+	use Jungle\User\AccessControl\Context\ContextInterface;
 
 	/**
 	 * Class Target
@@ -141,7 +140,7 @@ namespace Jungle\User\AccessControl\Matchable {
 
 
 		/**
-		 * @param ContextInterface $context
+		 * @param \Jungle\User\AccessControl\Context\ContextInterface $context
 		 * @param Result $current
 		 * @return bool
 		 * @throws Resolver\ConditionResolver\Exception

@@ -11,10 +11,6 @@ namespace Jungle\Application\Dispatcher\Exception {
 	
 	use Jungle\Application\Dispatcher\Exception;
 
-	class Control extends Exception{
-
-
-
-	}
+	class Control extends Exception{}
 }
 

@@ -10,8 +10,9 @@ namespace Jungle\User\AccessControl\Matchable\Resolver {
 	use Jungle\ExoCode\LogicConstruction\Condition;
 	use Jungle\ExoCode\LogicConstruction\Operator;
 	use Jungle\RegExp;
-	use Jungle\User\AccessControl\Context;
-	use Jungle\User\AccessControl\ContextInterface;
+	use Jungle\User\AccessControl\Context\ContextInterface;
+	use Jungle\User\AccessControl\Context\Substitute;
+	use Jungle\User\AccessControl\Context\SubstituteInterface;
 	use Jungle\User\AccessControl\Matchable\Resolver;
 	use Jungle\User\AccessControl\Matchable\Resolver\ConditionResolver\Exception as ResolveException;
 	use Jungle\User\AccessControl\Matchable\Resolver\ConditionResolver\Exception\BadMethodCall;
@@ -46,7 +47,7 @@ namespace Jungle\User\AccessControl\Matchable\Resolver {
 	 */
 	class ConditionResolver extends Resolver{
 
-		/** @var  Context */
+		/** @var  \Jungle\User\AccessControl\Context\Context */
 		protected $current_context;
 
 		/** @var string  */
@@ -67,25 +68,6 @@ namespace Jungle\User\AccessControl\Matchable\Resolver {
 		/** @var  string */
 		protected $condition_regex;
 
-		/** @var  Inspector  */
-		protected $inspector;
-
-
-		/**
-		 * @param $inspector
-		 * @return $this
-		 */
-		public function setInspector(Inspector $inspector = null){
-			$this->inspector = $inspector;
-			return $this;
-		}
-
-		/**
-		 * @return Inspector
-		 */
-		public function getInspector(){
-			return $this->inspector;
-		}
 
 
 		/**
@@ -143,6 +125,9 @@ namespace Jungle\User\AccessControl\Matchable\Resolver {
 			$this->current_context = $context;
 			if($this->inspector){
 				$this->inspector->beginInspect($context, $result, $condition);
+			}
+			if(is_callable($condition) && is_bool(($condition = call_user_func($condition,$context,$result)))){
+				return $condition;
 			}
 
 			$condition = $this->_parseCondition($condition);
@@ -253,7 +238,7 @@ namespace Jungle\User\AccessControl\Matchable\Resolver {
 			}else{
 				$infoQuery = null;
 			}
-			if($container instanceof Context\SubstituteInterface && $container->isDefined()){
+			if($container instanceof SubstituteInterface && $container->isDefined()){
 				$container = $container->getValue();
 			}
 
@@ -274,7 +259,7 @@ namespace Jungle\User\AccessControl\Matchable\Resolver {
 			}
 
 			if($infoQuery!==null){
-				$value = Context\Substitute::infoQuery($infoQuery, $value);
+				$value = Substitute::infoQuery($infoQuery, $value);
 			}
 
 
@@ -306,44 +291,23 @@ namespace Jungle\User\AccessControl\Matchable\Resolver {
 			return $value;
 		}
 
-
-		/**
-		 * @return string
-		 */
-		protected function _getConditionRegex(){
-			if(!$this->condition_regex){
-				$delimiter      = preg_quote($this->path_delimiter,'@');
-				$escape_left    = preg_quote($this->escape_left,'@');
-				$escape_right   = preg_quote($this->escape_right,'@');
-				$this->condition_regex = '@ (!)?(
-					('.$escape_left.'(?:(?>[\[\]]+) | (?R))'.$escape_right.') |
-					(\w+['.$delimiter.'\$\&\:\w\d]+\(.*?\)) |
-					\s*? ([\+\-\*\/\\\$\#\@\%\^\&\:\=\!]+) \s*? |
-					\s+? ([\+\-\*\/\\\$\#\@\%\^\&\:\=\!\w]+) \s+ |
-					([\*'.$delimiter.'\w\$\&\:\d]+) |
-					TRUE | FALSE | NULL
-					)
-				@sxmi';
-			}
-			return $this->condition_regex;
-		}
-
 		/**
 		 * @param $condition_definition
 		 * @return array|bool
+		 * @throws \Exception
 		 */
 		protected function _parseCondition($condition_definition){
-			if(preg_match_all($this->_getConditionRegex(),$condition_definition,$m)){
-				$c = count($m[0]);
-				if($c===1){
-					return [$m[2][0],$m[1][0]?false:true];
-				}elseif($c===3){
-					return [$m[0][0],trim($m[0][1]),$m[0][2]];
-				}else{
-					throw new \LogicException($condition_definition);
-				}
+			$chunks = preg_split("@[\\r\\n\\t\\s]+@", $condition_definition);
+			list($left,$operator,$right) = array_replace([null,null,null], $chunks);
+			$c = count($chunks);
+			if($c===1){
+				$first = substr($left,0,1);
+				return [$left, $first==='!'?false:true, $right];
+			}elseif($c===3){
+				return [$left, $operator, $right];
+			}else{
+				throw new \Exception('Passed condition is invalid');
 			}
-			return false;
 		}
 
 

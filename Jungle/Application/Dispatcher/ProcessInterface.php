@@ -17,12 +17,22 @@ namespace Jungle\Application\Dispatcher {
 	 * Interface ProcessInterface
 	 * @package Jungle\Application
 	 */
-	interface ProcessInterface{
+	interface ProcessInterface extends ProcessInitiatorInterface{
 
-		/**
-		 * @return bool
-		 */
-		public function hasErrors();
+		const STAGE_PREPARE         = 'prepare';    //stage    processing | failure | success
+		const STAGE_EXECUTE         = 'execute';    //stage    processing | failure | success
+		const STAGE_DONE            = 'done';       //stage    failure | success
+		const STAGE_RENDERING       = 'rendering';  //stage    failure | success
+		const STAGE_COMPLETE        = 'complete';   //stage    failure | success
+
+		const STATE_FAILURE         = 'failure';
+		const STATE_SUCCESS         = 'success';
+		const STATE_PROCESSING      = 'processing';
+
+		const CALL_ROUTING          = 'routing';
+		const CALL_FORWARD          = 'forward';
+		const CALL_HIERARCHY        = 'hierarchy';
+
 
 
 		/**
@@ -46,15 +56,45 @@ namespace Jungle\Application\Dispatcher {
 		public function getActionName();
 
 		/**
-		 * HMVC-Architecture
-		 * @return bool
-		 */
-		public function isExternal();
-
-		/**
 		 * @return array
 		 */
 		public function getMeta();
+
+
+		/**
+		 * @param $stage
+		 * @return mixed
+		 */
+		public function setStage($stage);
+
+		/**
+		 * @return mixed
+		 */
+		public function getStage();
+
+		/**
+		 * @param $state
+		 * @return mixed
+		 */
+		public function setState($state);
+
+		/**
+		 * @return mixed
+		 */
+		public function getState();
+
+
+		/**
+		 * @return mixed
+		 */
+		public function getInitiatorType();
+
+		/**
+		 * @return ProcessInterface|RoutingInterface|null
+		 */
+		public function getInitiator();
+
+
 
 		/**
 		 * @return RoutingInterface
@@ -62,19 +102,31 @@ namespace Jungle\Application\Dispatcher {
 		public function getRouting();
 
 		/**
+		 * @return \Jungle\Application\RouterInterface|null
+		 */
+		public function getRouter();
+
+		/**
+		 * @return ProcessInterface
+		 */
+		public function getBase();
+
+		/**
+		 * @return ProcessInterface
+		 */
+		public function getForwarder();
+
+
+		/**
 		 * @return ProcessInterface
 		 */
 		public function getRoot();
-
 		/**
 		 * @return ProcessInterface
 		 */
 		public function getParent();
 
-		/**
-		 * @return ProcessInterface|RoutingInterface|null
-		 */
-		public function getInitiator();
+
 
 		/**
 		 * @return mixed
@@ -86,10 +138,19 @@ namespace Jungle\Application\Dispatcher {
 		 */
 		public function getReferenceString();
 
+
 		/**
-		 * @return array
+		 * @param $key
+		 * @param $value
+		 * @return mixed
 		 */
-		public function getParams();
+		public function setParam($key, $value);
+
+		/**
+		 * @param $key
+		 * @return mixed
+		 */
+		public function hasParam($key);
 
 		/**
 		 * @param $key
@@ -106,17 +167,21 @@ namespace Jungle\Application\Dispatcher {
 		public function requireParam($key, $allowNull = true);
 
 		/**
-		 * @param $key
-		 * @return mixed
+		 * @return array
 		 */
-		public function hasParam($key);
+		public function getParams();
+
+
+
+
+
 
 		/**
-		 * @param $key
-		 * @param $value
+		 * @param $reference
+		 * @param null $params
 		 * @return mixed
 		 */
-		public function setParam($key, $value);
+		public function forward($reference, $params = null);
 
 		/**
 		 * @param $reference
@@ -132,49 +197,11 @@ namespace Jungle\Application\Dispatcher {
 		 */
 		public function callIn($reference, $data = null);
 
-		/**
-		 * @param $reference
-		 * @param null $data
-		 * @return mixed
-		 */
-		public function forward($reference, $data = null);
 
-//
-//		/**
-//		 * @param $type - ['strategy'|'module'|'controller'|'action']
-//		 * @param $container - ['system'|'session'|'user']
-//		 * @return object
-//		 */
-//		public function getMemory($type, $container);
-//
-//		public function resetMemory($type, $container);
-//
-/*
 
-        public function getStrategyMemory();
 
-        public function getStrategySessionMemory();
 
-        public function getStrategyUserMemory();
 
-		public function getModuleMemory();
-
-		public function getModuleSessionMemory();
-
-		public function getModuleUserMemory();
-
-		public function getControllerMemory();
-
-		public function getControllerSessionMemory();
-
-		public function getControllerUserMemory();
-
-		public function getActionMemory();
-
-		public function getActionSessionMemory();
-
-		public function getActionUserMemory();
-*/
 
 		/**
 		 * @param null $params
@@ -196,6 +223,114 @@ namespace Jungle\Application\Dispatcher {
 		 * @return string
 		 */
 		public function linkMain($params);
+
+
+		/**
+		 * @param $result
+		 * @param null $stage
+		 * @param null $state
+		 * @return $this
+		 */
+		public function setResult($result, $stage = null, $state = null);
+
+		/**
+		 * @return mixed
+		 */
+		public function getResult();
+
+
+
+
+
+
+		/**
+		 * @return mixed
+		 */
+		public function startBuffering();
+		/**
+		 * @return mixed
+		 */
+		public function endBuffering();
+		/**
+		 * @return mixed
+		 */
+		public function getBuffered();
+
+
+
+
+
+
+
+		/**
+		 * @param array $options
+		 * @param bool|false $merge
+		 * @return $this
+		 */
+		public function setOptions(array $options = [], $merge = false);
+		/**
+		 * @return array
+		 */
+		public function getOptions();
+
+		/**
+		 * @param $key
+		 * @param $value
+		 * @return $this
+		 */
+		public function setOption($key, $value);
+		/**
+		 * @param $key
+		 * @param null|mixed $default
+		 * @return mixed
+		 */
+		public function getOption($key, $default = null);
+		/**
+		 * @param $key
+		 * @return bool
+		 */
+		public function hasOption($key);
+
+
+
+
+		/**
+		 * @param $key
+		 * @param $task
+		 * @return mixed
+		 */
+		public function setTask($key, $task);
+		/**
+		 * @return bool
+		 */
+		public function hasTasks();
+		/**
+		 * @param $key
+		 * @return mixed
+		 */
+		public function getTask($key);
+		/**
+		 * @return array[]
+		 */
+		public function getTasks();
+
+
+
+		/**
+		 * @return bool
+		 */
+		public function hasErrors();
+
+
+
+
+
+
+
+
+
+
+
 
 		/**
 		 * @param $key
@@ -222,127 +357,21 @@ namespace Jungle\Application\Dispatcher {
 		 */
 		public function __unset($key);
 
-		/**
-		 * @param $canceled
-		 * @return mixed
-		 */
-		public function setCanceled($canceled);
-
-		/**
-		 * @return bool
-		 */
-		public function isCanceled();
-
-		/**
-		 * @return bool
-		 */
-		public function isCompleted();
-
-		/**
-		 * @param bool|true $completed
-		 * @return $this
-		 */
-		public function setCompleted($completed = true);
-
-		/**
-		 * @param $result
-		 * @param bool $completed
-		 * @return mixed
-		 */
-		public function setResult($result,$completed = true);
-
-		/**
-		 * @return mixed
-		 */
-		public function getResult();
-
-
-		/**
-		 * @return mixed
-		 */
-		public function startOutputBuffering();
-
-		/**
-		 * @return mixed
-		 */
-		public function endOutputBuffering();
-
-		/**
-		 * @return mixed
-		 */
-		public function getOutputBuffer();
-
-
-
-		/**
-		 * @param array $options
-		 * @param bool|false $merge
-		 * @return $this
-		 */
-		public function setOptions(array $options = [], $merge = false);
-
-
-		/**
-		 * @return array
-		 */
-		public function getOptions();
-
-
-		/**
-		 * @param $key
-		 * @param $value
-		 * @return $this
-		 */
-		public function setOption($key, $value);
-
-		/**
-		 * @param $key
-		 * @param null|mixed $default
-		 * @return mixed
-		 */
-		public function getOption($key, $default = null);
-
-		/**
-		 * @param $key
-		 * @return bool
-		 */
-		public function hasOption($key);
-
-		/**
-		 * @return bool
-		 */
-		public function hasTasks();
-
-		/**
-		 * @param $key
-		 * @return mixed
-		 */
-		public function getTask($key);
-
-		/**
-		 * @param $key
-		 * @param $task
-		 * @return mixed
-		 */
-		public function setTask($key, $task);
-
-		/**
-		 * @return array[]
-		 */
-		public function getTasks();
-
-		/**
-		 * @param bool|true $rendering
-		 * @return $this
-		 */
-		public function setRendering($rendering = true);
-
-		/**
-		 * @return bool
-		 */
-		public function isRendering();
-
-
+// TODO concept
+//		const GEN_STRATEGY    = 'strategy';
+//		const GEN_MODULE      = 'module';
+//		const GEN_CONTROLLER  = 'controller';
+//		const GEN_ACTION      = 'action';
+//
+//		const LINKING_USER    = 'user';
+//		const LINKING_SESSION = 'session';
+//
+//		/**
+//		 * @param $generalization
+//		 * @param $linking
+//		 * @return mixed
+//		 */
+//		public function getMemory($generalization, $linking);
 
 
 	}

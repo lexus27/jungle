@@ -10,7 +10,6 @@
 namespace Jungle\Application\Dispatcher {
 
 	use Jungle\Application\Dispatcher;
-	use Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface;
 	use Jungle\Di\DiInterface;
 
 	/**
@@ -129,12 +128,13 @@ namespace Jungle\Application\Dispatcher {
 
 		/**
 		 * @param array|null $reference
-		 * @param array $data
+		 * @param array $params
+		 * @param \Jungle\Application\Dispatcher\ProcessInitiatorInterface $initiator
+		 * @param $initiator_type
 		 * @param array $options
-		 * @param \Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface $initiator
 		 * @return ProcessInterface
 		 */
-		public function control(array $reference = null,array $data, array $options = null, ProcessInitiatorInterface $initiator = null);
+		public function control(array $reference,array $params, ProcessInitiatorInterface $initiator, $initiator_type, array $options = null);
 
 		/**
 		 * @return mixed

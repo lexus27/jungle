@@ -10,7 +10,7 @@
 namespace Jungle\Application\Router {
 
 	use Jungle\Application\Dispatcher;
-	use Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface;
+	use Jungle\Application\Dispatcher\ProcessInitiatorInterface;
 	use Jungle\Application\RequestInterface;
 	use Jungle\Application\Router\Exception\MatchedException;
 	use Jungle\Application\RouterInterface;

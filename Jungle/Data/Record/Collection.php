@@ -559,21 +559,23 @@ namespace Jungle\Data\Record {
 			if($this->auto_deploy && !$this->deployed){
 				$this->deploy();
 			}
-
-			$condition = Condition::build($condition);
-			$elapsed = 0;
-			$count = 0;
 			$a = [];
-			foreach($this->items as $item){
-				if(!$condition || call_user_func($condition,$item)){
-					$elapsed++;
-					if(!$offset || $elapsed>=$offset){
-						$a[] = $item;
+			if($this->items){
+				$condition = Condition::build($condition);
+				$elapsed = 0;
+				$count = 0;
 
-						if(++$count >= $limit){
-							break;
+				foreach($this->items as $item){
+					if(!$condition || call_user_func($condition,$item)){
+						$elapsed++;
+						if(!$offset || $elapsed>=$offset){
+							$a[] = $item;
+
+							if(++$count >= $limit){
+								break;
+							}
+
 						}
-
 					}
 				}
 			}

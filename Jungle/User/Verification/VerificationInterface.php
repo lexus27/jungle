@@ -4,61 +4,24 @@
  * Author: Kutuzov Alexey Konstantinovich <lexus.1995@mail.ru>
  * Project: jungle
  * IDE: PhpStorm
- * Date: 09.09.2016
- * Time: 13:05
+ * Date: 23.10.2016
+ * Time: 14:03
  */
 namespace Jungle\User\Verification {
 
 	/**
-	 * Interface VerificationInterface
+	 * Class Verification
 	 * @package Jungle\User\Verification
 	 */
 	interface VerificationInterface{
 
 		/**
+		 * @param $scope
+		 * @param TokenStorageInterface $storage
+		 * @param Verificator $verificator
 		 * @return mixed
 		 */
-		public function getCode();
-
-		/**
-		 * @return mixed
-		 */
-		public function getId();
-
-		/**
-		 * @param $strategy
-		 * @return mixed
-		 */
-		public function setVerificationStrategy($strategy);
-
-		/**
-		 * @return mixed
-		 */
-		public function getSessionId();
-
-		/**
-		 * @return mixed
-		 */
-		public function satisfy();
-
-		/**
-		 * @return bool
-		 */
-		public function isSatisfied();
-
-		/**
-		 * @return bool
-		 */
-		public function isOverdue();
-
-
-		/**
-		 * @param $expires
-		 * @return mixed
-		 */
-		public function setExpires($expires);
-
-
+		public function verify($scope, TokenStorageInterface $storage, Verificator $verificator);
 
 	}
 }

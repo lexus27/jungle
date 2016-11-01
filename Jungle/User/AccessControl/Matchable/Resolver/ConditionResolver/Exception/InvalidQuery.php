@@ -9,7 +9,7 @@ namespace Jungle\User\AccessControl\Matchable\Resolver\ConditionResolver\Excepti
 
 	/**
 	 * Class InvalidQuery
-	 * @package Jungle\User\AccessControl\Matchable\Resolver\ConditionResolver\Exception
+	 * @package Jungle\User\AccessControl\Matchable\Matchable\Resolver\ConditionResolver\Exception
 	 */
 	class InvalidQuery extends Query{
 		protected $type = 'invalid_definition';

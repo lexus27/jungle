@@ -10,16 +10,15 @@
 namespace Jungle\User\AccessControl\Matchable\Resolver {
 
 	use Jungle\Data\Record\Head\Field;
-	use Jungle\User\AccessControl\Context;
+	use Jungle\User\AccessControl\Context\ContextInterface;
 	use Jungle\User\AccessControl\Context\ObjectAccessor;
-	use Jungle\User\AccessControl\ContextInterface;
-	use Jungle\User\AccessControl\Matchable;
+	use Jungle\User\AccessControl\Matchable\Matchable;
 	use Jungle\User\AccessControl\Matchable\Result;
 	use Jungle\Util\Value\Massive;
 
 	/**
 	 * Class PredicateInspector
-	 * @package Jungle\User\AccessControl\Matchable\Resolver
+	 * @package Jungle\User\AccessControl\Matchable\Matchable\Resolver
 	 */
 	class PredicateInspector extends Inspector{
 
@@ -30,7 +29,7 @@ namespace Jungle\User\AccessControl\Matchable\Resolver {
 		protected $target_effect;
 
 		/**
-		 * @param ContextInterface $context
+		 * @param \Jungle\User\AccessControl\Context\ContextInterface $context
 		 * @param Result $result
 		 * @param $expression
 		 * @return $this

@@ -9,7 +9,7 @@ namespace Jungle\User\AccessControl\Matchable\Resolver\ConditionResolver\Excepti
 
 	/**
 	 * Class PathNotFound
-	 * @package Jungle\User\AccessControl\Matchable\Resolver\ConditionResolver\Exception
+	 * @package Jungle\User\AccessControl\Matchable\Matchable\Resolver\ConditionResolver\Exception
 	 */
 	class PathNotFound extends Query{
 		protected $type = 'path_not_found';

@@ -30,9 +30,16 @@ namespace Jungle\User {
 		public function getUser();
 
 		/**
+		 * @return mixed
+		 */
+		public function getUserId();
+
+		/**
 		 * @return bool
 		 */
 		public function hasUser();
+
+
 
 		/**
 		 * @param $id

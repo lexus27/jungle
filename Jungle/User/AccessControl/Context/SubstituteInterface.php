@@ -13,7 +13,7 @@ namespace Jungle\User\AccessControl\Context {
 
 	/**
 	 * Interface SubstituteInterface
-	 * @package Jungle\User\AccessControl\Context
+	 * @package Jungle\User\AccessControl\Context\Context
 	 */
 	interface SubstituteInterface extends IValue, IValueSettable, IValueErasable{
 

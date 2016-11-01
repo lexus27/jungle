@@ -50,7 +50,7 @@ namespace Jungle {
 
 			$holderChains = new HolderChains();
 			Di::setDefault($holderChains);
-			$holderChains->insertHolder('default',($di = new Di()), 0);
+			$holderChains->insertInjection('default',($di = new Di()), 0);
 			$this->setDi($holderChains);
 
 			$di = $holderChains->getInjection('default');
