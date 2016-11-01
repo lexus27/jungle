@@ -16,6 +16,11 @@ namespace Jungle\User {
 	interface AccountInterface{
 
 		/**
+		 * @return mixed
+		 */
+		public function getUserId();
+
+		/**
 		 * @return UserInterface|null
 		 */
 		public function getUser();
@@ -25,6 +30,7 @@ namespace Jungle\User {
 		 * @return $this
 		 */
 		public function setUser(UserInterface $user);
+
 
 	}
 }
