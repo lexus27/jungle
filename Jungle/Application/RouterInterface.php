@@ -10,6 +10,7 @@
 namespace Jungle\Application {
 
 	use Jungle\Application\Router\RouteInterface;
+	use Jungle\Application\Router\Routing;
 	use Jungle\Application\Router\RoutingInterface;
 	use Jungle\RegExp\Template;
 
@@ -44,7 +45,7 @@ namespace Jungle\Application {
 
 		/**
 		 * @param RequestInterface $request
-		 * @return \Generator|RoutingInterface[]
+		 * @return \Generator|Routing[]
 		 */
 		public function getMatchGenerator(RequestInterface $request);
 

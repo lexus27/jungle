@@ -9,9 +9,6 @@
  */
 namespace Jungle\Application\Dispatcher {
 
-	use Jungle\Application\DispatcherInterface;
-
-
 	/**
 	 * Interface ControllerInterface
 	 * @package Jungle\Application
@@ -22,16 +19,6 @@ namespace Jungle\Application\Dispatcher {
 		 * @return void
 		 */
 		public function initialize();
-
-		/**
-		 * @param DispatcherInterface $dispatcher
-		 * @param ModuleInterface $module
-		 * @param $params
-		 * @param $reference
-		 * @param $initiator
-		 * @return ProcessInterface
-		 */
-		public function factoryProcess(DispatcherInterface $dispatcher, ModuleInterface $module, $params, $reference, $initiator);
 
 		/**
 		 * @return array

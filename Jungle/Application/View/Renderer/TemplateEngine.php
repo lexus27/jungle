@@ -225,7 +225,7 @@ namespace Jungle\Application\View\Renderer {
 					);
 					if($isBreakLevel) return $content;
 				}elseif(!$level){
-					$ob = $process->getOutputBuffer();
+					$ob = $process->getBuffered();
 					if($ob) $content = $ob;
 				}
 			}
