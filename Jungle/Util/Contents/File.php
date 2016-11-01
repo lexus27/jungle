@@ -13,7 +13,7 @@ namespace Jungle\Util\Contents {
 	 * Class File
 	 * @package Jungle\Util\Contents
 	 */
-	class File implements  ContentsAwareInterface{
+	class File implements ContentsAwareInterface{
 
 		/** @var   */
 		protected $path;
