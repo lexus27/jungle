@@ -33,13 +33,13 @@ namespace Jungle\Util\Data\Condition {
 			$operator = null;
 			foreach($this->conditions as $i => $condition){
 				if($i > 0){
-					$operator = isset($this->operators[$i])?$this->operators[$i]:'and';
+					$operator = isset($this->operators[$i])?$this->operators[$i]:'AND';
 				}
-				if($operator === 'and' && isset($value)){
+				if($operator === 'AND' && isset($value)){
 					$value = ($value && call_user_func($condition, $data, $access));
-				}elseif($operator === 'or' && isset($value)){
+				}elseif($operator === 'OR' && isset($value)){
 					$value = ($value || call_user_func($condition, $data, $access));
-				}elseif($operator === 'xor' && isset($value)){
+				}elseif($operator === 'XOR' && isset($value)){
 					$value = ($value xor call_user_func($condition, $data, $access));
 				}else{
 					$value = call_user_func($condition, $data, $access);
