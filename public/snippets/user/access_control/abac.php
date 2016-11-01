@@ -8,10 +8,10 @@
  * Time: 15:58
  */
 
-use Jungle\User\AccessControl\Adapter\PolicyAdater\Memory as MemoryPolicyAdapter;
-use Jungle\User\AccessControl\Context;
+use Jungle\User\AccessControl\Context\Context;
 use Jungle\User\AccessControl\Manager;
-use Jungle\User\AccessControl\Matchable;
+use Jungle\User\AccessControl\Matchable\Aggregator\MemoryBuilder\Memory as MemoryPolicyAdapter;
+use Jungle\User\AccessControl\Matchable\Matchable;
 
 include '../../loader.php';
 
