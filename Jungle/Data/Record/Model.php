@@ -11,7 +11,10 @@ namespace Jungle\Data\Record {
 
 	use App\Model\Usergroup;
 	use Jungle\Data\Record;
+	use Jungle\Data\Record\Collection\Relationship;
+	use Jungle\Data\Record\Exception\Field\AccessViolation;
 	use Jungle\Data\Record\Head\Field;
+	use Jungle\Data\Record\Head\Field\Relation;
 	use Jungle\Data\Record\Head\ModelSchema;
 	use Jungle\Data\Record\Head\SchemaManager;
 
@@ -276,16 +279,54 @@ namespace Jungle\Data\Record {
 			return isset($this->_initialized_properties[$name]);
 		}
 
+		/**
+		 * @param $name
+		 * @return mixed
+		 * @throws AccessViolation
+		 * @throws Exception\Field
+		 */
 		public function getRelatedRecord($name){
-
+			$field = $this->_schema->getField($name);
+			if($field instanceof Relation && !$field->isMany()){
+				if(!self::$properties_changes_restrict_level && $field->isPrivate()){
+					throw new AccessViolation('Could not get private property "'.$name.'"');
+				}
+				return $this->_getFrontProperty($name);
+			}else{
+				throw new Exception\Field('getRelatedRecord(): field "'.$this->_schema->getName().'.'.$name.'" is not a Single Relation');
+			}
 		}
 
 		/**
 		 * @param $name
 		 * @param array $parameters
+		 * @return Relationship
+		 * @throws AccessViolation
+		 * @throws Exception\Field
 		 */
 		public function getRelatedCollection($name, array $parameters = []){
 
+			$field = $this->_schema->getField($name);
+			if($field instanceof Relation && $field->isMany()){
+				if(!self::$properties_changes_restrict_level && $field->isPrivate()){
+					throw new AccessViolation('Could not get private property "'.$name.'"');
+				}
+				/** @var Relationship $relationship */
+				$relationship = $this->_getFrontProperty($name);
+				if(!$parameters){
+					return $relationship;
+				}else{
+					$parameters = array_replace([
+						'condition' => null,
+						'limit'     => null,
+						'offset'    => null,
+						'sorter'    => null,
+					],$parameters);
+					return $relationship->extend($parameters['condition'],$parameters['limit'], $parameters['offset'], $parameters['sorter']);
+				}
+			}else{
+				throw new Exception\Field('getRelatedCollection(): field "'.$this->_schema->getName().'.'.$name.'" is not a Many Relation');
+			}
 		}
 	}
 }
