@@ -207,15 +207,16 @@ namespace Jungle\Application\Dispatcher {
 		/**
 		 * @param array|null $reference
 		 * @param array $params
-		 * @param array $options
 		 * @param \Jungle\Application\Dispatcher\ProcessInitiatorInterface|null $initiator
 		 * @param $initiator_type
+		 * @param ProcessInitiatorInterface|null $forwarder
+		 * @param array $options
 		 * @return mixed
 		 * @throws Control
 		 * @throws Exception
 		 * @throws \Exception
 		 */
-		public function control(array $reference,array $params, ProcessInitiatorInterface $initiator, $initiator_type, array $options = null){
+		public function control(array $reference,array $params, ProcessInitiatorInterface $initiator, $initiator_type,ProcessInitiatorInterface $forwarder = null, array $options = null){
 			$controller = $this->loadController($reference['controller']);
 			$action = $reference['action'];
 			if($controller instanceof ControllerManuallyInterface){
@@ -225,7 +226,7 @@ namespace Jungle\Application\Dispatcher {
 				}
 
 				$result = null;
-				$process = $this->factoryProcess($controller, $params, $reference, $initiator, $initiator_type);
+				$process = $this->factoryProcess($controller, $params, $reference, $initiator, $initiator_type, $forwarder);
 				$this->dispatcher->storeProcess($process);
 				try{
 					$this->set('process', $process, true);
@@ -258,7 +259,7 @@ namespace Jungle\Application\Dispatcher {
 				}
 
 				$result = null;
-				$process = $this->factoryProcess($controller, $params, $reference, $initiator, $initiator_type);
+				$process = $this->factoryProcess($controller, $params, $reference, $initiator, $initiator_type, $forwarder);
 				$this->dispatcher->storeProcess($process);
 				try{
 					$this->set('process', $process, true);
@@ -477,12 +478,13 @@ namespace Jungle\Application\Dispatcher {
 		 * @param $reference
 		 * @param $initiator
 		 * @param $initiator_type
-		 * @return \Jungle\Application\Dispatcher\Process
+		 * @param $forwarder
+		 * @return Process
 		 * @throws Exception
 		 */
-		public function factoryProcess($controller, $params, $reference, $initiator, $initiator_type){
+		public function factoryProcess($controller, $params, $reference, $initiator, $initiator_type, $forwarder){
 			if(method_exists($controller, 'factoryProcess')){
-				$process = call_user_func([$controller, 'factoryProcess'],$this->dispatcher, $this, $params, $reference, $initiator);
+				$process = call_user_func([$controller, 'factoryProcess'],$this->dispatcher, $this, $params, $reference, $initiator,$initiator_type, $forwarder);
 				if($process){
 					if(!$process instanceof ProcessInterface){
 						throw new Exception('Controller '.get_class($controller) . '::factoryProcess return value is not instanceof "'.ProcessInterface::class.'"');
@@ -490,7 +492,7 @@ namespace Jungle\Application\Dispatcher {
 					return $process;
 				}
 			}
-			return $this->dispatcher->factoryProcess($params, $reference, $this, $controller, $initiator, $initiator_type);
+			return $this->dispatcher->factoryProcess($params, $reference, $this, $controller, $initiator, $initiator_type,$forwarder);
 		}
 
 

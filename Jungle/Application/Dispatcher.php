@@ -83,6 +83,9 @@ namespace Jungle\Application {
 		/** @var  bool  */
 		protected $dispatching = false;
 
+		/** @var bool  */
+		protected $dispatching_error = false;
+
 		/** @var  RequestInterface */
 		protected $dispatching_request;
 
@@ -94,6 +97,7 @@ namespace Jungle\Application {
 
 		/** @var  ProcessInterface */
 		protected $restored_process;
+
 
 		/**
 		 * Dispatcher constructor.
@@ -540,11 +544,23 @@ namespace Jungle\Application {
 		 * @throws Exception\Forwarded
 		 */
 		public function forward($reference,array $params, ProcessInitiatorInterface $initiator){
-			$initiator = $initiator?: $this->currentProcess();
-			$root = $initiator->getRoot();
-			$root->setState($root::STATE_FAILURE);
-			$process = $this->control($reference, $params, $root, Process::CALL_FORWARD, null);
-			throw new Exception\Forwarded($process);
+			try{
+				$initiator = $initiator?: $this->currentProcess();
+				if($initiator instanceof ProcessInterface){
+					$root = $initiator->getRoot();
+					$root->setState($root::STATE_FAILURE);
+				}else{
+					$root = $initiator;
+				}
+				$process = $this->control($reference, $params, $root, Process::CALL_FORWARD,$initiator, null);
+				throw new Exception\Forwarded($process);
+			}catch(Exception\Forwarded $forwarded){
+				if($this->dispatching_error){
+					return $this->prepareResponse($forwarded->process);
+				}else{
+					throw $forwarded;
+				}
+			}
 		}
 
 
@@ -560,13 +576,14 @@ namespace Jungle\Application {
 		 * @param array $params
 		 * @param \Jungle\Application\Dispatcher\ProcessInitiatorInterface $initiator
 		 * @param string $initiator_type
+		 * @param ProcessInitiatorInterface $forwarder
 		 * @param $options
 		 * @return Process|mixed
 		 * @throws Control
 		 * @throws Exception\ContinueRoute
 		 * @throws \Jungle\Exception
 		 */
-		public function control($reference, array $params, ProcessInitiatorInterface $initiator, $initiator_type, $options = null){
+		public function control($reference, array $params, ProcessInitiatorInterface $initiator, $initiator_type,ProcessInitiatorInterface $forwarder = null, $options = null){
 			$reference = Reference::normalize($reference,[ 'module' => $this->default_module ]);
 
 			if(!($module = $this->getModule( ($moduleName = $reference['module']) ))){
@@ -576,8 +593,8 @@ namespace Jungle\Application {
 			$di = $this->getDi();
 			try{
 				$di->insertInjection('module', $module, 10);
-				$this->preControl($reference, $module, $initiator, $initiator_type);
-				$process = $module->control($reference,$params, $initiator, $initiator_type, $options);
+				$this->preControl($reference, $module, $initiator, $initiator_type,$forwarder);
+				$process = $module->control($reference,$params, $initiator, $initiator_type, $forwarder, $options);
 				$output = $this->_output($process, $options);
 				$this->postControl($output,$process);
 				return $output;
@@ -611,25 +628,7 @@ namespace Jungle\Application {
 		protected function _output(ProcessInterface $process,array $options = null){
 			try{
 				if(is_array($options)){
-					if(isset($options['render']) && $options['render']){
-						/** @var ViewInterface $view */
-						$view   = $this->getDi()->getShared('view');
-						$alias  = null;
-						$render_variables  = [];
-						$render_options    = [];
-						if(is_array($options['render'])){
-							$alias              = $options['render']['alias'];
-							$render_variables   = (array)$options['render']['variables'];
-							$render_options     = (array)$options['render']['options'];
-						}elseif(is_string($options['render'])){
-							$alias = $options['render'];
-						}
-						return $view->render($alias,$process,$render_variables, $render_options);
-					}elseif(isset($options['result']) && $options['result']){
-						return $process->getResult();
-					}elseif(isset($options['buffer']) && $options['buffer']){
-						return $process->getBuffered();
-					}
+					return $this->_renderProcess($process, $options);
 				}
 				return $process;
 			}finally{
@@ -639,12 +638,41 @@ namespace Jungle\Application {
 		}
 
 		/**
-		 * @param ModuleInterface $module
-		 * @param ControllerInterface $controller
+		 * @param ProcessInterface $process
+		 * @param array $options
+		 * @return string|null
+		 */
+		protected function _renderProcess(ProcessInterface $process,array $options){
+			if(isset($options['render']) && $options['render']){
+				/** @var ViewInterface $view */
+				$view   = $this->getDi()->getShared('view');
+				$alias  = null;
+				$render_variables  = [];
+				$render_options    = [];
+				if(is_array($options['render'])){
+					$alias              = $options['render']['alias'];
+					$render_variables   = (array)$options['render']['variables'];
+					$render_options     = (array)$options['render']['options'];
+				}elseif(is_string($options['render'])){
+					$alias = $options['render'];
+				}
+				return $view->render($alias,$process,$render_variables, $render_options);
+			}elseif(isset($options['result']) && $options['result']){
+				return $process->getResult();
+			}elseif(isset($options['buffer']) && $options['buffer']){
+				return $process->getBuffered();
+			}
+			return null;
+		}
+
+		/**
 		 * @param array $params
 		 * @param array $reference
+		 * @param ModuleInterface $module
+		 * @param ControllerInterface $controller
 		 * @param ProcessInitiatorInterface $initiator
 		 * @param $initiator_type
+		 * @param ProcessInitiatorInterface $forwarder
 		 * @return Process
 		 */
 		public function factoryProcess(
@@ -653,20 +681,10 @@ namespace Jungle\Application {
 			ModuleInterface $module,
 			ControllerInterface $controller,
 			ProcessInitiatorInterface $initiator,
-			$initiator_type
+			$initiator_type,
+			ProcessInitiatorInterface $forwarder = null
 		){
-			return new Process($this, $reference, $module, $controller, $params, $initiator, $initiator_type);
-		}
-
-		public function factoryForwardedProcess(
-			array $params,
-			array $reference,
-			ModuleInterface $module,
-			ControllerInterface $controller,
-			ProcessInitiatorInterface $initiator,
-			$initiator_type
-		){
-			return new Process($this, $reference, $module, $controller, $params, $initiator, $initiator_type);
+			return new Process($this, $reference, $module, $controller, $params, $initiator, $initiator_type,$forwarder);
 		}
 
 		/**
@@ -755,10 +773,11 @@ namespace Jungle\Application {
 		 * @param ModuleInterface $module
 		 * @param null|\Jungle\Application\Dispatcher\ProcessInitiatorInterface|ProcessInterface|Router\Routing $initiator
 		 * @param $initiator_type
+		 * @param null $forwarder
 		 * @throws Control
 		 * @throws Exception\ContinueRoute
 		 */
-		protected function preControl($reference, ModuleInterface $module, ProcessInitiatorInterface $initiator, $initiator_type){
+		protected function preControl($reference, ModuleInterface $module, ProcessInitiatorInterface $initiator, $initiator_type,$forwarder = null){
 			$this->event_manager->invokeEvent('dispatcher:preControl', $this, $reference, $module, $initiator);
 
 			/**
@@ -824,9 +843,10 @@ namespace Jungle\Application {
 				ob_end_clean();
 			}
 
+			$this->dispatching_error = true;
 			$reporter = $this->crash_reporter;
 			$reporter->report($e);
-			$process = $this->currentProcess();
+			$process = $this->currentProcess()?: $this->restored_process;
 			try{
 				if($process){
 					$process->setState($process::STATE_FAILURE);
@@ -848,8 +868,6 @@ namespace Jungle\Application {
 			}catch(\Exception $e){
 				echo '500 Internal Server Error, sorry please';
 				exit();
-			}finally{
-				$this->restoreProcess($process);
 			}
 		}
 
@@ -866,11 +884,11 @@ namespace Jungle\Application {
 			if(ob_get_level()){
 				ob_end_clean();
 			}
-
+			$this->dispatching_error = true;
 			$reporter = $this->crash_reporter;
 			$e =  new \ErrorException($message,0,$num, $filename,$line);
 			$reporter->report($e);
-			$process = $this->currentProcess();
+			$process = $this->currentProcess()?: $this->restored_process;
 			try{
 				if($process){
 					$process->setState($process::STATE_FAILURE);
@@ -887,8 +905,6 @@ namespace Jungle\Application {
 				$response->send();
 			}catch(\Exception $e){
 				echo '500 Internal Server Error, sorry please';
-			}finally{
-				$this->restoreProcess($process);
 			}
 			exit();
 		}
@@ -945,6 +961,7 @@ namespace Jungle\Application {
 			$default->setShared('response',$request->getResponse());
 
 			$this->dispatching              = true;
+			$this->dispatching_error        = false;
 			$this->dispatching_request      = $request;
 			$this->dispatching_strategy     = $strategy;
 			$strategy->registerServices();

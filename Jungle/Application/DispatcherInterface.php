@@ -28,10 +28,11 @@ namespace Jungle\Application {
 		 * @param array $params
 		 * @param ProcessInitiatorInterface|null $initiator
 		 * @param $initiator_type
+		 * @param ProcessInitiatorInterface $forwarder
 		 * @param null $options
 		 * @return mixed
 		 */
-		public function control($reference, array $params, ProcessInitiatorInterface $initiator, $initiator_type, $options = null);
+		public function control($reference, array $params, ProcessInitiatorInterface $initiator, $initiator_type,ProcessInitiatorInterface $forwarder = null, $options = null);
 
 		/**
 		 * @param $alias

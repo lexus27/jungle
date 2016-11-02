@@ -162,7 +162,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @throws NeedIntroduce
 		 */
 		public function requires(array $param_names, $return = false){
-			if($param_names !== null && !$this->rendering && $param_names !== array_intersect($param_names, array_keys($this->params))){
+			if($param_names !== null && $this->stage !== self::STAGE_RENDERING && $param_names !== array_intersect($param_names, array_keys($this->params))){
 				throw new NeedIntroduce("Params ".implode(', ',(array)$param_names)." required");
 			}
 			if($return && $param_names){
@@ -178,7 +178,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @throws NeedIntroduce
 		 */
 		public function getParams(array $required_names = null, $returnOnlyRequired = false){
-			if($required_names !== null && !$this->rendering && $required_names !== array_intersect($required_names, array_keys($this->params))){
+			if($required_names !== null && $this->stage !== self::STAGE_RENDERING && $required_names !== array_intersect($required_names, array_keys($this->params))){
 				throw new NeedIntroduce("Params ".implode(', ',(array)$required_names)." required");
 			}
 			if($required_names !== null && $returnOnlyRequired){
@@ -349,7 +349,7 @@ namespace Jungle\Application\Dispatcher {
 		 */
 		public function call($reference, $data = null, array $options = null){
 			$reference = Reference::normalize($reference, null, false);
-			return $this->dispatcher->control($reference, $data, $this, self::CALL_HIERARCHY, $options);
+			return $this->dispatcher->control($reference, $data, $this, self::CALL_HIERARCHY, null, $options);
 		}
 
 		/**
@@ -363,7 +363,7 @@ namespace Jungle\Application\Dispatcher {
 			$reference = Reference::normalize($reference, null, false);
 			$reference['module']		= $this->reference['module'];
 			$reference['controller']	= $this->reference['controller'] . '.' . $reference['controller'];
-			return $this->dispatcher->control($reference, $data, $this, self::CALL_HIERARCHY, $options);
+			return $this->dispatcher->control($reference, $data, $this, self::CALL_HIERARCHY, null, $options);
 		}
 
 		/**
@@ -379,7 +379,7 @@ namespace Jungle\Application\Dispatcher {
 				throw new Dispatcher\Exception\Control('Executing current action not allowed');
 			}
 			$reference['action'] = $action;
-			return $this->dispatcher->control($reference, $data, $this, self::CALL_HIERARCHY, $options);
+			return $this->dispatcher->control($reference, $data, $this, self::CALL_HIERARCHY, null, $options);
 		}
 
 		/**
@@ -397,7 +397,7 @@ namespace Jungle\Application\Dispatcher {
 			$references = Reference::generateSequence($reference,[ 'action' => Reference::SAFE_STRICT ]);
 			foreach($references as $reference){
 				if($this->dispatcher->hasControl($reference)){
-					return $this->dispatcher->control($reference, $data, $this, self::CALL_HIERARCHY, $options);
+					return $this->dispatcher->control($reference, $data, $this, self::CALL_HIERARCHY, null, $options);
 				}
 			}
 			throw new Dispatcher\Exception\Control('Not found suitable bubble for action "'.$action.'"');
@@ -419,7 +419,7 @@ namespace Jungle\Application\Dispatcher {
 			$references = Reference::getSequence($reference,[ 'action' => Reference::SAFE_STRICT ],'controller');
 			foreach($references as $reference){
 				if($this->dispatcher->hasControl($reference)){
-					return $this->dispatcher->control($reference, $data, $this, self::CALL_HIERARCHY, $options);
+					return $this->dispatcher->control($reference, $data, $this, self::CALL_HIERARCHY, null, $options);
 				}
 			}
 			throw new Dispatcher\Exception\Control('Not found suitable bubble for action "'.$action.'"');
@@ -438,7 +438,7 @@ namespace Jungle\Application\Dispatcher {
 				if($action!==null){
 					$reference['action'] = $action;
 				}
-				return $this->dispatcher->control($reference, $data, $this, self::CALL_HIERARCHY, $options);
+				return $this->dispatcher->control($reference, $data, $this, self::CALL_HIERARCHY, null, $options);
 			}else{
 				throw new Dispatcher\Exception\Control('Call Parent: initiator is not Process');
 			}
