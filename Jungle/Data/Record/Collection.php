@@ -123,6 +123,17 @@ namespace Jungle\Data\Record {
 		protected $face_access_property = null;
 
 		/**
+		 * @return array
+		 */
+		public function getItems(){
+			if($this->auto_deploy && !$this->deployed){
+				$this->deploy();
+			}
+			return $this->items;
+		}
+
+
+		/**
 		 * @param bool|true $capture
 		 * @return $this
 		 */
@@ -561,22 +572,28 @@ namespace Jungle\Data\Record {
 			}
 			$a = [];
 			if($this->items){
-				$condition = Condition::build($condition);
-				$elapsed = 0;
-				$count = 0;
+				if(!$condition && !$limit && !$offset){
+					return $this->items;
+				}
+				if($condition){
+					$condition = Condition::build($condition);
+					$elapsed = 0;
+					$count = 0;
+					foreach($this->items as $item){
+						if(!$condition || call_user_func($condition,$item)){
+							$elapsed++;
+							if(!$offset || $elapsed>=$offset){
+								$a[] = $item;
 
-				foreach($this->items as $item){
-					if(!$condition || call_user_func($condition,$item)){
-						$elapsed++;
-						if(!$offset || $elapsed>=$offset){
-							$a[] = $item;
+								if(++$count >= $limit){
+									break;
+								}
 
-							if(++$count >= $limit){
-								break;
 							}
-
 						}
 					}
+				}else{
+					return array_slice($this->items,$offset?:0,$limit);
 				}
 			}
 			return $a;
@@ -1368,7 +1385,7 @@ namespace Jungle\Data\Record {
 				$schema = $this->getSchema();
 				$condition = $this->getExtendedContainCondition($condition);
 				$condition = $condition?$condition->toStorageCondition():[];
-				return $schema->storageCount($condition,$limit?:$this->getLimit(), $this->getOffset() + $offset);
+				return $schema->storageCount($condition,$this->getOffset() + $offset, $limit?:$this->getLimit());
 			}
 		}
 

@@ -612,13 +612,16 @@ namespace Jungle\Data {
 		 */
 		public function export( $public = true ){
 			$values = [ ];
-			foreach($this->_schema->getFields() as $field){
-				if(!$field->isPrivate() && $field->isOriginality()){
-					$name = $field->getName();
-					$values[$name] = $this->getProperty($name);
+			if($this->_initialized){
+				foreach($this->_schema->getFields() as $field){
+					if(!$field->isPrivate() && $field->isOriginality()){
+						$name = $field->getName();
+						$values[$name] = $this->getProperty($name);
+					}
 				}
+				return $values;
 			}
-			return $values;
+			return [];
 		}
 
 		/**

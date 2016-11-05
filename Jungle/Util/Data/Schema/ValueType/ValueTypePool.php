@@ -139,7 +139,12 @@ namespace Jungle\Util\Data\Schema\ValueType {
 			]);
 			$this->type(['words'],[
 				'rules' => [
-					new RegExp([ 'pattern' => '@^[[:alpha:]]*[\w\-\_\d\s]*$@uS' ])
+					new RegExp([ 'pattern' => '@^[[:alpha:]][\w\-\_\d\s]*$@uS' ])
+				]
+			]);
+			$this->type(['text'],[
+				'rules' => [
+					new RegExp([ 'pattern' => '@^[[:alpha:]][\w\d\s ,\.\;\-\=\"\\\'\(\)\^\:\?\!]*$@uS' ])
 				]
 			]);
 		}
