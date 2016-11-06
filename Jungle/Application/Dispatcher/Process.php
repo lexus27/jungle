@@ -347,7 +347,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @return mixed
 		 * @throws Dispatcher\Exception\Control
 		 */
-		public function call($reference, $data = null, array $options = null){
+		public function call($reference, $data = null, $options = null){
 			$reference = Reference::normalize($reference, null, false);
 			return $this->dispatcher->control($reference, $data, $this, self::CALL_HIERARCHY, null, $options);
 		}
@@ -359,7 +359,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @return mixed
 		 * @throws Dispatcher\Exception\Control
 		 */
-		public function callIn($reference, $data = null, array $options = null){
+		public function callIn($reference, $data = null, $options = null){
 			$reference = Reference::normalize($reference, null, false);
 			$reference['module']		= $this->reference['module'];
 			$reference['controller']	= $this->reference['controller'] . '.' . $reference['controller'];
@@ -369,11 +369,11 @@ namespace Jungle\Application\Dispatcher {
 		/**
 		 * @param $action
 		 * @param $data
-		 * @param array $options
+		 * @param $options
 		 * @return mixed
 		 * @throws Dispatcher\Exception\Control
 		 */
-		public function callCurrent($action, $data, array $options = null){
+		public function callCurrent($action, $data, $options = null){
 			$reference = $this->reference;
 			if(strcasecmp($reference['action'],$action)===0){
 				throw new Dispatcher\Exception\Control('Executing current action not allowed');
@@ -389,7 +389,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @return Process|mixed
 		 * @throws Exception\Control
 		 */
-		public function callBubble($action, $data, array $options = null){
+		public function callBubble($action, $data, $options = null){
 			$reference = $this->reference;
 			if(strcasecmp($reference['action'],$action)===0){
 				throw new Dispatcher\Exception\Control('Executing current action not allowed');
@@ -411,7 +411,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @return Process|mixed
 		 * @throws Exception\Control
 		 */
-		public function callBubbleWithController($action, $data, array $options = null){
+		public function callBubbleWithController($action, $data, $options = null){
 			$reference = $this->reference;
 			if(strcasecmp($reference['action'],$action)===0){
 				throw new Dispatcher\Exception\Control('Executing current action not allowed');
@@ -432,7 +432,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @return mixed
 		 * @throws Dispatcher\Exception\Control
 		 */
-		public function callParent($data, $action = null, array $options = null){
+		public function callParent($data, $action = null, $options = null){
 			if($this->initiator instanceof Process){
 				$reference = $this->initiator->reference;
 				if($action!==null){

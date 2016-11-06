@@ -216,7 +216,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @throws Exception
 		 * @throws \Exception
 		 */
-		public function control(array $reference,array $params, ProcessInitiatorInterface $initiator, $initiator_type,ProcessInitiatorInterface $forwarder = null, array $options = null){
+		public function control(array $reference,array $params, ProcessInitiatorInterface $initiator, $initiator_type,ProcessInitiatorInterface $forwarder = null, $options = null){
 			$controller = $this->loadController($reference['controller']);
 			$action = $reference['action'];
 			if($controller instanceof ControllerManuallyInterface){
@@ -380,7 +380,8 @@ namespace Jungle\Application\Dispatcher {
 						$metadata = array_replace($metadata, (array)$controller->$mName());
 					}
 				}
-				$this->metadata_cache[$cache_key] = $metadata;
+				$default = $this->dispatcher->getDefaultMetadata();
+				$this->metadata_cache[$cache_key] = array_replace($default,$metadata);
 				return $metadata;
 			}
 			return $this->metadata_cache[$cache_key];

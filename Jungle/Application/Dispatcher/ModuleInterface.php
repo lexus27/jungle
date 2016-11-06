@@ -131,11 +131,11 @@ namespace Jungle\Application\Dispatcher {
 		 * @param array $params
 		 * @param \Jungle\Application\Dispatcher\ProcessInitiatorInterface $initiator
 		 * @param $initiator_type
-		 * @param null $forwarder
+		 * @param ProcessInitiatorInterface|null $forwarder
 		 * @param array $options
 		 * @return ProcessInterface
 		 */
-		public function control(array $reference,array $params, ProcessInitiatorInterface $initiator, $initiator_type,ProcessInitiatorInterface $forwarder = null, array $options = null);
+		public function control(array $reference,array $params, ProcessInitiatorInterface $initiator, $initiator_type,ProcessInitiatorInterface $forwarder = null, $options = null);
 
 		/**
 		 * @return mixed
