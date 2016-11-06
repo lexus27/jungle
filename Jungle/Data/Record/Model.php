@@ -65,7 +65,6 @@ namespace Jungle\Data\Record {
 			}
 			$this->_initValidationCollector($validationCollector);
 			$this->onConstruct();
-			$this->onRecordReady();
 		}
 
 		public function markRecordInitialized(){
@@ -261,6 +260,14 @@ namespace Jungle\Data\Record {
 		 * @return mixed
 		 */
 		protected function &_getFrontProperty($name){
+			/**
+			 * TODO
+			 * Записи когда заружаютсяиз БД создаются при помощи оператора new, и сразу происходит AutoInitializing
+			 * Изза события onRecordReady и состояния по умолчанию Record::OP_CREATE
+			 *
+			 * Нужно отсрочить onRecordReady до инициализации объекта в схеме
+			 * иначе будет всегда дублирования вызовов
+			 */
 			if($this->_operation_made === self::OP_CREATE){
 				return $this->{$name};
 			}
