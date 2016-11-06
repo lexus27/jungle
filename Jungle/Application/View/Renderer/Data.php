@@ -39,7 +39,7 @@ namespace Jungle\Application\View\Renderer {
 		 */
 		public function extractData(ProcessInterface $process,array $variables = []){
 			$o = [
-				'success'   => !$process->isCanceled(),
+				'success'   => $process->getState()===$process::STATE_SUCCESS,
 				'tasks'     => [],
 				'result'    => $process->getResult(),
 			];
@@ -57,6 +57,8 @@ namespace Jungle\Application\View\Renderer {
 
 				}
 			}
+
+
 
 			/*
 			if(!is_array($result)){
