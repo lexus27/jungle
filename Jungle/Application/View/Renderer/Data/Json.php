@@ -30,7 +30,7 @@ namespace Jungle\Application\View\Renderer\Data {
 		public function convert($data){
 			$pretty = $this->getOption('pretty', false);
 
-			if( ($data = json_encode($data,$pretty?JSON_PRETTY_PRINT:0)) === false){
+			if( ($data = @json_encode($data,$pretty?JSON_PRETTY_PRINT:0)) === false){
 				throw new \LogicException(json_last_error_msg());
 			}
 			return $data;
