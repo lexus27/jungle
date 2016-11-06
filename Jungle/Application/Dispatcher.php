@@ -103,7 +103,11 @@ namespace Jungle\Application {
 		 * Dispatcher constructor.
 		 */
 		public function __construct(){
-			register_shutdown_function([$this, '_errorsOnShutdown']);
+			register_shutdown_function(function(){
+
+				$this->_errorsOnShutdown();
+
+			});
 		}
 
 		/**
@@ -405,24 +409,31 @@ namespace Jungle\Application {
 		}
 
 
-
+		public function getDefaultMetadata(){
+			return [
+				'private'   => false,
+				'hierarchy' => true,
+				'strategy'  => null,
+			];
+		}
 
 		/**
 		 * @param $reference
 		 * @return array
 		 */
 		public function getMetadata($reference){
+			$default = $this->getDefaultMetadata();
 			$reference = Reference::normalize($reference, [ 'module' => $this->default_module]);
 			$moduleName = $reference['module'];
 			if(!isset($this->modules[$moduleName])){
-				return [];
+				return $default;
 			}
 			$module = $this->modules[$moduleName];
 			if(!$module instanceof ModuleInterface){
 				$module = $this->_loadModule($moduleName,$module);
 				$this->modules[$moduleName] = $module;
 			}
-			return $module->getMetadata($reference['controller'], $reference['action'] );
+			return $module->getMetadata($reference['controller'], $reference['action']);
 		}
 
 
@@ -625,10 +636,20 @@ namespace Jungle\Application {
 		 * @param array|null $options
 		 * @return ProcessInterface|mixed
 		 */
-		protected function _output(ProcessInterface $process,array $options = null){
+		protected function _output(ProcessInterface $process, $options = null){
 			try{
 				if(is_array($options)){
 					return $this->_renderProcess($process, $options);
+				}elseif(is_string($options) && $options){
+					$options = strtolower($options);
+					switch($options){
+						case'result': return $process->getResult();
+						case'buffered': return $process->getBuffered();
+						default:
+							/** @var ViewInterface $view */
+							$view   = $this->getDi()->getShared('view');
+							return $view->render($options,$process);
+					}
 				}
 				return $process;
 			}finally{
@@ -787,6 +808,9 @@ namespace Jungle\Application {
 			 * : Проверка, поддерживает ли контроль текущую стратегию
 			 * : Проверка, если Маршрут имеет динамичные ссылки и в системе нету такого действия - то пропустить маршрут
 			 */
+
+			$this->getMetadata($reference);
+
 			$meta = $module->getMetadata($reference['controller'], $reference['action']);
 
 			// check hmvc support
