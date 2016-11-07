@@ -544,6 +544,9 @@ namespace Jungle\Http {
 		 * @TODO: Sanitize & Filter Value in DataBase and other, by RegExp Type component or implement filtering abstract subject for all usage
 		 */
 		protected function _handleValueFilter($value, $filter = null){
+			if(!isset($value)){
+				return $value;
+			}
 			if($filter === null){
 				return $value;
 			}
