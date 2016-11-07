@@ -9,9 +9,11 @@
  */
 
 use Jungle\User\AccessControl\Context\Context;
+use Jungle\User\AccessControl\Context\ObjectAccessor;
 use Jungle\User\AccessControl\Manager;
+use Jungle\User\AccessControl\Matchable;
 use Jungle\User\AccessControl\Matchable\Aggregator\MemoryBuilder\Memory as MemoryPolicyAdapter;
-use Jungle\User\AccessControl\Matchable\Matchable;
+use Jungle\User\AccessControl\Matchable\Matchable as MatchableClass;
 
 include '../../loader.php';
 
@@ -147,8 +149,8 @@ $manager->setCombiner('dispute_all',  new Matchable\Combiner($combiner_settings[
 $manager->setDefaultCombiner('dispute_all');
 $manager->setMainCombiner('dispute_all');
 
-$manager->setDefaultEffect(Matchable::PERMIT);
-$manager->setSameEffect(Matchable::DENY);
+$manager->setDefaultEffect(MatchableClass::PERMIT);
+$manager->setSameEffect(MatchableClass::DENY);
 
 $aggregator = new MemoryPolicyAdapter(null);
 $aggregator->build([
@@ -288,7 +290,7 @@ $manager->setContext($context);
 echo '<br/>';
 
 
-$object = new Context\ObjectAccessor([
+$object = new ObjectAccessor([
 	'class' => 'Note',
 	'phantom' => [
 		'owner_id' => 2,
