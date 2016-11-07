@@ -4,10 +4,12 @@
  * Author: Kutuzov Alexey Konstantinovich <lexus.1995@mail.ru>
  * Project: jungle
  * IDE: PhpStorm
- * Date: 02.11.2016
- * Time: 14:04
+ * Date: 07.11.2016
+ * Time: 16:18
  */
 namespace Jungle\Application\Criteria {
+
+	use Jungle\Data\Record\Collection;
 
 	/**
 	 * Class Expeditor
@@ -15,18 +17,16 @@ namespace Jungle\Application\Criteria {
 	 */
 	class Expeditor{
 
-		/** @var  Distributor  */
-		protected $distributors = [];
 
-
-		public function setDistributor($key, Distributor $distributor){
-			$this->distributors[$key] = $distributor;
+		/**
+		 * @param $scope_key
+		 * @param Collection $collection
+		 * @param TransceiverInterface $transceiver
+		 * @return Distributor
+		 */
+		public function distribute($scope_key, Collection $collection, TransceiverInterface $transceiver){
+			return new Distributor($scope_key, $collection, $transceiver);
 		}
-
-
-
-
-
 
 
 	}
