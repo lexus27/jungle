@@ -9,9 +9,13 @@
  */
 namespace Jungle\Application\View\Renderer {
 	
+	use Jungle\Application\Criteria\Distributor;
+	use Jungle\Application\Criteria\HttpStructuralTransceiver;
 	use Jungle\Application\Dispatcher\ProcessInterface;
 	use Jungle\Application\View\Renderer;
 	use Jungle\Application\ViewInterface;
+	use Jungle\Data\Record\Collection;
+	use Jungle\Http\Request;
 
 	/**
 	 * Class Data
@@ -38,10 +42,14 @@ namespace Jungle\Application\View\Renderer {
 		 * @return mixed
 		 */
 		public function extractData(ProcessInterface $process,array $variables = []){
+			$result = $process->getResult();
+			if($result instanceof Collection){
+				$result = $this->decorateCollection($result);
+			}
 			$o = [
 				'success'   => $process->getState()===$process::STATE_SUCCESS,
 				'tasks'     => [],
-				'result'    => $process->getResult(),
+				'result'    => $result,
 			];
 			if($process->hasTasks()){
 				foreach($process->getTasks() as $key => $task){
@@ -60,13 +68,6 @@ namespace Jungle\Application\View\Renderer {
 
 
 
-			/*
-			if(!is_array($result)){
-				$o['object'] = $result;
-			}else{
-				$o = $result;
-			}
-			*/
 			if(isset($variables['global_data']) && is_array($variables['global_data'])){
 				return array_replace($variables['global_data'], $o);
 			}
@@ -78,6 +79,17 @@ namespace Jungle\Application\View\Renderer {
 		 * @return string
 		 */
 		abstract public function convert($data);
+
+		/**
+		 * @param Collection $collection
+		 * @return Distributor|Collection
+		 */
+		protected function decorateCollection(Collection $collection){
+			if(($r = $this->request) instanceof Request){
+				return new Distributor(null,$collection, new HttpStructuralTransceiver($r) );
+			}
+			return $collection;
+		}
 
 	}
 }
