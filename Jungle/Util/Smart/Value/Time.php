@@ -7,6 +7,8 @@
  */
 namespace Jungle\Util\Smart\Value {
 
+	use Jungle\Util\Value\Massive;
+
 	/**
 	 * Class Time
 	 * @package Jungle\Util\Smart\Value
@@ -131,7 +133,7 @@ namespace Jungle\Util\Smart\Value {
 		public static function timeGetYearHalf($time = null){
 			$mNumber = date('n',$time);
 			foreach(self::$year_half as  $half => $mNumbers){
-				if(Arr::arrStringExists($mNumbers,$mNumber,true)){
+				if(Massive::stringExists($mNumbers,$mNumber,true)){
 					return $half;
 				}
 			}
@@ -146,7 +148,7 @@ namespace Jungle\Util\Smart\Value {
 		public static function timeGetSeason($time = null){
 			$month = date('F',$time);
 			foreach(self::$seasons as  $season => $months){
-				if(Arr::arrStringExists($months,$month,true)){
+				if(Massive::stringExists($months,$month,true)){
 					return $season;
 				}
 			}

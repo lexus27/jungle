@@ -7,13 +7,13 @@
  */
 namespace Jungle\Data\Storage\Db\Lexer {
 
-	use Jungle\Util\INamed;
+	use Jungle\Util\Named\NamedInterface;
 
 	/**
 	 * Class Token
 	 * @package Jungle\Data\Storage\Db\Lexer
 	 */
-	class Token implements INamed{
+	class Token implements NamedInterface{
 
 		/** @var SqlContext  */
 		protected $context;

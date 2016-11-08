@@ -31,15 +31,6 @@ namespace Jungle\Application\Dispatcher {
 
 		/**
 		 * @param $actionName
-		 * @param \Exception $exception
-		 * @param ProcessInterface $process
-		 * @param $result
-		 * @return bool
-		 */
-		public function intercept($actionName, \Exception $exception, ProcessInterface $process, $result);
-
-		/**
-		 * @param $actionName
 		 * @return array
 		 */
 		public function getActionMetadata($actionName);
@@ -48,6 +39,22 @@ namespace Jungle\Application\Dispatcher {
 		 * @return string[]
 		 */
 		public function getActionNames();
+
+		/**
+		 * @param $actionName
+		 * @param \Exception $exception
+		 * @param ProcessInterface $process
+		 * @return bool
+		 */
+		public function interceptException($actionName, \Exception $exception, ProcessInterface $process);
+
+		/**
+		 * @param $actionName
+		 * @param \Exception $exception
+		 * @param ProcessInterface $process
+		 * @return bool
+		 */
+		public function interceptedException($actionName, \Exception $exception, ProcessInterface $process);
 
 	}
 }

@@ -8,14 +8,14 @@
 namespace Jungle\Data\Storage\Db\Structure\Column {
 
 	use Jungle\Data\Storage\Db\Structure\Column;
-	use Jungle\Util\INamed;
+	use Jungle\Util\Named\NamedInterface;
 	use Jungle\Util\Smart\Keyword\Keyword;
 
 	/**
 	 * Class Type
 	 * @package Jungle\Data\Storage\Db\Structure\Column
 	 */
-	class Type extends Keyword implements INamed{
+	class Type extends Keyword implements NamedInterface{
 
 
 		/**

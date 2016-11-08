@@ -10,7 +10,6 @@
 namespace Jungle\Application\Dispatcher {
 	
 	use Jungle\Application\Dispatcher;
-	use Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface;
 	use Jungle\Application\Notification\Responsible\NeedIntroduce;
 	use Jungle\Application\Router\RoutingInterface;
 
@@ -18,24 +17,25 @@ namespace Jungle\Application\Dispatcher {
 	 * Class Process
 	 * @package Jungle\Application\Dispatcher\Controller
 	 */
-	class Process implements ProcessInterface, ProcessInitiatorInterface{
-
-		const STATUS_SUCCESS    = 'success';
-		const STATUS_CANCELED   = 'canceled';
-		const STATUS_DETAINED   = 'detained';
-		const STATUS_FAILURE    = 'failure';
-
-
-
+	class Process implements ProcessInterface{
 
 		/** @var  Dispatcher */
 		protected $dispatcher;
 
-		/** @var  bool */
-		protected $initiator_external;
+		/** @var string  */
+		protected $state = 'processing';
 
-		/** @var  \Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface|RoutingInterface|ProcessInterface|null */
+		/** @var string  */
+		protected $stage = 'prepare';
+
+		/** @var  \Jungle\Application\Dispatcher\ProcessInitiatorInterface|RoutingInterface|ProcessInterface|null */
 		protected $initiator;
+
+		/** @var  string */
+		protected $initiator_type;
+
+		/** @var bool  */
+		protected $initiator_forwarder = false;
 
 		/** @var  ModuleInterface|null */
 		protected $module;
@@ -49,35 +49,17 @@ namespace Jungle\Application\Dispatcher {
 		/** @var  array */
 		protected $params = [];
 
-
-		/** @var string  */
-		protected $status = 'success';
-
-
-		/** @var  bool */
-		protected $completed = false;
-
-		/** @var  bool */
-		protected $canceled = false;
-
-		/**  TODO impl.
-		 * @var bool
-		 */
-		protected $failure = false;
-
-
-
-		protected $rendering = false;
-
-
 		/** @var  mixed */
-		protected $result = null;
+		protected $result;
+
+		/** @var  string */
+		protected $rendered;
 
 		/** @var  bool */
-		protected $output_buffering = false;
+		protected $buffering = false;
 
 		/** @var  string|null */
-		protected $output_buffer;
+		protected $buffered;
 
 		/** @var  array  */
 		protected $options = [];
@@ -85,62 +67,50 @@ namespace Jungle\Application\Dispatcher {
 		/** @var  array  */
 		protected $tasks = [];
 
+
 		/**
 		 * Process constructor.
 		 * @param Dispatcher $dispatcher
-		 * @param object|ControllerInterface|ControllerManuallyInterface $controller
-		 * @param array $params
 		 * @param mixed $reference
 		 * @param ModuleInterface $module
-		 * @param \Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface|RoutingInterface|ProcessInterface $initiator
+		 * @param object|ControllerInterface|ControllerManuallyInterface $controller
+		 * @param array $params
+		 * @param \Jungle\Application\Dispatcher\ProcessInitiatorInterface|RoutingInterface|ProcessInterface $initiator
+		 * @param string $initiator_type
+		 * @param ProcessInitiatorInterface $forwarder
 		 */
 		public function __construct(
-				Dispatcher $dispatcher,
-				$controller,
-				array $params,
-				$reference,
-				ModuleInterface $module = null,
-				ProcessInitiatorInterface $initiator = null
+			Dispatcher $dispatcher, array $reference, ModuleInterface $module, $controller,
+			array $params,
+			ProcessInitiatorInterface $initiator, $initiator_type,
+			ProcessInitiatorInterface $forwarder = null
 		){
-			$this->module				= $module;
-			$this->dispatcher 			= $dispatcher;
-			$this->initiator_external 	= $initiator instanceof RoutingInterface;
-			$this->initiator 			= $initiator;
-			$this->controller 			= $controller;
-			$this->params 				= $params;
-			$this->reference 			= $reference;
-		}
 
-		/**
-		 * @param bool|true $rendering
-		 * @return $this
-		 */
-		public function setRendering($rendering = true){
-			$this->rendering = $rendering;
-			return $this;
-		}
-
-		/**
-		 * @return bool
-		 */
-		public function isRendering(){
-			return $this->rendering;
-		}
-
-		/**
-		 * @return ProcessInterface|null
-		 */
-		public function getRoot(){
-			$initiator = $this->getInitiator();
-			if(!$initiator){
-				return null;
-			}
-			if($initiator instanceof ProcessInterface){
-				return $initiator;
+			if($initiator instanceof RoutingInterface){
+				$initiator_type = self::CALL_ROUTING;
+			}elseif($forwarder){
+				$initiator_type = self::CALL_FORWARD;
 			}else{
-				return $initiator->getRoot();
+				$initiator_type = self::CALL_HIERARCHY;
 			}
+
+			$this->initiator = $initiator;
+			$this->initiator_type = $initiator_type;
+
+			if($forwarder){
+				$this->initiator_forwarder = $forwarder;
+			}
+
+			$this->dispatcher = $dispatcher;
+			$this->reference = $reference;
+			$this->module = $module;
+			$this->controller = $controller;
+
+			$this->params = $params;
+
 		}
+
+
 
 		/**
 		 * @return Dispatcher
@@ -182,44 +152,61 @@ namespace Jungle\Application\Dispatcher {
 		 * @return string
 		 */
 		public function getReferenceString(){
-
-			$module = $this->reference['module']?$this->reference['module']:false;
-			$controller = $this->reference['controller']?$this->reference['controller']:false;
-			$action = $this->reference['action']?$this->reference['action']:false;
-			if($module){
-				return '#' . $module . ':' . $controller . ':' . $action;
-			}else{
-				if($controller){
-					return $controller . ':' . $action;
-				}else{
-					return  $action;
-				}
-			}
+			return Reference::stringify($this->reference);
 		}
 
 		/**
-		 * @param array $required
-		 * @param bool $onlyRequired
+		 * @param array $param_names
+		 * @param bool $return
+		 * @return $this
+		 * @throws NeedIntroduce
+		 */
+		public function requires(array $param_names, $return = false){
+			if($param_names !== null && $this->stage !== self::STAGE_RENDERING && $param_names !== array_intersect($param_names, array_keys($this->params))){
+				throw new NeedIntroduce("Params ".implode(', ',(array)$param_names)." required");
+			}
+			if($return && $param_names){
+				return array_intersect_key(array_flip($param_names), $this->params);
+			}
+			return $this;
+		}
+
+		/**
+		 * @param array $required_names
+		 * @param bool $returnOnlyRequired
 		 * @return array
 		 * @throws NeedIntroduce
 		 */
-		public function getParams(array $required = null, $onlyRequired = false){
-			if($required!==null && !$this->rendering && $required !== array_intersect($required, array_keys($this->params))){
-				throw new NeedIntroduce();
+		public function getParams(array $required_names = null, $returnOnlyRequired = false){
+			if($required_names !== null && $this->stage !== self::STAGE_RENDERING && $required_names !== array_intersect($required_names, array_keys($this->params))){
+				throw new NeedIntroduce("Params ".implode(', ',(array)$required_names)." required");
 			}
-			if($required!==null && $onlyRequired){
-				return array_intersect_key(array_flip($required), $this->params);
+			if($required_names !== null && $returnOnlyRequired){
+				return array_intersect_key(array_flip($required_names), $this->params);
 			}
 			return $this->params;
 		}
 
 		/**
-		 * @param $key
+		 * @param mixed $key
 		 * @param null $default
 		 * @return mixed
 		 */
 		public function getParam($key, $default = null){
 			return array_key_exists($key, $this->params)?$this->params[$key]:$default;
+		}
+
+		/**
+		 * @param mixed $key
+		 * @param bool $allowNull
+		 * @throws NeedIntroduce
+		 */
+		public function requireParam($key, $allowNull = true){
+			if(array_key_exists($key,$this->params) && ($allowNull || isset($this->params[$key]))){
+				return $this->params[$key];
+			}else{
+				throw new NeedIntroduce("Param ".$key." required");
+			}
 		}
 
 		/**
@@ -231,7 +218,7 @@ namespace Jungle\Application\Dispatcher {
 		}
 
 		/**
-		 * @param $key
+		 * @param mixed $key
 		 * @param $value
 		 * @return mixed
 		 */
@@ -251,11 +238,40 @@ namespace Jungle\Application\Dispatcher {
 
 
 		/**
-		 * HMVC-Architecture
+		 * @param $stage
 		 * @return mixed
 		 */
-		public function isExternal(){
-			return $this->initiator_external;
+		public function setStage($stage){
+			$this->stage = $stage;
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getStage(){
+			return $this->stage;
+		}
+
+		/**
+		 * @param $state
+		 * @return mixed
+		 */
+		public function setState($state){
+			$this->state = $state;
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getState(){
+			return $this->state;
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getInitiatorType(){
+			return $this->initiator_type;
 		}
 
 		/**
@@ -266,39 +282,63 @@ namespace Jungle\Application\Dispatcher {
 		}
 
 		/**
-		 * @return RoutingInterface|null
+		 * @return ProcessInterface
 		 */
-		public function getRouting(){
-			$initiator = $this->initiator;
-			if(!$initiator){
-				return null;
-			}
-			if($initiator instanceof RoutingInterface){
-				return $initiator;
-			}else{
-				return $initiator->getRouting();
-			}
+		public function getBase(){
+			return $this->initiator_type !== self::CALL_ROUTING? $this->initiator->getBase() : $this ;
+		}
+
+		/**
+		 * @return bool
+		 */
+		public function isStartupFail(){
+			return $this->initiator_forwarder && $this->initiator_type === self::CALL_ROUTING;
+		}
+
+		/**
+		 * @return ProcessInitiatorInterface|ProcessInterface|null
+		 */
+		public function getPredecessor(){
+			return $this->initiator_forwarder && $this->initiator_type === self::CALL_FORWARD? $this->initiator : null ;
 		}
 
 
 		/**
-		 * @return \Jungle\Application\RouterInterface|null
+		 * @return ProcessInitiatorInterface|ProcessInterface|null
 		 */
-		public function getRouter(){
-			$routing = $this->getRouting();
-			if(!$routing){
-				return null;
-			}
-			return $routing->getRouter();
+		public function getForwarder(){
+			return $this->initiator_forwarder;
 		}
 
+		/**
+		 * @return ProcessInterface
+		 */
+		public function getRoot(){
+			return $this->initiator_type === self::CALL_HIERARCHY? $this->initiator->getRoot() : $this ;
+		}
 
 		/**
 		 * @return ProcessInterface|null
 		 */
 		public function getParent(){
-			return $this->initiator_external? null : $this->initiator;
+			return $this->initiator_type === self::CALL_HIERARCHY? $this->initiator : null ;
 		}
+
+		/**
+		 * @return RoutingInterface|null
+		 */
+		public function getRouting(){
+			return $this->initiator_type === self::CALL_ROUTING? $this->initiator: $this->initiator->getRouting();
+		}
+
+		/**
+		 * @return \Jungle\Application\RouterInterface|null
+		 */
+		public function getRouter(){
+			return $this->initiator->getRouter();
+		}
+
+
 
 		/**
 		 * @param $reference
@@ -307,9 +347,9 @@ namespace Jungle\Application\Dispatcher {
 		 * @return mixed
 		 * @throws Dispatcher\Exception\Control
 		 */
-		public function call($reference, $data = null, array $options = null){
+		public function call($reference, $data = null, $options = null){
 			$reference = Reference::normalize($reference, null, false);
-			return $this->dispatcher->control($reference, $data, $options, $this);
+			return $this->dispatcher->control($reference, $data, $this, self::CALL_HIERARCHY, null, $options);
 		}
 
 		/**
@@ -319,27 +359,27 @@ namespace Jungle\Application\Dispatcher {
 		 * @return mixed
 		 * @throws Dispatcher\Exception\Control
 		 */
-		public function callIn($reference, $data = null, array $options = null){
+		public function callIn($reference, $data = null, $options = null){
 			$reference = Reference::normalize($reference, null, false);
 			$reference['module']		= $this->reference['module'];
 			$reference['controller']	= $this->reference['controller'] . '.' . $reference['controller'];
-			return $this->dispatcher->control($reference, $data, $options, $this);
+			return $this->dispatcher->control($reference, $data, $this, self::CALL_HIERARCHY, null, $options);
 		}
 
 		/**
 		 * @param $action
 		 * @param $data
-		 * @param array $options
+		 * @param $options
 		 * @return mixed
 		 * @throws Dispatcher\Exception\Control
 		 */
-		public function callCurrent($action, $data, array $options = null){
+		public function callCurrent($action, $data, $options = null){
 			$reference = $this->reference;
 			if(strcasecmp($reference['action'],$action)===0){
 				throw new Dispatcher\Exception\Control('Executing current action not allowed');
 			}
 			$reference['action'] = $action;
-			return $this->dispatcher->control($reference, $data, $options, $this);
+			return $this->dispatcher->control($reference, $data, $this, self::CALL_HIERARCHY, null, $options);
 		}
 
 		/**
@@ -349,7 +389,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @return Process|mixed
 		 * @throws Exception\Control
 		 */
-		public function callBubble($action, $data, array $options = null){
+		public function callBubble($action, $data, $options = null){
 			$reference = $this->reference;
 			if(strcasecmp($reference['action'],$action)===0){
 				throw new Dispatcher\Exception\Control('Executing current action not allowed');
@@ -357,7 +397,7 @@ namespace Jungle\Application\Dispatcher {
 			$references = Reference::generateSequence($reference,[ 'action' => Reference::SAFE_STRICT ]);
 			foreach($references as $reference){
 				if($this->dispatcher->hasControl($reference)){
-					return $this->dispatcher->control($reference, $data, $options, $this);
+					return $this->dispatcher->control($reference, $data, $this, self::CALL_HIERARCHY, null, $options);
 				}
 			}
 			throw new Dispatcher\Exception\Control('Not found suitable bubble for action "'.$action.'"');
@@ -371,7 +411,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @return Process|mixed
 		 * @throws Exception\Control
 		 */
-		public function callBubbleWithController($action, $data, array $options = null){
+		public function callBubbleWithController($action, $data, $options = null){
 			$reference = $this->reference;
 			if(strcasecmp($reference['action'],$action)===0){
 				throw new Dispatcher\Exception\Control('Executing current action not allowed');
@@ -379,7 +419,7 @@ namespace Jungle\Application\Dispatcher {
 			$references = Reference::getSequence($reference,[ 'action' => Reference::SAFE_STRICT ],'controller');
 			foreach($references as $reference){
 				if($this->dispatcher->hasControl($reference)){
-					return $this->dispatcher->control($reference, $data,$options, $this);
+					return $this->dispatcher->control($reference, $data, $this, self::CALL_HIERARCHY, null, $options);
 				}
 			}
 			throw new Dispatcher\Exception\Control('Not found suitable bubble for action "'.$action.'"');
@@ -392,13 +432,13 @@ namespace Jungle\Application\Dispatcher {
 		 * @return mixed
 		 * @throws Dispatcher\Exception\Control
 		 */
-		public function callParent($data, $action = null, array $options = null){
+		public function callParent($data, $action = null, $options = null){
 			if($this->initiator instanceof Process){
 				$reference = $this->initiator->reference;
 				if($action!==null){
 					$reference['action'] = $action;
 				}
-				return $this->dispatcher->control($reference, $data, $options, $this);
+				return $this->dispatcher->control($reference, $data, $this, self::CALL_HIERARCHY, null, $options);
 			}else{
 				throw new Dispatcher\Exception\Control('Call Parent: initiator is not Process');
 			}
@@ -406,13 +446,25 @@ namespace Jungle\Application\Dispatcher {
 
 		/**
 		 * @param $reference
-		 * @param null $data
-		 * @return void
+		 * @param null $params
+		 * @return mixed|void
+		 * @throws Exception\Forwarded
 		 */
-		public function forward($reference, $data = null){
-			if($this->initiator_external){
-				$this->dispatcher->forward($reference, $data = null);
+		public function forward($reference, $params = null){
+			if(in_array($this->initiator_type,[self::CALL_ROUTING,self::CALL_FORWARD])){
+				$this->dispatcher->forward($reference, (array)$params, $this);
 			}
+		}
+
+		/**
+		 * @param $reference
+		 * @param array $params
+		 * @param int $code
+		 * @param bool $exit
+		 */
+		public function redirect($reference, array $params = null, $code = null, $exit = false){
+			$link = $this->getRouter()->generateLink($params,$reference);
+			$this->dispatcher->response->setRedirect($link, $code?$code:302);
 		}
 
 
@@ -445,7 +497,7 @@ namespace Jungle\Application\Dispatcher {
 
 
 		/**
-		 * @param $key
+		 * @param mixed $key
 		 * @return mixed
 		 * @throws NeedIntroduce
 		 */
@@ -453,7 +505,7 @@ namespace Jungle\Application\Dispatcher {
 			if(array_key_exists($key, $this->params)){
 				return $this->params[$key];
 			}else{
-				if(!$this->rendering){
+				if($this->stage !== self::STAGE_RENDERING){
 					throw new NeedIntroduce('Required param "'.$key.'"');
 				}
 				return null;
@@ -486,46 +538,18 @@ namespace Jungle\Application\Dispatcher {
 		}
 
 		/**
-		 * @return bool
-		 */
-		public function isCompleted(){
-			return $this->completed;
-		}
-
-		/**
-		 * @param bool|true $completed
-		 * @return $this
-		 */
-		public function setCompleted($completed = true){
-			$this->completed = $completed;
-			return $this;
-		}
-
-		/**
 		 * @param $result
-		 * @param bool $completed
+		 * @param null $stage
+		 * @param null $state
 		 * @return $this
 		 */
-		public function setResult($result, $completed = true){
+		public function setResult($result, $stage = null, $state = null){
 			$this->result = $result;
-			$this->completed = $completed;
+			if($stage) $this->stage = $stage;
+			if($state) $this->state = $state;
 			return $this;
 		}
 
-		/**
-		 * @return $this
-		 */
-		public function cancel(){
-			$this->canceled = true;
-			return $this;
-		}
-
-		/**
-		 * @return bool
-		 */
-		public function isCanceled(){
-			return $this->canceled;
-		}
 
 		/**
 		 * @return mixed
@@ -533,35 +557,6 @@ namespace Jungle\Application\Dispatcher {
 		public function getResult(){
 			return $this->result;
 		}
-
-		/**
-		 * @return mixed
-		 */
-		public function startOutputBuffering(){
-			if(!$this->output_buffering){
-				ob_start();
-				$this->output_buffer = null;
-				$this->output_buffering = true;
-			}
-		}
-
-		/**
-		 * @return mixed
-		 */
-		public function endOutputBuffering(){
-			if($this->output_buffering){
-				$this->output_buffer = ob_get_clean();
-				$this->output_buffering = false;
-			}
-		}
-
-		/**
-		 * @return mixed
-		 */
-		public function getOutputBuffer(){
-			return $this->output_buffer;
-		}
-
 
 		/**
 		 * @return bool
@@ -591,7 +586,7 @@ namespace Jungle\Application\Dispatcher {
 		}
 
 		/**
-		 * @param $key
+		 * @param mixed $key
 		 * @param $value
 		 * @return $this
 		 */
@@ -601,7 +596,7 @@ namespace Jungle\Application\Dispatcher {
 		}
 
 		/**
-		 * @param $key
+		 * @param mixed $key
 		 * @param $default
 		 * @return mixed
 		 */
@@ -610,7 +605,7 @@ namespace Jungle\Application\Dispatcher {
 		}
 
 		/**
-		 * @param $key
+		 * @param mixed $key
 		 * @return bool
 		 */
 		public function hasOption($key){
@@ -620,18 +615,25 @@ namespace Jungle\Application\Dispatcher {
 
 
 		/**
-		 * @param $type
+		 * @param mixed $type
 		 * @param $data
 		 * @return $this
 		 */
 		public function setTask($type, $data){
 			$this->tasks[$type] = $data;
-			$this->canceled = true;
 			return $this;
 		}
 
 		/**
-		 * @param $type
+		 * @return mixed
+		 */
+		public function getTasks(){
+			return $this->tasks;
+		}
+
+
+		/**
+		 * @param mixed $type
 		 * @return null|mixed
 		 */
 		public function getTask($type){
@@ -645,6 +647,49 @@ namespace Jungle\Application\Dispatcher {
 			return !empty($this->tasks);
 		}
 
+
+		/**
+		 * @return mixed
+		 */
+		public function startBuffering(){
+			if(!$this->buffering){
+				ob_start();
+				$this->buffered = null;
+				$this->buffering = true;
+			}
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function endBuffering(){
+			if($this->buffering){
+				$this->buffered = ob_get_clean();
+				$this->buffering = false;
+			}
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getBuffered(){
+			return $this->buffered;
+		}
+
+
+
+		const FLASH_INFO        = 'info';
+		const FLASH_SUCCESS     = 'success';
+		const FLASH_FAILURE     = 'failure';
+		const FLASH_NOTICE      = 'notice';
+		const FLASH_WARNING     = 'warning';
+
+
+		public function setFlash($category, $value, $type = self::FLASH_INFO){}
+
+		public function hasFlash($category){}
+
+		public function getFlash($category){}
 
 	}
 }

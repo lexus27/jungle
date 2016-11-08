@@ -31,7 +31,7 @@ namespace Jungle\Application\View\ViewStrategy\RendererRule {
 		}
 
 		/**
-		 * @param RequestInterface|\Jungle\Util\Specifications\Http\RequestInterface $request
+		 * @param RequestInterface|\Jungle\Util\Communication\HttpFoundation\RequestInterface $request
 		 * @param \Jungle\Application\Dispatcher\ProcessInterface $process
 		 * @param ViewInterface $view
 		 * @return bool

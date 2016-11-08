@@ -60,30 +60,15 @@ namespace Jungle\Data {
 		
 		/** @var  int */
 		private $_property_iterator_count = 0;
-		
-		
-		
-		/** @var bool  */
-		protected $_set_property_dirty_applied = false;
-		
-		/** @var bool  */
-		protected $_set_property_relation_applied_in_new = false;
-		
-		/** @var bool  */
-		protected $_set_property_relation_applied_in_old = false;
-		
+
 		/** @var bool  */
 		protected static $properties_changes_restrict_level = 0;
-
-
 
 		/** @var  int */
 		protected $_internalIdentifier;
 
 		/** @var bool */
 		protected $_initialized = false;
-
-
 
 		/** @var  \Jungle\Data\Record\Head\Schema */
 		protected $_schema;
@@ -627,13 +612,16 @@ namespace Jungle\Data {
 		 */
 		public function export( $public = true ){
 			$values = [ ];
-			foreach($this->_schema->getFields() as $field){
-				if(!$field->isPrivate() && $field->isOriginality()){
-					$name = $field->getName();
-					$values[$name] = $this->getProperty($name);
+			if($this->_initialized){
+				foreach($this->_schema->getFields() as $field){
+					if(!$field->isPrivate() && $field->isOriginality()){
+						$name = $field->getName();
+						$values[$name] = $this->getProperty($name);
+					}
 				}
+				return $values;
 			}
-			return $values;
+			return [];
 		}
 
 		/**
@@ -754,6 +742,7 @@ namespace Jungle\Data {
 			$changed = [];
 			foreach($this->_schema->getFields() as $field){
 				$name = $field->getName();
+
 				if($this->isInitializedProperty($name)){
 					if($field instanceof Field\Relation && $field->isMany()){
 						/** @var Relationship $c */
@@ -881,6 +870,7 @@ namespace Jungle\Data {
 		}
 
 
+
 		/**
 		 *
 		 */
@@ -901,6 +891,7 @@ namespace Jungle\Data {
 		public static function disableAllChangesMode(){
 			self::$properties_changes_restrict_level = 0;
 		}
+
 
 		/**
 		 * @return Validation|null
@@ -1103,7 +1094,6 @@ namespace Jungle\Data {
 		}
 
 		/**
-		 * TODO
 		 * @return bool
 		 * @throws ValidationCollector
 		 */

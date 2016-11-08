@@ -7,7 +7,7 @@
  */
 namespace Jungle\Util\Smart\Keyword;
 
-use Jungle\Util\ITransient;
+use Jungle\Util\TransientInterface;
 
 /**
  * Class Keyword
@@ -16,9 +16,9 @@ use Jungle\Util\ITransient;
  * Инстанциируется через метод instanceFromArray
  *
  */
-abstract class Keyword implements ITransient , \Serializable{
+abstract class Keyword implements TransientInterface , \Serializable{
 
-	use \Jungle\Util\OptionContainerTrait{
+	use \Jungle\Util\PropContainer\PropContainerOptionTrait{
 		setOption as protected _setOption;
 	}
 
@@ -242,7 +242,7 @@ abstract class Keyword implements ITransient , \Serializable{
 	public function toArray(){
 		return [
 			'identifier' => $this->getIdentifier(),
-			'options' => $this->_OptionContainerTrait_options
+			'options' => $this->_srv_options
 		];
 	}
 

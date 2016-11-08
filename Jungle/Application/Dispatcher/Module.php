@@ -9,21 +9,14 @@
  */
 namespace Jungle\Application\Dispatcher {
 
-	use ControllerInterface;
 	use Jungle\Application\Dispatcher;
 	use Jungle\Application\Dispatcher\Exception\Control;
-	use Jungle\Application\Dispatcher\Process;
-	use Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface;
-	use Jungle\Application\Notification\Responsible\AuthenticationMissed;
-	use Jungle\Application\Notification\Responsible\NeedIntroduce;
+	use Jungle\Application\Notification\Responsible\AccessDenied;
 	use Jungle\Di;
 	use Jungle\Di\InjectionAwareInterface;
 	use Jungle\Di\InjectionAwareTrait;
 	use Jungle\FileSystem;
 	use Jungle\Loader;
-	use Jungle\Util\Data\Validation\Message\ValidationCollector;
-	use Jungle\Util\Data\Validation\Message\ValidatorMessage;
-	use Jungle\Util\Value\Massive;
 
 	/**
 	 * Class Module
@@ -60,6 +53,7 @@ namespace Jungle\Application\Dispatcher {
 		/** @var  array */
 		protected $default_metadata = [];
 
+		/** @var  array  */
 		protected $metadata_cache = [];
 
 		/**
@@ -204,199 +198,125 @@ namespace Jungle\Application\Dispatcher {
 		 * @return mixed
 		 */
 		public function getActionSuffix(){
-			if(is_null($this->controller_suffix) && $this->dispatcher){
+			if(is_null($this->action_suffix) && $this->dispatcher){
 				return $this->dispatcher->getActionSuffix();
 			}
 			return $this->action_suffix;
 		}
 
 		/**
-		 * @param \Exception $e
-		 * @param \Jungle\Application\Dispatcher\Process $process
-		 * @param $result
-		 * @return bool
-		 * @throws \Exception
-		 */
-		protected function interceptException(\Exception $e, Process $process, $result){
-			if($e instanceof ValidatorMessage || $e instanceof ValidationCollector){
-				$process->setTask('validation', $e);
-			}
-			if($e instanceof AuthenticationMissed){
-				$process->setTask('authentication', $e);
-			}
-			if($e instanceof NeedIntroduce){
-				$process->setTask('introduce', $e);
-			}
-
-			if(!$process->hasTasks()) throw $e;
-			else return true;
-		}
-
-		/**
 		 * @param array|null $reference
-		 * @param array $data
+		 * @param array $params
+		 * @param \Jungle\Application\Dispatcher\ProcessInitiatorInterface|null $initiator
+		 * @param $initiator_type
+		 * @param ProcessInitiatorInterface|null $forwarder
 		 * @param array $options
-		 * @param \Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface|null $initiator
 		 * @return mixed
 		 * @throws Control
+		 * @throws Exception
+		 * @throws \Exception
 		 */
-		public function control(array $reference = null,array $data, array $options = null, ProcessInitiatorInterface $initiator = null){
+		public function control(array $reference,array $params, ProcessInitiatorInterface $initiator, $initiator_type,ProcessInitiatorInterface $forwarder = null, $options = null){
+			$controller = $this->loadController($reference['controller']);
+			$action = $reference['action'];
+			if($controller instanceof ControllerManuallyInterface){
 
-			$reference = array_replace([
-				'module'     => $this->name,
-				'controller' => $this->getDefaultController(),
-				'action'     => $this->getDefaultAction()
-			],(array)$reference);
-
-			list($controllerName, $actionName) = Massive::orderedKeys($reference, ['controller','action']);
-
-			$controllerQualified = $this->getQualifiedReferenceString($reference,false);
-			$referenceString = $this->appendQualifiedAction($controllerQualified,$reference);
-			$controller = $this->loadController($controllerName);
-
-			if($controller instanceof Dispatcher\ControllerManuallyInterface){
-
-				if(!$controller->has($actionName)){
-					throw new Control('Action not found: ' . $referenceString);
+				if(!$controller->has($action)){
+					throw new Control('mca path not found(on:action) ' . var_export($reference, true));
 				}
 
 				$result = null;
-				$process = $this->factoryProcess($this->dispatcher, $controller, $data, $reference, $initiator);
-				$this->getAttachedDi()->set('process', $process, true);
+				$process = $this->factoryProcess($controller, $params, $reference, $initiator, $initiator_type, $forwarder);
+				$this->dispatcher->storeProcess($process);
 				try{
-					$process->startOutputBuffering();
-					if($this->beforeControl($process)===false){
-						$process->cancel();
-						goto checkout;
-					}
-					if($process->isCanceled()){
-						goto checkout;
-					}
-					$result = $controller->call($actionName, $process);
-					$process->setResult($result,true);
+					$this->set('process', $process, true);
+					$process->startBuffering();
+
+					$process->setStage(Process::STAGE_PREPARE);
+					$this->dispatcher->beforeControl($process);
+					$this->beforeControl($process);
+
+					$process->setStage(Process::STAGE_EXECUTE);
+					$result = $controller->call($action, $process);
+					$process->setResult($result,Process::STAGE_DONE,Process::STATE_SUCCESS);
+
 					$this->afterControl($process,$result);
+					$this->dispatcher->afterControl($process, $result);
+
 				}catch(\Exception $e){
-					if($controller->intercept($actionName, $e, $process, $result)!==true){
-						$this->interceptException($e, $process, $result);
+					if($this->_runExceptionIntercepting($action, $controller, $e, $process)===false){
+						throw $e;
 					}
 				}finally{
-					$process->endOutputBuffering();
+					$process->endBuffering();
 				}
 
 			}else{
 
-				$actionMethod = $this->prepareActionMethodName($actionName);
+				$actionMethod = $this->prepareActionMethodName($action);
 				if(!method_exists($controller,$actionMethod)){
-					throw new Control('Action not found: ' . $referenceString);
+					throw new Control('mca path not found(on:action) ' . var_export($reference, true));
 				}
 
 				$result = null;
-				$process = $this->factoryProcess($this->dispatcher, $controller, $data, $reference, $initiator);
+				$process = $this->factoryProcess($controller, $params, $reference, $initiator, $initiator_type, $forwarder);
+				$this->dispatcher->storeProcess($process);
 				try{
-					$process->startOutputBuffering();
+					$this->set('process', $process, true);
 
-					if($this->beforeControl($process)===false){
-						$process->cancel();
-					}
-					if(method_exists($controller, 'beforeControl')){
-						if($controller->beforeControl($actionName, $process)===false){
-							$process->cancel();
-							goto checkout;
-						}
-					}
-					$beforeConcreteAction = $actionName.'BeforeControl';
-					if(method_exists($controller, $beforeConcreteAction) && ($controller->{$beforeConcreteAction}($process) === false)){
-						$process->cancel();
-						goto checkout;
-					}
+					$process->startBuffering();
+					$process->setStage(Process::STAGE_PREPARE);
 
-					if($process->isCanceled()){
-						goto checkout;
-					}
+					$this->dispatcher->beforeControl($process);
+					$this->beforeControl($process);
 
+					method_exists($controller, 'beforeControl')
+						&& $controller->beforeControl($action, $process);
+
+					method_exists($controller, ($m = $action.'BeforeControl'))
+					   && $controller->{$m}($process);
+
+					$process->setStage(Process::STAGE_EXECUTE);
 					$result = $controller->{$actionMethod}($process);
-					$process->setResult($result,true);
+					$process->setResult($result,Process::STAGE_DONE,Process::STATE_SUCCESS);
 
-					$afterControlConcrete = $actionName.'AfterControl';
-					if(method_exists($controller, $afterControlConcrete)){
-						$controller->{$afterControlConcrete}($process);
-					}
-					if(method_exists($controller, 'afterControl')){
-						$controller->afterControl($actionName, $result,$process);
-					}
+					method_exists($controller, ($m = $action.'AfterControl'))
+						&& $controller->{$m}($process);
+
+					method_exists($controller, 'afterControl')
+						&& $controller->afterControl($action, $result,$process);
+
 					$this->afterControl($process, $result);
-
+					$this->dispatcher->afterControl($process, $result);
 				}catch(\Exception $e){
-					$exceptionControlMethod = $actionName.'InterceptException';
-					if(method_exists($controller, $exceptionControlMethod)){
-						if($controller->{$exceptionControlMethod}($e, $process, $result)===true){
-							return $process;
-						}
+					if($this->_runExceptionIntercepting($action, $controller, $e, $process)===false){
+						throw $e;
 					}
-					$exceptionControlMethod = 'InterceptException';
-					if(method_exists($controller, $exceptionControlMethod)){
-						if($controller->{$exceptionControlMethod}($actionName, $e, $process, $result)===true){
-							return $process;
-						}
-					}
-					$this->interceptException($e, $process, $result);
 				}finally{
-					$process->endOutputBuffering();
+					$process->endBuffering();
 				}
 
 			}
-			checkout:
-			return $this->checkoutProcess($process, $options);
-		}
-
-		/**
-		 * @param ProcessInterface $process
-		 * @param array|null $options
-		 * @return bool
-		 */
-		public function checkoutProcess(ProcessInterface $process,array $options = null){
 			return $process;
 		}
 
-
-		
 		/**
-		 * @param ProcessInterface $process
+		 * @param $controllerName
+		 * @param $actionName
+		 * @return bool
 		 */
-		protected function beforeControl($process){
-			
+		public function hasControl($controllerName, $actionName){
+			$controllerName = $controllerName?:$this->default_controller;
+			if(!($controller = $this->loadController($controllerName))){
+				return false;
+			}
+			$actionName = $actionName?:$this->default_action;
+			if($controller instanceof ControllerManuallyInterface){
+				return $controller->has($actionName);
+			}else{
+				return method_exists($controller,$this->prepareActionMethodName($actionName));
+			}
 		}
-		
-		/**
-		 * @param ProcessInterface $process
-		 * @param mixed $result
-		 */
-		protected function afterControl($process, $result){
-			
-		}
-
-		
-		/**
-		 * @param $reference
-		 * @param bool $withAction
-		 * @return string
-		 */
-		protected function getQualifiedReferenceString($reference,$withAction = true){
-			return ($reference['module']?'#'.$reference['module']:'').
-				   ($reference['controller']?':'.$reference['controller']:'').
-				   ($withAction && $reference['action']?':'.$reference['action']:'');
-		}
-
-		/**
-		 * @param $qualified
-		 * @param $reference
-		 * @return string
-		 */
-		protected function appendQualifiedAction($qualified, $reference){
-			return $qualified.($reference['action']?':'.$reference['action']:'');
-		}
-
-
 
 		/**
 		 * @param $controllerName
@@ -441,41 +361,10 @@ namespace Jungle\Application\Dispatcher {
 
 		/**
 		 * @param $controllerName
-		 * @return string
-		 * @throws Exception
-		 */
-		public function prepareControllerClassName($controllerName){
-			if(strpos($controllerName,'.')!==false){
-				$controllerName = explode('.',$controllerName);
-				foreach($controllerName as $i => $chunk){
-					if(!$chunk){
-						throw new Exception('Error qualified controller name');
-					}
-					$controllerName[$i] = ucfirst($chunk);
-				}
-				$controllerName = implode('\\',$controllerName);
-			}else{
-				$controllerName = ucfirst($controllerName);
-			}
-			return $this->getControllerNamespace() . '\\' . $controllerName . $this->getControllerSuffix();
-		}
-
-		/**
-		 * @param $actionName
-		 * @return string
-		 */
-		public function prepareActionMethodName($actionName){
-			return $actionName . $this->getActionSuffix();
-		}
-
-		/**
-		 * @param $controllerName
 		 * @param $actionName
 		 * @return array
 		 */
 		public function getMetadata($controllerName, $actionName){
-			$controllerName = $controllerName?:$this->default_controller;
-			$actionName = $actionName?:$this->default_action;
 			$cache_key = $controllerName.':'.$actionName;
 			if(!isset($this->metadata_cache[$cache_key])){
 				$controller = $this->loadController($controllerName);
@@ -491,30 +380,14 @@ namespace Jungle\Application\Dispatcher {
 						$metadata = array_replace($metadata, (array)$controller->$mName());
 					}
 				}
-				$this->metadata_cache[$cache_key] = $metadata;
+				$default = $this->dispatcher->getDefaultMetadata();
+				$this->metadata_cache[$cache_key] = array_replace($default,$metadata);
 				return $metadata;
 			}
 			return $this->metadata_cache[$cache_key];
 		}
 
 
-		/**
-		 * @param $controllerName
-		 * @param $actionName
-		 * @return bool
-		 */
-		public function hasControl($controllerName, $actionName){
-			$controllerName = $controllerName?:$this->default_controller;
-			if(!($controller = $this->loadController($controllerName))){
-				return false;
-			}
-			$actionName = $actionName?:$this->default_action;
-			if($controller instanceof ControllerManuallyInterface){
-				return $controller->has($actionName);
-			}else{
-				return method_exists($controller,$this->prepareActionMethodName($actionName));
-			}
-		}
 		
 		/**
 		 * Анализ структуры модуля
@@ -556,9 +429,9 @@ namespace Jungle\Application\Dispatcher {
 		 */
 		public function fromArray(array $definition){
 			$definition = array_replace_recursive([
-				'name' => null,
+				'name'      => null,
 				'namespace' => null,
-				'suffixes' => [
+				'suffixes'  => [
 					'controller' => null,
 					'action' => null
 				],
@@ -594,24 +467,25 @@ namespace Jungle\Application\Dispatcher {
 		}
 
 		/**
-		 * @return mixed
+		 * @return Di
 		 */
 		public function getDi(){
 			return $this->dispatcher->getDi();
 		}
 
 		/**
-		 * @param $dispatcher
 		 * @param $controller
 		 * @param $params
 		 * @param $reference
 		 * @param $initiator
-		 * @return \Jungle\Application\Dispatcher\Process
+		 * @param $initiator_type
+		 * @param $forwarder
+		 * @return Process
 		 * @throws Exception
 		 */
-		protected function factoryProcess($dispatcher, $controller, $params, $reference, $initiator){
+		public function factoryProcess($controller, $params, $reference, $initiator, $initiator_type, $forwarder){
 			if(method_exists($controller, 'factoryProcess')){
-				$process = call_user_func([$controller, 'factoryProcess'],$dispatcher, $this, $params, $reference, $initiator);
+				$process = call_user_func([$controller, 'factoryProcess'],$this->dispatcher, $this, $params, $reference, $initiator,$initiator_type, $forwarder);
 				if($process){
 					if(!$process instanceof ProcessInterface){
 						throw new Exception('Controller '.get_class($controller) . '::factoryProcess return value is not instanceof "'.ProcessInterface::class.'"');
@@ -619,7 +493,7 @@ namespace Jungle\Application\Dispatcher {
 					return $process;
 				}
 			}
-			return new Process($dispatcher, $controller, $params, $reference, $this, $initiator);
+			return $this->dispatcher->factoryProcess($params, $reference, $this, $controller, $initiator, $initiator_type,$forwarder);
 		}
 
 
@@ -656,6 +530,124 @@ namespace Jungle\Application\Dispatcher {
 		 */
 		public function getCacheDirname(){
 			return $this->cache_dirname;
+		}
+
+		/**
+		 * @param ProcessInterface $process
+		 * @throws AccessDenied
+		 */
+		protected function beforeControl(ProcessInterface $process){}
+
+		/**
+		 * @param ProcessInterface $process
+		 * @param mixed $result
+		 */
+		protected function afterControl(ProcessInterface $process, $result){}
+
+
+		/**
+		 * @param \Exception $e
+		 * @param ProcessInterface $process
+		 * @return bool
+		 * @throws \Exception
+		 */
+		protected function interceptException(\Exception $e, ProcessInterface $process){}
+
+		/**
+		 * @param \Exception $e
+		 * @param ProcessInterface $process
+		 */
+		protected function interceptedException(\Exception $e, ProcessInterface $process){}
+
+		/**
+		 * @param $actionName
+		 * @param $controller
+		 * @param \Exception $e
+		 * @param ProcessInterface $process
+		 * @return bool intercepted
+		 */
+		protected function _runExceptionIntercepting($actionName, $controller,\Exception $e,ProcessInterface $process){
+			if($controller instanceof ControllerManuallyInterface){
+				if($controller->interceptException($actionName, $e, $process) === true){
+					$this->_handleExceptionIntercepted($actionName, $controller, $e, $process);
+					return true;
+				}
+			}else{
+				if(method_exists($controller, ($exceptionControlMethod = $actionName.'InterceptException'))
+				   && $controller->{$exceptionControlMethod}($e, $process)===true){
+					$this->_handleExceptionIntercepted($actionName, $controller, $e, $process);
+					return true;
+				}
+				if(method_exists($controller, ($exceptionControlMethod = 'InterceptException'))
+				   && $controller->{$exceptionControlMethod}($actionName, $e, $process)===true){
+					$this->_handleExceptionIntercepted($actionName, $controller, $e, $process);
+					return true;
+				}
+			}
+
+			if($this->interceptException($e, $process)===true){
+				$this->_handleExceptionIntercepted($actionName, $controller, $e, $process);
+				return true;
+			}
+
+			if($this->dispatcher->interceptException($e, $process)===true){
+				$this->_handleExceptionIntercepted($actionName, $controller, $e, $process);
+				return true;
+			}
+
+			return false;
+		}
+
+		/**
+		 * @param $actionName
+		 * @param $controller
+		 * @param \Exception $e
+		 * @param ProcessInterface $process
+		 * @return bool
+		 */
+		protected function _handleExceptionIntercepted($actionName, $controller,\Exception $e,ProcessInterface $process){
+			if($controller instanceof ControllerManuallyInterface){
+				$controller->interceptedException($actionName, $e, $process);
+			}else{
+				method_exists($controller, ($exceptionControlMethod = $actionName.'InterceptedException'))
+				   && $controller->{$exceptionControlMethod}($e, $process);
+
+				method_exists($controller, ($exceptionControlMethod = 'InterceptedException'))
+				   && $controller->{$exceptionControlMethod}($actionName, $e, $process);
+			}
+			$this->interceptedException($e, $process);
+			$this->dispatcher->interceptedException($e, $process);
+		}
+
+
+
+		/**
+		 * @param $controllerName
+		 * @return string
+		 * @throws Exception
+		 */
+		protected function prepareControllerClassName($controllerName){
+			if(strpos($controllerName,'.')!==false){
+				$controllerName = explode('.',$controllerName);
+				foreach($controllerName as $i => $chunk){
+					if(!$chunk){
+						throw new Exception('Error qualified controller name');
+					}
+					$controllerName[$i] = ucfirst($chunk);
+				}
+				$controllerName = implode('\\',$controllerName);
+			}else{
+				$controllerName = ucfirst($controllerName);
+			}
+			return $this->getControllerNamespace() . '\\' . $controllerName . $this->getControllerSuffix();
+		}
+
+		/**
+		 * @param $actionName
+		 * @return string
+		 */
+		protected function prepareActionMethodName($actionName){
+			return $actionName . $this->getActionSuffix();
 		}
 
 	}

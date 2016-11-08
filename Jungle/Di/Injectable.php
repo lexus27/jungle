@@ -11,19 +11,22 @@ namespace Jungle\Di {
 
 	use Jungle\Application;
 	use Jungle\Application\Dispatcher;
+	use Jungle\Application\Dispatcher\Process;
 	use Jungle\Application\RequestInterface as ApplicationRequestInterface;
 	use Jungle\Application\ResponseInterface as ApplicationResponseInterface;
 	use Jungle\Application\View\ViewStrategyInterface;
 	use Jungle\Application\ViewInterface;
 	use Jungle\Data\Record\Head\SchemaManager;
+	use Jungle\EventManager\EventManager;
 	use Jungle\Loader;
 	use Jungle\Messenger;
 	use Jungle\User\Account;
 	use Jungle\User\SessionManager;
-	use Jungle\Util\Specifications\Http\CookieManagerInterface;
-	use Jungle\Util\Specifications\Http\RequestInterface;
-	use Jungle\Util\Specifications\Http\ResponseInterface;
-	use Jungle\Util\Specifications\Http\ResponseSettableInterface;
+	use Jungle\Util\Communication\HttpFoundation\Cookie\ManagerInterface;
+	use Jungle\Util\Communication\HttpFoundation\RequestInterface;
+	use Jungle\Util\Communication\HttpFoundation\ResponseInterface;
+	use Jungle\Util\Communication\HttpFoundation\ResponseOnServerInterface;
+	use Jungle\Util\Communication\HttpFoundation\ResponseSettableInterface;
 
 	/**
 	 * Class Injectable
@@ -33,9 +36,10 @@ namespace Jungle\Di {
 	 * @property Dispatcher $dispatcher
 	 * @property \Jungle\Application\RouterInterface|\Jungle\Application\Strategy\Http\Router $router
 	 * @property ApplicationRequestInterface|RequestInterface $request
-	 * @property ApplicationResponseInterface|ResponseInterface|ResponseSettableInterface $response
+	 * @property ApplicationResponseInterface|ResponseInterface|ResponseSettableInterface|ResponseOnServerInterface $response
 	 * @property $cache
 	 * @property $event
+	 * @property EventManager $event_manager
 	 *
 	 * @property ViewInterface $view
 	 * @property ViewStrategyInterface $view_strategy
@@ -47,10 +51,11 @@ namespace Jungle\Di {
 	 * @property Loader $loader
 	 *
 	 * @property Account $account
-	 * @property $access
+	 * @property \Jungle\User\AccessControl\Manager $access
 	 * @property SessionManager $session
-	 * @property CookieManagerInterface $cookie
+	 * @property ManagerInterface $cookie
 	 * @property Messenger $messenger
+	 * @property Process process
 	 */
 	abstract class Injectable implements InjectionAwareInterface{
 

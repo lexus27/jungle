@@ -27,6 +27,18 @@ namespace Jungle\User {
 		protected $saved = true;
 
 		/**
+		 * @return mixed
+		 */
+		public function getUserId(){
+			if(!$this->detected){
+				$sess = $this->session->readSession();
+				return $sess? $sess->getUserId(): null;
+			}
+			return $this->user->getId();
+		}
+
+
+		/**
 		 * @return UserInterface|null
 		 */
 		public function getUser(){

@@ -7,41 +7,33 @@
  */
 namespace Jungle\Util\Communication {
 
-	use Jungle\User\AccessAuth\Auth;
-	use Jungle\Util\Communication\URL\Host;
-	use Jungle\Util\Communication\URL\Host\Domain;
 	use Jungle\Util\Communication\URL\Host\IP;
-	use Jungle\Util\Communication\URL\Port;
-	use Jungle\Util\Communication\URL\Scheme;
 	use Jungle\Util\Smart\Value\Value;
 
 	/**
 	 * Class Url
 	 * @package Jungle\Util\Communication
-	 * @TODO AccessAuth(V_AUTH) correct with Login and Password self parameters
 	 */
 	class URL extends Value{
 
-		const V_SCHEME      = 'scheme';
-		const V_LOGIN       = 'login';
-		const V_PASSWORD    = 'password';
-		const V_AUTH        = 'auth';
-		const V_HOST        = 'host';
-		const V_PORT        = 'port';
-		const V_URI         = 'uri';
-		const V_PARAMETERS  = 'parameters';
-		const V_ANCHOR      = 'anchor';
+		const V_SCHEME   = 'scheme';
+		const V_USER     = 'user';
+		const V_PASS     = 'pass';
+		const V_HOST     = 'host';
+		const V_PORT     = 'port';
+		const V_PATH     = 'path';
+		const V_QUERY    = 'query';
+		const V_FRAGMENT = 'fragment';
 
 		protected static $default_value = [
-			self::V_SCHEME     => null,
-			self::V_LOGIN      => null,
-			self::V_PASSWORD   => null,
-			self::V_AUTH       => null,
-			self::V_HOST       => null,
-			self::V_PORT       => 0,
-			self::V_URI        => [],
-			self::V_PARAMETERS => [],
-			self::V_ANCHOR     => null
+			self::V_SCHEME   => null,
+			self::V_USER     => null,
+			self::V_PASS     => null,
+			self::V_HOST     => null,
+			self::V_PORT     => null,
+			self::V_PATH     => null,
+			self::V_QUERY    => null,
+			self::V_FRAGMENT => null
 		];
 
 		/**
@@ -67,23 +59,19 @@ namespace Jungle\Util\Communication {
 		/**
 		 * @return IP
 		 */
-		public function getHostIP(){
-			/** @var Host $host */
-			$host = $this->value[self::V_HOST];
-			return $host?$host->getIP():null;
+		public function getIp(){
+			return gethostbyname($this->value[self::V_HOST]);
 		}
 
 		/**
-		 * @return Domain
+		 * @return string
 		 */
-		public function getHostDomain(){
-			/** @var Host $host */
-			$host = $this->value[self::V_HOST];
-			return $host?$host->getDomain():null;
+		public function getDomain(){
+			return gethostbyaddr($this->value[self::V_HOST]);
 		}
 
 		/**
-		 * @return Scheme|string
+		 * @return string
 		 */
 		public function getScheme(){
 			return $this->value[self::V_SCHEME];
@@ -94,7 +82,7 @@ namespace Jungle\Util\Communication {
 		 * @return bool
 		 */
 		public function hasAuth(){
-			return $this->value[self::V_LOGIN] && $this->value[self::V_PASSWORD];
+			return $this->value[self::V_USER] && $this->value[self::V_PASS];
 		}
 
 
@@ -102,16 +90,16 @@ namespace Jungle\Util\Communication {
 		 * @param $login
 		 * @return $this
 		 */
-		public function setLogin($login){
-			return $this->manipulate(self::V_LOGIN,$login);
+		public function setUserLogin($login){
+			return $this->manipulate(self::V_USER,$login);
 		}
 
 
 		/**
 		 * @return string
 		 */
-		public function getLogin(){
-			return $this->value[self::V_LOGIN];
+		public function getUserLogin(){
+			return $this->value[self::V_USER];
 		}
 
 
@@ -119,23 +107,15 @@ namespace Jungle\Util\Communication {
 		 * @param $password
 		 * @return $this
 		 */
-		public function setPassword($password){
-			return $this->manipulate(self::V_PASSWORD,$password);
+		public function setUserPassword($password){
+			return $this->manipulate(self::V_PASS,$password);
 		}
 
 		/**
 		 * @return string
 		 */
-		public function getPassword(){
-			$auth = $this->getAccessAuth();
-			return $auth?$auth->getPassword():$this->value[self::V_PASSWORD];
-		}
-
-		/**
-		 * @return Auth|null
-		 */
-		public function getAccessAuth(){
-			return $this->value[self::V_AUTH];
+		public function getUserPassword(){
+			return $this->value[self::V_PASS];
 		}
 
 
@@ -144,11 +124,11 @@ namespace Jungle\Util\Communication {
 		 * @return URL
 		 */
 		public function setHost($host){
-			return $this->manipulate(self::V_HOST,Host::get($host));
+			return $this->manipulate(self::V_HOST,$host);
 		}
 
 		/**
-		 * @return Host
+		 * @return string
 		 */
 		public function getHost(){
 			return $this->value[self::V_HOST];
@@ -162,7 +142,7 @@ namespace Jungle\Util\Communication {
 			return $this->manipulate(self::V_PORT,intval($port));
 		}
 		/**
-		 * @return Port|int
+		 * @return int|null
 		 */
 		public function getPort(){
 			return $this->value[self::V_PORT];
@@ -171,39 +151,35 @@ namespace Jungle\Util\Communication {
 
 		/**
 		 * @param mixed $uri
-		 * @param bool $decode
 		 * @return $this
 		 */
-		public function setUri($uri,$decode = false){
-			if(is_string($uri)){
-				$uri = self::parseUri($uri,$decode);
-			}
-			return $this->manipulate(self::V_URI,(array)$uri);
+		public function setPath($uri){
+			return $this->manipulate(self::V_PATH,$uri);
 		}
 
 
 		/**
 		 * @return \string[]
 		 */
-		public function getUri(){
-			return $this->value[self::V_URI];
+		public function getPath(){
+			return $this->value[self::V_PATH];
 		}
 
 		/**
 		 * @param array $parameters
 		 */
-		public function setParameters(array $parameters){
-			if(!is_array($this->value[self::V_PARAMETERS])){
-				$this->value[self::V_PARAMETERS] = [];
+		public function setQueryParams(array $parameters){
+			if(!is_array($this->value[self::V_QUERY])){
+				$this->value[self::V_QUERY] = [];
 			}
-			$this->value[self::V_PARAMETERS] = $parameters;
+			$this->value[self::V_QUERY] = $parameters;
 		}
 
 		/**
 		 * @return array
 		 */
-		public function getParameters(){
-			return is_array($this->value[self::V_PARAMETERS])?$this->value[self::V_PARAMETERS]:[];
+		public function getQueryParams(){
+			return is_array($this->value[self::V_QUERY])?$this->value[self::V_QUERY]:[];
 		}
 
 
@@ -213,8 +189,8 @@ namespace Jungle\Util\Communication {
 		 * @return null
 		 */
 		public function getParam($key){
-			if($this->value[self::V_PARAMETERS]){
-				return isset($this->value[self::V_PARAMETERS][$key])?$this->value[self::V_PARAMETERS][$key]:null;
+			if($this->value[self::V_QUERY]){
+				return isset($this->value[self::V_QUERY][$key])?$this->value[self::V_QUERY][$key]:null;
 			}
 			return null;
 		}
@@ -224,8 +200,8 @@ namespace Jungle\Util\Communication {
 		 * @return bool
 		 */
 		public function hasParam($key){
-			if($this->value[self::V_PARAMETERS]){
-				return isset($this->value[self::V_PARAMETERS][$key]);
+			if($this->value[self::V_QUERY]){
+				return isset($this->value[self::V_QUERY][$key]);
 			}
 			return false;
 		}
@@ -235,8 +211,8 @@ namespace Jungle\Util\Communication {
 		 * @return $this
 		 */
 		public function removeParam($key){
-			if($this->value[self::V_PARAMETERS]){
-				unset($this->value[self::V_PARAMETERS][$key]);
+			if($this->value[self::V_QUERY]){
+				unset($this->value[self::V_QUERY][$key]);
 			}
 			return $this;
 		}
@@ -244,120 +220,8 @@ namespace Jungle\Util\Communication {
 		/**
 		 * @return string
 		 */
-		public function getAnchor(){
-			return $this->value[self::V_ANCHOR];
-		}
-
-
-
-		/**
-		 * @param $url
-		 * @return array
-		 */
-		public static function parseURLString($url){
-			if(is_string($url)){
-				$url = urldecode($url);
-				$regex = '~(?:([\w]+)://)?(?:([\w\d]+)(?::([\w\d]+))?@)?([^/:]+)(?::([\d]+))?([^?]+)?(?:\?([^#]+))?(?:#([\w\d@]+))?~';
-				$placeholders = [
-					self::V_SCHEME,
-					self::V_LOGIN,
-					self::V_PASSWORD,
-					self::V_HOST,
-					self::V_PORT,
-					self::V_URI,
-					self::V_PARAMETERS,
-					self::V_ANCHOR,
-				];
-				$placeholders   = array_flip($placeholders);
-				$placeholders   = array_map(function($index){return $index+1;},$placeholders);
-				$matched        = preg_match($regex,$url,$matches);
-
-				if($matched){
-					$data = [];
-					foreach($placeholders as $key => $maskId){
-						$data[$key] = $matches[$maskId];
-					}
-
-					$a = [];
-
-					$a[self::V_SCHEME]      = $data[self::V_SCHEME];
-					$a[self::V_LOGIN]       = $data[self::V_LOGIN];
-					$a[self::V_PASSWORD]    = $data[self::V_PASSWORD];
-					if($a[self::V_PASSWORD] && ($decoded = @urldecode($a[self::V_PASSWORD]))){
-						$a[self::V_PASSWORD] = $decoded;
-					}
-
-
-					$a[self::V_HOST]        = trim($data[self::V_HOST],'[]');
-					$a[self::V_PORT]        = $data[self::V_PORT];
-					$a[self::V_PORT]        = intval($a[self::V_PORT]);
-
-					$a[self::V_URI]         = self::parseUri($data[self::V_URI]);
-					$a[self::V_PARAMETERS]  = self::parseParameters($data[self::V_PARAMETERS]);
-					$a[self::V_ANCHOR]      = $data[self::V_ANCHOR];
-
-					return $a;
-				}
-			}
-			return false;
-		}
-
-		/**
-		 * @param $uri
-		 * @param bool $decode
-		 * @return array
-		 */
-		public static function parseUri($uri,$decode = false){
-			if(is_array($uri))return array_filter($uri);
-			elseif(is_string($uri)){
-				$uri = explode('/',preg_replace('@[/]+@','/',trim($uri,'/')));
-				if($decode) foreach($uri as &$c){$c = urldecode($c);}
-				return self::parseUri($uri);
-			}else{
-				return [];
-			}
-		}
-
-		/**
-		 * @param $uri
-		 * @param bool|false $encode
-		 * @return string
-		 */
-		public static function renderUri($uri,$encode = false){
-			return implode('/',array_map(function($v) use ($encode) {return urlencode($v);},array_filter($uri)));
-		}
-
-		/**
-		 * @param $params
-		 * @param bool $decode
-		 * @return array
-		 */
-		public static function parseParameters($params,$decode = false){
-			if(is_string($params)){
-				$parameters = [];
-				array_map(function($paramPair) use($parameters,$decode){
-					list($k,$v) = explode('=',$paramPair);
-					if($decode){
-						$parameters[urldecode($k)] = urldecode($v);
-					}else{
-						$parameters[$k] = $v;
-					}
-				},explode('&',$params));
-				return $parameters;
-			}elseif(is_array($params)){
-				return $params;
-			}else{
-				return [];
-			}
-		}
-
-		/**
-		 * @param array $parameters
-		 * @param bool $encode
-		 * @return string
-		 */
-		public static function renderParameters(array $parameters = [],$encode = false){
-			return implode('&',array_map(function($k,$v) use($encode){return $encode?(urlencode($k).'='.urlencode($v)):($k.'='.$v);},array_keys($parameters),$parameters));
+		public function getFragment(){
+			return $this->value[self::V_FRAGMENT];
 		}
 
 		/**
@@ -366,25 +230,17 @@ namespace Jungle\Util\Communication {
 		 */
 		public function merge($url){
 			if(is_string($url)){
-				$this->merge(self::parseURLString($url));
+				$this->merge(self::parseUrl($url));
 			}elseif($url instanceof URL){
 				$this->merge($url->toArray());
 			}elseif(is_array($url)){
-				$v = [];
-				if(isset($url[self::V_SCHEME])){     $v[self::V_SCHEME]     = $url[self::V_SCHEME];}
-				if(isset($url[self::V_LOGIN])){      $v[self::V_LOGIN]      = $url[self::V_LOGIN];}
-				if(isset($url[self::V_PASSWORD])){   $v[self::V_PASSWORD]   = $url[self::V_PASSWORD];}
-				if(isset($url[self::V_HOST])){       $v[self::V_HOST]       = $url[self::V_HOST];}
-				if(isset($url[self::V_PORT])){       $v[self::V_PORT]       = $url[self::V_PORT];}
-				if(isset($url[self::V_URI])){        $v[self::V_URI]        = $url[self::V_URI];}
-				if(isset($url[self::V_PARAMETERS])){ $v[self::V_PARAMETERS] = $url[self::V_PARAMETERS];}
-				if(isset($url[self::V_ANCHOR])){     $v[self::V_ANCHOR]     = $url[self::V_ANCHOR];}
 				foreach($this->value as $k => $value){
-					if(!isset($v[$k]) || !$v[$k]){
-						$v[$k] = $value;
+					if(!isset($url[$k])){
+						$url[$k] = $value;
 					}
 				}
-				$this->setValue($v);
+				$url = array_intersect_key($url,self::$default_value);
+				$this->setValue($url);
 			}
 			return $this;
 		}
@@ -397,9 +253,9 @@ namespace Jungle\Util\Communication {
 			if($url instanceof URL){
 				return $url;
 			}elseif(is_string($url)){
-				$u = new URL();
-				$u->setValue($url);
-				return $u;
+				$object = new URL();
+				$object->setValue($url);
+				return $object;
 			}else{
 				throw new \InvalidArgumentException(__METHOD__ . 'URL is not valid "'.$url.'"');
 			}
@@ -411,12 +267,12 @@ namespace Jungle\Util\Communication {
 		 */
 		public function setValue($value){
 			if(is_string($value)){
-				$value = self::parseURLString($value);
+				$value = self::parseUrl($value);
 			}elseif($value instanceof URL){
 				$value = $value->toArray();
 			}elseif(is_array($value)){
-				foreach(self::$default_value as $index => $defaultValue){
-					$value[$index] = isset($value[$index])?$value[$index]:$defaultValue;
+				foreach(self::$default_value as $index => $default){
+					$value[$index] = isset($value[$index])?$value[$index]:$default;
 				}
 				return parent::setValue($value);
 			}else{
@@ -429,44 +285,15 @@ namespace Jungle\Util\Communication {
 		 * @param $value
 		 */
 		public function beforeValueSet(& $value){
-
 			$host       = & $value[self::V_HOST];
 			$port       = & $value[self::V_PORT];
-			$scheme     = & $value[self::V_SCHEME];
-
-			$port = intval($port);
-
-			/** @var URL\Manager $manager */
-			$manager = URL\Manager::getDefault();
-			/** @var Port|null $port */
-
-
-
-			$port = $port? $manager->getPool('PortPool')->get($port):null;
-
-			/** @var Scheme|null $scheme */
-			$scheme = $scheme? $manager->getPool('SchemePool')->get($scheme):null;
-
-			if($scheme){
-				if(!$port){
-					$port = $scheme->getDefaultPort();
-				}else{
-					if(!$scheme->isAllowedPort($port->getIdentifier())){
-						$scheme->errorWrongPort($port);
-					}
-				}
-			}elseif($port){
-				$scheme = $port->getDefaultScheme();
+			if(isset($port)){
+				$port = intval($port);
 			}
-
-			if($host){
-				$host = Host::get($host);
-			}else{
+			if(!$host){
 				throw new \LogicException('URL must have hostname(ip or domain address)');
 			}
-
-			$value[self::V_URI]         = self::parseUri($value[self::V_PORT]);
-			$value[self::V_PARAMETERS]  = self::parseParameters($value[self::V_PARAMETERS]);
+			$value[self::V_QUERY] = self::parseParams($value[self::V_QUERY]);
 		}
 
 		/**
@@ -474,41 +301,6 @@ namespace Jungle\Util\Communication {
 		 */
 		public function toArray(){
 			return $this->value;
-		}
-
-		/**
-		 * @param array $chunks
-		 * @return string
-		 */
-		public static function renderURLFromArray(array $chunks){
-			$chunks[self::V_SCHEME]     = $chunks[self::V_SCHEME]       ?:null;
-			$chunks[self::V_LOGIN]      = $chunks[self::V_LOGIN]        ?:null;
-			$chunks[self::V_PASSWORD]   = $chunks[self::V_PASSWORD]     ?:null;
-			$chunks[self::V_HOST]       = $chunks[self::V_HOST]         ?:null;
-			$chunks[self::V_PORT]       = $chunks[self::V_PORT]         ?:null;
-			$chunks[self::V_URI]        = $chunks[self::V_URI]          ?:null;
-			$chunks[self::V_PARAMETERS] = $chunks[self::V_PARAMETERS]   ?:[];
-			$chunks[self::V_ANCHOR]     = $chunks[self::V_ANCHOR]       ?:null;
-			if(!$chunks[self::V_HOST]){
-				throw new \LogicException('Host must have in url chunks');
-			}
-
-			/** @var Scheme $scheme */
-			$scheme = $chunks[self::V_SCHEME];
-			return ($scheme?$scheme . '://' :'') .
-			       ($chunks[self::V_LOGIN] && $chunks[self::V_PASSWORD] ?$chunks[self::V_LOGIN] .':'. $chunks[self::V_PASSWORD]. '@': '') .
-			       $chunks[self::V_HOST] . ($scheme && $scheme->getPortRender() || !$scheme?($chunks[self::V_PORT]?':'.$chunks[self::V_PORT]:''):'') .
-			       ($chunks[self::V_URI]?        '/' . self::renderUri($chunks[self::V_URI]):'') .
-			       ($chunks[self::V_PARAMETERS]? '?' . self::renderParameters($chunks[self::V_PARAMETERS]) : '') .
-			       ($chunks[self::V_ANCHOR]?     '#' . $chunks[self::V_ANCHOR]:'');
-
-		}
-
-		/**
-		 * @return string
-		 */
-		public function __toString(){
-			return $this->renderURLFromArray($this->value);
 		}
 
 		/**
@@ -525,8 +317,246 @@ namespace Jungle\Util\Communication {
 			$white_list = array_flip($white_list);
 			$white_list = array_diff_key($white_list,$black_list);
 			$white_list[self::V_HOST] = 1;
-			return self::renderURLFromArray(array_intersect_key($a,$white_list));
+			return self::renderUrl(array_intersect_key($a,$white_list));
 		}
+
+		/**
+		 * @return string
+		 */
+		public function __toString(){
+			return $this->renderUrl($this->value);
+		}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		/**
+		 * @param string $path
+		 * @param bool $decode
+		 * @param string $separator
+		 * @return array
+		 */
+		public static function parsePathArray($path, $decode = false, $separator = '/'){
+			$path = explode($separator,$path);
+			if($decode) foreach($path as &$c) $c = urldecode($c);
+			return array_filter($path);
+		}
+
+		/**
+		 * @param array $path
+		 * @param bool|false $encode
+		 * @param string $separator
+		 * @return string
+		 */
+		public static function renderPath(array $path, $encode = false,$separator = '/'){
+			if($encode) foreach($path as &$c) $c = urlencode($c);
+			return implode($separator,$path);
+		}
+
+		/**
+		 * @param $string
+		 * @param bool|true $decode
+		 * @param string $separator
+		 * @param string $define
+		 * @return array
+		 */
+		public static function parseParams($string, $decode = true, $separator = '&', $define = '='){
+			$parameters = [];
+			$pairs = explode($separator,ltrim($string,'?'));
+			if($decode){
+				foreach($pairs as $pair){
+					list($k,$v) = explode($define,$pair);
+					$parameters[urldecode($k)] = urldecode($v);
+				}
+			}else{
+				foreach($pairs as $pair){
+					list($k,$v) = explode($define,$pair);
+					$parameters[$k] = $v;
+				}
+			}
+			return $parameters;
+		}
+
+		/**
+		 * @param array $params
+		 * @param bool $encode
+		 * @param string $separator
+		 * @param string $define
+		 * @return string
+		 */
+		public static function renderParams(array $params, $encode = false, $separator = '&', $define = '='){
+			$a = [];
+			if($encode){
+				foreach($params as $key => $value){
+					$a[] = urlencode($key).$define.urlencode($value);
+				}
+			}else{
+				foreach($params as $key => $value){
+					$a[] = $key.$define.$value;
+				}
+			}
+			return implode($separator, $a);
+		}
+
+
+		/**
+		 * @param $url
+		 * @param bool $full
+		 * @return array
+		 */
+		public static function parseUrl($url, $full = true){
+			if(is_string($url)){
+				$url = urldecode($url);
+				$regex = '~(?:([\w]+)://)?(?:([\w\d]+)(?::([\w\d]+))?@)?([^\?\&/:]+|\[[^/]]+\])?(?::([\d]+))?([^?#$]+)?(?:\?([^#$]+))?(?:#([^$]+))?~u';
+				$placeholders = [ self::V_SCHEME, self::V_USER, self::V_PASS, self::V_HOST, self::V_PORT, self::V_PATH, self::V_QUERY, self::V_FRAGMENT, ];
+				$placeholders   = array_flip($placeholders);
+				$placeholders   = array_map(function($index){return $index+1;},$placeholders);
+				$matched        = preg_match($regex,$url,$matches);
+
+				if($matched){
+					$data = [];
+					foreach($placeholders as $key => $maskId){
+						if(array_key_exists($maskId,$matches)){
+							$data[$key] = !empty($matches[$maskId])?$matches[$maskId]:null;
+						}else{
+							$data[$key] = null;
+						}
+					}
+					if($data[self::V_PORT]){
+						$data[self::V_PORT] = intval([self::V_PORT]);
+					}
+					if($data[self::V_HOST]){
+						$data[self::V_HOST] = trim($data[self::V_HOST],'[]');
+					}
+					if($data[self::V_QUERY]){
+						$data[self::V_QUERY] = self::parseParams($data[self::V_QUERY],true);
+					}
+					return $full?$data:array_filter($data);
+				}
+			}elseif(is_array($url)){
+				if($full){
+					return array_replace($url, array_intersect_key($url, self::$default_value));
+				}else{
+					return array_intersect_key($url, self::$default_value);
+				}
+			}
+			return false;
+		}
+
+
+		/**
+		 * @param array $chunks
+		 * @param bool $strict
+		 * @param bool $encode
+		 * @return string
+		 */
+		public static function renderUrl(array $chunks, $encode = false, $strict = true){
+			$chunks = array_replace(self::$default_value, $chunks);
+			if($strict && (!isset($chunks[self::V_HOST]) || !$chunks[self::V_HOST])){
+				throw new \LogicException('Host must have in url chunks');
+			}
+
+			$url = '';
+			if($chunks[self::V_SCHEME]){
+				$url.= $chunks[self::V_SCHEME] . '://';
+			}
+			if($chunks[self::V_USER]){
+				$url.= $chunks[self::V_USER] . ':' . $chunks[self::V_PASS];
+
+				if($chunks[self::V_HOST]){
+					$url.= '@';
+				}
+			}
+			if($chunks[self::V_HOST]){
+				$url.=$chunks[self::V_HOST];
+			}
+			if($chunks[self::V_PORT]){
+				$url.=':'.$chunks[self::V_PORT];
+			}
+			if($chunks[self::V_PATH]){
+				if(is_array($chunks[self::V_PATH])){
+					$url.=self::renderPath($chunks[self::V_PATH],$encode);
+				}else{
+					$url.=$chunks[self::V_PATH];
+				}
+			}
+			if($chunks[self::V_QUERY]){
+				if(is_array($chunks[self::V_QUERY])){
+					$url.= '?'.http_build_query($chunks[self::V_QUERY]);
+				}else{
+					$url.= '?'.$chunks[self::V_QUERY];
+				}
+			}
+			if($chunks[self::V_FRAGMENT]){
+				$url.= $chunks[self::V_FRAGMENT];
+			}
+			return $url;
+		}
+
+		/**
+		 * @param $url
+		 * @param $default
+		 * @param bool $asArray
+		 * @return string
+		 */
+		public static function absoluteUrl($url, $default, $asArray = false){
+			if(!is_array($url)){
+				$url = URL::parseUrl($url);
+			}
+			if(!is_array($default)){
+				$default = URL::parseUrl($default);
+			}
+			if(!$url['scheme']){
+				$url['scheme'] = $default['scheme'];
+			}
+			if(!$url['host']){
+				$url['host'] = $default['host'];
+			}
+			if(!$url['path']){
+				$url['path'] = $default['path'];
+			}else{
+				if(substr($url['path'],0,2) === './'){
+					$url['path'] = $default['path'] . substr($url['path'],2);
+				}
+			}
+			return $asArray?$url:URL::renderUrl($url, true, true);
+		}
+
+		/**
+		 * @param $domain
+		 * @return string
+		 */
+		public static function getBaseDomain($domain){
+			if($domain){
+				$domain = explode('.',$domain);
+				if(count($domain) >= 2){
+					$domain = array_slice($domain,-2);
+				}
+				$domain = implode('.',$domain);
+			}
+			return $domain;
+		}
+
+
+
+
+
+
 
 	}
 }

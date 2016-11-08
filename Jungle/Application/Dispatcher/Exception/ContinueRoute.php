@@ -17,9 +17,6 @@ namespace Jungle\Application\Dispatcher\Exception {
 	 */
 	class ContinueRoute extends Dispatcher_Exception{
 
-
-
-
 	}
 }
 

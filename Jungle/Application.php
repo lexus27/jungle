@@ -49,7 +49,8 @@ namespace Jungle {
 			$this->loader = $loader;
 
 			$holderChains = new HolderChains();
-			$holderChains->insertHolder('default',($di = new Di()), 0);
+			Di::setDefault($holderChains);
+			$holderChains->insertInjection('default',($di = new Di()), 0);
 			$this->setDi($holderChains);
 
 			$di = $holderChains->getInjection('default');

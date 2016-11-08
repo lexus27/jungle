@@ -16,8 +16,8 @@ namespace Jungle\Application\Strategy {
 	use Jungle\Application\View;
 	use Jungle\Application\View\ViewStrategyInterface;
 	use Jungle\Application\ViewInterface;
-	use Jungle\Util\Specifications\Http\RequestInterface as HTTP_RequestInterface;
-	use Jungle\Util\Specifications\Http\ResponseSettableInterface as HTTP_ResponseSettableInterface;
+	use Jungle\Util\Communication\HttpFoundation\RequestInterface as HTTP_RequestInterface;
+	use Jungle\Util\Communication\HttpFoundation\ResponseSettableInterface as HTTP_ResponseSettableInterface;
 
 	/**
 	 * Class Http

@@ -8,12 +8,14 @@
 namespace Jungle\User\AccessControl {
 
 	use Jungle\Application\Component;
-	use Jungle\User\AccessControl\Adapter\ContextAdapter;
+	use Jungle\User\AccessControl\Context\Context;
+	use Jungle\User\AccessControl\Context\ContextInterface;
 	use Jungle\User\AccessControl\Context\ObjectAccessor;
 	use Jungle\User\AccessControl\Matchable\Aggregator;
 	use Jungle\User\AccessControl\Matchable\Combiner;
-	use Jungle\User\AccessControl\Matchable\ExpressionResolver;
+	use Jungle\User\AccessControl\Matchable\Matchable;
 	use Jungle\User\AccessControl\Matchable\Resolver\ConditionResolver;
+	use Jungle\User\AccessControl\Matchable\Resolver\ExpressionResolver;
 	use Jungle\User\AccessControl\Matchable\Resolver\PredicateInspector;
 	use Jungle\User\AccessControl\Matchable\Result;
 	use Jungle\User\AccessControl\Matchable\Rule;
@@ -32,6 +34,9 @@ namespace Jungle\User\AccessControl {
 
 		/** @var  ConditionResolver */
 		protected $condition_resolver;
+
+		/** @var  ExpressionResolver */
+		protected $expression_resolver;
 
 		/** @var  PredicateInspector */
 		protected $predicate_inspector;
@@ -179,6 +184,25 @@ namespace Jungle\User\AccessControl {
 		}
 
 		/**
+		 * @param ExpressionResolver $resolver
+		 * @return $this
+		 */
+		public function setExpressionResolver(ExpressionResolver $resolver){
+			$this->expression_resolver = $resolver;
+			return $this;
+		}
+
+		/**
+		 * @return ExpressionResolver
+		 */
+		public function getExpressionResolver(){
+			if(!$this->expression_resolver){
+				$this->expression_resolver = new ExpressionResolver();
+			}
+			return $this->expression_resolver;
+		}
+
+		/**
 		 * @param PredicateInspector $inspector
 		 * @return $this
 		 */
@@ -239,25 +263,30 @@ namespace Jungle\User\AccessControl {
 		 * @return Result|bool
 		 */
 		public function enforce($action, $object, $returnResult = false){
-			$resolver = $this->getConditionResolver();
-			$context = $this->contextFrom($action,$object);
-			$collectByEffect = null;
+			try{
+				set_error_handler([$this,'_handleError']);
+				$resolver = $this->getConditionResolver();
+				$context = $this->contextFrom($action,$object);
+				$collectByEffect = null;
 
-			$object = $context->getObject();
-			if($object instanceof ObjectAccessor && $object->hasPredicateEffect()){
-				$collectByEffect = Matchable::friendlyEffect($object->getPredicateEffect());
-				$inspector = $this->getPredicateInspector();
-				$inspector->setTargetEffect($collectByEffect);
-				$resolver->setInspector($inspector);
+				$object = $context->getObject();
+				if($object instanceof ObjectAccessor && $object->hasPredicateEffect()){
+					$collectByEffect = Matchable::friendlyEffect($object->getPredicateEffect());
+					$inspector = $this->getPredicateInspector();
+					$inspector->setTargetEffect($collectByEffect);
+					$resolver->setInspector($inspector);
 
-			}else{
-				$resolver->setInspector(null);
+				}else{
+					$resolver->setInspector(null);
+				}
+				$result = $this->decise($context);
+				if($returnResult || $collectByEffect!==null){
+					return $result;
+				}
+				return $result->isAllowed();
+			}finally{
+				restore_error_handler();
 			}
-			$result = $this->decise($context);
-			if($returnResult || $collectByEffect!==null){
-				return $result;
-			}
-			return $result->isAllowed();
 		}
 
 		/**
@@ -356,9 +385,13 @@ namespace Jungle\User\AccessControl {
 		 * @param $finalEffect
 		 * @param Result $result
 		 * @param ContextInterface $context
+		 * @param ExpressionResolver $resolver
 		 * @throws \Exception
 		 */
-		protected function invoke($finalEffect,Result $result,ContextInterface $context){
+		protected function invoke($finalEffect,Result $result,ContextInterface $context,ExpressionResolver $resolver = null){
+			if(!$resolver){
+				$resolver = $this->getExpressionResolver();
+			}
 			$matchable = $result->getMatchable();
 			if($matchable instanceof Aggregator){
 				foreach($result->getChildren() as $child){
@@ -371,7 +404,7 @@ namespace Jungle\User\AccessControl {
 				$obligation = $matchable->getObligation();
 				if($obligation){
 					try{
-						if(call_user_func($obligation,$result,$context)===false){
+						if($resolver->resolve($context, $result, $obligation) === false){
 							throw new Exception('Obligation is not executed');
 						}
 					}catch(\Exception $e){
@@ -381,16 +414,16 @@ namespace Jungle\User\AccessControl {
 				$advice = $matchable->getAdvice();
 				if($advice){
 					try{
-						call_user_func($advice,$result,$context);
+						$resolver->resolve($context, $result, $advice);
 					}catch(\Exception $e){
 						$this->_handleException($e, $result);
 					}
 				}
 			}elseif(!$result->isMissed()){
-				$requirements = $matchable->getRequirement();
-				if($requirements){
+				$requirement = $matchable->getRequirement();
+				if($requirement){
 					try{
-						call_user_func($requirements,$result,$context);
+						$resolver->resolve($context, $result, $requirement);
 					}catch(\Exception $e){
 						$this->_handleException($e, $result);
 					}
@@ -399,8 +432,19 @@ namespace Jungle\User\AccessControl {
 		}
 
 		/**
+		 * @param $no
+		 * @param $str
+		 * @param $file
+		 * @param $line
+		 * @throws \ErrorException
+		 */
+		public function _handleError($no, $str, $file, $line){
+			throw new \ErrorException($str,$no,$no,$file,$line);
+		}
+
+		/**
 		 * @param \Exception $exception
-		 * @throws \Exception
+		 * @param Result $result
 		 */
 		protected function _handleException(\Exception $exception, Result $result){
 

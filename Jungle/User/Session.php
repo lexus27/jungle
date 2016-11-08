@@ -226,6 +226,13 @@ namespace Jungle\User {
 		}
 
 		/**
+		 * @return mixed|null
+		 */
+		public function getUserId(){
+			return $this->user?$this->user->getId():null;
+		}
+
+		/**
 		 * @param $permissions
 		 * @return mixed
 		 */

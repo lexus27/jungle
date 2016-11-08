@@ -9,14 +9,14 @@ namespace Jungle\Data\Storage\Db\Structure {
 
 	use Jungle\Data\Storage\Db\Dialect;
 	use Jungle\Data\Storage\Db\Structure;
-	use Jungle\Util\INamed;
+	use Jungle\Util\Named\NamedInterface;
 
 	/**
 	 * Class Database
 	 * @package Jungle\Data\Storage\Db\Structure
 	 * TargetTable schema structure
 	 */
-	class Database extends StructureObject implements INamed{
+	class Database extends StructureObject implements NamedInterface{
 
 		/** @var  string */
 		protected $name;

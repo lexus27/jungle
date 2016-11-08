@@ -123,6 +123,17 @@ namespace Jungle\Data\Record {
 		protected $face_access_property = null;
 
 		/**
+		 * @return array
+		 */
+		public function getItems(){
+			if($this->auto_deploy && !$this->deployed){
+				$this->deploy();
+			}
+			return $this->items;
+		}
+
+
+		/**
 		 * @param bool|true $capture
 		 * @return $this
 		 */
@@ -559,22 +570,30 @@ namespace Jungle\Data\Record {
 			if($this->auto_deploy && !$this->deployed){
 				$this->deploy();
 			}
-
-			$condition = Condition::build($condition);
-			$elapsed = 0;
-			$count = 0;
 			$a = [];
-			foreach($this->items as $item){
-				if(!$condition || call_user_func($condition,$item)){
-					$elapsed++;
-					if(!$offset || $elapsed>=$offset){
-						$a[] = $item;
+			if($this->items){
+				if(!$condition && !$limit && !$offset){
+					return $this->items;
+				}
+				if($condition){
+					$condition = Condition::build($condition);
+					$elapsed = 0;
+					$count = 0;
+					foreach($this->items as $item){
+						if(!$condition || call_user_func($condition,$item)){
+							$elapsed++;
+							if(!$offset || $elapsed>=$offset){
+								$a[] = $item;
 
-						if(++$count >= $limit){
-							break;
+								if(++$count >= $limit){
+									break;
+								}
+
+							}
 						}
-
 					}
+				}else{
+					return array_slice($this->items,$offset?:0,$limit);
 				}
 			}
 			return $a;
@@ -993,7 +1012,7 @@ namespace Jungle\Data\Record {
 		}
 
 		/**
-		 * Synchronize state
+		 * SynchronizeException state
 		 */
 		public function synchronize(){
 			foreach($this->items as $item){
@@ -1001,7 +1020,7 @@ namespace Jungle\Data\Record {
 					$this->getRoot()->_removeItem($item);
 				}elseif($item->hasChangesProperty()){
 					if(!$item->save()){
-						throw new Record\Collection\Exception\Synchronize('Error save');
+						throw new Collection\SynchronizeException('Error save');
 					}
 				}
 			}
@@ -1341,7 +1360,7 @@ namespace Jungle\Data\Record {
 		}
 
 		/**
-		 * @throws Collection\Exception\Synchronize
+		 * @throws \Jungle\Data\Record\Collection\SynchronizeException
 		 */
 		public function __destruct(){
 			$this->in_destructing = true;
@@ -1366,7 +1385,7 @@ namespace Jungle\Data\Record {
 				$schema = $this->getSchema();
 				$condition = $this->getExtendedContainCondition($condition);
 				$condition = $condition?$condition->toStorageCondition():[];
-				return $schema->storageCount($condition,$limit?:$this->getLimit(), $this->getOffset() + $offset);
+				return $schema->storageCount($condition,$this->getOffset() + $offset, $limit?:$this->getLimit());
 			}
 		}
 

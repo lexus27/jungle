@@ -85,23 +85,28 @@ namespace Jungle\Application\Dispatcher {
 	 *
 	 *
 	 *
+	 * #module:controller:action
+	 * &error -> #{current}:{current}:error
+	 * &controller:action -> #{current}:controller:action
+	 * #{default}:{current}:{current}
+	 *
 	 */
 	abstract class Reference{
 
 
-		const TYPE_BUBBLE = 'bubble';
-		const TYPE_CURRENT = 'current';
-		const TYPE_DEFAULT = 'default';
+		const TYPE_BUBBLE    = 'bubble';
+		const TYPE_CURRENT   = 'current';
+		const TYPE_DEFAULT   = 'default';
 
-		const SAFE_STRICT       = 2;
-		const SAFE_NAMESPACE    = 1;
-		const SAFE_SOFT         = 0;
+		const SAFE_STRICT    = 2;
+		const SAFE_NAMESPACE = 1;
+		const SAFE_SOFT      = 0;
 
 
 		/**
-		 * @param $reference
-		 * @param array|null $default_reference
-		 * @param bool $finallyNormalize
+		 * @param               $reference
+		 * @param array|null    $default_reference
+		 * @param bool          $finallyNormalize
 		 * @return array
 		 */
 		public static function normalize($reference = null, array $default_reference = null, $finallyNormalize = true){
@@ -160,6 +165,26 @@ namespace Jungle\Application\Dispatcher {
 				}
 			}
 			return $reference;
+		}
+
+		/**
+		 * @param array $reference
+		 * @param callable $replacer
+		 * @return array
+		 */
+		public static function replace(array $reference, callable $replacer){
+			foreach($reference as $k => & $v){
+				$v = call_user_func($replacer, $k, $v);
+			}
+			return $reference;
+		}
+
+		/**
+		 * @param array $reference
+		 * @return string
+		 */
+		public static function stringify(array $reference){
+			return "#{$reference['module']}:{$reference['controller']}:{$reference['action']}";
 		}
 
 
@@ -269,6 +294,10 @@ namespace Jungle\Application\Dispatcher {
 			}
 		}
 
+		/**
+		 * @param array $queue
+		 * @param $config
+		 */
 		protected static function orderQueue(array & $queue, $config){
 			$defaultQueue = $queue;
 			usort($queue, function($a,$b) use($defaultQueue, $config) {

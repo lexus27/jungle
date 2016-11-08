@@ -9,7 +9,7 @@
  */
 namespace Jungle\Util\Data\Schema\OuterInteraction\ValueAccessor {
 
-	use Jungle\Util\Data\Record\Properties\PropertyRegistryInterface;
+	use Jungle\Util\Data\Record\PropertyRegistryInterface;
 
 	/**
 	 * Class Setter

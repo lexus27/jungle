@@ -9,15 +9,32 @@
  */
 namespace Jungle\User\AccessControl\Matchable {
 	
-	use Jungle\User\AccessControl\Context;
+	use Jungle\User\AccessControl\Matchable\Resolver\Inspector;
 
 	/**
 	 * Class Resolver
-	 * @package Jungle\User\AccessControl\Matchable
+	 * @package Jungle\User\AccessControl\Matchable\Matchable
 	 */
 	abstract class Resolver implements ResolverInterface{
 
+		/** @var  Inspector  */
+		protected $inspector;
 
+		/**
+		 * @param $inspector
+		 * @return $this
+		 */
+		public function setInspector(Inspector $inspector = null){
+			$this->inspector = $inspector;
+			return $this;
+		}
+
+		/**
+		 * @return Inspector
+		 */
+		public function getInspector(){
+			return $this->inspector;
+		}
 
 	}
 }

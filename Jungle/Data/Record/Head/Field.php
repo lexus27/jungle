@@ -14,7 +14,6 @@ namespace Jungle\Data\Record\Head {
 	use Jungle\Util\Data\Schema\OuterInteraction\Mapped\Field as MappedField;
 	use Jungle\Util\Data\Schema\ValueType;
 	use Jungle\Util\Data\Schema\ValueType\ValueTypePool;
-	use Jungle\Util\Data\Validation\Message\AggregationMessageException;
 
 	/**
 	 * Class Field

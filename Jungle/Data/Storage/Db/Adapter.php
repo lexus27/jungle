@@ -302,7 +302,7 @@ namespace Jungle\Data\Storage\Db {
 				],(array)$options));
 				$stmt = $this->query($sql->getSql(),$sql->getBindings(),$sql->getDataTypes(), true);
 				if($stmt){
-					return $stmt->fetchColumn(0);
+					return intval($stmt->fetchColumn(0));
 				}else{
 					return false;
 				}

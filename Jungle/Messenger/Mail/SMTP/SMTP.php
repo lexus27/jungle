@@ -7,17 +7,16 @@
  */
 namespace Jungle\Messenger\Mail\SMTP {
 
-	use Jungle\Communication\Stream;
-	use Jungle\Communication\Stream\Connection;
-	use Jungle\Communication\URL;
 	use Jungle\Messenger;
-	use Jungle\Messenger\ICombination;
-	use Jungle\Messenger\IContact;
+	use Jungle\Messenger\CombinationInterface;
+	use Jungle\Messenger\ContactInterface;
 	use Jungle\Messenger\Mail\Contact;
-	use Jungle\Messenger\Mail\IMessage;
+	use Jungle\Messenger\Mail\MessageInterface;
 	use Jungle\User\AccessAuth\Auth;
-	use Jungle\Util\Specifications\TextTransfer\Body\Multipart;
-	use Jungle\Util\Specifications\TextTransfer\Document;
+	use Jungle\Util\Communication\ApiInteractingStream\ExtraCombination;
+	use Jungle\Util\Communication\ApiInteractingStream\SmtpApi;
+	use Jungle\Util\Communication\Hypertext\Content\Multipart;
+	use Jungle\Util\Communication\Hypertext\Document;
 
 	/**
 	 * Class SMTP
@@ -31,22 +30,22 @@ namespace Jungle\Messenger\Mail\SMTP {
 		/** @var int */
 		protected $flushed = 0;
 
-		/** @var ICombination */
+		/** @var CombinationInterface */
 		protected $combination;
 
 		/** @Total for one send collection count $this->options['max_destinations'] */
 
-		/** @var IContact[] */
+		/** @var ContactInterface[] */
 		protected $to = [];
 
-		/** @var IContact[] */
+		/** @var ContactInterface[] */
 		protected $cc = [];
 
-		/** @var IContact[]*/
+		/** @var ContactInterface[]*/
 		protected $bcc = [];
 
 
-		/** @var  IContact[] */
+		/** @var  ContactInterface[] */
 		protected $_current_destinations = [];
 
 		/** @var array  */
@@ -57,31 +56,42 @@ namespace Jungle\Messenger\Mail\SMTP {
 		 * @param array $options
 		 */
 		public function __construct(array $options = []){
-			parent::__construct(array_merge([
-				'charset'           => 'utf-8',
-				'url'               => null,
-				'timeout'           => 5,
+			$this->options = array_merge([
+
+				'connector'         => null,
+				'secure_connector'  => null,
+
+				'host'              => null,
+				'port'              => null,
+				'secure'            => false,
+				'timeout'           => null,
+
 				'auth'              => null,
-				'from'              => null,
-				'change_headers'    => null,
+
+				'sender_from_login' => true,
+				'sender'            => null,
+
+				'charset'           => ini_get('default_charset'),
 				'extra_headers'     => null,
 
 				'timezone'          => 3,
 
 				'interval'          => 10,
 				'max_destinations'  => 30,
-				'mailer_service'    => 'PHP Jungle.messager.SMTP',
-			],$options));
-			$this->options['auth']      = Auth::getAccessAuth($this->options['auth']);
-			$this->options['url']       = URL::getURL($this->options['url']);
-			$this->options['from']      = Contact::getContact($this->options['from']);
+				'agent'             => 'JungleFramework Messenger',
+			],$options);
+			$this->options['auth'] = $auth = Auth::getAccessAuth($this->options['auth']);
+			if(!$this->options['sender'] && $this->options['sender_from_login']){
+				$this->options['sender'] = $auth->getLogin();
+			}
+			$this->options['sender']      = Contact::getContact($this->options['sender']);
 		}
 
 		/**
-		 * @param ICombination $combination
+		 * @param CombinationInterface $combination
 		 * @return void
 		 */
-		protected function begin(ICombination $combination){
+		protected function begin(CombinationInterface $combination){
 			$this->combination = $combination;
 			$this->to = [];
 			$this->cc = [];
@@ -89,23 +99,23 @@ namespace Jungle\Messenger\Mail\SMTP {
 		}
 
 		/**
-		 * @param IContact $destination
+		 * @param ContactInterface $destination
 		 * @return void
 		 */
-		protected function registerDestination(IContact $destination){
-			if($destination instanceof Messager\Mail\IContact){
+		protected function registerDestination(ContactInterface $destination){
+			if($destination instanceof Messenger\Mail\ContactInterface){
 				switch($destination->getType()){
-					case Messager\Mail\IContact::TYPE_MAIN:
+					case Messenger\Mail\ContactInterface::TYPE_MAIN:
 						if(count($this->to) < 1){
 							$this->to[] = $destination;
 						}else{
 							$this->cc[] = $destination;
 						}
 						break;
-					case Messager\Mail\IContact::TYPE_CC:
+					case Messenger\Mail\ContactInterface::TYPE_CC:
 						$this->cc[] = $destination;
 						break;
-					case Messager\Mail\IContact::TYPE_BCC:
+					case Messenger\Mail\ContactInterface::TYPE_BCC:
 						$this->bcc[] = $destination;
 						break;
 				}
@@ -121,10 +131,10 @@ namespace Jungle\Messenger\Mail\SMTP {
 		}
 
 		/**
-		 * @param ICombination $combination
+		 * @param CombinationInterface $combination
 		 * @return void
 		 */
-		protected function complete(ICombination $combination){
+		protected function complete(CombinationInterface $combination){
 			$this->flushSend();
 		}
 
@@ -159,179 +169,138 @@ namespace Jungle\Messenger\Mail\SMTP {
 		protected function sendCollection(){
 			if(!$this->to) throw new \LogicException();
 			/**
-			 * @var Contact $from
+			 * @var Contact $sender
 			 * @var Contact $author
 			 * @var \Jungle\User\AccessAuth\Pair $auth
-			 * @var URL $url
-			 * @var IMessage $m
-			 * @var IContact[] $destinations
+			 * @var MessageInterface $messageObject
+			 * @var ContactInterface[] $destinations
 			 */
-			$from           = $this->options['from'];
-			$author         = $m->getAuthor()?:$from;
-			$url            = $this->options['url'];
-			$m              = $this->combination->getMessage();
-			$destinations   = [];
+
+			$messageObject  = $this->combination->getMessage();
+
+			$host = $this->options['host'];
+			$sender = $this->options['sender'];
+			$auth = $this->options['auth'];
+			$author = $messageObject->getAuthor()?:$sender;
+			$destinations = [];
 
 
 			$document = new Document();
 			$document->setHeader('Date',            date("D, j M Y G:i:s")." +0{$this->options['timezone']}00");
-			$document->setHeader('From',            "{$this->prepareString($from->getName())} <{$from->getAddress()}>");
+			$document->setHeader('From',            "{$this->prepareString($sender->getName())} <{$sender->getAddress()}>");
 			$document->setHeader('Sender',          "{$this->prepareString($author->getName())} <{$author->getAddress()}>");
-			$document->setHeader('X-Mailer',        $this->options['mailer_service']);
+			$document->setHeader('X-Mailer',        $this->options['agent']);
 			$document->setHeader('Reply-To',        $document->getHeader('From'));
 			$document->setHeader('X-Priority',      "3 (Normal)");
-			$document->setHeader('Message-ID',      "<172562218.".date("YmjHis")."@{$url->getHost()}>");
-			$document->setHeader('Subject',         "{$this->prepareString($m->getSubject())}");
+			$document->setHeader('Message-ID',      "<172562218.".date("YmjHis")."@{$host}>");
+			$document->setHeader('Subject',         "{$this->prepareString($messageObject->getSubject())}");
 			$document->setHeader('MIME-Version',    "1.0");
 
-
-			if(is_array($this->options['change_headers'])){
-				$document->setHeaders($this->options['change_headers'],true);
-			}
-
 			if(is_array($this->options['extra_headers'])){
-				$document->setHeaders($this->options['extra_headers'],false);
+				$document->setHeaders($this->options['extra_headers'],true);
 			}
 
 			$to = [];
 			foreach($this->to as $d){
-				$to[] = ($d instanceof Messager\Mail\IContact && $d->getName()?$this->prepareString($d->getName()):'')." <{$d->getAddress()}>";
+				$to[] = ($d instanceof Messenger\Mail\ContactInterface && $d->getName()?$this->prepareString($d->getName()):'') . " <{$d->getAddress()}>";
 				$destinations[] = $d;
 			}
 			if($to) $document->setHeader('To',implode('; ',$to));
 
 			$cc = [];
 			foreach($this->cc as $d){
-				$cc[] = ($d instanceof Messager\Mail\IContact && $d->getName()?$this->prepareString($d->getName()):'')." <{$d->getAddress()}>";
+				$cc[] = ($d instanceof Messenger\Mail\ContactInterface && $d->getName()?$this->prepareString($d->getName()):'') . " <{$d->getAddress()}>";
 				$destinations[] = $d;
 			}
 			if($cc) $document->setHeader('Cc',implode('; ',$cc));
 
 			$bcc = [];
 			foreach($this->bcc as $d){
-				$bcc[] = ($d instanceof Messager\Mail\IContact && $d->getName()?$this->prepareString($d->getName()):'')." <{$d->getAddress()}>";
+				$bcc[] = ($d instanceof Messenger\Mail\ContactInterface && $d->getName()?$this->prepareString($d->getName()):'') . " <{$d->getAddress()}>";
 				$destinations[] = $d;
 			}
 			if($bcc) $document->setHeader('Bcc',implode('; ',$bcc));
-			if($m->hasAttachments()){
+			if($messageObject->hasAttachments()){
 
 				$body = new Multipart();
 
 				$main = new Document();
-				$main->setHeader('Content-Type',"{$m->getType()}; charset={$this->options['charset']}");
+				$main->setHeader('Content-Type',"{$messageObject->getType()}; charset={$this->options['charset']}");
 				$main->setHeader('Content-Transfer-Encoding',"8bit");
-				$main->setBody($m->getContent());
+				$main->setContent($messageObject->getContent());
 
 				$body->addPart($main);
 
-				foreach($m->getAttachments() as $attachment){
+				foreach($messageObject->getAttachments() as $attachment){
 					$a = new Document();
 					$a->setHeader('Content-Type',"{$attachment->getType()}; name=\"{$attachment->getName()}\"");
 					$a->setHeader('Content-Transfer-Encoding',"base64");
 					$a->setHeader('Content-Disposition',"{$attachment->getDisposition()}; filename=\"{$attachment->getName()}\"");
 					$a->setHeaders($attachment->getHeaders(),false);
-					$a->setBody($attachment->getRaw());
+					$a->setContent($attachment->getRaw());
 
 					$body->addPart($a);
 				}
-				$document->setBody($body);
+				$document->setContent($body);
 			}else{
-				$document->setHeader('Content-Type',"{$m->getType()}; charset={$this->options['charset']}");
+				$t = $messageObject->getType();
+				if(!$t){
+					$t = 'text/plain';
+				}
+				$document->setHeader('Content-Type',"{$t}; charset={$this->options['charset']}");
 				$document->setHeader('Content-Transfer-Encoding',"8bit");
-				$document->setBody($m->getContent());
+				$document->setContent($messageObject->getContent());
 			}
-			$message = $document->represent();
-			$stream = $this->getStream();
-			$stream->reset()->execute([
-				'defaults' => [
-					'rule' => [
-						'negated' => true
-					]
-				],
-				'commands' => [
-					[
-						'EHLO '.$url->getHost(),[
-						'code' => 250, 'msg' => 'SMTP Hello error'
-					]
-					],[
-						'AUTH LOGIN',[
-							'code' => 334, 'msg' => 'Authentication error(START)'
-						]
-					],[
-						$auth->getBase64Login(),[
-							'code' => 334, 'msg' => 'Authentication error(login)'
-						]
-					],[
-						$auth->getBase64Password(),[
-							'code'=> 235, 'msg' => 'Authentication error(password)'
-						]
-					],[
-						"MAIL FROM:<{$from->getAddress()}> SIZE=".strlen($message),[
-							'code' => 250, 'msg' => 'Sender invalid'
-						]
-					],[
-						'collection' => $destinations,
-						'handler'    => function($index,IContact $destination){
-							return [
-								"RCPT TO:<{$destination->getAddress()}>",[
-									'code' => [250,220,251],
-									'msg' => "Ошибка, адрес {$destination->getAddress()} не может быть доступен",
-									'negated' => true
-								]
-							];
-						}
-					], [
-						'DATA',[
-						'code' => 354, 'msg' => 'DATA pre send error'
-						]
-					],[
-						"$message\r\n.",[
-							'code' => [220,250], 'msg' => 'SMTP server not accepted send data'
-						]
-					], 'QUIT'
-				]
-			])->reset();
+			$message = (string)$document;
+			$apiCombination = $this->getApiCombination();
+			$apiCombination->run([
+				'login'     => $auth->getBase64Login(),
+				'password'  => $auth->getBase64Password(),
+
+				'mail_from' => $sender->getAddress(),
+				'recipient' => function() use($destinations) {
+					$a = [];
+					foreach($destinations as $contact){
+						$a[] = $contact->getAddress();
+					};
+					return $a;
+				},
+				'data' => $message,
+				'size' => strlen($message),
+
+				'connector'         => $this->options['connector'],
+				'secure_connector'  => $this->options['secure_connector'],
+			]);
 		}
 
 		/**
-		 * @return Stream\Specification
+		 * @return ExtraCombination
 		 */
-		protected function getSpecification(){
-			static $s;
-			if(!$s){
-				$s = new Stream\Specification();
-				$s->setCodeRecognizer(function($d){return intval(substr($d,0,3));});
-				$s->setCommandStructureModifier(function($d){return $d . "\r\n";});
-				$s->setReader(function($fp){
-					$data = "";
-					while($str = fgets($fp,515)){
-						$data .= $str;
-						if(substr($str,3,1) == " ") { break; }
-					}
-					return $data;
-				});
+		protected function getApiCombination(){
+			static $combination;
+			if(!$combination){
+				$combination = new ExtraCombination(new SmtpApi());
+				/** @var Auth $auth */
+				$auth = $this->options['auth'];
+				$combination->setDefaultParams([
+					'host'       => $this->options['host'],
+					'port'       => $this->options['port'],
+					'secure'     => $this->options['secure'],
+					'timeout'    => isset($this->options['timeout'])?$this->options['timeout']:null,
 
-			}
-			return $s;
-		}
+					'login'      => $auth->getBase64Login(),
+					'password'   => $auth->getBase64Login(),
+				]);
 
-		/**
-		 * @return Stream
-		 */
-		protected function getStream(){
-			static $s;
-			if(!$s){
-				$s = $this->getSpecification()->openStream([
-					'url'       => $this->options['url'],
-					'timeout'   => isset($this->options['timeout'])?$this->options['timeout']:3,
-					'start'     => [
-						null, [
-							'code' => 220, 'msg' => 'Error connect to SMTP server', 'negated' => true
-						]
-					]
+				$combination->setList([
+					'hello',
+					'auth',
+					'mail_from',
+					'recipient',
+					'data'
 				]);
 			}
-			return $s;
+			return $combination;
 		}
 
 	}

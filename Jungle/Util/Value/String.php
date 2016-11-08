@@ -408,7 +408,9 @@ namespace Jungle\Util\Value {
 		 */
 		public static function uncamelize($text,$delimiter = null) {
 			if(!$delimiter)$delimiter = self::$default_camelize_delimiter;
-			return mb_strtolower(preg_replace('/(?:(^|[a-zа-я])|(\s+)|(\W))([A-ZА-Я])/e', '"\\3"? "\\0" :("\\2"? "'.$delimiter.'\\4" :(mb_strlen("\\1")? "\\1'.$delimiter.'\\4" : "\\4"))', $text));
+			return mb_strtolower(preg_replace_callback('/(?:(^|[a-zа-я])|(\s+)|(\W))([A-ZА-Я])/uS', function($m) use($delimiter){
+				return $m[3]?$m[0]:($m[2]?$delimiter.$m[4]: (mb_strlen($m[1])? $m[1] . $delimiter . $m[4] : $m[4] ) );
+			}, $text));
 		}
 
 
@@ -426,7 +428,9 @@ namespace Jungle\Util\Value {
 		public static function camelize($text,$wordDelimiters = null,$firstLover = false) {
 			if(!$wordDelimiters)$wordDelimiters = self::$camelize_word_delimiters;
 			$s = self::uncamelize($text);
-			$s = preg_replace('/(^|\s+|'.implode('|',RegExp::pregQuoteArray($wordDelimiters,'/')).')([a-zа-я])/ei', 'mb_strtoupper("\\2")', $s);
+			$s = preg_replace_callback('/(^|\s+|'.implode('|',RegExp::pregQuoteArray($wordDelimiters,'/')).')([a-zа-я])/uSi', function($m){
+				return mb_strtoupper($m[2]);
+			}, $s);
 			return $firstLover?self::lcFirst($s):$s;
 		}
 
@@ -468,7 +472,6 @@ namespace Jungle\Util\Value {
 		 * @param null $delimiter
 		 * @param null $afterNumerable
 		 * @return mixed
-		 * @internal param null $pattern
 		 */
 		public static function increment($string, $value = 1, $delimiter = null, $afterNumerable = null){
 

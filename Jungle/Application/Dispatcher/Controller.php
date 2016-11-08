@@ -15,7 +15,20 @@ namespace Jungle\Application\Dispatcher {
 	 * Class Controller
 	 * @package Jungle\Application
 	 */
-	abstract class Controller extends Injectable implements ControllerInterface{}
+	abstract class Controller extends Injectable implements ControllerInterface{
+
+		/**
+		 * @return void
+		 */
+		public function initialize(){}
+
+		/**
+		 * @return array
+		 */
+		public function getDefaultMetadata(){
+			return [];
+		}
+	}
 
 }
 

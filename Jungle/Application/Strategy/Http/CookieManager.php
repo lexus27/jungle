@@ -13,15 +13,16 @@ namespace Jungle\Application\Strategy\Http {
 	use Jungle\Di\DiInterface;
 	use Jungle\Http\Request;
 	use Jungle\Http\Response;
-	use Jungle\Util\Specifications\Http\CookieManagerInterface;
-	use Jungle\Util\Specifications\Http\RequestInterface;
-	use Jungle\Util\Specifications\Http\ResponseInterface;
+	use Jungle\Util\Communication\HttpFoundation\Cookie\ManagerInterface;
+	use Jungle\Util\Communication\HttpFoundation\RequestInterface;
+	use Jungle\Util\Communication\HttpFoundation\ResponseInterface;
+	use Jungle\Util\Communication\URL;
 
 	/**
 	 * Class CookieManager
 	 * @package Jungle\Application\Strategy\Http
 	 */
-	class CookieManager extends Component implements CookieManagerInterface{
+	class CookieManager extends Component implements ManagerInterface{
 
 		/** @var  CookieManager */
 		protected $parent;
@@ -121,7 +122,7 @@ namespace Jungle\Application\Strategy\Http {
 		 * @param $hostname
 		 * @return mixed
 		 */
-		public function setHost($hostname = null){
+		public function setDomain($hostname = null){
 			$this->default_host = $hostname;
 			return $this;
 		}
@@ -129,12 +130,12 @@ namespace Jungle\Application\Strategy\Http {
 		/**
 		 * @return string|null
 		 */
-		public function getHost(){
+		public function getDomain(){
 			if($this->default_path !== null){
 				return $this->default_path;
 			}
 			if($this->parent){
-				return $this->parent->getHost();
+				return $this->parent->getDomain();
 			}
 			return $this->getDi()->getShared('request')->getServer()->getHost();
 		}
@@ -160,6 +161,26 @@ namespace Jungle\Application\Strategy\Http {
 			}
 			return false;
 		}
+
+		/**
+		 * @param $domain
+		 * @return mixed
+		 */
+		public function checkDomain($domain){
+			$domain_allowed = $this->getDomain();
+			$domain = array_reverse(explode('.',$domain));
+			$domain_allowed = array_reverse(explode('.',$domain_allowed));
+			foreach($domain_allowed as $i => $item){
+				if(!$item){
+					return true;
+				}
+				if($item && (!isset($domain[$i]) || strcasecmp($item,$domain[$i])!==0)){
+					return false;
+				}
+			}
+			return true;
+		}
+
 
 		/**
 		 * @param null $httpOnly
@@ -200,7 +221,7 @@ namespace Jungle\Application\Strategy\Http {
 
 		/**
 		 * @param $name
-		 * @return \Jungle\Util\Specifications\Http\Cookie
+		 * @return \Jungle\Util\Communication\HttpFoundation\Cookie
 		 */
 		public function getCookieObject($name){
 			return $this->getResponse()->getCookie($name);
@@ -213,19 +234,23 @@ namespace Jungle\Application\Strategy\Http {
 		 * @param null $path
 		 * @param null $secure
 		 * @param null $httpOnly
-		 * @param null $host
+		 * @param null $domain
 		 * @return mixed
 		 */
 		public function setCookie(
-			$key, $value, $expire = null, $path = null, $secure = null, $httpOnly = null, $host = null
+			$key, $value = null, $expire = null, $path = null, $secure = null, $httpOnly = null, $domain = null
 		){
-			$this->getResponse()->setCookie($key,$value,
-				$expire!==null?$expire:$this->getExpires(),
-				$path!==null?$path:$this->getPath(),
-				$secure!==null?$secure:$this->isSecure(),
-				$httpOnly!==null?$httpOnly:$this->isHttpOnly(),
-				$host !== null?$host:$this->getHost()
-			);
+			if(is_array($key)){
+				$this->getResponse()->setCookie($key);
+			}else{
+				$this->getResponse()->setCookie($key,$value,
+					$expire!==null?$expire:$this->getExpires(),
+					$path!==null?$path:$this->getPath(),
+					$secure!==null?$secure:$this->isSecure(),
+					$httpOnly!==null?$httpOnly:$this->isHttpOnly(),
+					$domain !== null?$domain:$this->getDomain()
+				);
+			}
 			return $this;
 		}
 

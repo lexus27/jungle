@@ -10,13 +10,13 @@ namespace Jungle\Data\Storage\Db\Structure\Column {
 	use Jungle\Data\Storage\Db\Structure\Column;
 	use Jungle\Data\Storage\Db\Structure\StructureObject;
 	use Jungle\Data\Storage\Db\Structure\Table;
-	use Jungle\Util\INamed;
+	use Jungle\Util\Named\NamedInterface;
 
 	/**
 	 * Class ForeignKey
 	 * @package Jungle\Data\Storage\Db\Structure\Column
 	 */
-	class ForeignKey extends StructureObject implements INamed{
+	class ForeignKey extends StructureObject implements NamedInterface{
 
 		const R_NOACTION    = null;
 

@@ -20,10 +20,10 @@ namespace Jungle\Util\Communication\URL\Host {
 		const TYPE_IPV6 = 2;
 
 		/** @var string  */
-		protected static $ip_v4_regex = '/^(25[0-5]|2[0-4][0-9]|1?[0-9][0-9]{1,2})(\.(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})){3}$/';
+		protected static $ip_v4_regex = '/^(25[0-5]|2[0-4][0-9]|1?[0-9][0-9]{1,2})(\.(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})){3}$/S';
 
 		/** @var string  */
-		protected static $ip_v6_regex = '/^([0-9a-f]|:){1,4}(:([0-9a-f]{0,4})*){1,7}$/i';
+		protected static $ip_v6_regex = '/^([0-9a-f]|:){1,4}(:([0-9a-f]{0,4})*){1,7}$/iS';
 
 		/** @var IP[] */
 		protected static $ip_collection = [];
@@ -123,7 +123,7 @@ namespace Jungle\Util\Communication\URL\Host {
 		 * @return bool
 		 */
 		public static function match($ip){
-			return filter_var($ip,FILTER_VALIDATE_IP | FILTER_FLAG_IPV6);(bool) preg_match('@[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}@',trim(trim($ip,'.')));
+			return filter_var($ip,FILTER_VALIDATE_IP | FILTER_FLAG_IPV6);
 		}
 
 		/**

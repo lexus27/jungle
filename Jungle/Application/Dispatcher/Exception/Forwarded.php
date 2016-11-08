@@ -19,7 +19,7 @@ namespace Jungle\Application\Dispatcher\Exception {
 	class Forwarded extends Exception{
 
 		/** @var  ProcessInterface */
-		protected $process;
+		public $process;
 
 		/**
 		 * Forwarded constructor.
@@ -27,14 +27,7 @@ namespace Jungle\Application\Dispatcher\Exception {
 		 */
 		public function __construct(ProcessInterface $process){
 			$this->process = $process;
-			parent::__construct('Forwarded');
-		}
-
-		/**
-		 * @return ProcessInterface
-		 */
-		public function getProcess(){
-			return $this->process;
+			parent::__construct('System: Forwarded');
 		}
 
 	}

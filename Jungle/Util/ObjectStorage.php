@@ -148,7 +148,7 @@ class ObjectStorage implements \ArrayAccess, \Countable, \Iterator{
 	/**
 	 * @return mixed
 	 */
-	public function & current(){
+	public function &current(){
 		return $this->objects[$this->_i];
 	}
 
@@ -180,14 +180,5 @@ class ObjectStorage implements \ArrayAccess, \Countable, \Iterator{
 		$this->_i = 0;
 	}
 
-	/**
-	 * Return the current element
-	 * @link http://php.net/manual/en/iterator.current.php
-	 * @return mixed Can return any type.
-	 * @since 5.0.0
-	 */
-	public function current(){
-		return $this->objects[$this->_i];
-	}
 
 }

@@ -22,22 +22,22 @@ trait ObservableTrait {
 	/**
 	 * @var array
 	 */
-	private $_events = [];
+	private $_srv_events = [];
 
 	/**
 	 * @var array
 	 */
-	private $_listeners = [];
+	private $_srv_listeners = [];
 
 	/**
 	 * @var array
 	 */
-	private $_listenersObjects = [];
+	private $_srv_listenersObjects = [];
 
 	/**
 	 * @var Observable[]
 	 */
-	private $_delegations = [];
+	private $_srv_delegations = [];
 
 
 	/**
@@ -60,7 +60,7 @@ trait ObservableTrait {
 			}
 		}else{
 			$name = strtolower($name);
-			if(!$this->hasEvent($name))$this->_events[] = $name;
+			if(!$this->hasEvent($name))$this->_srv_events[] = $name;
 		}
 	}
 
@@ -75,7 +75,7 @@ trait ObservableTrait {
 		if(is_string($eName) && $eName){
 			$eName = strtolower($eName);
 			if($this->hasEvent($eName) && $this->hasListeners($eName)){
-				$listeners = & $this->_listeners[$eName];
+				$listeners = & $this->_srv_listeners[$eName];
 				if($listeners){
 					array_splice($listeners,0,0,(array)$this->getAdditionListeners($eName));
 					foreach($listeners as $i => & $listener){
@@ -105,12 +105,12 @@ trait ObservableTrait {
 						}
 					}
 				}
-				foreach($this->_delegations as $delegate){
+				foreach($this->_srv_delegations as $delegate){
 					$output = call_user_func_array([$delegate,'invokeEvent'],array_merge([$eName,$args]));
 					if($output===false && $try)$try = false;
 				}
 
-				foreach($this->_listenersObjects as $object){
+				foreach($this->_srv_listenersObjects as $object){
 					if(method_exists($object,'invokeEvent')){
 						$output = call_user_func_array([$object,'invokeEvent'],array_merge([$eName,$args]));
 						if($output===false && $try)$try = false;
@@ -133,12 +133,12 @@ trait ObservableTrait {
 		$eName = strtolower($eName);
 		return (boolean)(
 			(
-				isset($this->_listeners[$eName]) &&
-				is_array($this->_listeners[$eName]) &&
-				count($this->_listeners[$eName])
+				isset($this->_srv_listeners[$eName]) &&
+				is_array($this->_srv_listeners[$eName]) &&
+				count($this->_srv_listeners[$eName])
 			) || (
-				$this->_listenersObjects
-			) || ($this->_delegations)
+				$this->_srv_listenersObjects
+			) || ($this->_srv_delegations)
 		);
 	}
 
@@ -148,7 +148,7 @@ trait ObservableTrait {
 	 */
 	public function hasEvent($eName){
 		$eName = strtolower($eName);
-		return in_array($eName,$this->_events,true);
+		return in_array($eName,$this->_srv_events,true);
 	}
 
 	/**
@@ -161,25 +161,25 @@ trait ObservableTrait {
 	 */
 	public function addListener($eName,$fn=null,$scope=null,$turn=null,array $config=[]){
 		if(is_object($eName) && $eName instanceof Observable){
-			if(array_search($eName,$this->_delegations,true)===false){
-				if(is_integer($turn))array_splice($this->_delegations,$turn,0,[$eName]);
-				else $this->_delegations[] = $eName;
+			if(array_search($eName,$this->_srv_delegations,true) === false){
+				if(is_integer($turn))array_splice($this->_srv_delegations,$turn,0,[$eName]);
+				else $this->_srv_delegations[] = $eName;
 			}
 			return true;
 		}elseif(is_object($eName) && $fn===null){
-			if(array_search($eName,$this->_listenersObjects,true)===false){
-				if(is_integer($turn))array_splice($this->_listenersObjects,$turn,0,[$eName]);
-				else $this->_listenersObjects[] = $eName;
+			if(array_search($eName,$this->_srv_listenersObjects,true) === false){
+				if(is_integer($turn))array_splice($this->_srv_listenersObjects,$turn,0,[$eName]);
+				else $this->_srv_listenersObjects[] = $eName;
 			}
 			return true;
 		}else{
 			if(is_callable($fn) || $fn instanceof \Closure || is_array($fn) || is_string($fn)){
 				$eName = strtolower($eName);
 				if($this->hasEvent($eName)){
-					if(!is_array($this->_listeners[$eName])){
-						$this->_listeners[$eName] = array();
+					if(!is_array($this->_srv_listeners[$eName])){
+						$this->_srv_listeners[$eName] = array();
 					}
-					$listeners = & $this->_listeners[$eName];
+					$listeners = & $this->_srv_listeners[$eName];
 					$listener = array(&$fn,&$scope,(array)$config);
 					if(is_integer($turn))array_splice($listeners,$turn,0,array($listener));
 					else $listeners[] = $listener;
@@ -198,20 +198,20 @@ trait ObservableTrait {
 	 */
 	public function removeListener($eName,$fn=null,$scope=null){
 		if(is_object($eName) && $fn===null){
-			if(($i = array_search($eName,$this->_listenersObjects,true))!==false){
-				array_splice($this->_listenersObjects,$i,1);
+			if(($i = array_search($eName,$this->_srv_listenersObjects,true)) !== false){
+				array_splice($this->_srv_listenersObjects,$i,1);
 			}
 			return true;
 		}else{
 			if(is_callable($fn) || $fn instanceof \Closure || is_array($fn) || is_string($fn)){
 				$eName = strtolower($eName);
 				if($this->hasEvent($eName)){
-					if(!is_array($this->_listeners[$eName])){
+					if(!is_array($this->_srv_listeners[$eName])){
 						return true;
 					}
-					foreach($this->_listeners[$eName] as $i => list($_fn,$_scope,$_config)){
+					foreach($this->_srv_listeners[$eName] as $i => list($_fn,$_scope,$_config)){
 						if($_fn===$fn && $scope===$_scope){
-							unset($this->_listeners[$eName][$i]);
+							unset($this->_srv_listeners[$eName][$i]);
 						}
 					}
 					return true;

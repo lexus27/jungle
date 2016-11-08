@@ -10,22 +10,33 @@
 namespace Jungle\Application {
 
 	use Jungle\Application;
+	use Jungle\Application\Dispatcher\ControllerInterface;
 	use Jungle\Application\Dispatcher\Exception;
 	use Jungle\Application\Dispatcher\Exception\Control;
 	use Jungle\Application\Dispatcher\Exception\NotCertainBehaviour;
 	use Jungle\Application\Dispatcher\Module;
 	use Jungle\Application\Dispatcher\ModuleInterface;
 	use Jungle\Application\Dispatcher\Process;
-	use Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface;
+	use Jungle\Application\Dispatcher\ProcessInitiatorInterface;
 	use Jungle\Application\Dispatcher\ProcessInterface;
 	use Jungle\Application\Dispatcher\Reference;
+	use Jungle\Application\Notification\Responsible\AccessDenied;
+	use Jungle\Application\Notification\Responsible\AuthenticationMissed;
+	use Jungle\Application\Notification\Responsible\NeedIntroduce;
 	use Jungle\Application\Router;
+	use Jungle\Application\Router\Routing;
 	use Jungle\Application\Router\RoutingInterface;
 	use Jungle\Application\View;
 	use Jungle\Di\HolderChains;
 	use Jungle\Di\Injectable;
 	use Jungle\Di\InjectionAwareInterface;
 	use Jungle\FileSystem;
+	use Jungle\Http\Response;
+	use Jungle\User\AccessControl\Context\Substitute;
+	use Jungle\User\AccessControl\Manager;
+	use Jungle\User\Verification\Hint;
+	use Jungle\Util\Data\Validation\Message\ValidationCollector;
+	use Jungle\Util\Data\Validation\Message\ValidatorMessage;
 
 	/**
 	 * Class Dispatcher
@@ -35,7 +46,7 @@ namespace Jungle\Application {
 
 
 		/** @var  StrategyInterface */
-		protected $current_strategy;
+		protected $dispatching_strategy;
 
 		/** @var  StrategyInterface[] */
 		protected $strategies = [];
@@ -51,11 +62,7 @@ namespace Jungle\Application {
 
 
 		/** @var array  */
-		protected $error_reference = [
-			'module'        => 'index',
-			'controller'    => 'index',
-			'action'        => 'error'
-		];
+		protected $error_reference      = '#index:index:error';
 
 		/** @var  string */
 		protected $default_module       = 'index';
@@ -72,36 +79,36 @@ namespace Jungle\Application {
 		/** @var  string */
 		protected $controller_suffix    = 'Controller';
 
+
 		/** @var  bool  */
 		protected $dispatching = false;
 
+		/** @var bool  */
+		protected $dispatching_error = false;
+
 		/** @var  RequestInterface */
-		protected $last_request;
+		protected $dispatching_request;
+
+		/** @var  RoutingInterface|ProcessInitiatorInterface */
+		protected $dispatching_routing;
+
+		/** @var ProcessInterface[]  */
+		protected $dispatching_processes = [];
 
 		/** @var  ProcessInterface */
-		protected $last_process;
+		protected $restored_process;
 
-		/** @var  RoutingInterface */
-		protected $last_routing;
 
 		/**
 		 * Dispatcher constructor.
 		 */
 		public function __construct(){
 			register_shutdown_function(function(){
-				if($this->dispatching){
-					$error = error_get_last();
-					if(isset($error) && ($error['type'] & (E_ERROR | E_PARSE | E_COMPILE_ERROR | E_CORE_ERROR | E_USER_ERROR | E_CORE_ERROR | E_COMPILE_ERROR | E_RECOVERABLE_ERROR))){
-						$this->handleFatalError($error['type'], $error['message'], $error['file'], $error['line']);
-					}else{
-						ob_end_flush();
-					}
-				}
+
+				$this->_errorsOnShutdown();
+
 			});
 		}
-
-
-
 
 		/**
 		 * @param $name
@@ -150,6 +157,38 @@ namespace Jungle\Application {
 			return $this->default_action;
 		}
 
+
+		/**
+		 * @param $suffix
+		 * @return $this
+		 */
+		public function setActionSuffix($suffix){
+			$this->action_suffix = $suffix;
+			return $this;
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getActionSuffix(){
+			return $this->action_suffix;
+		}
+
+		/**
+		 * @param $suffix
+		 * @return $this
+		 */
+		public function setControllerSuffix($suffix){
+			$this->controller_suffix = $suffix;
+			return $this;
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getControllerSuffix(){
+			return $this->controller_suffix;
+		}
 
 		/**
 		 * @param ModuleInterface $module
@@ -305,8 +344,8 @@ namespace Jungle\Application {
 		/**
 		 * @return StrategyInterface
 		 */
-		public function getCurrentStrategy(){
-			return $this->current_strategy;
+		public function getDispatchingStrategy(){
+			return $this->dispatching_strategy;
 		}
 
 		/**
@@ -316,14 +355,7 @@ namespace Jungle\Application {
 		public function matchStrategy(RequestInterface $request){
 			if($this->strategies_order === null){
 				$this->strategies_order = array_keys($this->strategies_definitions);
-				usort($this->strategies_order, function($a, $b){
-					$a = $this->strategies_definitions[$a]['priority'];
-					$b = $this->strategies_definitions[$b]['priority'];
-					if($a == $b){
-						return 0;
-					}
-					return $a > $b?1:-1;
-				});
+				usort($this->strategies_order, [$this,'_strategy_sort']);
 			}
 			foreach($this->strategies_order as $name){
 				$definition = $this->strategies_definitions[$name];
@@ -338,6 +370,22 @@ namespace Jungle\Application {
 				}
 			}
 			return null;
+		}
+
+
+
+		/**
+		 * @param $a
+		 * @param $b
+		 * @return int
+		 */
+		protected function _strategy_sort($a,$b){
+			$a = $this->strategies_definitions[$a]['priority'];
+			$b = $this->strategies_definitions[$b]['priority'];
+			if($a == $b){
+				return 0;
+			}
+			return $a > $b?1:-1;
 		}
 
 
@@ -361,24 +409,31 @@ namespace Jungle\Application {
 		}
 
 
-
+		public function getDefaultMetadata(){
+			return [
+				'private'   => false,
+				'hierarchy' => true,
+				'strategy'  => null,
+			];
+		}
 
 		/**
 		 * @param $reference
 		 * @return array
 		 */
 		public function getMetadata($reference){
+			$default = $this->getDefaultMetadata();
 			$reference = Reference::normalize($reference, [ 'module' => $this->default_module]);
 			$moduleName = $reference['module'];
 			if(!isset($this->modules[$moduleName])){
-				return [];
+				return $default;
 			}
 			$module = $this->modules[$moduleName];
 			if(!$module instanceof ModuleInterface){
 				$module = $this->_loadModule($moduleName,$module);
 				$this->modules[$moduleName] = $module;
 			}
-			return $module->getMetadata($reference['controller'], $reference['action'] );
+			return $module->getMetadata($reference['controller'], $reference['action']);
 		}
 
 
@@ -402,31 +457,41 @@ namespace Jungle\Application {
 			if($this->dispatching){
 				throw new Exception('dispatch already run!');
 			}
+			
 			try{
 				$strategy = $this->matchStrategy($request);
 				if(!$strategy){
 					throw new Exception('Not have matched Strategy for current request!');
 				}
-				$this->onStrategyRecognized($strategy);
-				if($this->beforeDispatch($request) !== false){
-					$this->onDispatchStarted($request);
+				$this->_prepareDispatch($request, $strategy);
+				if($this->_beforeDispatch($request, $strategy) !== false){
+
 					/**
-					 * @var RoutingInterface $routing
+					 * @var Routing $routing
 					 * @var RouterInterface $router
 					 */
 					$router = $strategy->getShared('router');
 					$matching = $router->getMatchGenerator($request);
 					foreach($matching as $routing){
 						try{
-							$this->last_routing = $routing;
+							$this->dispatching_routing = $routing;
 							if($routing->isUnknown()){
 								throw new NotCertainBehaviour('Defined router, no have "not_found" route');
 							}else{
-								$process = $this->control($routing->getReference(), (array) $routing->getParams(), null, $routing);
+								$process = $this->control(
+									$routing->getReference(),
+									(array) $routing->getParams(),
+									$routing, Process::CALL_ROUTING
+								);
 								$response = $this->prepareResponse($process);
-								$this->afterDispatch($request,$routing,$process);
+								$this->_afterDispatch($request,$routing,$process);
 								return $response;
 							}
+						}catch(Exception\Forwarded $forwarded){
+							$process = $forwarded->process;
+							$response = $this->prepareResponse($process);
+							$this->_afterDispatch($request,$routing,$process);
+							return $response;
 						}catch(Exception\ContinueRoute $e){
 							$routing->reset();
 							continue;
@@ -435,11 +500,80 @@ namespace Jungle\Application {
 				}
 				throw new NotCertainBehaviour('Defined router, no have "not_found" route');
 			}catch(\Exception $e){
-				return $this->handleException($e);
+				return $this->_handleException($e);
 			}finally{
-				$this->onDispatchContinue();
+				$this->_continueDispatch();
 			}
 		}
+
+		/**
+		 * @param ProcessInterface $process
+		 */
+		public function storeProcess(ProcessInterface $process){
+			$this->dispatching_processes[] = $process;
+		}
+
+		/**
+		 * @param ProcessInterface $process
+		 * @return ProcessInterface|null
+		 * @throws \Exception
+		 */
+		public function restoreProcess(ProcessInterface $process = null){
+			$r = array_pop($this->dispatching_processes);
+			if($process && $r !== $process){
+				throw new \Exception('Process is not valid for restoring');
+			}
+			$this->restored_process = $r;
+			return $r;
+		}
+
+		/**
+		 * @return ProcessInterface|null
+		 */
+		public function mainProcess(){
+			return $this->dispatching_processes?$this->dispatching_processes[0]:null;
+		}
+
+		/**
+		 * @return ProcessInterface|null
+		 */
+		public function currentProcess(){
+			return $this->dispatching_processes?$this->dispatching_processes[count($this->dispatching_processes)-1]:null;;
+		}
+
+		/**
+		 *
+		 * Подмена главного действия контроллера
+		 *
+		 * @TODO Проработка завершения всех предшествующих hmvc процессов
+		 *
+		 * @param $reference
+		 * @param array $params
+		 * @param ProcessInitiatorInterface|null $initiator
+		 * @return Response
+		 * @throws Control
+		 * @throws Exception\Forwarded
+		 */
+		public function forward($reference,array $params, ProcessInitiatorInterface $initiator){
+			try{
+				$initiator = $initiator?: $this->currentProcess();
+				if($initiator instanceof ProcessInterface){
+					$root = $initiator->getRoot();
+					$root->setState($root::STATE_FAILURE);
+				}else{
+					$root = $initiator;
+				}
+				$process = $this->control($reference, $params, $root, Process::CALL_FORWARD,$initiator, null);
+				throw new Exception\Forwarded($process);
+			}catch(Exception\Forwarded $forwarded){
+				if($this->dispatching_error){
+					return $this->prepareResponse($forwarded->process);
+				}else{
+					throw $forwarded;
+				}
+			}
+		}
+
 
 		/**
 		 *
@@ -450,44 +584,50 @@ namespace Jungle\Application {
 		 * JSON, HTML, XML и так далее
 		 *
 		 * @param $reference
-		 * @param $data
+		 * @param array $params
+		 * @param \Jungle\Application\Dispatcher\ProcessInitiatorInterface $initiator
+		 * @param string $initiator_type
+		 * @param ProcessInitiatorInterface $forwarder
 		 * @param $options
-		 * @param null|\Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface|ProcessInterface|Router\Routing $initiator
 		 * @return Process|mixed
 		 * @throws Control
+		 * @throws Exception\ContinueRoute
+		 * @throws \Jungle\Exception
 		 */
-		public function control($reference, $data = null, $options = null, ProcessInitiatorInterface $initiator = null){
+		public function control($reference, array $params, ProcessInitiatorInterface $initiator, $initiator_type,ProcessInitiatorInterface $forwarder = null, $options = null){
 			$reference = Reference::normalize($reference,[ 'module' => $this->default_module ]);
 
 			if(!($module = $this->getModule( ($moduleName = $reference['module']) ))){
 				throw new Control('Module "'.$moduleName.'" not found!');
 			}
 
+			$di = $this->getDi();
 			try{
-				$this->getDi()->insertHolder('module', $module, 10);
-				$this->beforeControl($reference, $module, $initiator);
-				$process = $module->control($reference,(array) $data, $options, $initiator);
-				$output = $this->checkoutProcess($process, $options);
-				$this->afterControl($output,$process);
+				$di->insertInjection('module', $module, 10);
+				$this->preControl($reference, $module, $initiator, $initiator_type,$forwarder);
+				$process = $module->control($reference,$params, $initiator, $initiator_type, $forwarder, $options);
+				$output = $this->_output($process, $options);
+				$this->postControl($output,$process);
 				return $output;
 			}finally{
-				$this->getDi()->restoreInjection('module', $module);
+				$di->restoreInjection('module', $module);
 			}
 		}
 
+
 		/**
 		 * @param ProcessInterface $process
-		 * @return ResponseInterface
+		 * @return Response
 		 */
 		public function prepareResponse(ProcessInterface $process){
-			$response = $this->last_request->getResponse();
+			$response = $this->dispatching_request->getResponse();
 			/** @var ViewInterface $view */
 			$view = $this->getDi()->getShared('view');
 			if($response->getContent() === null){
 				$rendered = $view->render(null,$process);
 				$response->setContent($rendered);
 			}
-			$this->current_strategy->complete($response, $view);
+			$this->dispatching_strategy->complete($response, $view);
 			return $response;
 		}
 
@@ -496,32 +636,76 @@ namespace Jungle\Application {
 		 * @param array|null $options
 		 * @return ProcessInterface|mixed
 		 */
-		public function checkoutProcess(ProcessInterface $process,array $options = null){
-			$this->last_process = $process;
-			if(is_array($options)){
-				if(isset($options['render']) && $options['render']){
-					/** @var ViewInterface $view */
-					$view   = $this->getDi()->getShared('view');
-					$alias  = null;
-					$render_variables  = [];
-					$render_options    = [];
-					if(is_array($options['render'])){
-						$alias              = $options['render']['alias'];
-						$render_variables   = (array)$options['render']['variables'];
-						$render_options     = (array)$options['render']['options'];
-					}elseif(is_string($options['render'])){
-						$alias = $options['render'];
+		protected function _output(ProcessInterface $process, $options = null){
+			try{
+				if(is_array($options)){
+					return $this->_renderProcess($process, $options);
+				}elseif(is_string($options) && $options){
+					$options = strtolower($options);
+					switch($options){
+						case'result': return $process->getResult();
+						case'buffered': return $process->getBuffered();
+						default:
+							/** @var ViewInterface $view */
+							$view   = $this->getDi()->getShared('view');
+							return $view->render($options,$process);
 					}
-					return $view->render($alias,$process,$render_variables, $render_options);
 				}
-				if(isset($options['result']) && $options['result']){
-					return $process->getResult();
-				}
-				if(isset($options['buffer']) && $options['buffer']){
-					return $process->getOutputBuffer();
-				}
+				return $process;
+			}finally{
+				$this->restoreProcess($process);
+				$this->restored_process = $process;
 			}
-			return $process;
+		}
+
+		/**
+		 * @param ProcessInterface $process
+		 * @param array $options
+		 * @return string|null
+		 */
+		protected function _renderProcess(ProcessInterface $process,array $options){
+			if(isset($options['render']) && $options['render']){
+				/** @var ViewInterface $view */
+				$view   = $this->getDi()->getShared('view');
+				$alias  = null;
+				$render_variables  = [];
+				$render_options    = [];
+				if(is_array($options['render'])){
+					$alias              = $options['render']['alias'];
+					$render_variables   = (array)$options['render']['variables'];
+					$render_options     = (array)$options['render']['options'];
+				}elseif(is_string($options['render'])){
+					$alias = $options['render'];
+				}
+				return $view->render($alias,$process,$render_variables, $render_options);
+			}elseif(isset($options['result']) && $options['result']){
+				return $process->getResult();
+			}elseif(isset($options['buffer']) && $options['buffer']){
+				return $process->getBuffered();
+			}
+			return null;
+		}
+
+		/**
+		 * @param array $params
+		 * @param array $reference
+		 * @param ModuleInterface $module
+		 * @param ControllerInterface $controller
+		 * @param ProcessInitiatorInterface $initiator
+		 * @param $initiator_type
+		 * @param ProcessInitiatorInterface $forwarder
+		 * @return Process
+		 */
+		public function factoryProcess(
+			array $params,
+			array $reference,
+			ModuleInterface $module,
+			ControllerInterface $controller,
+			ProcessInitiatorInterface $initiator,
+			$initiator_type,
+			ProcessInitiatorInterface $forwarder = null
+		){
+			return new Process($this, $reference, $module, $controller, $params, $initiator, $initiator_type,$forwarder);
 		}
 
 		/**
@@ -533,202 +717,89 @@ namespace Jungle\Application {
 			}
 		}
 
-
 		/**
-		 *
-		 * Подмена целевого действия контроллера
-		 *
-		 * @param $reference
-		 * @param $params
-		 * @param ProcessInitiatorInterface|null $initiator
-		 * @return ResponseInterface
-		 * @throws Control
-		 */
-		public function forward($reference, $params, ProcessInitiatorInterface $initiator = null){
-			try{
-				$process = $this->control($reference, $params, null, $initiator);
-				throw new Exception\Forwarded($process);
-			}catch (Exception\Forwarded $forward){
-				$process = $forward->getProcess();
-				return $this->prepareResponse($process);
-			}
-		}
-
-		/**
-		 * Специфично для HTTP
-		 *
-		 * @param $reference
-		 * @param $permanent
-		 */
-		public function redirect($reference, $permanent = false){
-
-		}
-
-
-
-		/**
-		 * @param $suffix
-		 * @return $this
-		 */
-		public function setActionSuffix($suffix){
-			$this->action_suffix = $suffix;
-			return $this;
-		}
-
-		/**
+		 * @param \Exception $e
+		 * @param ProcessInterface $process
 		 * @return mixed
 		 */
-		public function getActionSuffix(){
-			return $this->action_suffix;
-		}
-
-		/**
-		 * @param $suffix
-		 * @return $this
-		 */
-		public function setControllerSuffix($suffix){
-			$this->controller_suffix = $suffix;
-			return $this;
-		}
-
-		/**
-		 * @return mixed
-		 */
-		public function getControllerSuffix(){
-			return $this->controller_suffix;
-		}
-
-
-
-
-
-		/**
-		 * @param $num
-		 * @param $message
-		 * @param $filename
-		 * @param $line
-		 * @throws \Jungle\Application\Exception
-		 * @internal param bool $return
-		 */
-		public function handleFatalError($num, $message, $filename, $line){
-			if(ob_get_level()) ob_end_clean();
-			if($this->last_process){
-				$response = $this->forward($this->error_reference,[
-					'exception' => new \ErrorException($message,0,$num, $filename,$line)
-				], $this->last_process);
-			}elseif($this->last_routing){
-				$response = $this->forward($this->error_reference,[
-					'exception' => new \ErrorException($message,0,$num, $filename,$line)
-				], $this->last_routing);
-
-			}else{
-				throw new \Jungle\Application\Exception('Initiator is not recognized!');
+		public function interceptException(\Exception $e, ProcessInterface $process){
+			$this->event_manager->invokeEvent('dispatcher:interceptException', $this, $process, $e);
+			if($e instanceof NeedIntroduce){
+				$process->setTask('introduce', $e);
 			}
-			$response->send();
-			exit();
+			if($e instanceof ValidatorMessage || $e instanceof ValidationCollector){
+				$process->setTask('validation', $e);
+			}
+			if($e instanceof AuthenticationMissed){
+				$process->setTask('authentication', $e);
+			}
+			if($e instanceof AccessDenied){
+				$process->setTask('access', $e);
+			}
+			if($e instanceof Hint){
+				$process->setTask('verification', $e);
+			}
+			return $process->hasTasks();
 		}
 
 		/**
 		 * @param \Exception $e
-		 * @param bool $return
-		 * @return ResponseInterface
-		 * @throws \Jungle\Application\Exception
+		 * @param ProcessInterface $process
 		 */
-		public function handleException(\Exception $e, $return = true){
-			if(ob_get_level()) ob_end_clean();
+		public function interceptedException(\Exception $e, ProcessInterface $process){
+			$this->event_manager->invokeEvent('dispatcher:interceptedException', $this, $process, $e);
+		}
 
-			if($this->last_process){
-				$response = $this->forward($this->error_reference,[
-					'exception' => $e
-				], $this->last_process);
-			}elseif($this->last_routing){
-				$response = $this->forward($this->error_reference,[
-					'exception' => $e
-				], $this->last_routing);
-			}else{
-				throw new \Jungle\Application\Exception('Initiator is not recognized!');
+
+		/**
+		 * @param ProcessInterface $process
+		 * @throws AccessDenied
+		 */
+		public function beforeControl(ProcessInterface $process){
+			$this->event_manager->invokeEvent('dispatcher:beforeControl', $this, $process);
+
+			if($process->getInitiatorType() === Process::CALL_ROUTING){
+				/** @var Manager $access */
+				if($access = $this->getDi()->getShared('access',false)){
+					$substitute = new Substitute();
+					$substitute->setClass('MCA');
+					$substitute->setValue($process->getReference() + ['mca' => $process->getReferenceString()]);
+
+					$allowed = $access->enforce('control', $substitute);
+					if(!$allowed){
+						throw new AccessDenied();
+					}
+				}
 			}
 
-			if(!$return){
-				$response->send();
-				exit();
-			}
-
-			return $response;
-		}
-
-
-
-		/**
-		 * @param RequestInterface $request
-		 */
-		protected function beforeDispatch(RequestInterface $request){
-
 		}
 
 		/**
-		 * @param RequestInterface $request
-		 * @param RoutingInterface $routing
-		 * @param ProcessInterface $result
+		 * @param ProcessInterface $process
+		 * @param $result
 		 */
-		protected function afterDispatch(RequestInterface $request, Router\RoutingInterface $routing, ProcessInterface $result){
-
-		}
-
-		/**
-		 * @param StrategyInterface $strategy
-		 */
-		protected function onStrategyRecognized(StrategyInterface $strategy){
-			$this->current_strategy = $strategy;
-
-			$strategy->registerServices();
-
-		}
-
-		/**
-		 * @param RequestInterface $request
-		 */
-		protected function onDispatchStarted(RequestInterface $request){
-
-			$diChains = $this->getDi();
-			$diChains->insertHolder('strategy',$this->current_strategy, 5);
-
-			$default = $diChains->getInjection('default');
-			$default->setShared('request',$request);
-			$default->setShared('response',$request->getResponse());
-
-			$this->dispatching = true;
-			$this->last_request = $request;
+		public function afterControl(ProcessInterface $process, $result){
+			$this->event_manager->invokeEvent('dispatcher:afterControl', $this, $process);
 		}
 
 		/**
 		 *
-		 */
-		protected function onDispatchContinue(){
-
-			$diChains = $this->getDi();
-			$diChains->restoreInjection('strategy');
-
-			$default = $diChains->getInjection('default');
-			$default->removeService('request');
-			$default->removeService('response');
-
-			$this->current_strategy = null;
-			$this->dispatching      = false;
-			$this->last_request     = null;
-			$this->last_process     = null;
-		}
-
-
-
-		/**
+		 * Метод вызывается перед запуском инициализации Процесса,
+		 * здесь можно проверить правовую состоятельность вызова
+		 * Ответственным за ошибку в этом методе,
+		 * является контекст Инициатора в котором mca Был вызван.
+		 * В противном случае - ContinueRoute как переключатель
+		 *
 		 * @param $reference
 		 * @param ModuleInterface $module
-		 * @param null|\Jungle\Application\Dispatcher\Process\ProcessInitiatorInterface|ProcessInterface|Router\Routing $initiator
+		 * @param null|\Jungle\Application\Dispatcher\ProcessInitiatorInterface|ProcessInterface|Router\Routing $initiator
+		 * @param $initiator_type
+		 * @param null $forwarder
 		 * @throws Control
 		 * @throws Exception\ContinueRoute
 		 */
-		protected function beforeControl($reference, ModuleInterface $module, ProcessInitiatorInterface $initiator = null){
+		protected function preControl($reference, ModuleInterface $module, ProcessInitiatorInterface $initiator, $initiator_type,$forwarder = null){
+			$this->event_manager->invokeEvent('dispatcher:preControl', $this, $reference, $module, $initiator);
 
 			/**
 			 * В данном методе происходит пре-контроль
@@ -737,19 +808,22 @@ namespace Jungle\Application {
 			 * : Проверка, поддерживает ли контроль текущую стратегию
 			 * : Проверка, если Маршрут имеет динамичные ссылки и в системе нету такого действия - то пропустить маршрут
 			 */
-			if($initiator){
 
-				$meta = $module->getMetadata($reference['controller'], $reference['action']);
+			$this->getMetadata($reference);
 
-				// check hmvc support
-				if($initiator instanceof ProcessInterface && (!isset($meta['hierarchy']) || !$meta['hierarchy'])){
-					throw new Control("{$module->getName()}:{$reference['controller']}:{$reference['action']} not support hierarchy calling!");
-				}
-				// check private
-				if($initiator instanceof RoutingInterface && (
-						(isset($meta['private']) && $meta['private']) ||
-						(!$module->hasControl($reference['controller'], $reference['action']) && $initiator->getRoute()->isDynamic())
-					)
+			$meta = $module->getMetadata($reference['controller'], $reference['action']);
+
+			// check hmvc support
+			if($initiator instanceof ProcessInterface && (!isset($meta['hierarchy']) || !$meta['hierarchy'])){
+				throw new Control('mca "'.Reference::stringify($reference).'" is not supported Hierarchy call');
+			}
+			// check private
+			if($initiator instanceof RoutingInterface){
+				if(isset($meta['private']) && $meta['private']){
+					throw new Exception\ContinueRoute();
+				}elseif(
+					!$module->hasControl($reference['controller'], $reference['action'])
+					&& $initiator->getRoute()->isDynamic()
 				){
 					throw new Exception\ContinueRoute();
 				}
@@ -759,15 +833,15 @@ namespace Jungle\Application {
 			if(isset($meta['strategy']) && $meta['strategy']){
 				$strategy = $meta['strategy'];
 				if(!is_array($strategy)) $strategy = [$strategy];
-				$current = $this->current_strategy->getName();
-				if(!in_array($this->current_strategy->getName(), $strategy, true)){
+				$current = $this->dispatching_strategy->getName();
+				if(!in_array($current, $strategy, true)){
 
 					if($initiator instanceof RoutingInterface){
-						// if external request call (out of routing)
+						// if routed
 						throw new Exception\ContinueRoute();
 					}else{
 						// if hmvc call
-						throw new Control("{$module->getName()}:{$reference['controller']}:{$reference['action']} not support \"{$current}\" application strategy!");
+						throw new Control('Application request strategy "'.$current.'" not support in "'.Reference::stringify($reference).'"');
 					}
 				}
 			}
@@ -778,13 +852,160 @@ namespace Jungle\Application {
 		 * @param $output
 		 * @param ProcessInterface $process
 		 */
-		protected function afterControl($output,ProcessInterface $process){
+		protected function postControl($output,ProcessInterface $process){
+			$this->event_manager->invokeEvent('dispatcher:postControl', $this, $process, $output);
+		}
 
+		/**
+		 * @param \Exception $e
+		 * @param bool $return
+		 * @return ResponseInterface
+		 * @throws \Jungle\Application\Exception
+		 */
+		protected function _handleException(\Exception $e, $return = true){
+			if(ob_get_level()){
+				ob_end_clean();
+			}
+
+			$this->dispatching_error = true;
+			$reporter = $this->crash_reporter;
+			$reporter->report($e);
+			$process = $this->currentProcess()?: $this->restored_process;
+			try{
+				if($process){
+					$process->setState($process::STATE_FAILURE);
+					$response = $this->forward($this->error_reference,[
+						'exception' => $e
+					], $process);
+				}elseif($this->dispatching_routing){
+					$response = $this->forward($this->error_reference,[
+						'exception' => $e
+					], $this->dispatching_routing);
+				}else{
+					throw new \Jungle\Application\Exception('Initiator is not recognized!');
+				}
+				if(!$return){
+					$response->send();
+					exit();
+				}
+				return $response;
+			}catch(\Exception $e){
+				echo '500 Internal Server Error, sorry please';
+				exit();
+			}
 		}
 
 
+		/**
+		 * @param $num
+		 * @param $message
+		 * @param $filename
+		 * @param $line
+		 * @throws \Jungle\Application\Exception
+		 */
+		protected function _handleFatalError($num, $message, $filename, $line){
+
+			if(ob_get_level()){
+				ob_end_clean();
+			}
+			$this->dispatching_error = true;
+			$reporter = $this->crash_reporter;
+			$e =  new \ErrorException($message,0,$num, $filename,$line);
+			$reporter->report($e);
+			$process = $this->currentProcess()?: $this->restored_process;
+			try{
+				if($process){
+					$process->setState($process::STATE_FAILURE);
+					$response = $this->forward($this->error_reference,[
+						'exception' => $e
+					], $process);
+				}elseif($this->dispatching_routing){
+					$response = $this->forward($this->error_reference,[
+						'exception' => $e
+					], $this->dispatching_routing);
+				}else{
+					throw new \Jungle\Application\Exception('Initiator is not recognized!');
+				}
+				$response->send();
+			}catch(\Exception $e){
+				echo '500 Internal Server Error, sorry please';
+			}
+			exit();
+		}
+
+		protected function _errorsOnShutdown(){
+			if($this->dispatching){
+				$error = error_get_last();
+
+				$listen_error =
+					E_ERROR |
+					E_PARSE |
+					E_COMPILE_ERROR |
+					E_CORE_ERROR |
+					E_USER_ERROR |
+					E_CORE_ERROR |
+					E_COMPILE_ERROR |
+					E_RECOVERABLE_ERROR;
+
+				if(isset($error) && ($error['type'] & $listen_error)){
+					$this->_handleFatalError($error['type'], $error['message'], $error['file'], $error['line']);
+				}
+			}
+		}
 
 
+		/**
+		 * @param RequestInterface $request
+		 * @param StrategyInterface $strategy
+		 */
+		protected function _beforeDispatch(RequestInterface $request, StrategyInterface $strategy){
+			$this->event_manager->invokeEvent('dispatcher:beforeDispatch',false,$this, $request, $strategy);
+		}
+
+		/**
+		 * @param RequestInterface $request
+		 * @param RoutingInterface $routing
+		 * @param ProcessInterface $result
+		 */
+		protected function _afterDispatch(RequestInterface $request, Router\RoutingInterface $routing, ProcessInterface $result){
+			$this->event_manager->invokeEvent('dispatcher:afterDispatch',false,$this, $request, $routing, $result);
+		}
+
+		/**
+		 * @param RequestInterface $request
+		 * @param StrategyInterface $strategy
+		 * @throws \Jungle\Exception
+		 */
+		protected function _prepareDispatch(RequestInterface $request, StrategyInterface $strategy){
+			$diChains = $this->getDi();
+			$diChains->insertInjection('strategy',$strategy, 5);
+
+			$default = $diChains->getInjection('default');
+			$default->setShared('request',$request);
+			$default->setShared('response',$request->getResponse());
+
+			$this->dispatching              = true;
+			$this->dispatching_error        = false;
+			$this->dispatching_request      = $request;
+			$this->dispatching_strategy     = $strategy;
+			$strategy->registerServices();
+		}
+
+		protected function _continueDispatch(){
+			$diChains = $this->getDi();
+			$diChains->restoreInjection('strategy');
+
+			$default = $diChains->getInjection('default');
+			$default->removeService('request');
+			$default->removeService('response');
+
+
+			$this->dispatching              = false;
+			$this->dispatching_strategy     = null;
+			$this->dispatching_request      = null;
+			$this->restored_process             = null;
+			$this->dispatching_processes    = [];
+		}
 
 
 		/**

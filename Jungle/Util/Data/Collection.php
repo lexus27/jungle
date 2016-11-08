@@ -20,7 +20,8 @@ namespace Jungle\Util\Data {
 		\Countable,
 		\Iterator,
 		CollectionInterface,
-		Ordered\CollectionReadInterface{
+		Ordered\CollectionReadInterface,
+		\JsonSerializable{
 
 		/** @var array */
 		protected $items = [];
@@ -129,6 +130,14 @@ namespace Jungle\Util\Data {
 		 */
 		public function count(){
 			return count($this->items);
+		}
+
+
+		/**
+		 * @return mixed
+		 */
+		function jsonSerialize(){
+			return $this->getItems();
 		}
 
 

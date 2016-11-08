@@ -10,13 +10,13 @@ namespace Jungle\Data\Storage\Db\Structure\Column {
 	use Jungle\Data\Storage\Db\Structure\Column;
 	use Jungle\Data\Storage\Db\Structure\StructureObject;
 	use Jungle\Data\Storage\Db\Structure\Table;
-	use Jungle\Util\INamed;
+	use Jungle\Util\Named\NamedInterface;
 
 	/**
 	 * Class Index
 	 * @package Jungle\Data\Storage\Db\Structure\Column
 	 */
-	class Index extends StructureObject implements INamed{
+	class Index extends StructureObject implements NamedInterface{
 
 		const T_PRIMARY     = 'PRIMARY';
 
@@ -200,7 +200,7 @@ namespace Jungle\Data\Storage\Db\Structure\Column {
 				return false;
 			}
 			if($this->isNew()){
-				if($this->_adapter->createIndex($this)){
+				if($this->_adapter->addIndex($this)){
 					$this->setNew(false);
 					$this->setDirty(false);
 				}else{
@@ -210,7 +210,7 @@ namespace Jungle\Data\Storage\Db\Structure\Column {
 			}
 			if($this->isDirty()){
 				if($this->_adapter->removeIndex($this)){
-					if($this->_adapter->createIndex($this)){
+					if($this->_adapter->addIndex($this)){
 						$this->setNew(false);
 						$this->setDirty(false);
 					}else{

@@ -26,7 +26,7 @@ namespace Jungle\Application\Strategy\Http {
 		 * @return bool
 		 */
 		public function isDesiredRequest(RequestInterface $request){
-			return $request instanceof \Jungle\Util\Specifications\Http\RequestInterface;
+			return $request instanceof \Jungle\Util\Communication\HttpFoundation\RequestInterface;
 		}
 
 

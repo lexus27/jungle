@@ -9,13 +9,13 @@
  */
 namespace Jungle\Event {
 
-	use Jungle\Util\INamed;
+	use Jungle\Util\Named\NamedInterface;
 
 	/**
 	 * Interface EventInterface
 	 * @package Jungle\Event
 	 */
-	interface EventInterface extends INamed{
+	interface EventInterface extends NamedInterface{
 
 		/**
 		 * @param $name

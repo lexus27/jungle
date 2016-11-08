@@ -7,7 +7,7 @@
  */
 
 namespace Jungle\ExoCode\LogicConstruction;
-use Jungle\Util\INamed;
+use Jungle\Util\Named\NamedInterface;
 use Jungle\Util\Value\Massive;
 use Jungle\Util\Value\String;
 
@@ -15,7 +15,7 @@ use Jungle\Util\Value\String;
  * Class Operator
  * @package Jungle\ExoCode\LogicConstruction
  */
-class Operator implements INamed{
+class Operator implements NamedInterface{
 
 	/**
 	 * @var Operator[]

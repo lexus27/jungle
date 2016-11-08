@@ -9,13 +9,13 @@
  */
 namespace Jungle\Util\Data\Schema\Indexed {
 
-	use Jungle\Util\INamed;
+	use Jungle\Util\Named\NamedInterface;
 
 	/**
 	 * Class Index
 	 * @package Jungle\Util\Data\Schema
 	 */
-	abstract class Index implements IndexInterface, INamed{
+	abstract class Index implements IndexInterface, NamedInterface{
 
 		/** @var  string */
 		protected $name;

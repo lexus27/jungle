@@ -1420,8 +1420,8 @@ namespace Jungle\Data\Record\Head {
 			$referencedSchemafield, $referencedOppositeRelations = [],
 			array $options = null
 		){
-			return $this->define(array_replace_recursive([
-				'type' => self::TYPE_ONE,
+			return $this->relation($name, array_replace_recursive([
+				'type' => Relation::TYPE_ONE,
 				'fields' => $fields,
 				'referenced_fields' => $referencedFields,
 				'referenced_schema' => $referencedSchema,

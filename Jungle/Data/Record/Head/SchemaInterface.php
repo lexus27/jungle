@@ -11,7 +11,7 @@ namespace Jungle\Data\Record\Head {
 	
 	/**
 	 * Interface SchemaInterface
-	 * @package modelX
+	 * @package Jungle\Data\Record\Head
 	 */
 	interface SchemaInterface{
 

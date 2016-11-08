@@ -9,7 +9,7 @@ namespace Jungle\User\AccessControl\Matchable\Resolver\ConditionResolver\Excepti
 
 	/**
 	 * Class BadMethodCall
-	 * @package Jungle\User\AccessControl\Matchable\Resolver\ConditionResolver\Exception
+	 * @package Jungle\User\AccessControl\Matchable\Matchable\Resolver\ConditionResolver\Exception
 	 */
 	class BadMethodCall extends Query{
 		protected $type = 'call_error';

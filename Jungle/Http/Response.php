@@ -9,27 +9,29 @@
  */
 namespace Jungle\Http {
 	
-	use Jungle\Util\Specifications\Http\Cookie;
-	use Jungle\Util\Specifications\Http\CookieInterface;
-	use Jungle\Util\Specifications\Http\RequestInterface;
-	use Jungle\Util\Specifications\Http\ResponseInterface;
-	use Jungle\Util\Specifications\Http\ResponseSettableInterface;
-	use Jungle\Util\Specifications\Http\ServerInterface;
+	use Jungle\Util\Communication\HttpFoundation\Cookie;
+	use Jungle\Util\Communication\HttpFoundation\CookieInterface;
+	use Jungle\Util\Communication\HttpFoundation\RequestInterface;
+	use Jungle\Util\Communication\HttpFoundation\ResponseInterface;
+	use Jungle\Util\Communication\HttpFoundation\ResponseOnServerInterface;
+	use Jungle\Util\Communication\HttpFoundation\ResponsePointerInterface;
+	use Jungle\Util\Communication\HttpFoundation\ResponseSettableInterface;
+	use Jungle\Util\Communication\HttpFoundation\ServerInterface;
+	use Jungle\Util\Communication\Hypertext\HeaderRegistryTrait;
 
 	/**
 	 * Class Response
 	 * @package Jungle\Http
 	 */
-	class Response implements \Jungle\Application\ResponseInterface,ResponseInterface, ResponseSettableInterface{
+	class Response implements \Jungle\Application\ResponseInterface,ResponseInterface, ResponseSettableInterface, ResponseOnServerInterface{
+
+		use HeaderRegistryTrait;
 
 		/** @var  bool */
 		protected $sent = false;
 
 		/** @var  int */
 		protected $code;
-
-		/** @var  array */
-		protected $headers = [];
 
 		/** @var  CookieInterface[] */
 		protected $cookies = [];
@@ -78,17 +80,32 @@ namespace Jungle\Http {
 		}
 
 		/**
-		 * @return bool
-		 */
-		public function isTemporalRedirect(){
-			return $this->code === 302;
-		}
-
-		/**
 		 * @return null
 		 */
 		public function getRedirectUrl(){
 			return isset($this->headers['Location'])?$this->headers['Location']:null;
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function isContentLocated(){
+			return isset($this->headers['Content-Location']);
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getContentLocationUrl(){
+			return isset($this->headers['Content-Location'])?$this->headers['Content-Location']:null;
+		}
+
+		/**
+		 * @param string $name
+		 * @param array $arguments
+		 */
+		function __call($name, $arguments){
+			// TODO: Implement __call() method.
 		}
 
 
@@ -111,34 +128,25 @@ namespace Jungle\Http {
 		/**
 		 * @param $key
 		 * @param $value
-		 * @return mixed
-		 */
-		public function setHeader($key, $value){
-			$this->headers[$key] = $value;
-			return $this;
-		}
-
-		/**
-		 * @param $key
-		 * @return mixed
-		 */
-		public function getHeader($key){
-			return $this->headers[$key];
-		}
-
-
-
-		/**
-		 * @param $key
-		 * @param $value
-		 * @param int $expire
+		 * @param int $expires
 		 * @param string $path
 		 * @param null $secure
 		 * @param null $httpOnly
-		 * @param null $host
-		 * @return CookieInterface
+		 * @param null $domain
+		 * @return Interface
 		 */
-		public function setCookie($key, $value, $expire = null, $path = null, $secure = null, $httpOnly = null, $host = null){
+		public function setCookie($key, $value = null, $expires = null, $path = null, $secure = null, $httpOnly = null, $domain = null){
+			if(is_array($key)){
+				$key = array_replace([
+					'key'       => null,
+					'value'     => null,
+					'expires'   => null,
+					'path'      => null,
+					'secure'    => null,
+					'httpOnly'  => null,
+				],$key);
+				extract($key,EXTR_OVERWRITE);
+			}
 			if(isset($this->cookies[$key])){
 				$cookie = $this->cookies[$key];
 			}else{
@@ -146,11 +154,11 @@ namespace Jungle\Http {
 				$cookie->setName($key);
 			}
 			$cookie->setValue($value);
-			$cookie->setExpires($expire);
+			$cookie->setExpires($expires);
 			$cookie->setPath($path);
 			$cookie->setSecure($secure);
 			$cookie->setHttpOnly($httpOnly);
-			$cookie->setHost($host);
+			$cookie->setDomain($domain);
 			return $cookie;
 		}
 
@@ -163,7 +171,7 @@ namespace Jungle\Http {
 		}
 
 		/**
-		 * @return \Jungle\Util\Specifications\Http\CookieInterface[]
+		 * @return \Jungle\Util\Communication\HttpFoundation\Interface[]
 		 */
 		public function getCookies(){
 			return $this->cookies;
@@ -237,7 +245,7 @@ namespace Jungle\Http {
 					$value = $cookie->getValue();
 					$expire = $cookie->getExpires();
 					$path = $cookie->getPath();
-					$host = $cookie->getHost();
+					$host = $cookie->getDomain();
 					$secure = $cookie->isSecure();
 					$httpOnly = $cookie->isHttpOnly();
 					if(is_array($value) || is_object($value)){
@@ -285,20 +293,12 @@ namespace Jungle\Http {
 		}
 
 		/**
-		 * @param ServerInterface $server
-		 * @return mixed
-		 * @throws \Exception
-		 */
-		public function setServer(ServerInterface $server){
-			throw new \Exception('Not effect');
-		}
-
-		/**
 		 * @return ServerInterface
 		 */
 		public function getServer(){
 			return $this->request->getServer();
 		}
+
 	}
 }
 

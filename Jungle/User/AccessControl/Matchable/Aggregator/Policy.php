@@ -7,9 +7,8 @@
  */
 namespace Jungle\User\AccessControl\Matchable\Aggregator {
 
-	use Jungle\User\AccessControl\Context;
-	use Jungle\User\AccessControl\Matchable;
 	use Jungle\User\AccessControl\Matchable\Aggregator;
+	use Jungle\User\AccessControl\Matchable\Matchable;
 	use Jungle\User\AccessControl\Matchable\Rule;
 
 	/**
@@ -19,7 +18,7 @@ namespace Jungle\User\AccessControl\Matchable\Aggregator {
 	class Policy extends Aggregator{
 
 		/**
-		 * @param Matchable $matchable
+		 * @param \Jungle\User\AccessControl\Matchable\Matchable $matchable
 		 * @param bool $applied
 		 * @return $this
 		 */
@@ -32,7 +31,7 @@ namespace Jungle\User\AccessControl\Matchable\Aggregator {
 		}
 
 		/**
-		 * @param Matchable $matchable
+		 * @param \Jungle\User\AccessControl\Matchable\Matchable $matchable
 		 * @param bool|false $applied
 		 * @return $this
 		 */
