@@ -1,10 +1,10 @@
 {
   "name": "lexus27/jungle",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "license": "Apache 2.0",
   "description": "Jungle PHP Framework",
-  "keywords": ["framework", "toolkit"],
-  "homepage": "https://github.com/Lexus27/Jungle",
+  "keywords": ["framework", "toolkit","hmvc"],
+  "homepage": "https://github.com/Lexus27/jungle",
   "authors": [{
 	  "name": "Alexey Kutuzov",
 	  "email": "lexus27.khv@gmail.com",
