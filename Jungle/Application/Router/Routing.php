@@ -89,6 +89,7 @@ namespace Jungle\Application\Router {
 				$this->notFound		= true;
 				$this->params		= $params;
 				$this->reference	= $reference;
+				$this->route        = new NotFoundRoute($params, $reference);
 				if($throwException){
 					throw new MatchedException($this);
 				}
