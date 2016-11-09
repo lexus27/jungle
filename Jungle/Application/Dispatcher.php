@@ -819,7 +819,7 @@ namespace Jungle\Application {
 			}
 			// check private
 			if($initiator instanceof RoutingInterface){
-				if(isset($meta['private']) && $meta['private']){
+				if(!$initiator->isNotFound() && isset($meta['private']) && $meta['private']){
 					throw new Exception\ContinueRoute();
 				}elseif(
 					!$module->hasControl($reference['controller'], $reference['action'])
@@ -890,6 +890,9 @@ namespace Jungle\Application {
 				}
 				return $response;
 			}catch(\Exception $e){
+				if(ob_get_level()){
+					ob_end_clean();
+				}
 				echo '500 Internal Server Error, sorry please';
 				exit();
 			}
@@ -928,6 +931,9 @@ namespace Jungle\Application {
 				}
 				$response->send();
 			}catch(\Exception $e){
+				if(ob_get_level()){
+					ob_end_clean();
+				}
 				echo '500 Internal Server Error, sorry please';
 			}
 			exit();

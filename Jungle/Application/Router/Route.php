@@ -33,6 +33,7 @@ namespace Jungle\Application\Router {
 		 */
 		protected $router;
 
+		/** @var   */
 		protected $default_param_name;
 
 		/**
@@ -475,10 +476,11 @@ namespace Jungle\Application\Router {
 		 */
 		protected function _normalizeParams(array $params, RoutingInterface $routing){
 			$params = array_replace($this->default_params, $params);
+			$params = $this->prepareMatchedBindParams($params);
 			if($this->converter){
 				$params = call_user_func($this->converter, $params, $routing->getRequest(), $routing);
 			}
-			return $this->prepareMatchedBindParams($params);
+			return $params;
 		}
 
 
