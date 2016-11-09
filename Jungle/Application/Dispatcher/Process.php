@@ -199,14 +199,18 @@ namespace Jungle\Application\Dispatcher {
 		/**
 		 * @param mixed $key
 		 * @param bool $allowNull
+		 * @param bool $allowEmpty
+		 * @return
 		 * @throws NeedIntroduce
 		 */
-		public function requireParam($key, $allowNull = true){
-			if(array_key_exists($key,$this->params) && ($allowNull || isset($this->params[$key]))){
-				return $this->params[$key];
-			}else{
+		public function requireParam($key, $allowNull = true, $allowEmpty = false){
+			if(!array_key_exists($key,$this->params) ||
+			   (!$allowEmpty && empty($this->params[$key])) ||
+			   (!$allowNull && !isset($this->params[$key]))
+			){
 				throw new NeedIntroduce("Param ".$key." required");
 			}
+			return $this->params[$key];
 		}
 
 		/**
