@@ -32,7 +32,7 @@ namespace Jungle\Util\Data\Validation\Message {
 		 * @param string $type
 		 * @param string $field_name
 		 * @param array $params
-		 * @param array $messages
+		 * @param MessageInterface[] $messages
 		 * @param string $systemMessage
 		 */
 		public function __construct($type, $field_name,array $params = null, array $messages = null, $systemMessage = ''){
