@@ -134,7 +134,7 @@ namespace Jungle\Util\Data\Schema\ValueType {
 
 			$this->type(['email'],[
 				'rules' => [
-					new RegExp([ 'pattern' => '@^[[:alpha:]][\w\-\_]*@[[:alpha:]]\w*\.[[:alpha:]]\w*$@uS' ])
+					new RegExp([ 'pattern' => '@^[\w\-\.\d\_]*\@[\w\.]*$@uS' ])
 				]
 			]);
 			$this->type(['words'],[
