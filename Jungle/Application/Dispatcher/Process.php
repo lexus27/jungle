@@ -182,7 +182,7 @@ namespace Jungle\Application\Dispatcher {
 				throw new NeedIntroduce("Params ".implode(', ',(array)$required_names)." required");
 			}
 			if($required_names !== null && $returnOnlyRequired){
-				return array_intersect_key(array_flip($required_names), $this->params);
+				return array_intersect_key($this->params, array_flip($required_names));
 			}
 			return $this->params;
 		}
