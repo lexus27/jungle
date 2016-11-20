@@ -113,7 +113,7 @@ namespace Jungle\Util\Data\Schema {
 		/**
 		 * @return string
 		 */
-		public function getPrimaryFieldName(){
+		public function getPk(){
 			if(!$this->indexes){
 				/** @var FieldInterface[] $f */
 				$f = array_slice($this->fields,0,1,false);
@@ -140,7 +140,7 @@ namespace Jungle\Util\Data\Schema {
 		/**
 		 * @inheritDoc
 		 */
-		public function getPrimaryField(){
+		public function getPkField(){
 			if(!$this->indexes){
 				return $this->getFirstField();
 			}

@@ -9,7 +9,7 @@
  */
 namespace Jungle\User\AccessControl\Matchable\Resolver {
 
-	use Jungle\Data\Record\Head\Field;
+	use Jungle\Data\Record\Field\Field;
 	use Jungle\User\AccessControl\Context\ContextInterface;
 	use Jungle\User\AccessControl\Context\ObjectAccessor;
 	use Jungle\User\AccessControl\Matchable\Matchable;

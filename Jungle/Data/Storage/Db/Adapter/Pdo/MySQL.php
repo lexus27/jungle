@@ -34,6 +34,9 @@ namespace Jungle\Data\Storage\Db\Adapter\Pdo {
 		public function _handleOperationException($type = null,  \Exception $e = null){
 			if($e instanceof \PDOException){
 
+
+				// TODO Здесь требуется комплексный подход к определению большинства типичных ошибок операции
+
 				$code = $this->getLastErrorCode();
 				$message = $this->getLastErrorMessage();
 
@@ -52,6 +55,7 @@ namespace Jungle\Data\Storage\Db\Adapter\Pdo {
 				}
 				throw new Operation($e->getMessage(),$e->getCode(),$e);
 			}
+			throw $e;
 		}
 
 	}

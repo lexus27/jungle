@@ -77,14 +77,15 @@ namespace Jungle\Data\Storage\Db\Adapter {
 			$this->connection = new \PDO(
 				$options['type'].':'.implode(';',$dsn),
 				$username,$password,
-				array(
+				array_replace(isset($options['attributes'])? (array)$options['attributes']: [], [
 					\PDO::ATTR_CURSOR => \PDO::CURSOR_SCROLL,
 					\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION
-				)
+				])
 			);
 		}
 
 		/**
+		 * @param null $sequenceName
 		 * @return string
 		 */
 		public function lastCreatedIdentifier($sequenceName = null){

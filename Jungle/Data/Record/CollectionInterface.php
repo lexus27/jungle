@@ -9,7 +9,7 @@
  */
 namespace Jungle\Data\Record {
 
-	use Jungle\Data\Record\Head\Schema;
+	use Jungle\Data\Record\Schema\Schema;
 
 
 	/**

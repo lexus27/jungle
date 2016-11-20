@@ -18,7 +18,7 @@ namespace Jungle\Util\Data\Schema\Indexed {
 		/**
 		 * @return string
 		 */
-		public function getPrimaryFieldName();
+		public function getPk();
 
 		/**
 		 * @param string $fieldName

@@ -21,7 +21,7 @@ namespace Jungle\Util\Data\Schema\OuterInteraction {
 	 * @property Field[]    $fields
 	 *
 	 * @method Field[]      getFields()
-	 * @method Field        getPrimaryField()
+	 * @method Field        getPkField()
 	 */
 	abstract class Schema
 		extends \Jungle\Util\Data\Schema\Schema

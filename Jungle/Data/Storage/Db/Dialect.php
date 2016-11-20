@@ -11,6 +11,7 @@ namespace Jungle\Data\Storage\Db {
 	use Jungle\Data\Storage\Db\Structure\Column;
 	use Jungle\Data\Storage\Db\Structure\Column\ForeignKey;
 	use Jungle\Data\Storage\Db\Structure\Column\Index;
+	use Jungle\Util\Data\Condition\Condition;
 
 	/**
 	 * Class Dialect
@@ -569,10 +570,6 @@ namespace Jungle\Data\Storage\Db {
 		/**
 		 * @param Sql $servant
 		 * @param null $condition
-		 * @return array [
-		 *      0 => (string) $condition,
-		 *      1 => (array|null) $binds,
-		 *      2 => (array|null)$types
 		 * ]
 		 */
 		public function prepareCondition(Sql $servant, $condition = null){
@@ -624,9 +621,13 @@ namespace Jungle\Data\Storage\Db {
 						$this->prepareConditionTarget($servant, $left,$operator,$right);
 						$delimited = false;
 					}elseif($count === 3 || $count === 2){
-						$left = isset($c[0])?$c[0]:$c['left'];
-						$operator = isset($c[1])?$c[1]:$c['operator'];
-						$right = isset($c[2])?$c[2]:$c['right'];
+
+						list($left, $operator, $right) = Condition::toList($c,[0,'left'],[1,'operator'],[2,'right']);
+
+
+						//$left = isset($c[0])?$c[0]:$c['left'];
+						//$operator = isset($c[1])?$c[1]:$c['operator'];
+						//$right = isset($c[2])?$c[2]:$c['right'];
 						$this->prepareConditionTarget($servant, $left,$operator,$right);
 						$delimited = false;
 					}

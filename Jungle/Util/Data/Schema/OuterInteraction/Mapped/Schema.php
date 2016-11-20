@@ -18,7 +18,7 @@ namespace Jungle\Util\Data\Schema\OuterInteraction\Mapped {
 	 *
 	 * @method Field        getField($key)
 	 * @method Field[]      getFields()
-	 * @method Field        getPrimaryField()
+	 * @method Field        getPkField()
 	 *
 	 */
 	abstract class Schema extends \Jungle\Util\Data\Schema\OuterInteraction\Schema{
@@ -58,13 +58,13 @@ namespace Jungle\Util\Data\Schema\OuterInteraction\Mapped {
 		/**
 		 * @return string
 		 */
-		public function getOriginalPrimaryName(){
-			return $this->getPrimaryField()->getOriginalKey();
+		public function getPkOriginal(){
+			return $this->getPkField()->getOriginalKey();
 		}
 
 		/**
 		 * @param $key
-		 * @return \Jungle\Data\Record\Head\Field|null
+		 * @return \Jungle\Data\Record\Field\Field|null
 		 */
 		public function getFieldByOriginalKey($key){
 			foreach($this->getFields() as $field){
