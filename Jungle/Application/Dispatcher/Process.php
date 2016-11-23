@@ -527,7 +527,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @return mixed
 		 */
 		public function __set($key, $value){
-			throw new \LogicException('Not Effect');
+			$this->params[$key] = $value;
 		}
 
 		/**
@@ -535,7 +535,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @return mixed
 		 */
 		public function __unset($key){
-			throw new \LogicException('Not Effect');
+			unset($this->params[$key]);
 		}
 
 		/**
