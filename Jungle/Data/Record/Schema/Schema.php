@@ -364,6 +364,27 @@ namespace Jungle\Data\Record\Schema {
 			$this->validations[] = $validator;
 		}
 
+		/**
+		 * @param $field_name
+		 * @param $validatorType
+		 * @return Validation|null
+		 */
+		public function getValidationFor($field_name, $validatorType){
+			foreach($this->validations as $v){
+				if($v->type === $validatorType && in_array($field_name, $v->fields())){
+					return $v;
+				}
+			}
+			return null;
+		}
+
+		/**
+		 * @return array|Record\Validation\Validation[]
+		 */
+		public function getValidations(){
+			return $this->validations;
+		}
+
 		public function beginTransaction(){
 			$this->getDefaultStorage()->begin();
 		}

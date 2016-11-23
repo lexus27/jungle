@@ -23,6 +23,10 @@ namespace Jungle\Data\Record\Validation {
 		protected $fields = [];
 
 
+		public function fields(){
+			return $this->fields;
+		}
+
 		public function __construct($fields){
 			$this->fields = is_array($fields)?$fields:[$fields];
 		}
