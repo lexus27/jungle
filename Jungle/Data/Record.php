@@ -548,7 +548,7 @@ namespace Jungle\Data {
 				return $this->getRelated($key);
 			}
 
-			return $this;
+			throw new \Exception('Trying to getProperty "'.$key.'" not existing in schema "'.$this->_schema->getName().'"');
 		}
 
 
@@ -580,7 +580,7 @@ namespace Jungle\Data {
 			}else{
 				$relation = $this->_schema->getRelation($relation_key);
 				if(!$relation){
-					throw new \Exception('{relation:'.$relation_key.'} not exists in schema');
+					throw new \Exception('Trying to getRelated "'.$relation_key.'" not existing in schema "'.$this->_schema->getName().'"');
 				}else{
 					 $this->_related[$relation_key] = $related = $relation->load($this);
 				}
@@ -612,6 +612,7 @@ namespace Jungle\Data {
 		 * @param $relation_key
 		 * @param Record|null $object
 		 * @return $this
+		 * @throws \Exception
 		 */
 		public function setRelated($relation_key, Record $object = null){
 			if(isset($this->_schema->relations[$relation_key])){
@@ -621,6 +622,10 @@ namespace Jungle\Data {
 				}else{
 					$this->_related[$relation_key] = $object;
 				}
+			}else{
+
+				throw new \Exception('Trying to setRelated "'.$relation_key.'" not existing in schema "'.$this->_schema->getName().'"');
+
 			}
 			return $this;
 		}
@@ -640,7 +645,7 @@ namespace Jungle\Data {
 			}else{
 				$relation = $this->_schema->getRelation($relationship_key);
 				if(!$relation){
-					throw new \Exception('{relation:'.$relationship_key.'} not exists in schema');
+					throw new \Exception('Trying to addRelated "'.$relationship_key.'" not existing in schema "'.$this->_schema->getName().'"');
 				}elseif(!$relation instanceof RelationMany){
 					throw new \Exception('add{Related:'.$relationship_key.'} must be call to Many relation');
 				}else{
