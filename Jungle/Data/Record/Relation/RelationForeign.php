@@ -53,6 +53,10 @@ namespace Jungle\Data\Record\Relation {
 			if(isset($virtual))$this->virtual = $virtual;
 		}
 
+		public function getLocalFields(){
+			return $this->fields;
+		}
+
 		/**
 		 * @param Record $record
 		 * @return Record|null

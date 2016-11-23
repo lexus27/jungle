@@ -67,6 +67,9 @@ namespace Jungle\Data\Record\Relation {
 		 * @return bool
 		 */
 		public function isAllowedSchema(Schema $schema){
+			if(!$this->referenced_schema_allowed){
+				return true;
+			}
 			foreach($this->referenced_schema_allowed as $id){
 				if($schema->isDerivativeFrom($id)){
 					return true;
@@ -105,6 +108,10 @@ namespace Jungle\Data\Record\Relation {
 			}
 		}
 
+		public function getLocalFields(){
+			$fields = array_merge($this->fields,[$this->referenced_schema]);
+			return $fields;
+		}
 		/**
 		 * @param Record $record
 		 * @return Record|null
@@ -112,7 +119,7 @@ namespace Jungle\Data\Record\Relation {
 		public function load(Record $record){
 			// Загрузка при отсутствии значений полей внешнего ключа
 			// Проверяем есть ли возможность загрузить связанный объект
-			$data = $record->getProperties($this->fields + [$this->referenced_schema]);
+			$data = $record->getProperties($this->getLocalFields());
 			if(in_array(null, $data, true)){
 				return null;
 			}
@@ -149,7 +156,7 @@ namespace Jungle\Data\Record\Relation {
 		}
 
 		public function dataEmpty(){
-			return array_fill_keys($this->fields + [$this->referenced_schema], null);
+			return array_fill_keys($this->getLocalFields(), null);
 		}
 
 
