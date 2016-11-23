@@ -434,6 +434,7 @@ namespace Jungle\Data {
 		 * @return $this
 		 */
 		public function assign(array $data, $whiteList = null, $blackList = null, $actual = false){
+			$related_data = array_intersect_key($data,$this->_schema->relations);
 			$data = array_intersect_key($data,$this->_schema->fields);
 			if($whiteList !== null){
 				if(!is_array($whiteList)){
@@ -442,6 +443,7 @@ namespace Jungle\Data {
 					}
 					$whiteList = [ $whiteList ];
 				}
+				$related_data = array_intersect_key($related_data, array_flip($whiteList) );
 				$data = array_intersect_key($data, array_flip($whiteList) );
 			}
 			if($blackList !== null){
@@ -451,12 +453,16 @@ namespace Jungle\Data {
 					}
 					$blackList = [ $blackList ];
 				}
+				$related_data = array_diff_key($related_data, array_flip($blackList) );
 				$data = array_diff_key($data, array_flip($blackList) );
 			}
 
 			// выставляем значения в свойства объекта
 			foreach($data as $key => $val){
 				$this->{$key} = $val;
+			}
+			foreach($related_data as $key => $related){
+				$this->setRelated($key, $related);
 			}
 
 			if($actual){
@@ -582,7 +588,14 @@ namespace Jungle\Data {
 		 * @return $this
 		 */
 		public function setRelated($relation_key, Record $object = null){
-			$this->_related[$relation_key] = $object;
+			if(isset($this->_schema->relations[$relation_key])){
+				$r = $this->_schema->relations[$relation_key];
+				if($r instanceof RelationMany){
+					$this->addRelated($relation_key,$object);
+				}else{
+					$this->_related[$relation_key] = $object;
+				}
+			}
 			return $this;
 		}
 
