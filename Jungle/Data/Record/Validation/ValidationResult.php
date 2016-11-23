@@ -33,12 +33,15 @@ namespace Jungle\Data\Record\Validation {
 		/** @var ValidationResult[]  */
 		protected $related_error_validations = [];
 
+		protected static $_level = 0;
+
 		/**
 		 * ValidationResult constructor.
 		 * @param Record $record
 		 */
 		public function __construct(Record $record){
 			$this->record = $record;
+			parent::__construct('ValidationResult');
 		}
 
 		/**
@@ -81,7 +84,7 @@ namespace Jungle\Data\Record\Validation {
 		 * @return ValidationResult|null
 		 */
 		public function getOneRelatedValidation($relation_key){
-			return isset($this->related_error_validations[$relation_key])?$this->related_error_validations[$relation_key][0]:null;
+			return isset($this->related_error_validations[$relation_key][0])?$this->related_error_validations[$relation_key][0]:null;
 		}
 
 		/**
@@ -104,6 +107,65 @@ namespace Jungle\Data\Record\Validation {
 		 */
 		public function hasUnknownConstraint(){
 			return in_array(self::CONSTRAINT_UNKNOWN, $this->constraint_errors, true);
+		}
+
+
+
+
+
+		function __toString(){
+			self::$_level++;
+			$schema = $this->record->getSchema();
+
+			$fields = [];
+			foreach($this->field_errors as $fieldKey => $validations){
+				$field = "\t".'"'.$fieldKey.'"('.$schema->fields[$fieldKey]->getFieldType().') value: ' .
+				         var_export($this->record->{$fieldKey},true) . PHP_EOL;
+				$field.= "\t".'ValidationsFailed: ['. PHP_EOL ;
+				foreach($validations as $validation){
+					$field.= "\t\t".json_encode($validation) . PHP_EOL;
+				}
+				$field.= "\t".']';
+				$fields[] = $field;
+			}
+
+			$relations = [];
+			foreach($this->related_error_validations as $relationKey => $results){
+				$relation = "\t".'"'.$relationKey.'": [';
+				$res = [];
+				foreach($results as $result){
+					$str = "\r\n$result";
+					$str = strtr($str, [
+						PHP_EOL => PHP_EOL . str_pad("",self::$_level+1,"\t")
+					]);
+					$res[]= '{'.$str."\r\n".str_pad("",self::$_level,"\t").'}';
+				}
+				$relation.=implode(',',$res);
+				$relation.= ']';
+				$relations[] = $relation;
+			}
+
+
+
+			$string = [];
+			if(self::$_level === 1){
+				$string[]= 'ValidationError: "'.get_class($this).'"  ';
+			}
+			$string[]='Schema: "'. $schema->getName().'"';
+			if($this->constraint_errors){
+				$string[]='Constraints: '. implode(', ',$this->constraint_errors);
+			}
+
+			if($fields){
+				$string[]= "Fields: ". PHP_EOL.implode(PHP_EOL, $fields);
+			}
+			if($relations){
+				$string[]= "Relations: {". PHP_EOL.implode(PHP_EOL, $relations).PHP_EOL.'}';
+			}
+
+			self::$_level--;
+			return implode(PHP_EOL, $string);
+
 		}
 
 	}

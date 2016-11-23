@@ -17,7 +17,9 @@ namespace Jungle\Data\Record\Validation {
 	 */
 	class ValidationCollector extends \Exception{
 
-		public function __construct(){}
+		public function __construct($message = null){
+			parent::__construct($message);
+		}
 
 		protected $field_errors = [];
 
