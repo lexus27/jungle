@@ -349,6 +349,32 @@ namespace Jungle\Data {
 		}
 
 		/**
+		 * @param $relation_key
+		 * @return bool
+		 */
+		public function hasChangesRelated($relation_key){
+			$data = $this->_related_snapshot->earliest()->data();
+			if(isset($data[$relation_key]) xor isset($this->_related[$relation_key])){
+				return true;
+			}
+			return isset($data[$relation_key])
+			       && isset($this->_related[$relation_key])
+			       && $data[$relation_key] !== $this->_related[$relation_key];
+		}
+
+		/**
+		 * @param $relation_key
+		 * @return null
+		 */
+		public function getOldRelated($relation_key){
+			$data = $this->_related_snapshot->earliest()->data();
+			if(isset($data[$relation_key])){
+				return $data[$relation_key];
+			}
+			return null;
+		}
+
+		/**
 		 * @param null|array|string $field
 		 * @return array
 		 */
