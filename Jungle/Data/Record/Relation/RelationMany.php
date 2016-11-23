@@ -24,6 +24,8 @@ namespace Jungle\Data\Record\Relation {
 		 */
 		public $each_name;
 
+
+
 		/**
 		 * RelationMany constructor.
 		 * @param $name
@@ -32,9 +34,8 @@ namespace Jungle\Data\Record\Relation {
 		 * @param null $each_name
 		 */
 		public function __construct($name, $referenced_relation, $referenced_schema_name = null, $each_name = null){
-			$this->name = $name;
+			parent::__construct($name, $referenced_relation, $referenced_schema_name);
 			$this->each_name = $each_name;
-			$this->referenced_relation = ($referenced_schema_name? $referenced_schema_name . '.' :'') . $referenced_relation;
 		}
 
 		/**
@@ -55,12 +56,12 @@ namespace Jungle\Data\Record\Relation {
 		 * @throws Record\Exception
 		 */
 		public function afterRecordCreate(Record $record){
+
+			$this->_check();
+
 			/** @var Relationship $relationship */
 			$relationship = $record->getRelatedLoaded($this->name);
 			if($relationship){
-
-				$this->_check();
-
 				// получаем данные из текущей записи, для выставления их в каждую связанную
 				/** @var RelationForeign $opposite */
 				$opposite = $this->referenced_relation;
@@ -83,6 +84,9 @@ namespace Jungle\Data\Record\Relation {
 
 
 		public function afterRecordUpdate(Record $record, Snapshot $snapshot){
+
+			$this->_check();
+
 			/** @var Relationship $relationship */
 			$relationship = $record->getRelated($this->name);
 			$opposite = $this->getReferencedRelation();
@@ -174,11 +178,10 @@ namespace Jungle\Data\Record\Relation {
 
 		public function beforeRecordDelete(Record $record){
 
-			/** @var Relationship $relationship */
-			$relationship = $record->getRelated($this->name);
-
 			$this->_check();
 
+			/** @var Relationship $relationship */
+			$relationship = $record->getRelated($this->name);
 			/** @var RelationForeign $opposite */
 			$opposite = $this->referenced_relation;
 

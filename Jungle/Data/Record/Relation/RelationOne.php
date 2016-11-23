@@ -18,6 +18,18 @@ namespace Jungle\Data\Record\Relation {
 	 */
 	class RelationOne extends RelationAbstractHost{
 
+
+
+		/**
+		 * RelationMany constructor.
+		 * @param $name
+		 * @param $referenced_relation
+		 * @param null $referenced_schema_name
+		 */
+		public function __construct($name, $referenced_relation, $referenced_schema_name = null){
+			parent::__construct($name, $referenced_relation, $referenced_schema_name);
+		}
+
 		/**
 		 * @param Record $record
 		 * @return mixed
@@ -36,6 +48,7 @@ namespace Jungle\Data\Record\Relation {
 		 */
 		public function afterRecordSave(Record $record, Snapshot $snapshot = null){
 			if($record->hasChangesProperty($this->name)){
+				$this->_check();
 				/** @var Record $related */
 				$related = $record->getRelated($this->name);
 				$data = $this->referenced_relation->dataTo($record);

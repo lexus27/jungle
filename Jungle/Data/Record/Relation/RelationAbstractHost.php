@@ -44,7 +44,7 @@ namespace Jungle\Data\Record\Relation {
 			$this->referenced_relation = ($referenced_schema_name? $referenced_schema_name . '.' :'') . $referenced_relation;
 		}
 
-		public function initialize(){
+		public function _check(){
 
 			$initialized = (!$this->referenced_schema || !$this->referenced_fields || !$this->fields);
 
@@ -80,6 +80,8 @@ namespace Jungle\Data\Record\Relation {
 			}
 		}
 
+		public function initialize(){}
+
 
 		/**
 		 * @return RelationForeign
@@ -88,6 +90,7 @@ namespace Jungle\Data\Record\Relation {
 			if($this->referenced_relation instanceof RelationForeign){
 				return $this->referenced_relation;
 			}else{
+				$this->_check();
 				return $this->referenced_relation;
 			}
 		}
@@ -96,13 +99,12 @@ namespace Jungle\Data\Record\Relation {
 			return $this->getReferencedRelation()->createConditionTo($record, $this->condition);
 		}
 
-
 		public function referencedData(Record $record){
-			return $this->referenced_relation->dataTo($record, $this->phantom);
+			return $this->getReferencedRelation()->dataTo($record, $this->phantom);
 		}
 
 		public function getAttachSignature(){
-			return crc32(implode($this->fields + $this->referenced_fields));
+			return crc32(implode(array_merge($this->fields,$this->referenced_fields)));
 		}
 
 
