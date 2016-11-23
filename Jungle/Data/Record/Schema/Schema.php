@@ -52,7 +52,7 @@ namespace Jungle\Data\Record\Schema {
 		public $pk;
 
 		/** @var bool  */
-		public $pk_auto_generation = false;
+		public $pk_auto_generation = true;
 
 		/** @var  Field[] */
 		public $fields = [];
