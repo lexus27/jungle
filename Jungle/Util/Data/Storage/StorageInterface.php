@@ -81,9 +81,10 @@ namespace Jungle\Util\Data\Storage {
 		public function hasForeignControlSupport();
 
 		/**
+		 * @param null $sequence
 		 * @return mixed
 		 */
-		public function lastCreatedIdentifier();
+		public function lastCreatedIdentifier($sequence = null);
 
 		/**
 		 * @return mixed

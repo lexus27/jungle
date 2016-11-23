@@ -27,6 +27,7 @@ namespace Jungle\Application {
 	use Jungle\Application\Router\Routing;
 	use Jungle\Application\Router\RoutingInterface;
 	use Jungle\Application\View;
+	use Jungle\Data\Record\Validation\ValidationResult;
 	use Jungle\Di\HolderChains;
 	use Jungle\Di\Injectable;
 	use Jungle\Di\InjectionAwareInterface;
@@ -35,8 +36,6 @@ namespace Jungle\Application {
 	use Jungle\User\AccessControl\Context\Substitute;
 	use Jungle\User\AccessControl\Manager;
 	use Jungle\User\Verification\Hint;
-	use Jungle\Util\Data\Validation\Message\ValidationCollector;
-	use Jungle\Util\Data\Validation\Message\ValidatorMessage;
 
 	/**
 	 * Class Dispatcher
@@ -727,7 +726,7 @@ namespace Jungle\Application {
 			if($e instanceof NeedIntroduce){
 				$process->setTask('introduce', $e);
 			}
-			if($e instanceof ValidatorMessage || $e instanceof ValidationCollector){
+			if($e instanceof ValidationResult){
 				$process->setTask('validation', $e);
 			}
 			if($e instanceof AuthenticationMissed){

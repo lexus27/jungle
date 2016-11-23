@@ -9,7 +9,7 @@
  */
 namespace Jungle\Data\Record\Collection {
 
-	use Jungle\Data\Record\Head\Schema;
+	use Jungle\Data\Record\Schema\Schema;
 	use Jungle\Util\Data\Schema\OuterInteraction\ValueAccessAwareInterface;
 	use Jungle\Util\Data\Schema\OuterInteraction\ValueAccessor;
 	use Jungle\Util\Value\Cmp as UtilCmp;

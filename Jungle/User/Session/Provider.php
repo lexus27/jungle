@@ -141,6 +141,9 @@ namespace Jungle\User\Session {
 			$session = $this->storage->factorySession();
 			$session->setSessionId($this->storeSignature($signature));
 			$session->setCreateTime(time());
+			$request = $this->request;
+			$session->setRegisteredIp($request->getClient()->getIp());
+			$session->setRegisteredUserAgent($request->getBrowser()->getUserAgent());
 			$this->signature_inspector->setSignature($signature, $this->getRefreshLifetime());
 			return $session;
 		}

@@ -9,17 +9,18 @@
  */
 namespace Jungle\Data {
 
-	use Jungle\Data\Record\Collection\Relationship;
 	use Jungle\Data\Record\Exception;
 	use Jungle\Data\Record\Exception\Field\AccessViolation;
 	use Jungle\Data\Record\Exception\Field\ReadonlyViolation;
 	use Jungle\Data\Record\Exception\Field\UnexpectedValue;
 	use Jungle\Data\Record\ExportableInterface;
-	use Jungle\Data\Record\Head\Field;
-	use Jungle\Data\Record\Head\Field\Relation;
-	use Jungle\Data\Record\Head\Field\Virtual;
-	use Jungle\Data\Record\Head\Schema;
-	use Jungle\Data\Record\TransientState;
+	use Jungle\Data\Record\Relation\Relation;
+	use Jungle\Data\Record\Relation\RelationMany;
+	use Jungle\Data\Record\Relation\Relationship;
+	use Jungle\Data\Record\Repository;
+	use Jungle\Data\Record\Schema\Schema;
+	use Jungle\Data\Record\Snapshot;
+	use Jungle\Data\Record\Validation\ValidationResult;
 	use Jungle\Data\Storage\Exception\DuplicateEntry;
 	use Jungle\Data\Storage\Exception\Operation;
 	use Jungle\Util\Data\Record\PropertyRegistryInterface;
@@ -27,9 +28,7 @@ namespace Jungle\Data {
 	use Jungle\Util\Data\Schema\OuterInteraction\SchemaAwareInterface;
 	use Jungle\Util\Data\Storage;
 	use Jungle\Util\Data\Validation;
-	use Jungle\Util\Data\Validation\Message\RuleMessage;
-	use Jungle\Util\Data\Validation\Message\ValidationCollector;
-	use Jungle\Util\Data\Validation\Message\ValidatorMessage;
+	use Jungle\Util\Value\String;
 	
 	/**
 	 * Class Record
@@ -45,165 +44,194 @@ namespace Jungle\Data {
 		\JsonSerializable,
 		SchemaAwareInterface{
 
-		const OP_CREATE = 1;
 
-		const OP_UPDATE = 2;
 
-		const OP_DELETE = 3;
-		
+		/** @var array  */
+		protected static $_default_snapshots = [];
+
+		protected static $_service_properties = [
+
+			'_property_iterator_index',
+			'_property_iterator_count',
+
+
+			'_idx',
+			'_class',
+			'_schema',
+
+			'_record_state',
+			'_operation_made',
+			'_operation_options',
+			'_property_safe',
+			'_initialized',
+
+			'_snapshot',
+
+			'_original',
+			'_validation',
+		];
+
+
 		/** @var   */
 		protected static $instantiatedRecordsCount = 0;
-		
-		
+
+
+
 		/** @var  int */
 		private $_property_iterator_index = 0;
-		
+
 		/** @var  int */
 		private $_property_iterator_count = 0;
 
-		/** @var bool  */
-		protected static $properties_changes_restrict_level = 0;
+
+
+		const OP_NONE   = null;
+		const OP_CREATE = 'create';
+		const OP_UPDATE = 'update';
+		const OP_DELETE = 'delete';
+
+		const STATE_NEW     = 'new';
+		const STATE_LOADED  = 'loaded';
+		const STATE_DELETED = 'deleted';
+
+
+		/** @var string  */
+		protected $_class;
 
 		/** @var  int */
-		protected $_internalIdentifier;
+		protected $_idx;
+
+		/** @var  \Jungle\Data\Record\Schema\Schema */
+		protected $_schema;
+
+		/** @var bool  */
+		protected $_property_safe = false;
 
 		/** @var bool */
 		protected $_initialized = false;
 
-		/** @var  \Jungle\Data\Record\Head\Schema */
-		protected $_schema;
-		
-		/** @var  int */
-		protected $_operation_made = self::OP_CREATE;
-		
-		/** @var bool */
-		protected $_operation_processing = false;
-		
+		/** @var  string */
+		protected $_operation_made = self::OP_NONE;
+
+		/** @var array  */
+		protected $_operation_options = [];
+
+		/** @var string  */
+		protected $_record_state = self::STATE_NEW;
+
 		/** @var  mixed */
 		protected $_original;
 
-		/** @var  array */
-		protected $_processed = [];
+		/** @var  ValidationResult|null */
+		protected $_validation;
 
-		/** @var  ValidationCollector|null */
-		protected $validation_collector;
+		/** @var  Snapshot|null */
+		protected $_snapshot;
 
-		/** @var  TransientState|null */
-		protected $transient_state;
+		/** @var  Snapshot|null */
+		protected $_related_snapshot;
 
+		/** @var array  */
+		protected $_related = [];
 
 		/**
 		 * Record constructor.
-		 * @param null $validationCollector
 		 */
-		public function __construct($validationCollector = null){
-			$this->_internalIdentifier = ++self::$instantiatedRecordsCount;
-		}
+		public function __construct(){
+			try{
+				$this->_property_safe = false;
 
-		/**
-		 * @param null $validationCollector
-		 */
-		protected function _initValidationCollector($validationCollector = null){
-			if($validationCollector !== null){
-				if($validationCollector instanceof ValidationCollector){
-					$this->setValidationCollector($validationCollector);
-				}elseif($validationCollector === true){
-					$this->setValidationCollector();
+				$this->_class = get_called_class();
+				$this->_idx = ++self::$instantiatedRecordsCount;
+
+				$this->_check_schema();
+
+				if(!isset(self::$_default_snapshots[$this->_class])){
+					$exclude = array_flip(static::$_service_properties);
+					$data = get_object_vars($this);
+					$data = array_diff_key($data,$exclude);
+					self::$_default_snapshots[$this->_class] = $data;
 				}
-			}
-		}
 
+				$data = [];
+				// выставим свойства по умолчанию
+				foreach($this->_schema->getDefaultAttributes() as $k => $v){
+					$data[$k] = $this->{$k} = $v;
+				}
 
-		/**
-		 * @param $operationMade
-		 * @return $this
-		 */
-		public function setOperationMade($operationMade){
-			if($this->_initialized){
-				throw new \LogicException('Record is already initialized!');
-			}
-			$this->_operation_made = $operationMade;
-			return $this;
-		}
+				if(!$this->_schema->isRecordMaking()){
 
-		/**
-		 * @return int
-		 */
-		public function getOperationMade(){
-			return $this->_operation_made;
-		}
-
-		/**
-		 * @param $original
-		 * @return $this
-		 */
-		public function setOriginalData($original){
-			if($this->_initialized){
-				throw new \LogicException('Record is already initialized!');
+					// Важно: Через схему вызовется Record::setInitialized, а в нем Record::_apply_state
+					// $original_sync === false
+					// $analyzed_data === schema fields defaults
+					$this->_schema->initializeRecord($this, $data);
+				}
+			}finally{
+				$this->_property_safe = true;
 			}
-			if($this->_original !== $original){
-				$this->_original = $original;
-				$this->_afterOriginalDataChanged();
-			}
-			return $this;
 		}
 
 		/**
 		 *
 		 */
-		protected function _afterOriginalDataChanged(){
-			$this->_resetAll();
-		}
+		protected function _check_schema(){
 
-
-
-		/**
-		 * @return $this
-		 */
-		public function markRecordInitialized(){
-			if(!$this->_initialized){
-				$this->_initialized = true;
-				$this->_schema->markInitialized($this);
-				if($this->_operation_made === self::OP_UPDATE){
-					$this->afterFetch();
-				}
-				$this->onRecordReady();
+			$schema_manager = Repository::getDefault();
+			$schema = $schema_manager->getLoadedSchema($this->_class);
+			if(!$schema){
+				$schema = $schema_manager->factorySchema($this->_class);
+				$schema_manager->initializeSchema($schema, $this);
 			}
-			return $this;
+
+			$this->_schema = $schema;
 		}
 
 		/**
-		 * @return $this
+		 * Основной метод для универсального сброса актуального состояния физических полей объекта
+		 *
+		 * Сбрасывает снапшот полей на состояние $data,
+		 * @param array $analyzed_data может быть взят из свойств объекта или из оригинала.
+		 * Должен содержать значения всех полей схемы
+		 *
+		 * @param bool|false $original_sync управляет синхронизацией с оригиналом,
+		 * если тру то состояние свойств изменится на текущий оригинал или на умолчания.
+		 * и если $analyzed_data NULL то снапшот будет создан можно сказать из оригинала,
+		 * т.к оригинал предварительно будет выставлен в свойства объекта
+		 * на основе которых формируется $data в этом методе
+		 *
+		 * $data может быть передан по предварительному анализу $this->{field_name} из вне
+		 *
 		 */
-		public function toFlyweight(){
-			$this->_initialized = false;
-			return $this;
+		protected function _apply_state($original_sync = false, array $analyzed_data = null){
+			if($original_sync){
+
+				if($this->_original === null){
+					foreach($this->_schema->getDefaultAttributes() as $k => $v){
+						$this->{$k} = $v;
+					}
+				}else{
+					foreach($this->_schema->decodeRaw($this->_original) as $k => $v){
+						$this->{$k} = $v;
+					}
+				}
+			}
+			if($analyzed_data === null){
+				if(!$this->_snapshot){
+					$analyzed_data = [];
+					foreach($this->_schema->getDefaultAttributes() as $k => $v){
+						$analyzed_data[$k] = $this->{$k};
+					}
+				}else{
+					$analyzed_data = $this->data();
+				}
+			}
+			$this->_snapshot = new Snapshot($analyzed_data);
+
+			$relations = $this->_schema->getRelations();
+			if($relations){
+				$this->_related_snapshot = new Snapshot($this->_related);
+			}
 		}
-
-
-		/**
-		 * @return mixed
-		 */
-		public function getOriginalData(){
-			return $this->_original;
-		}
-
-
-
-		/**
-		 * @return int
-		 */
-		public static function getStatusInstantiatedRecordsCount(){
-			return self::$instantiatedRecordsCount;
-		}
-
-		/**
-		 * @return mixed
-		 */
-		public function getIdentifierValue(){
-			return $this->_getFrontProperty($this->getSchema()->getPrimaryFieldName());
-		}
-
 
 		/**
 		 * @param Schema $schema
@@ -222,20 +250,191 @@ namespace Jungle\Data {
 		}
 
 		/**
+		 * @param string $record_state
+		 * @param $original_data
+		 * @return $this
+		 */
+		public function setRecordState($record_state = self::STATE_LOADED, $original_data){
+
+			// защита от изменения состояния если запись инициализована
+			if($this->_initialized){
+				throw new \LogicException('Record is already initialized!');
+			}
+
+			$this->_record_state = $record_state;
+
+			if($this->_original !== $original_data){
+				$this->_original = $original_data;
+			}
+
+			return $this;
+		}
+
+		/**
+		 * @return string
+		 */
+		public function getRecordState(){
+			return $this->_record_state;
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getOriginalData(){
+			return $this->_original;
+		}
+
+		/**
+		 * @param bool $initialized
+		 * @param array $_data
+		 * @return $this
+		 */
+		public function setInitialized($initialized = true,array $_data = null){
+			if(($old = $this->_initialized) !== $initialized){
+				$this->_initialized = $initialized;
+				if($initialized === true){
+
+					// Пере-Инициализация снимка данных актуального состояния
+					$this->_apply_state($this->_original !== null, $_data);
+
+					if($this->_record_state === self::STATE_LOADED){
+						$this->_schema->afterFetch($this);
+					}else{
+						$this->_schema->justConstruct($this);
+					}
+					$this->onRecordReady();
+				}
+			}
+			return $this;
+		}
+
+
+
+		/**
+		 * @return bool
+		 */
+		public function isInitialized(){
+			return $this->_initialized;
+		}
+
+
+
+
+		/**
+		 * @param null|array|string $field
+		 * @return bool
+		 */
+		public function hasChangesProperty($field = null){
+			// получаем исходный снимок и сверяем его напрямую с текущими значениями свойств объекта
+			$data = $this->_snapshot->earliest()->data();
+			if($field === null){
+				foreach($data as $k => $v){
+					if($this->{$k} !== $v){
+						return true;
+					}
+				}
+				return false;
+			}else{
+				if(is_array($field)){
+					foreach($field as $name){
+						if($data[$name] !== $this->{$name}){
+							return true;
+						}
+					}
+					return false;
+				}else{
+					return $data[$field] !== $this->{$field};
+				}
+			}
+		}
+
+		/**
+		 * @param null|array|string $field
+		 * @return array
+		 */
+		public function getChangedProperties($field = null){
+			// получаем исходный снимок и сверяя с ним выбераем измененые значения из свойств объекта
+			$a = [];
+			if($field && !is_array($field)){
+				$field = [$field];
+			}
+			if($this->_record_state === self::STATE_NEW){
+				$fields = array_keys($this->_schema->fields);
+				if($field){
+					$fields = array_intersect($fields, $field);
+				}
+				foreach($fields as $key){
+					$a[$key] = $this->{$key};
+				}
+			}else{
+				$data = $this->_snapshot->earliest()->data();
+				if($field){
+					$data = array_intersect_key($data, array_flip($field));
+				}
+				foreach($data as $k => $old){
+					$new = $this->{$k};
+					if($new !== $old) $a[$k] = $new;
+				}
+			}
+			return $a;
+		}
+
+
+
+		/**
+		 * @return array
+		 */
+		protected function data(){
+			$a = [];
+			foreach($this->_schema->fields as $k => $v){
+				$a[$k] = $this->{$k};
+			}
+			return $a;
+		}
+
+
+		/**
+		 * Функция для получения значений, с возможностью указания нужных свойств в наборе
+		 * @param array|null $name_list
+		 * @return array
+		 */
+		public function getProperties(array $name_list = null){
+			if($name_list === null){
+				return $this->data();
+			}else{
+				$a = [];
+				foreach(array_intersect(array_keys($this->_schema->fields),$name_list) as $key){
+					$a[$key] = $this->{$key};
+				}
+				return $a;
+			}
+		}
+
+		/**
+		 * @return int
+		 */
+		public static function getStatusInstantiatedRecordsCount(){
+			return self::$instantiatedRecordsCount;
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function getPkValue(){
+			return $this->getProperty($this->_schema->pk);
+		}
+
+
+		/**
 		 * @Complex-Triggered
 		 * @param array $data
 		 * @param null|string[]|string|int[]|int $whiteList
 		 * @param null|string[]|string|int[]|int $blackList
-		 * @param bool $appliedInOld
-		 * @param bool $appliedInNew
+		 * @param $actual
 		 * @return $this
-		 * @throws AccessViolation
-		 * @throws Exception
-		 * @throws ReadonlyViolation
-		 * @throws UnexpectedValue
 		 */
-		public function assign(array $data, $whiteList = null, $blackList = null, $appliedInOld = false, $appliedInNew = false, $dirtyApplied = false){
-			$attributes = $this->_schema->getFieldNames();
+		public function assign(array $data, $whiteList = null, $blackList = null, $actual = false){
+			$data = array_intersect_key($data,$this->_schema->fields);
 			if($whiteList !== null){
 				if(!is_array($whiteList)){
 					if(!is_numeric($whiteList) || !is_string($whiteList)){
@@ -243,7 +442,7 @@ namespace Jungle\Data {
 					}
 					$whiteList = [ $whiteList ];
 				}
-				$attributes = array_intersect($attributes, $whiteList);
+				$data = array_intersect_key($data, array_flip($whiteList) );
 			}
 			if($blackList !== null){
 				if(!is_array($blackList)){
@@ -252,32 +451,26 @@ namespace Jungle\Data {
 					}
 					$blackList = [ $blackList ];
 				}
-				$attributes = array_diff($attributes, $blackList);
+				$data = array_diff_key($data, array_flip($blackList) );
 			}
 
-			if(!self::$properties_changes_restrict_level){
-				if($readOnly = $this->_schema->getReadonlyNames()){
-					$attributes = array_diff($attributes, $readOnly);
-				}
-				if($privates = $this->_schema->getPrivateNames()){
-					$attributes = array_diff($attributes, $privates);
-				}
+			// выставляем значения в свойства объекта
+			foreach($data as $key => $val){
+				$this->{$key} = $val;
 			}
 
-			foreach($attributes as $key){
-				if(array_key_exists($key, $data)){
-					$this->setProperty($key,$data[$key],$appliedInOld,$appliedInNew,$dirtyApplied);
-				}
+			if($actual){
+				// данные которые были выставленны просто перекрывают прошлые данные в раннем снапшоте
+				$earliest = $this->_snapshot->earliest();
+				$earliest->setData(array_replace($earliest->data(), $data));
 			}
+
 			return $this;
 		}
 
 		/**
 		 * @param $key
 		 * @param $value
-		 * @param bool $appliedInOld
-		 * @param bool $appliedInNew
-		 * @param bool $dirtyApplied
 		 * @return $this
 		 * @throws AccessViolation
 		 * @throws Exception
@@ -285,38 +478,16 @@ namespace Jungle\Data {
 		 * @throws ReadonlyViolation
 		 * @throws UnexpectedValue
 		 */
-		public function setProperty($key, $value, $appliedInOld = false, $appliedInNew = false, $dirtyApplied = false){
-			$field = $this->_schema->getField($key);
-			if($field){
-
-				if(!self::$properties_changes_restrict_level){
-					if($field->isReadonly()){
-						throw new ReadonlyViolation('Could not set readonly "'.$key.'" property');
-					}
-					if($field->isPrivate()){
-						throw new AccessViolation('Could not set private property "'.$key.'"');
-					}
-				}
-
-
-				$value = $field->stabilize($value);
-				if(!$this->validation_collector && !$dirtyApplied && $field->validate($value) === false){
-					throw new UnexpectedValue('Verification aborted!');
-				}
-
-				if($field instanceof Relation){
-					$this->_setRelationFieldValue($key, $value, $field, $appliedInOld, $appliedInNew);
+		public function setProperty($key, $value){
+			if(array_key_exists($key, $this->_schema->fields)){
+				$this->{$key} = $value;
+			}
+			if(isset($this->_schema->relations[$key])){
+				if($this->_schema->relations[$key] instanceof RelationMany){
+					$this->addRelated($key,$value);
 				}else{
-					$this->_setFrontProperty($key, $value);
+					$this->setRelated($key,$value);
 				}
-
-				if($dirtyApplied){
-					$this->_processed[$key] = $value;
-					$this->_original = $this->_schema->valueAccessSet($this->_original,$key, $value);
-				}
-
-			}else{
-				throw new Exception('Set Field "'.$key.'" not exists in data map schema["'.$this->_schema->getName().'"]');
 			}
 			return $this;
 		}
@@ -326,7 +497,7 @@ namespace Jungle\Data {
 		 * @return bool
 		 */
 		public function hasProperty($key){
-			return !!$this->_schema->getField($key);
+			return isset($this->_schema->fields[$key]) || isset($this->_schema->relations[$key]);
 		}
 
 		/**
@@ -336,119 +507,153 @@ namespace Jungle\Data {
 		 * @throws Exception\Field
 		 */
 		public function getProperty($key){
-			$field = $this->_schema->getField($key);
-			if($field){
-				if(!self::$properties_changes_restrict_level && $field->isPrivate()){
-					throw new AccessViolation('Could not get private property "'.$key.'"');
-				}
-				return $this->_getFrontProperty($key);
-			}else{
-				throw new Exception\Field('Get Field "'.$key.'" not exists in data map schema["'.$this->_schema->getName().'"]');
+
+			if(isset($this->_schema->fields[$key])){
+				return $this->{$key};
 			}
+
+			if(isset($this->_schema->relations[$key])){
+				return $this->getRelated($key);
+			}
+
+			return $this;
 		}
 
 
-
-
-
 		/**
+		 * Отдает связанный объект без загрузки из бд,
+		 * тоесть только если связь по ключу уже была загружена в память
+		 * @param $relation_key
 		 *
+		 * @return bool|false в случае если связь не загружена
+		 * @return null в случае если связь пустая
+		 * @return Record|Relationship|bool
 		 */
-		protected function _continueSetProperty(){
-
-		}
-
-		/**
-		 * @param $key
-		 * @param $value
-		 * @param Relation $field
-		 * @param bool $appliedInOld
-		 * @param bool $appliedInNew
-		 * @throws AccessViolation
-		 * @throws Exception\Field
-		 * @throws ReadonlyViolation
-		 * @throws UnexpectedValue
-		 */
-		protected function _setRelationFieldValue($key, $value,Relation $field, $appliedInOld = false, $appliedInNew = false){
-			try{
-				self::$properties_changes_restrict_level++;
-				if(!$field->isMany()){
-					if($this->isInitializedProperty($key)){
-						$old = $this->_getFrontProperty($key);
-						if($value !== $old){
-							$this->_setFrontProperty($key, $value);
-							/** @var Relation[] $opposites */
-							if((!$appliedInOld && $old) || (!$appliedInNew && $value)){
-								$opposites = $field->getOppositeRelations($this);
-							}
-							if(!$appliedInOld && $old instanceof Record){
-								foreach($opposites as $f){
-									if($f->isMany()){
-										$relationship = $old->getProperty($f->getName());
-										$relationship->removeItem($this);
-									}else{
-										$old->setProperty($f->getName(), null, true, true);
-									}
-								}
-							}
-
-							if(!$appliedInNew && $value instanceof Record){
-								foreach($opposites as $f){
-									if($f->isMany()){
-										$relationship = $value->getProperty($f->getName());
-										$relationship->add($this);
-									}else{
-										$value->setProperty($f->getName(), $this, true, true);
-									}
-								}
-							}
-
-						}
-					}else{
-						$this->_setFrontProperty($key, $value);
-					}
-					if(!$value && $field->isBelongs()){
-						foreach($field->getFields() as $f){
-							$this->setProperty($f, null);
-						}
-						if($field->isDynamic()){
-							$this->setProperty($field->getDynamicSchemafield(), null);
-						}
-					}
-				}else{
-					if($value === null || (is_array($value) && empty($value))){
-						$relationship = $this->_getFrontProperty($key);
-						$relationship->remove();
-					}else{
-						throw new Exception\Field(
-							'Set property "' . $key .
-							'" positive value is forbidden, but you can detach all by pass null or empty array'
-						);
-					}
-				}
-			}finally{
-				self::$properties_changes_restrict_level--;
+		public function getRelatedLoaded($relation_key){
+			if(array_key_exists($relation_key, $this->_related)){
+				return $this->_related[$relation_key];
 			}
+			return $this->_record_state===self::STATE_NEW?null:false;
 		}
 
 		/**
-		 * @param $key
-		 * @param $value
-		 * @param $field
+		 * @param $relation_key
+		 * @param array $options
+		 * @return Record|Relationship|null
+		 * @throws \Exception
 		 */
-		protected function _beforeSetProperty($key, $value, $field){
+		public function getRelated($relation_key, array $options = null){
+			if(array_key_exists($relation_key, $this->_related)){
+				$related = $this->_related[$relation_key];
+			}else{
+				$relation = $this->_schema->getRelation($relation_key);
+				if(!$relation){
+					throw new \Exception('{relation:'.$relation_key.'} not exists in schema');
+				}else{
+					 $this->_related[$relation_key] = $related = $relation->load($this);
+				}
+			}
 
+			if($options && $related instanceof Relationship){
+
+				$options = array_replace([
+					'condition' => null,
+					'limit' => null,
+					'offset' => null,
+					'ordering' => null,
+				],$options);
+
+
+				return $related->extend(
+					$options['condition'],
+					$options['limit'],
+					$options['offset'],
+					$options['ordering']
+				);
+
+			}
+			return $related;
+		}
+
+
+		/**
+		 * @param $relation_key
+		 * @param Record|null $object
+		 * @return $this
+		 */
+		public function setRelated($relation_key, Record $object = null){
+			$this->_related[$relation_key] = $object;
+			return $this;
 		}
 
 		/**
-		 * @param $key
-		 * @param $value
-		 * @param $field
+		 * @param $relationship_key
+		 * @param Record|array $object
+		 * @return $this
+		 * @throws \Exception
 		 */
-		protected function _afterSetProperty($key, $value, $field){
+		public function addRelated($relationship_key, $object){
+			if(array_key_exists($relationship_key, $this->_related)){
+				$relationship = $this->_related[$relationship_key];
+				if(!$relationship instanceof Relationship){
+					throw new \Exception('add{Related:'.$relationship_key.'} must be call to Many relation');
+				}
+			}else{
+				$relation = $this->_schema->getRelation($relationship_key);
+				if(!$relation){
+					throw new \Exception('{relation:'.$relationship_key.'} not exists in schema');
+				}elseif(!$relation instanceof RelationMany){
+					throw new \Exception('add{Related:'.$relationship_key.'} must be call to Many relation');
+				}else{
+					$this->_related[$relationship_key] = $relationship = $relation->load($this);
+				}
+			}
 
+			if(!$object instanceof Record && !is_array($object) && !$object instanceof \Iterator){
+				throw new \InvalidArgumentException('argument object must be Record or Record[](array or \Iterator)');
+			}
+
+			if($object instanceof Record){
+				$relationship->add($object);
+			}else{
+				foreach($object as $record){
+					$relationship->add($record);
+				}
+			}
+			return $this;
 		}
 
+		public function __call($name, $arguments){
+			$three = substr($name, 0, 3);
+			switch($three){
+
+				case 'get':
+					$tail = String::uncamelize(substr($name, 3),'_');
+					return $this->getRelated($tail,isset($arguments[0])?$arguments[0]:null);
+					break;
+				case 'set':
+					$tail = String::uncamelize(substr($name, 3),'_');
+					return $this->setRelated($tail,isset($arguments[0])?$arguments[0]:null);
+					break;
+				case 'add':
+					$tail = String::uncamelize(substr($name, 3),'_');
+					return $this->addRelated($tail,$arguments);
+					break;
+				default:
+					if(substr($name, 0, 4) === 'find'){
+						$tail = String::uncamelize(substr($name, 4),'_');
+						foreach($this->_schema->relations as $relation){
+							if($relation instanceof RelationMany && $relation->each_name === $tail){
+								return $this->getRelated($relation->name, isset($arguments[0])?$arguments[0]:null);
+							}
+						}
+					}
+					break;
+			}
+
+			throw new \BadMethodCallException('Trying to call the not defined method "'.$name.'"');
+
+		}
 
 
 
@@ -456,7 +661,7 @@ namespace Jungle\Data {
 		 * @return string
 		 */
 		public function getSource(){
-			return $this->_schema->getSource();
+			return null;
 		}
 
 		/**
@@ -467,22 +672,618 @@ namespace Jungle\Data {
 		}
 
 		/**
-		 * @return Storage|string
+		 * @return string
 		 */
-		public function getStorage(){
-			return $this->_schema->getStorage();
+		public function getStorageService(){
+			return 'database';
 		}
 
 		/**
 		 * @return Storage|string
 		 */
-		public function getWriteStorage(){
-			return $this->_schema->getWriteStorage();
+		public function getWriteStorageService(){
+			return $this->getStorageService();
 		}
+
+		/**
+		 * @param bool $public
+		 * @return array
+		 * @throws Exception
+		 */
+		public function export( $public = true ){
+			$values = [ ];
+			if($this->_initialized){
+				foreach($this->_schema->fields as $name => $field){
+					$values[$name] = $this->getProperty($name);
+				}
+				return $values;
+			}
+			return $values;
+		}
+
+		public function getBootField(){
+			return null;
+		}
+
+		public function getBootValue(){
+			return null;
+		}
+
+		/**
+		 * Актуализация данных
+		 */
+		public function refresh(){
+			if($this->_record_state === self::STATE_NEW){
+				$this->_original = null;
+				$this->_apply_state(true, null);
+				$this->onRecordReady();
+			}else{
+				$item = $this->_schema->storageLoadById($this->getPkValue());
+				if($item !== $this->_original){
+					$this->_original = $item;
+					$this->_apply_state(true, null);
+					$this->onRecordReady();
+				}
+			}
+			return $this;
+		}
+
+		/**
+		 * @param null $fieldName
+		 * @return mixed
+		 */
+		public function reset($fieldName = null){
+			$data = $this->_snapshot->earliest()->data();
+			if($fieldName === null){
+				foreach($data as $k => $v){
+					$this->{$k} = $v;
+				}
+			}else{
+				if(array_key_exists($fieldName, $data)){
+					$this->{$fieldName} = $data[$fieldName];
+				}
+			}
+		}
+
+		/**
+		 * @return Snapshot
+		 */
+		public function getSnapshot(){
+			return $this->_snapshot;
+		}
+
+		/**
+		 * @param Operation $operation
+		 * @param bool $delete
+		 * @return bool
+		 * @throws Operation
+		 * @throws ValidationResult
+		 * @throws null
+		 */
+		protected function _handleStorageOperationException(Operation $operation, $delete = false){
+			if($this->_validation){
+				// будем перехватывать только ошибку дупликата
+				if($operation instanceof DuplicateEntry){
+					$this->_validation->addConstraintError(ValidationResult::CONSTRAINT_DUPLICATE);
+					throw $this->_validation;
+				}
+			}
+			throw $operation;
+		}
+
+
+		public function stabilize(){
+			// Values Stabilizing
+			foreach($this->_schema->fields as $name => $field){
+				$this->{$name} = $field->stabilize($this->{$name});
+			}
+		}
+
+		/**
+		 * @return ValidationResult|null
+		 */
+		public function getRecordValidation(){
+			return $this->_validation;
+		}
+
+		/**
+		 * @param bool $throw
+		 * @return bool|ValidationResult
+		 * @throws ValidationResult
+		 */
+		public function validate($throw = true){
+			// Values Stabilizing
+			foreach($this->_schema->fields as $name => $field){
+				$this->{$name} = $field->stabilize($this->{$name});
+			}
+			$this->_validation = $validation = new ValidationResult($this);
+			$this->_schema->validate($this,$validation);
+			if($throw){
+				if($validation->hasErrors()){
+					throw $validation;
+				}
+				return true;
+			}else{
+				return $validation;
+			}
+		}
+
+
+		/**
+		 * @return bool
+		 * @throws Exception
+		 */
+		public function save(){
+			if($this->_operation_made !== self::OP_NONE){
+				if($this->_operation_made === self::OP_DELETE){
+					throw new Exception('Current operation execute is not allow saving record!');
+				}
+				return true;
+			}
+
+			$repository = $this->_schema->getRepository();
+			try{
+				$repository->startOperation($this);
+
+				switch($this->_record_state){
+					case self::STATE_NEW:
+
+						if($this->_schema->beforeCreate($this)!==false){
+							$this->_operation_made = self::OP_CREATE;
+							$this->_operation_options = [];
+							if($this->_doCreate()){
+								$this->_operation_made  = self::OP_NONE;
+								$this->_record_state    = self::STATE_LOADED;
+								$this->_schema->onCreate($this);
+								return true;
+							}
+						}
+
+						break;
+
+					case self::STATE_LOADED:
+
+						// не вычисляет измененные связанные записи
+						if(!$this->hasChangesProperty()){
+							return true;
+						}
+
+						if($this->_schema->beforeUpdate($this)!==false){
+							$this->_operation_made = self::OP_UPDATE;
+							$this->_operation_options = [];
+							if($this->_doUpdate()){
+								$this->_schema->onUpdate($this);
+								$this->_operation_made = self::OP_NONE;
+								$this->onUpdate();
+								$this->onSave();
+								return true;
+							}
+						}
+						break;
+				}
+				return false;
+			}finally{
+				$repository->endOperation($this);
+				$this->_validation = null;
+				$this->_operation_made = self::OP_NONE;
+			}
+		}
+
+		/**
+		 * @return bool
+		 * @throws Operation
+		 * @throws ValidationResult
+		 * @throws \Exception
+		 * @throws bool
+		 * @throws null
+		 */
+		protected function _doCreate(){
+			$schema = $this->_schema;
+
+			$pk_field = $schema->getPkField();
+			$pk = $schema->getPk();
+
+			$operation = $schema->getRepository()->currentOperationControl();
+
+			$store = $schema->getWriteStorage($this);
+			$source = $schema->getWriteSource($this);
+
+
+			// Берем Отношения которые были затронуты в работе
+			/** @var Relation[]|null $relations */
+			$relations = null;
+			if($this->_related){
+				$relations = $this->_schema->getRelations();
+				$relations = array_intersect_key($relations, $this->_related);
+			}
+
+			// допустим объект сохраняется, чтобы обеспечить функциональность событий по отношениям
+			// нужно получить список Связей у которых стоит прослушка событий текущей схемы
+			// Виды прослушек следующие:
+			//  Создания,
+			//  Обновления,
+			//  Сохранения,
+			//  Удаления
+			// При этом объект который создает событие уже в памяти - это нужно иметь в виду
+			// А объекты которые отреагируют на него, могут быть даже не загружены, поэтому следует
+			// Произвести действия в базе данных либо загрузить все связанные объекты для обработки событий
+			//
+			// Так-же запись создающая событие может и не быть в памяти,
+			// т.к обновлялась из Коллекции способом синхронизации с хранилищем
+			// Тут получается что была обновленна коллекция записей и каждая запись связана
+			// с другими записями что с точки зрения такой событийности пораждает иерархичное
+			// или рекурсивное реагирование
+			// Возможно в таком случае помогут SET CASE WHEN THEN ELSE END для связанной коллекции, но это уже методом обновления .
+
+			// Validation
+			$validation = $this->validate(false);
+
+			if($validation->hasErrors()){
+				throw $validation;
+			}
+
+			try{
+
+				if($this->{$pk}){
+					// PK был выставлен
+					$pk_value = $this->{$pk};
+				}else{
+					// до сохранения можно получить значение PK
+					if(($pk_value = $schema->pkBeforeCreate($this, $pk_field, $store, $source)) ){
+						$this->{$pk} = $pk_value;
+						$this->_operation_options['pk_pre_generated'] = true;
+					}
+				}
+
+				if($relations){
+					// вычисление работы отношений перед сохранением
+					// исходя из того что в схеме есть Отношения, нужно работать с Транзакциями
+					$store->begin();
+					foreach($relations as $relation_name => $relation){
+						try{
+							$operation->relationStart($relation_name);
+							$relation->beforeRecordCreate($this);
+							$relation->beforeRecordSave($this);
+						}catch(Record\Validation\ValidationResult $relatedValidation){
+							$validation->addRelatedValidation($relation_name, $relatedValidation);
+						}finally{
+							$operation->relationEnd($relation_name);
+						}
+					}
+				}
+
+
+				$data = $this->data();
+				if(!$pk_value){
+					unset($data[$pk]);
+				}
+				$original = $schema->encodeRaw($data);
+
+				if(!$schema->storageCreate($original, $source, $store)){
+
+					// откат в случае ошибок
+					if($relations) $store->rollback();
+
+					return false;
+				}
+
+				// Синхронизируем оригинальные данные из свойств объекта, т.к сохранение прошло успешно
+				if($pk_value){
+					// идентификатор был получен перед сохранением и успешно сохранился в хранилище
+					$this->{$pk} = $data[$pk] = $pk_value;
+					$this->_original = $original;
+				}else{
+					// получаем идентификатор созданной записи в хранилище
+					$pk_value = $store->lastCreatedIdentifier();
+					// Стабилизируем полученное значение по правилам поля
+					$pk_value = $this->_schema->stabilize($this, $pk, $pk_value);
+
+					$this->{$pk} = $data[$pk] = $pk_value;
+
+					$this->_original = $schema->valueAccessSet($data, $pk, $pk_value);
+				}
+
+				if($relations){
+					// вычисление работы отношений после сохранения
+					// исходя из того что в схеме есть Отношения, нужно работать с Транзакциями
+					foreach($relations as $relation_name => $relation){
+						try{
+							$operation->relationStart($relation_name);
+							$relation->afterRecordCreate($this);
+							$relation->afterRecordSave($this);
+						}catch(Record\Validation\ValidationResult $relatedValidation){
+							$validation->addRelatedValidation($relation_name, $relatedValidation);
+						}finally{
+							$operation->relationEnd($relation_name);
+						}
+					}
+
+					// До коммита делаем выброс Валидации на верхний уровень
+					if($validation->hasErrors()) throw $validation;
+
+					// успешно завершаем транзакцию
+					$store->commit();
+				}else{
+					//делаем выброс Валидации на верхний уровень
+					if($validation->hasErrors()) throw $validation;
+				}
+
+			}catch(\Exception $e){
+
+				// откат в случае ошибок
+				if($relations) $store->rollback();
+
+				if($e instanceof Operation){
+					$this->_handleStorageOperationException($e,true);
+					return false;
+				}else{
+					throw $e;
+				}
+			}
+			// Сбрасываем снапшот на текущее сохраненное состояние
+			$this->_apply_state(false, $data);
+
+			$this->_onCreate();
+			return true;
+
+		}
+
+		/**
+		 * @return bool
+		 * @throws Operation
+		 * @throws ValidationResult
+		 * @throws \Exception
+		 * @throws bool
+		 * @throws null
+		 */
+		protected function _doUpdate(){
+
+			$schema = $this->_schema;
+
+
+			/*
+			 * Хотелось бы добавить выборку только по измененным полям
+			 * В валидации и связях
+			 */
+
+			$pk_value = $this->getPkValue();
+			$dynamic_update = $schema->isDynamicUpdate();
+
+			// Берем Отношения которые были изменены
+			/** @var Relation[]|null $relations */
+			$relations = null;
+			$related_earliest = null;
+			if($this->_related_snapshot){
+				$related_earliest = $this->_related_snapshot->earliest();
+				$relations = $this->_schema->getRelations();
+				$relations = array_intersect_key($relations, $this->_related);
+				// Здесь требуется получить потенциально измененнные связи в процессе работы с записью
+			}
+
+			$operation = $schema->getRepository()->currentOperationControl();
+
+			$store = $schema->getWriteStorage($this);
+
+
+			// Validation
+			$validation = $this->validate(false);
+
+			if($validation->hasErrors()){
+				throw $validation;
+			}
+
+			try{
+
+				if($relations){
+					// вычисление работы отношений перед сохранением
+					// исходя из того что в схеме есть Отношения, нужно работать с Транзакциями
+					$store->begin();
+					foreach($relations as $relation_name => $relation){
+						try{
+							$operation->relationStart($relation_name);
+							$relation->beforeRecordUpdate($this, $related_earliest);
+							$relation->beforeRecordSave($this, $related_earliest);
+						}catch(Record\Validation\ValidationResult $relatedValidation){
+							$validation->addRelatedValidation($relation_name, $relatedValidation);
+						}finally{
+							$operation->relationEnd($relation_name);
+						}
+					}
+
+				}
+
+				$dirty_data = $this->getChangedProperties();
+
+				$data = $this->data();
+
+				if($dynamic_update){
+					$to_storage = $schema->encodeRaw($dirty_data);
+					$to_original = $schema->encodeRaw( $data, $this->_original);
+				}else{
+					$to_storage = $schema->encodeRaw( $data, $this->_original);
+					$to_original = $to_storage;
+				}
+
+				if($to_storage){
+
+					if(!$schema->storageUpdateById($to_storage, $pk_value)){
+						// откат в случае ошибок
+						if($relations) $store->rollback();
+						return false;
+					}
+
+					// Синхронизируем оригинальные данные из свойств объекта, т.к сохранение прошло успешно
+					$this->_original = $to_original;
+				}
+
+
+
+				if($relations){
+					// вычисление работы отношений после сохранения
+					// исходя из того что в схеме есть Отношения, нужно работать с Транзакциями
+					foreach($relations as $relation_name => $relation){
+						try{
+							$operation->relationStart($relation_name);
+							$relation->afterRecordUpdate($this, $related_earliest);
+							$relation->afterRecordSave($this, $related_earliest);
+						}catch(Record\Validation\ValidationResult $relatedValidation){
+							$validation->addRelatedValidation($relation_name, $relatedValidation);
+						}finally{
+							$operation->relationEnd($relation_name);
+						}
+					}
+
+					// До коммита делаем выброс Валидации на верхний уровень
+					if($validation->hasErrors()) throw $validation;
+
+					// успешно завершаем транзакцию
+					$store->commit();
+				}else{
+					//делаем выброс Валидации на верхний уровень
+					if($validation->hasErrors()) throw $validation;
+				}
+			}catch (\Exception $e){
+				// откат в случае ошибок
+				if($relations) $store->rollback();
+
+				if($e instanceof Operation){
+					$this->_handleStorageOperationException($e,true);
+					return false;
+				}
+				throw $e;
+			}
+			// Сбрасываем снапшот на текущее сохраненное состояние,
+			// без синхронизации из оригинала т.к данные актуальны
+			$this->_apply_state(false, $data);
+
+			$this->_onUpdate($pk_value, $dirty_data);
+
+			return true;
+
+		}
+		
+
+
+
+		/**
+		 * @return bool
+		 * @throws Exception
+		 * @throws \Exception
+		 */
+		public function delete(){
+			if($this->_operation_made !== self::OP_NONE){
+				if($this->_operation_made !== self::OP_DELETE){
+					throw new Exception('Already run, op:save');
+				}
+				return true;
+			}
+
+			if(
+				$this->_record_state === self::STATE_LOADED
+				&& $this->_schema->beforeDelete($this) !== false
+			){
+				$this->_operation_made = self::OP_DELETE;
+				$this->_operation_options = [];
+				if($this->_doDelete()){
+					$this->_record_state = self::STATE_DELETED;
+					$this->_schema->onDelete($this);
+				}else{
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		/**
+		 * @return bool
+		 * @throws \Exception
+		 */
+		protected function _doDelete(){
+
+			$schema = $this->_schema;
+
+			/** @var Relation[]|null $relations */
+			$relations = $this->_schema->getRelations() ?: null;
+
+			$store =  $this->_schema->getWriteStorage($this);
+			try{
+				if($relations){
+					$store->begin();
+					foreach($relations as $name => $field){
+						$field->beforeRecordDelete($this);
+					}
+				}
+				$pk         = $schema->getPk();
+				$pk_value   = $this->getPkValue();
+
+				if(!$schema->storageRemove([[$pk,'=',$pk_value]])){
+					if($relations) $store->rollback();
+					return false;
+				}
+
+				if($relations){
+					foreach($relations as $name => $field){
+						$field->afterRecordDelete($this);
+					}
+					$store->commit();
+				}
+			}catch(\Exception $e){
+				if($relations) $store->rollback();
+				if($e instanceof Operation){
+					$this->_handleStorageOperationException($e,true);
+				}
+				throw $e;
+			}
+			$this->_onDelete();
+			return true;
+		}
+
+
+
+		public function beforeSave(){ }
+
+		public function beforeCreate(){}
+
+		public function beforeUpdate(){}
+
+		public function beforeDelete(){ }
+
+
+		public function onSave(){}
+
+		public function onCreate(){}
+
+		public function onUpdate(){ }
+
+		public function onDelete(){ }
+
+
+		public function afterFetch(){ }
+
+
+		protected function onRecordReady(){ }
+
+		public function onConstruct(){}
+
+
+		protected function _onCreate(){}
+
+		/**
+		 * @param $id
+		 * @param $dirty_data
+		 */
+		protected function _onUpdate($id,$dirty_data){}
+
+		protected function _onDelete(){}
+
+
+
+
 
 		/**
 		 * @param $name
-		 * @return mixed|Relationship|Record|null
+		 * @return mixed|\Jungle\Data\Record\Relation\Relationship|Record|null
 		 */
 		public function __get($name){
 			return $this->getProperty($name);
@@ -493,7 +1294,11 @@ namespace Jungle\Data {
 		 * @param $value
 		 */
 		public function __set($name, $value){
-			$this->setProperty($name, $value);
+			if($this->_property_safe){
+				$this->setProperty($name, $value);
+			}else{
+				$this->{$name} = $value;
+			}
 		}
 
 		/**
@@ -507,36 +1312,9 @@ namespace Jungle\Data {
 		/**
 		 * @param $name
 		 */
-		public function __unset($name){
-			$this->resetPropertyDefault($name);
-		}
+		public function __unset($name){}
 
-		/**
-		 * @param $name
-		 * @return mixed
-		 * @throws AccessViolation
-		 * @throws Exception\Field
-		 * @throws ReadonlyViolation
-		 * @throws UnexpectedValue
-		 */
-		public function resetPropertyDefault($name){
-			$field = $this->_schema->getField($name);
-			if($field){
-				$default = $field->getDefault();
-				if(($default !== null) || ($default === null && $field->isNullable())){
-					return $this->setProperty($name, $default);
-				}else{
-					throw new Exception\Field('Property "' . $name . '" no have default value');
-				}
-			}
-			return $this;
-		}
 
-		/**
-		 * @param $name
-		 * @return bool
-		 */
-		abstract public function isInitializedProperty($name);
 
 		/**
 		 * @inheritDoc
@@ -562,9 +1340,7 @@ namespace Jungle\Data {
 		/**
 		 * @inheritDoc
 		 */
-		public function offsetUnset($offset){
-			$this->resetPropertyDefault($offset);
-		}
+		public function offsetUnset($offset){}
 
 
 		/**
@@ -605,69 +1381,7 @@ namespace Jungle\Data {
 			$this->_property_iterator_count = count($this->_schema->getEnumerableNames());
 		}
 
-		/**
-		 * @param bool $public
-		 * @return array
-		 * @throws Exception
-		 */
-		public function export( $public = true ){
-			$values = [ ];
-			if($this->_initialized){
-				foreach($this->_schema->getFields() as $field){
-					if(!$field->isPrivate() && $field->isOriginality()){
-						$name = $field->getName();
-						$values[$name] = $this->getProperty($name);
-					}
-				}
-				return $values;
-			}
-			return [];
-		}
 
-		/**
-		 * Актуализация данных
-		 */
-		public function refresh(){
-			if($this->_operation_made === self::OP_CREATE){
-				$this->_original = null;
-				$this->_afterOriginalDataChanged();
-				$this->onRecordReady();
-			}else{
-				$item = $this->_schema->storageLoadById($this->getIdentifierValue());
-				if($item !== $this->_original){
-					$this->_original = $item;
-					$this->_afterOriginalDataChanged();
-					$this->onRecordReady();
-				}
-			}
-			return $this;
-		}
-
-		/**
-		 * @param null $fieldName
-		 * @return mixed
-		 */
-		abstract public function reset($fieldName = null);
-
-
-		/**
-		 * @param null $fieldName
-		 */
-		abstract protected function _resetAll($fieldName = null);
-
-		/**
-		 *
-		 */
-		protected function _afterReset(){
-
-		}
-
-		/**
-		 *
-		 */
-		protected function _afterResetAll(){
-			$this->transient_state = null;
-		}
 
 		/**
 		 * @return string
@@ -693,861 +1407,6 @@ namespace Jungle\Data {
 			return $this->export();
 		}
 
-
-		/**
-		 * @param null $field
-		 * @return bool
-		 */
-		public function hasChangesProperty($field = null){
-			if($field === null){
-				foreach($this->_schema->getFields() as $field){
-					$name = $field->getName();
-					if($this->isInitializedProperty($name)){
-						if($field instanceof Field\Relation && $field->isMany()){
-							/** @var Relationship $c */
-							$c = $this->_getFrontProperty($name);
-							if($c->isDirty()){
-								return true;
-							}
-						}elseif($this->_getProcessed($name) !== $this->_getFrontProperty($name)){
-							return true;
-						}
-
-					}
-				}
-			}
-			$name = $field;
-			if($this->isInitializedProperty($name)){
-				$field = $this->_schema->getField($name);
-				if($field instanceof Field\Relation && $field->isMany()){
-					/** @var Relationship $c */
-					$c = $this->_getFrontProperty($name);
-					if($c->isDirty()){
-						return true;
-					}
-				}elseif($this->_getProcessed($name) !== $this->_getFrontProperty($name)){
-					return true;
-				}
-			}
-			return false;
-		}
-
-
-		
-
-		/**
-		 * @return string[]
-		 */
-		public function getChangedProperties(){
-			$changed = [];
-			foreach($this->_schema->getFields() as $field){
-				$name = $field->getName();
-
-				if($this->isInitializedProperty($name)){
-					if($field instanceof Field\Relation && $field->isMany()){
-						/** @var Relationship $c */
-						$c = $this->_getFrontProperty($name);
-						if($c->isDirty()){
-							$changed[] = $name; // Нужно узнавать у коллекции, были ли изменения
-						}
-					}elseif($this->_getProcessed($name) !== $this->_getFrontProperty($name)){
-						$changed[] = $name;
-					}
-				}
-			}
-			return $changed;
-		}
-
-		/**
-		 * @return bool
-		 * @throws Exception
-		 */
-		public function save(){
-			try{
-				if($this->_operation_processing){
-					if($this->_operation_made === self::OP_DELETE){
-						throw new Exception('Current operation execute is not allow saving record!');
-					}
-					return true;
-				}
-				switch($this->_operation_made){
-					case self::OP_CREATE:
-						if($this->beforeSave() !== false && $this->beforeCreate() !== false){
-							$this->_operation_processing = true;
-							if($this->_doCreate()){
-								$this->_operation_made = self::OP_UPDATE;
-								$this->_operation_processing = false;
-								$this->_schema->getCollection()->itemCreated($this);
-								$this->onCreate();
-								$this->onSave();
-								return true;
-							}
-						}
-						break;
-
-					case self::OP_UPDATE:
-						$changed = $this->getChangedProperties();
-						if(!$changed){
-							return true;
-						}
-
-						if($this->beforeSave() !== false && $this->beforeUpdate($changed) !== false){
-							$this->_operation_processing = true;
-							if($this->_doUpdate($this->getChangedProperties())){
-								$this->_operation_made = self::OP_UPDATE;
-								$this->_operation_processing = false;
-								$this->_schema->getCollection()->itemUpdated($this);
-								$this->onUpdate();
-								$this->onSave();
-								return true;
-							}
-						}
-						break;
-					case self::OP_DELETE:
-						return true;
-						break;
-				}
-				return false;
-			}finally{
-				$this->validation_collector = null;
-			}
-		}
-
-		/**
-		 * @return bool
-		 * @throws Exception
-		 * @throws \Exception
-		 */
-		public function delete(){
-			try{
-				if($this->_operation_processing){
-					if($this->_operation_made !== self::OP_DELETE){
-						throw new Exception('Current operation execute is not allow delete!');
-					}
-					return true;
-				}
-				if($this->_operation_made === self::OP_UPDATE && ($this->beforeRemove() !== false)){
-					$this->_operation_processing = true;
-					$this->_operation_made = self::OP_DELETE;
-					if(!$this->_doDelete()){
-						return false;
-					}else{
-						$this->_schema->getCollection()->removeItem($this);
-						$this->_operation_processing = false;
-					}
-				}
-
-				return true;
-			}finally{
-				$this->validation_collector = null;
-			}
-
-		}
-
-
-
-		/**
-		 * @param $name
-		 * @param $value
-		 */
-		abstract protected function _setFrontProperty($name, $value);
-
-		/**
-		 * @param $name
-		 * @return mixed
-		 */
-		abstract protected function &_getFrontProperty($name);
-
-		/**
-		 * @param $key
-		 * @return mixed
-		 */
-		protected function _getProcessed($key){
-			if(!array_key_exists($key, $this->_processed)){
-				return $this->_processed[$key] = $this->_schema->valueAccessGet($this, $key);
-			}
-			return $this->_processed[$key];
-		}
-
-
-
-		/**
-		 *
-		 */
-		public static function startAllChangesLevel(){
-			self::$properties_changes_restrict_level++;
-		}
-
-		/**
-		 *
-		 */
-		public static function stopAllChangesLevel(){
-			self::$properties_changes_restrict_level--;
-		}
-
-		/**
-		 *
-		 */
-		public static function disableAllChangesMode(){
-			self::$properties_changes_restrict_level = 0;
-		}
-
-
-		/**
-		 * @return Validation|null
-		 */
-		public function getValidation(){
-			return $this->_schema->getValidation();
-		}
-
-
-		/**
-		 * @return TransientState
-		 */
-		public function getTransientState(){
-			return $this->transient_state;
-		}
-
-		/**
-		 * @param null $tag
-		 * @return bool
-		 */
-		public function stateFix($tag = null){
-			$properties = [];
-			foreach($this->_schema->getFields() as $field){
-				$name = $field->getName();
-				if($this->isInitializedProperty($name)){
-					$properties[$name] = $this->_getFrontProperty($name);
-				}
-			}
-			if($properties){
-				$old = $this->transient_state;
-				$this->transient_state = TransientState::checkout($properties, $tag, $old);
-				if($this->transient_state !== $old){
-					if($this->transient_state){
-						$this->transient_state->setFixed(true);
-					}
-					return true;
-				}
-			}
-			if($this->transient_state){
-				$this->transient_state->setFixed(true);
-			}
-			return false;
-		}
-
-		/**
-		 * @param null $tag
-		 * @return bool
-		 */
-		public function stateCapture($tag = null){
-			$properties = [];
-			foreach($this->_schema->getFields() as $field){
-				$name = $field->getName();
-				if($this->isInitializedProperty($name)){
-					$properties[$name] = $this->_getFrontProperty($name);
-				}
-			}
-			if($properties){
-				$old = $this->transient_state;
-				$this->transient_state = TransientState::checkout($properties, $tag, $old);
-				if($this->transient_state !== $old){
-					return true;
-				}
-			}
-			return false;
-		}
-
-
-		/**
-		 * @throws AccessViolation
-		 * @throws Exception
-		 * @throws ReadonlyViolation
-		 * @throws UnexpectedValue
-		 */
-		public function stateRollback(){
-			if($this->transient_state){
-				$data = $this->transient_state->getForwardData($this->_processed);
-				$previous = $this->transient_state->getPrevious();
-				if($previous){
-					$data = array_replace( $this->transient_state->getRollbackData(), $data );
-				}
-				if($data){
-					try{
-						self::$properties_changes_restrict_level++;
-						foreach($data as $k=>$v){
-							$this->setProperty($k,$v);
-						}
-					}finally{
-						self::$properties_changes_restrict_level--;
-					}
-				}
-
-				if($previous){
-					$this->transient_state = $previous;
-				}else{
-					$this->transient_state = null;
-				}
-			}else{
-				$this->reset();
-			}
-			return $this;
-		}
-
-		/**
-		 * @return $this
-		 * @throws AccessViolation
-		 * @throws Exception
-		 * @throws ReadonlyViolation
-		 * @throws UnexpectedValue
-		 */
-		public function stateRecover(){
-			if($this->transient_state){
-				$data = $this->transient_state->getForwardData();
-				if($data){
-					try{
-						self::$properties_changes_restrict_level++;
-						foreach($data as $k=>$v){
-							$this->setProperty($k,$v);
-						}
-					}finally{
-						self::$properties_changes_restrict_level--;
-					}
-				}
-			}else{
-				$this->reset();
-			}
-			return $this;
-		}
-
-		/**
-		 * @return $this
-		 */
-		public function stateShift(){
-			if($this->transient_state){
-				$this->transient_state = $this->transient_state->getPrevious();
-			}
-			return $this;
-		}
-
-		/**
-		 * @return $this
-		 */
-		public function stateClean(){
-			if($this->transient_state){
-				if($this->transient_state->clean() === false){
-					$this->transient_state = null;
-				}
-			}
-			return $this;
-		}
-
-
-
-		/**
-		 * @param ValidationCollector $collector
-		 * @return ValidationCollector
-		 */
-		public function setValidationCollector(ValidationCollector $collector = null){
-			if(!$collector){
-				$collector = new ValidationCollector();
-			}
-			$this->stateCapture();
-			$this->validation_collector = $collector;
-			return $collector->setObject($this);
-		}
-
-		/**
-		 * @return ValidationCollector
-		 */
-		public function getValidationCollector(){
-			return $this->validation_collector;
-		}
-
-
-		/**
-		 * @throws AccessViolation
-		 * @throws Exception
-		 * @throws ReadonlyViolation
-		 * @throws UnexpectedValue
-		 */
-		protected function _preValidate(){
-			if($this->validation_collector){
-				if($this->stateCapture()){
-					$data = $this->transient_state->getData();
-					$this->stateShift();
-					$messages = [];
-					foreach($data as $k=>$v){
-						try{
-							$this->setProperty($k,$v);
-						}catch(ValidatorMessage $message){
-							$messages[] = $message;
-						}
-					}
-					if($messages){
-						$this->validation_collector->appendMessages($messages);
-						return false;
-					}
-				}
-			}
-			return true;
-		}
-
-		/**
-		 * @return bool
-		 * @throws ValidationCollector
-		 */
-		protected function _validate(){
-			$validation = $this->_schema->getValidation();
-			if($validation){
-				$messages = $validation->validate($this);
-				if($messages){
-					if($this->validation_collector){
-						$this->validation_collector->appendMessages($messages);
-						return false;
-					}else{
-						throw new ValidationCollector($this, $messages);
-					}
-				}
-			}
-			return true;
-		}
-
-
-		/**
-		 * @return true|ValidationCollector
-		 * @throws ValidationCollector
-		 */
-		public function validate(){
-			try{
-				if($this->validation_collector){
-					if($this->stateCapture()){
-						$data = $this->transient_state->getData();
-						$this->stateShift();
-						$messages = [];
-						foreach($data as $k=>$v){
-							try{
-								$this->setProperty($k,$v);
-							}catch(ValidatorMessage $message){
-								$messages[] = $message;
-							}
-						}
-						if($messages){
-							//return
-							$this->validation_collector->appendMessages($messages);
-							//return false;
-						}
-					}
-				}
-
-				$validation = $this->_schema->getValidation();
-				$messages = $validation->validate($this);
-				if($messages){
-					if($this->validation_collector){
-						return $this->validation_collector->appendMessages($messages);
-						//return false;
-					}else{
-						throw new ValidationCollector($this, $messages);
-					}
-				}
-				return true;
-			}finally{
-				$this->validation_collector = null;
-			}
-		}
-
-		/**
-		 * @param Operation $operation
-		 * @param bool $delete
-		 * @return bool
-		 * @throws Operation
-		 */
-		protected function _handleStorageOperationException(Operation $operation, $delete = false){
-			if($this->validation_collector){
-				// TODO improve idea
-				if($operation instanceof DuplicateEntry){
-					$this->validation_collector->appendMessages([
-						new ValidatorMessage(null, null, [], [ new RuleMessage('Unique',null) ],$operation->getMessage())
-					]);
-					return false;
-				}
-			}
-			throw $operation;
-		}
-
-
-
-		/**
-		 * @return bool
-		 * @throws \Exception
-		 */
-		protected function _doCreate(){
-
-			$store = $this->getWriteStorage();
-			$pkField = null;
-			/** @var Relation[] $relationFields */
-			$relationFields = [ ];
-			/** @var Virtual[] $virtualFields */
-			$virtualFields = [ ];
-			/** @var Field[] $originalityFields */
-			$originalityFields = [ ];
-			foreach($this->_schema->getFields() as $field){
-				if($field instanceof Relation){
-					$relationFields[] = $field;
-				}elseif($field instanceof Virtual){
-					$virtualFields[] = $field;
-				}else{
-					if($field->isPrimary()){
-						$pkField = $field;
-					}
-					$originalityFields[] = $field;
-				}
-			}
-
-			if($this->_preValidate()!==true){
-				return false;
-			}
-
-			try{
-				self::$properties_changes_restrict_level++;
-				foreach($virtualFields as $field){}
-				if($relationFields){
-					$store->begin();
-					foreach($relationFields as $field){
-						$field->beforeRecordSave($this,$this->_processed,null);
-					}
-				}
-				$data = null;
-				foreach($originalityFields as $field){
-					$name = $field->getName();
-					$value = $this->_getFrontProperty($name);
-					$data = $this->_schema->valueAccessSet($data, $name, $value);
-				}
-
-				if($this->_validate()!==true){
-					return false;
-				}
-
-				try{
-					if(!$this->_schema->storageCreate($data, $this->getSource())){
-						if($relationFields){
-							$store->rollback();
-						}
-						return false;
-					}
-				}catch(Operation $e){
-					if($this->_handleStorageOperationException($e) === false){
-						return false;
-					}
-				}
-
-				$this->_afterStorageCreate($data, $pkField->getName(), $store->lastCreatedIdentifier(),$pkField);
-				if($relationFields){
-					foreach($relationFields as $field){
-						$field->afterRecordSave($this,$this->_processed,null);
-					}
-					$store->commit();
-				}
-				$this->_onCreateCommit();
-				return true;
-			}catch(\Exception $e){
-				if($relationFields){
-					$store->rollback();
-				}
-				throw $e;
-			}finally{
-				self::$properties_changes_restrict_level--;
-			}
-		}
-
-		/**
-		 * @param $changed
-		 * @return bool
-		 * @throws \Exception
-		 */
-		protected function _doUpdate($changed){
-
-
-			$pkField = null;
-			/** @var Relation[] $relationFields */
-			$relationFields = [ ];
-			/** @var Virtual[] $virtualFields */
-			$virtualFields = [ ];
-			/** @var Field[] $originalityFields */
-			$originalityFields = [ ];
-			foreach($this->_schema->getFields() as $field){
-				if($field instanceof Relation){
-					$relationFields[] = $field;
-				}elseif($field instanceof Virtual){
-					$virtualFields[] = $field;
-				}else{
-					if($field->isPrimary()){
-						$pkField = $field;
-					}
-					$originalityFields[] = $field;
-				}
-			}
-
-			$this->_preValidate();
-
-			$store = $this->getWriteStorage();
-			try{
-				foreach($virtualFields as $field){
-
-				}
-				if($relationFields){
-					$store->begin();
-
-					$belongsChanges = false;
-					foreach($relationFields as $field){
-						if($field->getType() === Relation::TYPE_BELONGS){
-							$belongsChanges = true;
-						}
-						$field->beforeRecordSave($this,$this->_processed,$changed);
-					}
-					if($belongsChanges){
-						$changed = $this->getChangedProperties();
-					}
-
-				}
-				$dynamicUpdate = $this->_schema->isDynamicUpdate();
-				$idValue = $this->getIdentifierValue();
-				$pkName = $pkField->getName();
-				if($dynamicUpdate){
-					$data = null;
-					$original = $this->_original;
-					foreach($originalityFields as $field){
-						$name = $field->getName();
-						if(in_array($name, $changed, true)){
-							$value = $this->_getFrontProperty($name);
-							$data = $this->_schema->valueAccessSet($data, $name, $value);
-							$original = $this->_schema->valueAccessSet($original, $name, $value);
-						}
-					}
-					if($data){
-						if($this->_validate()!==true){
-							return false;
-						}
-						try{
-							if(!$this->_schema->storageUpdateById($data, $idValue)){
-								if($relationFields){
-									$store->rollback();
-								}
-								return false;
-							}
-						}catch(Operation $e){
-							if($this->_handleStorageOperationException($e) === false){
-								return false;
-							}
-						}
-
-						$this->_afterStorageUpdate($original, $pkName,$idValue, $changed);
-					}
-				}else{
-					$data = $this->_original;
-					foreach($originalityFields as $field){
-						$name = $field->getName();
-						$data = $this->_schema->valueAccessSet($data, $name, $this->_getFrontProperty($name));
-					}
-					if($data){
-						if($this->_validate()!==true){
-							return false;
-						}
-						try{
-							if(!$this->_schema->storageUpdateById($data, $idValue)){
-								if($relationFields){
-									$store->rollback();
-								}
-								return false;
-							}
-						}catch(Operation $e){
-							if($this->_handleStorageOperationException($e) === false){
-								return false;
-							}
-						}
-
-						$this->_afterStorageUpdate($data, $pkName,$idValue, $changed);
-					}
-				}
-
-				if($relationFields){
-					foreach($relationFields as $field){
-						$field->afterRecordSave($this,$this->_processed,$changed);
-					}
-					$store->commit();
-				}
-
-				$this->_onUpdateCommit($idValue, $changed);
-
-				return true;
-			}catch (\Exception $e){
-				if($relationFields){
-					$store->rollback();
-				}
-				throw $e;
-			}
-			// TODO Запретить выставлять NULL к Relationship полям! или додумать алгоритм обработки при сохранении или при выставлении
-
-		}
-
-		/**
-		 * @return bool
-		 * @throws \Exception
-		 */
-		protected function _doDelete(){
-			/**
-			 * @var Field[] $fields
-			 * @var Relation[] $relationFields
-			 */
-			$fields = [];
-			$relationFields = [];
-			foreach($this->_schema->getFields() as $field){
-				$name = $field->getName();
-				$fields[$name] = $field;
-				if($field instanceof Relation){
-					$relationFields[$name] = $field;
-				}
-			}
-			$store = $this->getWriteStorage();
-			try{
-				if($relationFields){
-					$store->begin();
-					foreach($relationFields as $name => $field){
-						$field->beforeRecordDelete($this);
-					}
-				}
-				$pkField = $this->_schema->getPrimaryField();
-				$pkName = $pkField->getName();
-				$pkValue = $this->getProperty($pkName);
-
-				try{
-					if(!$this->_schema->storageRemove([[$pkName,'=',$pkValue]])){
-						if($relationFields){
-							$store->rollback();
-						}
-						return false;
-					}
-				}catch(Operation $e){
-					if($this->_handleStorageOperationException($e,true) === false){
-						return false;
-					}
-				}
-
-				$this->_afterStorageRemove();
-				if($relationFields){
-					foreach($relationFields as $name => $field){
-						$field->afterRecordDelete($this);
-					}
-					$store->commit();
-				}
-				$this->_onRemoveCommit();
-				return true;
-			}catch(\Exception $e){
-				if($relationFields){
-					$store->rollback();
-				}
-				throw $e;
-			}
-		}
-
-		protected function afterFetch(){ }
-
-		protected function beforeSave(){ }
-
-		/**
-		 *
-		 */
-		protected function onSave(){
-			$this->stateClean();
-			$this->stateFix();
-		}
-
-		protected function beforeCreate(){
-			foreach($this->_schema->getFields() as $field){
-				if($field->hasOption('on_create')){
-					call_user_func($field->getOption('on_create'),$this,$field);
-				}
-			}
-		}
-
-		protected function onCreate(){}
-
-		/**
-		 * @param array $changed
-		 * @return bool
-		 */
-		protected function beforeUpdate(array $changed){
-			foreach($this->_schema->getFields($changed) as $field){
-				if(!$field->getOption('changeable', true)){
-					return false;
-				}
-			}
-			return true;
-		}
-
-		protected function onUpdate(){ }
-
-		protected function beforeRemove(){ }
-
-		protected function onRecordReady(){ }
-
-		protected function onConstruct(){}
-
-		/**
-		 * @param $data
-		 * @param $pkName
-		 * @param $identifier
-		 * @param Field $pkField
-		 */
-		protected function _afterStorageCreate($data, $pkName, $identifier, Field $pkField){
-			$this->_resetAll($pkName);
-			$this->_original = $this->_schema->valueAccessSet($data, $pkName, $identifier);
-		}
-
-		/**
-		 * @param $data
-		 * @param $data
-		 * @param $pkName
-		 * @param $idValue
-		 * @param array $changed
-		 */
-		protected function _afterStorageUpdate($data, $pkName,$idValue,array $changed){
-			$this->_original = $data;
-		}
-
-		protected function _afterStorageRemove(){
-
-		}
-
-
-		/**
-		 * @see Record::_doCreate
-		 */
-		protected function _onCreateCommit(){
-			$collection = $this->_schema->getCollection();
-			$collection->saturate(Record\Collection::SAT_LOAD,$collection);
-			$collection->add($this);
-			$collection->saturate(false);
-		}
-
-		/**
-		 * @see Record::_doUpdate
-		 * @param $id
-		 * @param $changed
-		 */
-		protected function _onUpdateCommit($id,$changed){
-
-		}
-
-		/**
-		 * @see Record::_doDelete
-		 */
-		protected function _onRemoveCommit(){
-			$collection = $this->_schema->getCollection();
-			$collection->setSyncLevel(Record\Collection::SYNC_FULL);
-			$collection->removeItem($this);
-			$collection->setSyncLevel();
-		}
 
 
 	}

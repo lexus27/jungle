@@ -18,7 +18,7 @@ namespace Jungle\Util\Data\Validation\Message {
 	class ValidationCollector extends ValidatorMessage{
 
 		/** @var  string  */
-		protected $type = 'Validation';
+		protected $type = 'Validations';
 
 		/** @var  bool  */
 		protected $container = true;

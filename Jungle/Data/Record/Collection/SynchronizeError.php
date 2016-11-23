@@ -8,11 +8,11 @@
  * Time: 22:54
  */
 namespace Jungle\Data\Record\Collection {
-	
+
 	/**
-	 * Class SynchronizeException
+	 * Class SynchronizeError
 	 * @package Jungle\Data\Record\Collection\Exception
 	 */
-	class SynchronizeException extends Exception{}
+	class SynchronizeError extends Exception{}
 }
 

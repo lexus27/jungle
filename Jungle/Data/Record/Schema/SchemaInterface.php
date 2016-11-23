@@ -7,11 +7,11 @@
  * Date: 01.06.2016
  * Time: 23:30
  */
-namespace Jungle\Data\Record\Head {
+namespace Jungle\Data\Record\Schema {
 	
 	/**
 	 * Interface SchemaInterface
-	 * @package Jungle\Data\Record\Head
+	 * @package Jungle\Data\Record\Schema
 	 */
 	interface SchemaInterface{
 

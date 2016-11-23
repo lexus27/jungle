@@ -7,15 +7,15 @@
  * Date: 26.07.2016
  * Time: 5:10
  */
-namespace Jungle\Data\Record\Head {
+namespace Jungle\Data\Record {
 	
 	use Jungle\Data\Record\Exception;
 
 	/**
-	 * Class SchemaManagerException
-	 * @package Jungle\Data\Record\Head
+	 * Class RepositoryException
+	 * @package Jungle\Data\Record\Schema
 	 */
-	class SchemaManagerException extends Exception{
+	class RepositoryException extends Exception{
 		
 	}
 }

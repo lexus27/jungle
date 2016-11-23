@@ -7,20 +7,23 @@
  * Date: 07.06.2016
  * Time: 0:49
  */
-namespace Jungle\Data\Record\Head {
+namespace Jungle\Data\Record {
 	
 	use Jungle\Data\Record;
+	use Jungle\Data\Record\Schema\Schema;
 	use Jungle\Util\Data\ShipmentInterface;
 	use Jungle\Util\Data\ShipmentOriginalInterface;
 
 	/**
 	 * Class RecordShipment
-	 * @package Jungle\Data\Record\Head
+	 * @package Jungle\Data\Record\Schema
 	 */
 	class RecordShipment implements ShipmentInterface{
 
 		/** @var  ShipmentOriginalInterface */
 		protected $original_shipment;
+
+		protected $original_names = [];
 
 		/** @var  Schema */
 		protected $schema;
@@ -31,6 +34,7 @@ namespace Jungle\Data\Record\Head {
 		 */
 		public function setOriginalShipment(ShipmentOriginalInterface $shipment){
 			$this->original_shipment = $shipment;
+			$this->original_names = [];
 			return $this;
 		}
 
@@ -72,14 +76,17 @@ namespace Jungle\Data\Record\Head {
 			if($fetched===false){
 				return $fetched;
 			}
-			$names = $this->schema->getOriginalNames();
+			if($this->original_names===null){
+				$this->original_names = $this->schema->getOriginalNames();
+			}
+
 			$data = [];
-			foreach($names as $i => $name){
+			foreach($this->original_names as $i => $name){
 				if(array_key_exists($i, $fetched)){
 					$data[$name] = $fetched[$i];
 				}
 			}unset($fetched);
-			$record = $this->schema->initializeRecord($data);
+			$record = $this->schema->makeRecord($data);
 			return $record;
 		}
 

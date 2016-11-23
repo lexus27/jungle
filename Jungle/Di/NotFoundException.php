@@ -4,12 +4,12 @@
  * Author: Kutuzov Alexey Konstantinovich <lexus.1995@mail.ru>
  * Project: jungle
  * IDE: PhpStorm
- * Date: 25.07.2016
- * Time: 4:04
+ * Date: 20.11.2016
+ * Time: 3:58
  */
-namespace Jungle\Util\Data\Schema\Field {
+namespace Jungle\Di {
 	
-	interface TypeInterface{
+	class NotFoundException extends \Exception{
 		
 	}
 }

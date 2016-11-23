@@ -16,7 +16,7 @@ namespace Jungle\Di {
 	use Jungle\Application\ResponseInterface as ApplicationResponseInterface;
 	use Jungle\Application\View\ViewStrategyInterface;
 	use Jungle\Application\ViewInterface;
-	use Jungle\Data\Record\Head\SchemaManager;
+	use Jungle\Data\Record\Repository;
 	use Jungle\EventManager\EventManager;
 	use Jungle\Loader;
 	use Jungle\Messenger;
@@ -46,7 +46,7 @@ namespace Jungle\Di {
 	 *
 	 * @property $filesystem
 	 * @property $database
-	 * @property SchemaManager $schema
+	 * @property Repository $schema
 	 *
 	 * @property Loader $loader
 	 *
