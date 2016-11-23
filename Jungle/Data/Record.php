@@ -482,6 +482,13 @@ namespace Jungle\Data {
 			if(array_key_exists($key, $this->_schema->fields)){
 				$this->{$key} = $value;
 			}
+			if(isset($this->_schema->relations[$key])){
+				if($this->_schema->relations[$key] instanceof RelationMany){
+					$this->addRelated($key,$value);
+				}else{
+					$this->setRelated($key,$value);
+				}
+			}
 			return $this;
 		}
 
@@ -857,13 +864,18 @@ namespace Jungle\Data {
 				return false;
 			}finally{
 				$repository->endOperation($this);
+				$this->_validation = null;
 				$this->_operation_made = self::OP_NONE;
 			}
 		}
 
 		/**
 		 * @return bool
+		 * @throws Operation
+		 * @throws ValidationResult
 		 * @throws \Exception
+		 * @throws bool
+		 * @throws null
 		 */
 		protected function _doCreate(){
 			$schema = $this->_schema;
@@ -906,6 +918,10 @@ namespace Jungle\Data {
 			// Validation
 			$validation = $this->validate(false);
 
+			if($validation->hasErrors()){
+				throw $validation;
+			}
+
 			try{
 
 				if($this->{$pk}){
@@ -929,7 +945,7 @@ namespace Jungle\Data {
 							$relation->beforeRecordCreate($this);
 							$relation->beforeRecordSave($this);
 						}catch(Record\Validation\ValidationResult $relatedValidation){
-							$validation->addRelatedValidation($relation_name, $validation);
+							$validation->addRelatedValidation($relation_name, $relatedValidation);
 						}finally{
 							$operation->relationEnd($relation_name);
 						}
@@ -976,7 +992,7 @@ namespace Jungle\Data {
 							$relation->afterRecordCreate($this);
 							$relation->afterRecordSave($this);
 						}catch(Record\Validation\ValidationResult $relatedValidation){
-							$validation->addRelatedValidation($relation_name, $validation);
+							$validation->addRelatedValidation($relation_name, $relatedValidation);
 						}finally{
 							$operation->relationEnd($relation_name);
 						}
@@ -1014,13 +1030,21 @@ namespace Jungle\Data {
 
 		/**
 		 * @return bool
+		 * @throws Operation
+		 * @throws ValidationResult
 		 * @throws \Exception
+		 * @throws bool
+		 * @throws null
 		 */
 		protected function _doUpdate(){
 
 			$schema = $this->_schema;
 
 
+			/*
+			 * Хотелось бы добавить выборку только по измененным полям
+			 * В валидации и связях
+			 */
 
 			$pk_value = $this->getPkValue();
 			$dynamic_update = $schema->isDynamicUpdate();
@@ -1044,6 +1068,9 @@ namespace Jungle\Data {
 			// Validation
 			$validation = $this->validate(false);
 
+			if($validation->hasErrors()){
+				throw $validation;
+			}
 
 			try{
 
@@ -1057,7 +1084,7 @@ namespace Jungle\Data {
 							$relation->beforeRecordUpdate($this, $related_earliest);
 							$relation->beforeRecordSave($this, $related_earliest);
 						}catch(Record\Validation\ValidationResult $relatedValidation){
-							$validation->addRelatedValidation($relation_name, $validation);
+							$validation->addRelatedValidation($relation_name, $relatedValidation);
 						}finally{
 							$operation->relationEnd($relation_name);
 						}
@@ -1100,7 +1127,7 @@ namespace Jungle\Data {
 							$relation->afterRecordUpdate($this, $related_earliest);
 							$relation->afterRecordSave($this, $related_earliest);
 						}catch(Record\Validation\ValidationResult $relatedValidation){
-							$validation->addRelatedValidation($relation_name, $validation);
+							$validation->addRelatedValidation($relation_name, $relatedValidation);
 						}finally{
 							$operation->relationEnd($relation_name);
 						}
