@@ -864,6 +864,7 @@ namespace Jungle\Data\Record {
 		}
 
 		/**
+		 * TODO Сделать сброс SyncLevel после спец-действий требующих этот параметр
 		 * @param $data
 		 * @param null $condition
 		 * @param bool $full_sync_actual - Выставить всем объектам данные при этом указать что они актуальные
