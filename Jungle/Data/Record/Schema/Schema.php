@@ -18,7 +18,6 @@ namespace Jungle\Data\Record\Schema {
 	use Jungle\Data\Record\Repository;
 	use Jungle\Data\Record\Validation\Validation;
 	use Jungle\Data\Record\Validation\ValidationCollector;
-	use Jungle\Data\Record\Validation\Validator;
 	use Jungle\Data\Storage\Exception;
 	use Jungle\Util\Data\Condition\Condition;
 	use Jungle\Util\Data\Schema\OuterInteraction\ValueAccessAwareInterface;
@@ -138,7 +137,7 @@ namespace Jungle\Data\Record\Schema {
 		 * @return $this
 		 */
 		public function setPk($pk, $auto_generate = true){
-			$this->pk = $pk;
+			$this->pk = $pk?:($this->fields?key($this->fields):null);
 			$this->pk_auto_generation = $auto_generate;
 			return $this;
 		}
@@ -623,7 +622,10 @@ namespace Jungle\Data\Record\Schema {
 		public function encodeRaw(array $data, $raw = null){
 			// Значение проходит модификацию по полю только в случае если оно не NULL
 			if(!$raw)$raw = [];
-			foreach($this->fields as $name => $field){
+
+			/** @var Field[] $fields */
+			$fields = array_intersect_key($this->fields, $data);
+			foreach($fields as $name => $field){
 				if(isset($data[$name])){
 					$raw[$this->mapping[$name]] = $field->encode($data[$name]);
 				}else{
@@ -1066,7 +1068,7 @@ namespace Jungle\Data\Record\Schema {
 			$this->foreign_dependency = [];
 			foreach($this->relations as $name => $relation){
 				if($relation instanceof Record\Relation\RelationForeign){
-					foreach($relation->fields as $f){
+					foreach($relation->getLocalFields() as $f){
 						$this->foreign_dependency[$f] = $name;
 					}
 				}
