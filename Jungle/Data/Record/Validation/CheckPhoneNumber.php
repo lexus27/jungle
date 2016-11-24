@@ -28,7 +28,7 @@ namespace Jungle\Data\Record\Validation {
 				if(!is_array($min_max)){
 					$min_max = [11];
 				}
-				$pattern = '@^+?[\d]{'.implode(',',$min_max).'}$@';
+				$pattern = '@^\+?[\d]{'.implode(',',$min_max).'}$@';
 			}
 			$pattern = $pattern?: '@+?[\d]{11}@';
 			parent::__construct($pattern, $fields);
