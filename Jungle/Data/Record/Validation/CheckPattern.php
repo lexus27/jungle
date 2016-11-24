@@ -35,13 +35,11 @@ namespace Jungle\Data\Record\Validation {
 		public function validate(Record $record, ValidationCollector $collector){
 			$values = $record->getProperties($this->fields);
 			$pattern = $this->pattern;
-			$field_errors = [];
 			foreach($values as $key => $value){
 				if(!is_null($value) && !preg_match($pattern, $value)){
-					$field_errors[] = $key;
+					$collector->error($key,$this);
 				}
 			}
-			return $field_errors;
 		}
 
 	}
