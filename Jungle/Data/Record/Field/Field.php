@@ -46,8 +46,15 @@ namespace Jungle\Data\Record\Field {
 		 */
 		public function __construct($name, $nullable = false, $default = null,array $options = []){
 			$this->name = $name;
-			$this->nullable = $nullable;
-			$this->default = $default;
+			if(!is_bool($nullable)){
+				if(is_null($default)){
+					$this->nullable = is_null($nullable);
+					$this->default = $nullable;
+				}
+			}else{
+				$this->nullable = $nullable;
+				$this->default = $default;
+			}
 			foreach($options as $k => $v){
 				if($k !== 'field_type')$this->{$k} = $v;
 			}

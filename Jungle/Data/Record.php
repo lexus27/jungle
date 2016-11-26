@@ -995,7 +995,7 @@ namespace Jungle\Data {
 						}
 					}
 				}
-
+				$schema->beforeStorageCreate($this);
 
 				$data = $this->data();
 				if(!$pk_value){
@@ -1135,6 +1135,8 @@ namespace Jungle\Data {
 					}
 
 				}
+
+				$schema->beforeStorageUpdate($this);
 
 				$dirty_data = $this->getChangedProperties();
 
@@ -1282,6 +1284,14 @@ namespace Jungle\Data {
 			$this->_onDelete();
 			return true;
 		}
+
+		public function onStorageSave(){ }
+		public function onStorageUpdate(){ }
+		public function onStorageCreate(){ }
+
+		public function beforeStorageSave(){ }
+		public function beforeStorageCreate(){ }
+		public function beforeStorageUpdate(){ }
 
 
 

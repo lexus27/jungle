@@ -553,6 +553,44 @@ namespace Jungle\Data\Record\Schema {
 			}
 		}
 
+		public function beforeStorageCreate(Record $record){
+			// behaviours handle
+			foreach($this->behaviours as $behaviour){
+				if(is_object($behaviour) && method_exists($behaviour,'beforeStorageCreate')){
+					if(call_user_func([$behaviour,'beforeStorageCreate'],$record, $this) === false){
+						return false;
+					}
+				}
+			}
+
+			if($record->beforeStorageSave() === false){
+				return false;
+			}
+			if($record->beforeStorageCreate() === false){
+				return false;
+			}
+			return true;
+		}
+
+		public function beforeStorageUpdate(Record $record){
+			// behaviours handle
+			foreach($this->behaviours as $behaviour){
+				if(is_object($behaviour) && method_exists($behaviour,'beforeStorageUpdate')){
+					if(call_user_func([$behaviour,'beforeStorageUpdate'],$record, $this) === false){
+						return false;
+					}
+				}
+			}
+
+			if($record->beforeStorageSave() === false){
+				return false;
+			}
+			if($record->beforeStorageUpdate() === false){
+				return false;
+			}
+			return true;
+		}
+
 
 		/**
 		 * @param Record $record
