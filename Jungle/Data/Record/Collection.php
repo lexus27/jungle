@@ -141,7 +141,7 @@ namespace Jungle\Data\Record {
 		}
 
 		/**
-		 * @return array
+		 * @return Record[]
 		 */
 		public function getItems(){
 			if($this->auto_deploy && !$this->deployed){
@@ -861,6 +861,19 @@ namespace Jungle\Data\Record {
 		public function collectOne($condition = null, $offset = null){
 			$a = $this->collect($condition,1,$offset);
 			return $a?$a[0]:null;
+		}
+
+		/***
+		 * @param $property
+		 * @return array
+		 * @throws \Exception
+		 */
+		public function listProperty($property){
+			$a = [];
+			foreach($this->getItems() as $item){
+				$a[] = $item->getProperty($property);
+			}
+			return $a;
 		}
 
 		/**
