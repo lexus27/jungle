@@ -36,8 +36,8 @@ namespace Jungle\Util\Data\Condition {
 		public function __invoke($data, $access = null){
 			return \Jungle\ExoCode\LogicConstruction\Condition::collateRaw(
 				ValueAccessor::handleAccessGet($access, $data, $this->field),
-				$this->operator,
-				$this->wanted, Operator::class
+				Operator::getOperator($this->operator),
+				$this->wanted
 			);
 		}
 

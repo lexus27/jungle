@@ -47,8 +47,6 @@ namespace Jungle\Data\Record\Relation {
 
 			$this->holder = $holder;
 			$this->holder_relation = $holder_relation;
-
-			$this->setAncestor($ancestor);
 			$state = $holder->getRecordState();
 			if($state === Record::STATE_LOADED){
 				$this->applyCondition();
@@ -57,6 +55,9 @@ namespace Jungle\Data\Record\Relation {
 				// и у него могут быть связи не иначе как только с объектами в памяти
 				$this->deployed = true;
 			}
+
+			$this->setAncestor($ancestor);
+
 
 		}
 

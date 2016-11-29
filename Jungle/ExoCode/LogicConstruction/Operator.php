@@ -82,6 +82,9 @@ class Operator implements NamedInterface{
 	 * @return Operator|null
 	 */
 	public static function getOperator($name){
+		if($name instanceof Operator){
+			return $name;
+		}
 		static $base_initialized = false;
 		if(!$base_initialized){
 			static::_initializeDefaultOperators();

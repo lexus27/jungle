@@ -64,6 +64,8 @@ namespace Jungle\Data\Record {
 		/** @var  string */
 		protected $sync_level = self::SYNC_LOCAL;
 
+		protected $last_sync;
+
 		/** @var  string  */
 		protected $saturation_mode = self::SAT_NONE;
 
@@ -612,6 +614,16 @@ namespace Jungle\Data\Record {
 		}
 
 
+
+		public function forSyncLevel($level = self::SYNC_LOCAL){
+			$root = $this->getRoot();
+			if($level !== $root->sync_level){
+				$root->last_sync = $root->sync_level;
+				$root->sync_level = $level;
+			}
+			return $this;
+		}
+
 		/**
 		 * @param $level
 		 * @return $this
@@ -627,6 +639,10 @@ namespace Jungle\Data\Record {
 		public function getSyncLevel(){
 			return $this->getRoot()->sync_level;
 		}
+
+
+
+
 
 
 		/**
@@ -812,6 +828,47 @@ namespace Jungle\Data\Record {
 
 
 
+		/**
+		 * @param null $condition
+		 * @param null $offset
+		 * @param null $limit
+		 * @return int
+		 * TODO Более деликатный подход к состояниям до деплоя и после
+		 */
+		public function count($condition = null, $offset = null, $limit = null){
+			$root = $this->getRoot();
+			$level = $root->sync_level;
+			try{
+				if($level === self::SYNC_LOCAL || $level === self::SYNC_FULL){
+					if($this->auto_deploy && !$this->deployed){
+						$this->deploy();
+					}
+					return $this->getCheckpoint()->_count($condition, $offset, $limit);
+				}else{
+					$schema = $this->getSchema();
+					$condition = $this->getExtendedContainCondition($condition);
+					$condition = $condition?$condition->toStorageCondition():[];
+					return $schema->storageCount($condition,$this->getOffset() + $offset, $limit?:$this->getLimit());
+				}
+			}finally{
+				if($root->last_sync){
+					$root->last_sync = null;
+				}
+			}
+		}
+
+		/**
+		 * @param $condition
+		 * @param null $offset
+		 * @param $limit
+		 * @return int
+		 */
+		protected function _count($condition = null, $offset = null, $limit = null){
+			if($condition === null && $offset === null && $limit === null){
+				return count($this->items);
+			}
+			return count($this->collect($condition,$limit,$offset));
+		}
 
 		/**
 		 * @param $condition
@@ -877,47 +934,55 @@ namespace Jungle\Data\Record {
 		}
 
 		/**
-		 * TODO Сделать сброс SyncLevel после спец-действий требующих этот параметр
 		 * @param $data
 		 * @param null $condition
 		 * @param bool $full_sync_actual - Выставить всем объектам данные при этом указать что они актуальные
 		 * @return $this
 		 */
 		public function update($data, $condition = null, $full_sync_actual = false){
-			$level = $this->getSyncLevel();
-			if($level === self::SYNC_STORE){
-				$affected = $this->schema->storageUpdate($data, $this->getExtendedContainCondition($condition)->toStorageCondition());
-				if($affected){
-					foreach($this->getRoot()->collect($condition) as $item){
-						$item->assign($data,null,null,true);
+			$root = $this->getRoot();
+			$level = $root->sync_level;
+			try{
+				if($level === self::SYNC_STORE){
+					$affected = $this->schema->storageUpdate($data, $this->getExtendedContainCondition($condition)->toStorageCondition());
+					if($affected){
+						foreach($root->collect($condition) as $item){
+							$item->assign($data,null,null,true);
+						}
+						return $affected;
 					}
-					return $affected;
-				}
-			}elseif($level === self::SYNC_FULL){
-				$condition = $this->getExtendedContainCondition($condition);
-				if($full_sync_actual){
-					foreach($this->getRoot()->collect($condition) as $item){
-						$item->assign($data,null,null,true);
+				}elseif($level === self::SYNC_FULL){
+					$condition = $this->getExtendedContainCondition($condition);
+					if($full_sync_actual){
+						foreach($root->collect($condition) as $item){
+							$item->assign($data,null,null,true);
+						}
+					}else{
+						foreach($root->collect($condition) as $item){
+							$item->assign($data);
+						}
 					}
-				}else{
-					foreach($this->getRoot()->collect($condition) as $item){
-						$item->assign($data);
-					}
-				}
 
-			}else{
-				try{
-					$ad = $this->auto_deploy;
-					if($ad){
-						$this->auto_deploy = false;
+				}else{
+					try{
+						$ad = $this->auto_deploy;
+						if($ad){
+							$this->auto_deploy = false;
+						}
+						foreach($this->collect($condition) as $item){
+							$item->assign($data);
+						}
+					}finally{
+						$this->auto_deploy = $ad;
 					}
-					foreach($this->collect($condition) as $item){
-						$item->assign($data);
-					}
-				}finally{
-					$this->auto_deploy = $ad;
+				}
+			}finally{
+				if($root->last_sync){
+					$root->sync_level = $root->last_sync;
+					$root->last_sync = null;
 				}
 			}
+
 			return $this;
 		}
 
@@ -930,19 +995,27 @@ namespace Jungle\Data\Record {
 			if(!is_array($condition) && $condition!==null){
 				$condition = [$this->schema->getPk() => $condition];
 			}
-			$level = $this->getSyncLevel();
-			if($level === self::SYNC_STORE){
-				$condition = $this->getExtendedContainCondition($condition);
-				$affected = $this->schema->storageRemove($condition->toStorageCondition());
-				if($affected){
-					$this->getRoot()->_remove($condition);
-					return $affected;
+			try{
+				$root = $this->getRoot();
+				$level = $root->sync_level;
+				if($level === self::SYNC_STORE){
+					$condition = $this->getExtendedContainCondition($condition);
+					$affected = $this->schema->storageRemove($condition->toStorageCondition());
+					if($affected){
+						$root->_remove($condition);
+						return $affected;
+					}
+				}elseif($level === self::SYNC_FULL){
+					$condition = $this->getExtendedContainCondition($condition);
+					$root->_remove($condition);
+				}else{
+					$this->getCheckpoint()->_remove($condition);
 				}
-			}elseif($level === self::SYNC_FULL){
-				$condition = $this->getExtendedContainCondition($condition);
-				$this->getRoot()->_remove($condition);
-			}else{
-				$this->getCheckpoint()->_remove($condition);
+			}finally{
+				if($root->last_sync){
+					$root->sync_level = $root->last_sync;
+					$root->last_sync = null;
+				}
 			}
 			return $this;
 		}
@@ -979,19 +1052,27 @@ namespace Jungle\Data\Record {
 		 * @return bool
 		 */
 		public function removeItem(Record $record){
-			$level = $this->getSyncLevel();
-			if($level === self::SYNC_STORE){
-				if(!$record->delete()){
-					return false;
+			try{
+				$root = $this->getRoot();
+				$level = $root->sync_level;
+				if($level === self::SYNC_STORE){
+					if(!$record->delete()){
+						return false;
+					}
+					if(!$root->_removeItem($record)){
+						return false;
+					}
+					return true;
+				}elseif($level === self::SYNC_FULL){
+					return $root->_removeItem($record);
+				}else{
+					return $this->getCheckpoint()->_removeItem($record);
 				}
-				if(!$this->getRoot()->_removeItem($record)){
-					return false;
+			}finally{
+				if($root->last_sync){
+					$root->sync_level = $root->last_sync;
+					$root->last_sync = null;
 				}
-				return true;
-			}elseif($level === self::SYNC_FULL){
-				return $this->getRoot()->_removeItem($record);
-			}else{
-				return $this->getCheckpoint()->_removeItem($record);
 			}
 		}
 
@@ -1326,12 +1407,11 @@ namespace Jungle\Data\Record {
 		public function extend($condition = null, $limit = null, $offset = null, $sorter = null){
 			/** @var Collection $descendant */
 			$descendant = clone $this;
-			$descendant->setAncestor($this);
 			$descendant->setLimit($limit);
 			$descendant->setOffset($offset);
 			$descendant->setContainCondition($condition);
 			$descendant->setSorter($sorter);
-			$descendant->refresh();
+			$descendant->setAncestor($this);
 			return $descendant;
 		}
 
@@ -1399,7 +1479,9 @@ namespace Jungle\Data\Record {
 		/**
 		 *
 		 */
-		protected function _onExtended(){}
+		protected function _onExtended(){
+			$this->refresh();
+		}
 		
 		protected function _onLimitChanged($old){}
 		
@@ -1421,38 +1503,6 @@ namespace Jungle\Data\Record {
 			}
 		}
 
-		/**
-		 * @param null $condition
-		 * @param null $offset
-		 * @param null $limit
-		 * @return int
-		 */
-		public function count($condition = null, $offset = null, $limit = null){
-			$syncLevel = $this->getSyncLevel();
-			if($syncLevel === self::SYNC_LOCAL){
-				return $this->getCheckpoint()->_count($condition, $offset, $limit);
-			}elseif($syncLevel === self::SYNC_FULL){
-				return $this->getRoot()->_count($condition, $offset, $limit);
-			}else{
-				$schema = $this->getSchema();
-				$condition = $this->getExtendedContainCondition($condition);
-				$condition = $condition?$condition->toStorageCondition():[];
-				return $schema->storageCount($condition,$this->getOffset() + $offset, $limit?:$this->getLimit());
-			}
-		}
-
-		/**
-		 * @param $condition
-		 * @param null $offset
-		 * @param $limit
-		 * @return int
-		 */
-		protected function _count($condition = null, $offset = null, $limit = null){
-			if($condition === null && $offset === null && $limit === null){
-				return count($this->items);
-			}
-			return count($this->collect($condition,$limit,$offset));
-		}
 
 		
 		
