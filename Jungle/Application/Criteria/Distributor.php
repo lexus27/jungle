@@ -166,10 +166,13 @@ namespace Jungle\Application\Criteria {
 		 * @return array
 		 */
 		public function jsonSerialize(){
+			if(!$this->criteria){
+				$this->apply();
+			}
 			return [
 				'total_count' => $this->total,
 				'count' => $this->count,
-				'items' => $this->collection
+				'items' => $this->collection->getItems()
 			];
 		}
 

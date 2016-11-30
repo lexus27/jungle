@@ -40,10 +40,10 @@ namespace Jungle\Application\Criteria {
 			$offset = $this->request->getParam('offset', null);
 			$limit = $this->request->getParam('limit', null);
 
-			isset($condition) && ($criteria->condition = $condition);
-			isset($order) && ($criteria->order = $order);
-			isset($offset) && ($criteria->offset = $offset);
-			isset($limit) && ($criteria->limit = $limit);
+			!empty($condition) && ($criteria->condition = $condition?json_decode($condition, true):$condition);
+			!empty($order) && ($criteria->order = $order?json_decode($order, true):$order);
+			!empty($offset) && ($criteria->offset = $offset);
+			!empty($limit) && ($criteria->limit = $limit);
 			if(!isset($criteria->limit)){
 				$criteria->limit = 10;
 			}
