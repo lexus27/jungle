@@ -60,10 +60,11 @@ namespace Jungle\User\Verification {
 			$message = new Messenger\Mail\Message();
 			$message->setSubject('Подтвердите код');
 			$message->setContent('Код для ввода: '.$code.' , введите его в соответствующую форму на сайте');
-			$contact = Messenger\Mail\Contact::getContact('Алексей <lexus27.khv@gmail.com>');
 
 			$combination = new Messenger\Combination();
-			$combination->addDestination($contact);
+			$combination->addDestination(
+				Messenger\Mail\Contact::getContact('Алексей <lexus27.khv@gmail.com>')
+			);
 			$combination->setMessage($message);
 
 			$this->messenger->send($combination);

@@ -349,6 +349,7 @@ namespace Jungle\Data\Record {
 			if($condition !== $oldCondition){
 				$this->contain_condition = $condition;
 				$this->_resetExtendedContainCondition();
+				$this->refresh();
 			}
 			return $this;
 		}

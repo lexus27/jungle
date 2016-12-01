@@ -92,7 +92,11 @@ namespace Jungle\Util\Data\Condition {
 				}),
 
 				(new Operator())->setName('like')->setHandler(function($a,$b){
-					return fnmatch($b,$a,FNM_CASEFOLD);
+					$result = !!preg_match('@^'.strtr($b,[
+						'%' => '.*',
+						'_' => '.'
+					]).'$@smi',$a);
+					return $result;
 				}),
 
 				(new Operator())->setName('start-with')->setHandler(function($a,$b){
