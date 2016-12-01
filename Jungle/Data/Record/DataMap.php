@@ -10,9 +10,7 @@
 namespace Jungle\Data\Record {
 
 	use Jungle\Data\Record;
-	use Jungle\Data\Record\Collection\Relationship;
-	use Jungle\Data\Record\Head\Field;
-	use Jungle\Data\Record\Head\Schema;
+	use Jungle\Data\Record\Schema\Schema;
 
 	/**
 	 * Class DataMap - Предвестник ORM ~ Моделей
@@ -35,10 +33,9 @@ namespace Jungle\Data\Record {
 			parent::__construct();
 			$this->setSchema($schema);
 			if($data!==null){
-				$this->_operation_made = self::OP_UPDATE;
-				$this->setOriginalData($data);
+				$this->setRecordState(self::STATE_LOADED, $data);
 			}else{
-				$this->_operation_made = self::OP_CREATE;
+				$this->setRecordState(self::STATE_NEW, $data);
 			}
 			$this->onConstruct();
 		}
@@ -113,11 +110,11 @@ namespace Jungle\Data\Record {
 		}
 
 		/**
-		 * @param $changed
+		 * @param $dirty_data
 		 * @return bool
 		 */
-		protected function _doUpdate($changed){
-			if(parent::_doUpdate($changed)){
+		protected function _doUpdate($dirty_data){
+			if(parent::_doUpdate($dirty_data)){
 				$this->_processed = $this->_properties;
 				return true;
 			}

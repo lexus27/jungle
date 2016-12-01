@@ -16,6 +16,41 @@ namespace Jungle\Util\Data\Condition {
 	 * @package Jungle\ExoCode\LogicConstruction
 	 */
 	class Operator extends \Jungle\ExoCode\LogicConstruction\Operator{
+		/**
+		 * @param $name
+		 * @return Operator|null
+		 */
+		public static function getOperator($name){
+			if($name instanceof Operator){
+				return $name;
+			}
+			static $base_initialized = false;
+			if(!$base_initialized){
+				static::_initializeDefaultOperators();
+				$base_initialized = true;
+			}
+			$i = static::searchOperator($name);
+			if($i!==false){
+				return static::$_operators[$i];
+			}
+			return null;
+		}
+
+		/**
+		 * @param $operator
+		 * @return bool|int|string
+		 */
+		public static function searchOperator($operator){
+			if($operator instanceof Operator){
+				$operator = $operator->getName();
+			}
+			foreach(static::$_operators as $i => $o){
+				if(strcasecmp($o->getName(),$operator)===0){
+					return $i;
+				}
+			}
+			return false;
+		}
 
 		/**
 		 *

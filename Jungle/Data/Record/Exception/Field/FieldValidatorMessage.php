@@ -9,16 +9,16 @@
  */
 namespace Jungle\Data\Record\Exception\Field {
 
-	use Jungle\Data\Record\Head\Field;
+	use Jungle\Data\Record\Field\Field;
 	use Jungle\Util\Data\Validation\Message\ValidatorMessage;
 
 	/**
 	 * Class FieldValidatorMessage
-	 * @package Jungle\Data\Record\Head\Field
+	 * @package Jungle\Data\Record\Field\Field
 	 */
 	class FieldValidatorMessage extends ValidatorMessage{
 
-		/** @var  Field */
+		/** @var  \Jungle\Data\Record\Field\Field */
 		protected $field;
 
 		/**

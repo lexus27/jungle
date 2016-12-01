@@ -182,7 +182,7 @@ namespace Jungle\Application\Dispatcher {
 				throw new NeedIntroduce("Params ".implode(', ',(array)$required_names)." required");
 			}
 			if($required_names !== null && $returnOnlyRequired){
-				return array_intersect_key(array_flip($required_names), $this->params);
+				return array_intersect_key($this->params,array_flip($required_names));
 			}
 			return $this->params;
 		}
@@ -527,7 +527,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @return mixed
 		 */
 		public function __set($key, $value){
-			throw new \LogicException('Not Effect');
+			$this->params[$key] = $value;
 		}
 
 		/**
@@ -535,7 +535,7 @@ namespace Jungle\Application\Dispatcher {
 		 * @return mixed
 		 */
 		public function __unset($key){
-			throw new \LogicException('Not Effect');
+			unset($this->params[$key]);
 		}
 
 		/**

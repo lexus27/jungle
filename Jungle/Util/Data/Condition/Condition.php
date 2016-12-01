@@ -36,8 +36,8 @@ namespace Jungle\Util\Data\Condition {
 		public function __invoke($data, $access = null){
 			return \Jungle\ExoCode\LogicConstruction\Condition::collateRaw(
 				ValueAccessor::handleAccessGet($access, $data, $this->field),
-				$this->operator,
-				$this->wanted, Operator::class
+				Operator::getOperator($this->operator),
+				$this->wanted
 			);
 		}
 
@@ -127,9 +127,14 @@ namespace Jungle\Util\Data\Condition {
 						$complex->addCondition($target, $delimiterOperator);
 						$delimiterOperator = null;
 					}elseif($count === 3 || $count === 2){
-						$left = isset($c[0])?$c[0]:$c['left'];
-						$operator = isset($c[1])?$c[1]:$c['operator'];
-						$right = isset($c[2])?$c[2]:$c['right'];
+
+
+						//$left = isset($c[0])?$c[0]:$c['left'];
+						//$operator = isset($c[1])?$c[1]:$c['operator'];
+						//$right = isset($c[2])?$c[2]:$c['right'];
+						// сдесь была раньше проблема если значения является NULL , при проверке на isset()
+
+						list($left, $operator, $right) = self::toList($c,[0,'left'],[1,'operator'],[2,'right']);
 
 						$target = new Condition();
 						$target->setField($left);
@@ -145,6 +150,27 @@ namespace Jungle\Util\Data\Condition {
 				return $complex;
 			}
 			return null;
+		}
+
+		/**
+		 * @param array $a
+		 * @param \array[] ...$keys
+		 * @return array
+		 *
+		 * Выборка альтернативных ключей последовательно
+		 *
+		 */
+		public static function toList(array $a, array ... $keys){
+			$b = [];
+			foreach($keys as $i => $k){
+				foreach($k as $key){
+					if(array_key_exists($key,$a)){
+						$b[$i] = $a[$key];
+						break;
+					}
+				}
+			}
+			return $b;
 		}
 
 	}

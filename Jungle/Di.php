@@ -13,6 +13,7 @@ namespace Jungle {
 	use Jungle\Di\DiNestingTrait;
 	use Jungle\Di\DiSettingInterface;
 	use Jungle\Di\HolderChains;
+	use Jungle\Di\NotFoundException;
 	use Jungle\Di\Service;
 	use Jungle\Di\ServiceInterface;
 
@@ -185,11 +186,11 @@ namespace Jungle {
 								return $srv;
 							}
 						}else{
-							if($throwException)throw new \Exception('Service "' . $fullName . '" not exists!');
+							if($throwException)throw new NotFoundException('Service "' . $fullName . '" not exists!');
 						}
 					}
 				}
-				if($throwException)throw new \Exception('Service "' . $fullName . '" not exists!');
+				if($throwException)throw new NotFoundException('Service "' . $fullName . '" not exists!');
 			}
 			return null;
 		}
@@ -227,14 +228,14 @@ namespace Jungle {
 								return $srv;
 							}
 						}else{
-							if($throwException)throw new \Exception('Service "' . $fullName . '" not exists!');
+							if($throwException)throw new NotFoundException('Service "' . $fullName . '" not exists!');
 							return null;
 						}
 					}
 					return $container->shared_instances[$name];
 				}
 			}
-			if($throwException)throw new \Exception('Service "' . $fullName . '" not exists!');
+			if($throwException)throw new NotFoundException('Service "' . $fullName . '" not exists!');
 			return null;
 		}
 
@@ -263,12 +264,12 @@ namespace Jungle {
 							return $srv;
 						}
 					}elseif($throwException){
-						throw new \Exception('Service "' . $fullName . '" not exists!');
+						throw new NotFoundException('Service "' . $fullName . '" not exists!');
 					}
 				}
 			}
 			if($throwException){
-				throw new \Exception('Service "' . $fullName . '" not exists!');
+				throw new NotFoundException('Service "' . $fullName . '" not exists!');
 			}
 			return null;
 		}
@@ -288,7 +289,7 @@ namespace Jungle {
 				}
 				return $this->services[$container_name];
 			}else{
-				if($throwException)throw new \Exception('Service container "' . $container_name . '" not found');
+				if($throwException)throw new NotFoundException('Service container "' . $container_name . '" not found');
 				return null;
 			}
 		}
@@ -499,7 +500,7 @@ namespace Jungle {
 					return $srv;
 				}
 			}else{
-				throw new \Exception('Service "' . $name . '" not exists!');
+				throw new NotFoundException('Service "' . $name . '" not exists!');
 			}
 			return null;
 		}
@@ -577,7 +578,7 @@ namespace Jungle {
 					return $srv;
 				}
 			}else{
-				throw new \Exception('Service "' . $name . '" not exists!');
+				throw new NotFoundException('Service "' . $name . '" not exists!');
 			}
 			return null;
 		}

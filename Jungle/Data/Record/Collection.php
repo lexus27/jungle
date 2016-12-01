@@ -12,7 +12,7 @@ namespace Jungle\Data\Record {
 	use Jungle\Data\Record;
 	use Jungle\Data\Record\Collection\Sorter;
 	use Jungle\Data\Record\Collection\SorterInterface;
-	use Jungle\Data\Record\Head\Schema;
+	use Jungle\Data\Record\Schema\Schema;
 	use Jungle\Util\Data\Collection\ExtendableInterface;
 	use Jungle\Util\Data\Collection\ExtendableTrait;
 	use Jungle\Util\Data\Collection\Sortable\SorterInterface as SortableSorterInterface;
@@ -36,13 +36,17 @@ namespace Jungle\Data\Record {
 		RegistryReadInterface,
 		SchemaAwareInterface{
 
-		const SAT_NONE   = false;
-		const SAT_DEPLOY = 1;
-		const SAT_LOAD   = 2;
+		const SAT_NONE         = false;
+		const SAT_DEPLOY       = 'deploy';
+		const SAT_LOAD         = 'load';
 
-		const SYNC_LOCAL    = 1;
-		const SYNC_FULL     = 2;
-		const SYNC_STORE    = 3;
+		const SYNC_LOCAL       = 'local';
+		const SYNC_FULL        = 'full';
+		const SYNC_STORE       = 'store';
+
+		const LEVEL_NONE       = null;
+		const LEVEL_ROOT       = 'root';
+		const LEVEL_CHECKPOINT = 'checkpoint';
 
 		/** @var  Schema */
 		protected $schema;
@@ -51,25 +55,30 @@ namespace Jungle\Data\Record {
 		protected $root;
 
 		/** @var array  */
-		protected $root_present_identifiers = [];
+		protected $persist_ids = [];
 
-		/** @var  int  */
+
+		/** @var  string */
+		protected $level = self::LEVEL_NONE;
+
+		/** @var  string */
+		protected $sync_level = self::SYNC_LOCAL;
+
+		protected $last_sync;
+
+		/** @var  string  */
 		protected $saturation_mode = self::SAT_NONE;
 
 		/** @var  Collection */
 		protected $saturation_initiator;
 
-		/** @var bool */
-		protected $as_checkpoint = false;
+
 
 		/** @var  Collection|null */
 		protected $ancestor;
 
 		/** @var  Collection[] */
 		protected $descendants = [ ];
-
-		/** @var bool  */
-		protected $in_destructing = false;
 
 		/** @var  Record[] */
 		protected $items = [];
@@ -93,11 +102,10 @@ namespace Jungle\Data\Record {
 		protected $auto_sort = false;
 
 		/** @var  bool  */
-		protected $sorted = false;
-
+		protected $auto_deploy = false;
 
 		/** @var  bool  */
-		protected $auto_deploy = false;
+		protected $sorted = false;
 
 		/** @var  bool  */
 		protected $deployed = false;
@@ -113,9 +121,13 @@ namespace Jungle\Data\Record {
 		protected $dirty_capturing = false;
 
 
+		/**
+		 * TODO impl.
+		 * @param Record $item
+		 */
+		public function hasItem(Record $item){
 
-		/** @var int */
-		protected $sync_level = self::SYNC_LOCAL;
+		}
 
 
 
@@ -123,7 +135,15 @@ namespace Jungle\Data\Record {
 		protected $face_access_property = null;
 
 		/**
-		 * @return array
+		 * Collection constructor.
+		 * @param null $level
+		 */
+		public function __construct($level = null){
+			$this->level = $level?:self::LEVEL_ROOT;
+		}
+
+		/**
+		 * @return Record[]
 		 */
 		public function getItems(){
 			if($this->auto_deploy && !$this->deployed){
@@ -157,19 +177,39 @@ namespace Jungle\Data\Record {
 			$this->dirty_removed = [];
 		}
 
+
+		/**
+		 * @return Collection
+		 */
+		public function getRoot(){
+			if(!$this->ancestor){
+				return $this;
+			}elseif($this->level === self::LEVEL_ROOT){
+				return $this;
+			}else{
+				return $this->ancestor->getRoot();
+			}
+		}
+
 		/**
 		 * @return Collection
 		 */
 		public function getCheckpoint(){
-			if(!$this->ancestor){
+			// если насыщения корневой коллекции не происходит, то отдать текущую коллекцию
+
+			if( !$this->ancestor || (
+					$this->level === self::LEVEL_ROOT || (
+					    $this->level === self::LEVEL_CHECKPOINT &&
+				        $this->getRoot()->saturation_mode === self::SAT_NONE
+				    )
+				)
+			){
 				return $this;
-			}else{
-				if($this->as_checkpoint && $this->getRoot()->saturation_mode === self::SAT_NONE){
-					return $this;
-				}else{
-					return $this->ancestor->getCheckpoint();
-				}
+			}elseif($this->ancestor){
+				return $this->ancestor->getCheckpoint();
 			}
+
+			return null;
 		}
 
 
@@ -243,14 +283,11 @@ namespace Jungle\Data\Record {
 		 * @return Schema
 		 */
 		public function getSchema(){
-			if($this->schema){
-				return $this->schema;
-			}
-			if($this->ancestor){
-				return $this->ancestor->schema;
-			}
 			return $this->schema;
 		}
+
+
+
 		
 		
 		/**
@@ -315,23 +352,6 @@ namespace Jungle\Data\Record {
 			}
 			return $this;
 		}
-
-		/**
-		 * @record-listener
-		 * @param Record $record
-		 */
-		public function itemCreated(Record $record){
-			$root = $this->getRoot();
-			$id = $record->getIdentifierValue();
-			if(!in_array($id,$root->root_present_identifiers,true)){
-				$root->root_present_identifiers[$id] = true;
-			}
-		}
-
-		/**
-		 * @param Record $record
-		 */
-		public function itemUpdated(Record $record){}
 
 		/**
 		 *
@@ -517,7 +537,7 @@ namespace Jungle\Data\Record {
 			/** @var Record $item */
 			if(!$faceAccessProperty){
 				foreach($this->items as $item){
-					if($item->getIdentifierValue() === $key){
+					if($item->getPkValue() === $key){
 						return $item;
 					}
 				}
@@ -544,7 +564,7 @@ namespace Jungle\Data\Record {
 			/** @var Record $item */
 			if(!$faceAccessProperty){
 				foreach($this->items as $item){
-					if($item->getIdentifierValue() === $key){
+					if($item->getPkValue() === $key){
 						return true;
 					}
 				}
@@ -558,6 +578,297 @@ namespace Jungle\Data\Record {
 			return false;
 		}
 
+
+
+
+		/**
+		 * @return array
+		 */
+		public function getPresentIdentifiers(){
+			return $this->getRoot()->persist_ids;
+		}
+
+		/**
+		 * @param bool $state
+		 * @param Collection|null $initiator
+		 */
+		public function setSaturationMode($state, Collection $initiator = null){
+			$base = $this->getRoot();
+			if(!$state){
+				$base->saturation_mode = self::SAT_NONE;
+				$base->saturation_initiator = null;
+			}else{
+				if(!$initiator){
+					throw new \InvalidArgumentException('Initiator supplied for saturation is null, but must be Collection');
+				}
+				$base->saturation_mode = $state;
+				$base->saturation_initiator = $initiator;
+			}
+		}
+
+		/**
+		 * @return int
+		 */
+		public function getSaturationMode(){
+			return $this->saturation_mode;
+		}
+
+
+
+		public function forSyncLevel($level = self::SYNC_LOCAL){
+			$root = $this->getRoot();
+			if($level !== $root->sync_level){
+				$root->last_sync = $root->sync_level;
+				$root->sync_level = $level;
+			}
+			return $this;
+		}
+
+		/**
+		 * @param $level
+		 * @return $this
+		 */
+		public function setSyncLevel($level = self::SYNC_LOCAL){
+			$this->getRoot()->sync_level = $level;
+			return $this;
+		}
+
+		/**
+		 * @return int
+		 */
+		public function getSyncLevel(){
+			return $this->getRoot()->sync_level;
+		}
+
+
+
+
+
+
+		/**
+		 * @record-listener
+		 * @param Record $record
+		 */
+		public function onItemCreated(Record $record){
+			$root = $this->getRoot();
+
+			$root->saturation_mode = self::SAT_LOAD;
+			$root->saturation_initiator = $this;
+
+			$this->add($record);
+
+			$root->saturation_mode = self::SAT_NONE;
+			$root->saturation_initiator = null;
+
+			$root->persist_ids[$record->getPkValue()] = true;
+		}
+
+		/**
+		 * @record-listener
+		 * @param Record $record
+		 */
+		public function onItemUpdated(Record $record){}
+
+		/**
+		 * @record-listener
+		 * @param Record $record
+		 */
+		public function onItemDeleted(Record $record){
+			$this->removeItem($record);
+		}
+
+
+
+
+
+		/**
+		 * @param Record $item
+		 * @return bool
+		 * ----Released-----
+		 * - Объект перед добавлением берется из схемы в свою очередь который
+		 * является приспособленцем до момента markRecordInitialized
+		 *
+		 * - Требуется продумать вариант добавления записей при реализации запроса к хранилищу по Condition, Limit, etc
+		 * чтобы коллекция не производила проверки повторно
+		 *
+		 * - есть возможность производить запрос к хранилищу с использованием исключения по айдишникам чтобы в ответ
+		 * не приходили присутствующие записи.
+		 *
+		 * - контроль того чтобы запросы к хранилищу производились только при использовании коллекции или
+		 * наследников коллекции, это позволит избежать загрузки корневой коллекции которая возможно используется с
+		 * бесконечным лимитом, или сделать на безлимитные коллекции запрет на загрузку
+		 * -----------------
+		 * @throws \Exception
+		 */
+		public function add($item){
+			if(!$item instanceof Record){
+				throw new \Exception('Item Must be ' . Record::class . ' instance!');
+			}
+			if($this->getCheckpoint()->_add($item)){
+				if(
+					$item->getRecordState() !== Record::STATE_NEW
+					&& $this->getRoot()->saturation_mode !== self::SAT_DEPLOY
+				){
+					$this->sorted = false;
+				}
+				return true;
+			}
+			return false;
+		}
+
+		/**
+		 * @param Record $record
+		 * @return $this
+		 */
+		protected function _add(Record $record){
+			if($this->isEnough()){
+				return false;
+			}
+			if($this->_beforeItemAdd($record) === false){
+				return false;
+			}
+			$this->items[] = $record;
+			$this->_afterItemAdd($record);
+			return true;
+		}
+
+		/**
+		 * @param Record $record
+		 * @return bool
+		 * @throws \Exception
+		 */
+		protected function _beforeItemAdd($record){
+
+			$record_state = $record->getRecordState();
+
+			// Запись может быть не инициализирована
+
+
+			// проверка схемы записи на производность от текущей схемы
+			$schema = $record->getSchema();
+			/**
+			 * Проверка является ли текущая схема производной (тоесть текущая коллекция производная) от аргументироемой схемы
+			 */
+			//$this->schema->isDerivativeFrom($schema)
+			if(!$schema->isDerivativeFrom($this->schema)){
+				throw new \Exception(
+					'Passed record schema "'.$schema->getName().
+					'" is not support, collection use "'.$this->schema->getName().'" schema!');
+			}
+
+			// Проверка присутствия, если объект подготовительный то ищем его присутствие в нашей коллекции
+			if($record_state === Record::STATE_NEW &&
+			   array_search($record,$this->items, true) !== false
+			){
+				return false;
+			}
+
+			$root = $this->getRoot();
+
+
+			// Проверка присутствия, для персистентных записей, если сейчас не деплой режим
+			if($record_state === Record::STATE_LOADED &&
+			   $this->level === self::LEVEL_ROOT &&
+			   ($root->saturation_mode !== self::SAT_DEPLOY  || count($this->items))
+			){
+				$recordId = $record->getPkValue();
+				if(isset($root->persist_ids[$recordId])){
+					return false;
+				}
+			}
+			//проверка на сопоставления условию Contain Condition
+			if($root->saturation_mode === self::SAT_DEPLOY){
+				if(!$this->isDerivative($root->saturation_initiator)){
+					return false;
+				}
+				//если текущая коллекция является предком инициатора деплоя, то деплой был произведен унаследованым Contain Condition
+			}elseif($record->getRecordState()!==Record::STATE_NEW && !$this->checkCondition($record)){
+				return false;
+			}
+			return true;
+		}
+
+
+		/**
+		 * @param Record $record
+		 */
+		protected function _afterItemAdd($record){
+			$satMode = $this->getRoot()->saturation_mode;
+
+			$this->schema->initializeRecord($record);
+
+			// добавляем объект в диртиаддед и удаляем из диртиремоув
+			if($this->dirty_capturing && $satMode === self::SAT_NONE){
+
+				$i = array_search($record,$this->dirty_removed,true);
+				if($i !== false){
+					array_splice($this->dirty_removed,$i,1);
+				}
+
+				$i = array_search($record,$this->dirty_added,true);
+				if($i === false){
+					$this->dirty_added[] = $record;
+				}
+
+			}
+
+			// добавляем идентификатор в стек загруженных идентификаторов
+			if($this->level === self::LEVEL_ROOT
+			   && $record->getRecordState() !== Record::STATE_NEW){
+
+				$this->persist_ids[$record->getPkValue()] = true;
+
+			}
+			// добавляем в наследников коллекции
+			/** @var Collection $descendant */
+			foreach($this->descendants as $descendant){
+				$descendant->_add($record);
+			}
+		}
+
+
+
+		/**
+		 * @param null $condition
+		 * @param null $offset
+		 * @param null $limit
+		 * @return int
+		 * TODO Более деликатный подход к состояниям до деплоя и после
+		 */
+		public function count($condition = null, $offset = null, $limit = null){
+			$root = $this->getRoot();
+			$level = $root->sync_level;
+			try{
+				if($level === self::SYNC_LOCAL || $level === self::SYNC_FULL){
+					if($this->auto_deploy && !$this->deployed){
+						$this->deploy();
+					}
+					return $this->getCheckpoint()->_count($condition, $offset, $limit);
+				}else{
+					$schema = $this->getSchema();
+					$condition = $this->getExtendedContainCondition($condition);
+					$condition = $condition?$condition->toStorageCondition():[];
+					return $schema->storageCount($condition,$this->getOffset() + $offset, $limit?:$this->getLimit());
+				}
+			}finally{
+				if($root->last_sync){
+					$root->last_sync = null;
+				}
+			}
+		}
+
+		/**
+		 * @param $condition
+		 * @param null $offset
+		 * @param $limit
+		 * @return int
+		 */
+		protected function _count($condition = null, $offset = null, $limit = null){
+			if($condition === null && $offset === null && $limit === null){
+				return count($this->items);
+			}
+			return count($this->collect($condition,$limit,$offset));
+		}
 
 		/**
 		 * @param $condition
@@ -609,270 +920,69 @@ namespace Jungle\Data\Record {
 			return $a?$a[0]:null;
 		}
 
-
-		/**
+		/***
+		 * @param $property
 		 * @return array
+		 * @throws \Exception
 		 */
-		public function getPresentIdentifiers(){
-			if(!$this->ancestor){
-				return array_keys($this->root_present_identifiers);
-			}else{
-				return $this->ancestor->getPresentIdentifiers();
+		public function listProperty($property){
+			$a = [];
+			foreach($this->getItems() as $item){
+				$a[] = $item->getProperty($property);
 			}
+			return $a;
 		}
-
-		/**
-		 * @param bool $state
-		 * @param Collection|null $initiator
-		 */
-		public function saturate($state, Collection $initiator = null){
-			$base = $this->getRoot();
-			if(!$state){
-				$base->saturation_mode = self::SAT_NONE;
-				$base->saturation_initiator = null;
-			}else{
-				if(!$initiator){
-					throw new \InvalidArgumentException('Initiator supplied for saturation is null, but must be Collection');
-				}
-				$base->saturation_mode = $state;
-				$base->saturation_initiator = $initiator;
-			}
-		}
-
-		/**
-		 * @param Record $item
-		 * @return bool
-		 * ----Released-----
-		 *   - Объект перед добавлением берется из схемы в свою очередь который
-		 *      является приспособленцем до момента markRecordInitialized
-		 *
-		 *   - Требуется продумать вариант добавления записей при реализации запроса к хранилищу по Condition, Limit, etc
-		 *      чтобы коллекция не производила проверки повторно
-		 *
-		 *   - есть возможность производить запрос к хранилищу с использованием исключения по айдишникам чтобы в ответ
-		 *      не приходили присутствующие записи.
-		 *
-		 *   - контроль того чтобы запросы к хранилищу производились только при использовании коллекции или
-		 *      наследников коллекции, это позволит избежать загрузки корневой коллекции которая возможно используется с
-		 *      бесконечным лимитом, или сделать на безлимитные коллекции запрет на загрузку
-		 * -----------------
-		 */
-		public function add($item){
-			if(!$item instanceof Record){
-				throw new \LogicException('$item Must be '.Record::class. ' instance!');
-			}
-			if($this->getCheckpoint()->_add($item)){
-				if($item->getOperationMade() !== Record::OP_CREATE && $this->getRoot()->saturation_mode !== self::SAT_DEPLOY){
-					$this->sorted = false;
-				}
-				return true;
-			}
-			return false;
-		}
-
-		/**
-		 * @param Record $record
-		 * @return $this
-		 */
-		protected function _add(Record $record){
-			if($this->isEnough()){
-				return false;
-			}
-			if($this->_beforeItemAdd($record) === false){
-				return false;
-			}
-			$this->items[] = $record;
-			$this->_afterItemAdd($record);
-			return true;
-		}
-
-		/**
-		 * @param Record $record
-		 * @return bool
-		 *
-		 *
-		 *
-		 */
-		protected function _beforeItemAdd($record){
-			$schema = $record->getSchema();
-			if(!$this->schema->isDerivativeFrom($schema)){
-				throw new \LogicException(
-					'Passed record schema "'.$schema->getName().
-					'" is not support, collection use "'.$this->schema->getName().'" schema!');
-			}
-			if($record->getOperationMade() === Record::OP_CREATE && array_search($record,$this->items, true)!==false){
-				return false;
-			}
-
-			$root = $this->getRoot();
-			// Проверка присутствия, для загруженых потомков добавляемых не деплоем
-			if(!$this->ancestor &&
-			   $record->getOperationMade() !== $record::OP_CREATE &&
-			   ($root->saturation_mode !== self::SAT_DEPLOY  || count($this->items))
-			){
-				$recordId = $record->getIdentifierValue();
-				if(isset($root->root_present_identifiers[$recordId])){
-					return false;
-				}
-			}
-			//проверка на сопоставления условию Contain Condition
-			if($root->saturation_mode === self::SAT_DEPLOY){
-				if(!$this->isDerivative($root->saturation_initiator)){
-					return false;
-				}
-				//если текущая коллекция является предком инициатора деплоя, то деплой был произведен унаследованым Contain Condition
-			}elseif($record->getOperationMade()!==Record::OP_CREATE && !$this->checkCondition($record)){
-				return false;
-			}
-			return true;
-		}
-
-
-		/**
-		 * @param Record $record
-		 */
-		protected function _afterItemAdd($record){
-			$satMode = $this->getRoot()->saturation_mode;
-			$opMade = $record->getOperationMade();
-			$record->markRecordInitialized();
-			if($this->dirty_capturing && $satMode === self::SAT_NONE){
-				$i = array_search($record,$this->dirty_removed,true);
-				if($i !== false){
-					array_splice($this->dirty_removed,$i,1);
-				}else{
-					$this->dirty_added[] = $record;
-				}
-			}
-
-			if(!$this->ancestor && $opMade !== $record::OP_CREATE){
-				$this->root_present_identifiers[$record->getIdentifierValue()] = true;
-			}
-			/** @var Collection $descendant */
-			foreach($this->descendants as $descendant){
-				$descendant->_add($record);
-			}
-		}
-
-		/**
-		 * @param $level
-		 * @return $this
-		 */
-		public function setSyncLevel($level = self::SYNC_LOCAL){
-			$this->getRoot()->sync_level = $level;
-			return $this;
-		}
-
-		/**
-		 * @return int
-		 */
-		public function getSyncLevel(){
-			return $this->getRoot()->sync_level;
-		}
-
-		protected static $special_record_call_function = null;
-		protected static $special_record_get_function = null;
-		protected static $special_record_set_function = null;
-		protected static $special_record_static_get_function = null;
-		protected static $special_record_static_set_function = null;
-
-		/**
-		 * @return \Closure|null
-		 */
-		protected function _getSpecialRecordCallFunction(){
-			if(self::$special_record_call_function===null){
-				self::$special_record_call_function = \Closure::bind(function($record,$method,$arguments){
-					return call_user_func_array([$record,$method],$arguments);
-				},null,Record::class);
-			}
-			return self::$special_record_call_function;
-		}
-
-		/**
-		 * @return \Closure|null
-		 */
-		protected function _getSpecialRecordStaticGetFunction(){
-			if(self::$special_record_static_get_function===null){
-				self::$special_record_static_get_function = \Closure::bind(function($record,$property){
-					return $record::${$property};
-				},null,Record::class);
-			}
-			return self::$special_record_static_get_function;
-		}
-
-		/**
-		 * @return \Closure|null
-		 */
-		protected function _getSpecialRecordStaticSetFunction(){
-			if(self::$special_record_static_set_function===null){
-				self::$special_record_static_set_function = \Closure::bind(function($record,$property,$value){
-					$record::${$property} = $value;
-				},null,Record::class);
-			}
-			return self::$special_record_static_set_function;
-		}
-
-		/**
-		 * @return \Closure|null
-		 */
-		protected function _getSpecialRecordGetFunction(){
-			if(self::$special_record_get_function===null){
-				self::$special_record_get_function = \Closure::bind(function($record,$property){
-					return $record->{$property};
-				},null,Record::class);
-			}
-			return self::$special_record_get_function;
-		}
-
-		/**
-		 * @return \Closure|null
-		 */
-		protected function _getSpecialRecordSetFunction(){
-			if(self::$special_record_static_set_function===null){
-				self::$special_record_static_set_function = \Closure::bind(function($record,$property,$value){
-					$record->{$property} = $value;
-				},null,Record::class);
-			}
-			return self::$special_record_static_set_function;
-		}
-
 
 		/**
 		 * @param $data
 		 * @param null $condition
-		 * @param bool $fullSyncIgnoreDirty
+		 * @param bool $full_sync_actual - Выставить всем объектам данные при этом указать что они актуальные
 		 * @return $this
 		 */
-		public function update($data, $condition = null, $fullSyncIgnoreDirty = false){
-			$level = $this->getSyncLevel();
-			if($level === self::SYNC_STORE){
-				$affected = $this->schema->storageUpdate($data, $this->getExtendedContainCondition($condition)->toStorageCondition());
-				if($affected){
-					foreach($this->getRoot()->collect($condition) as $item){
-						$item->assign($data,null,null,false,false, true);
+		public function update($data, $condition = null, $full_sync_actual = false){
+			$root = $this->getRoot();
+			$level = $root->sync_level;
+			try{
+				if($level === self::SYNC_STORE){
+					$affected = $this->schema->storageUpdate($data, $this->getExtendedContainCondition($condition)->toStorageCondition());
+					if($affected){
+						foreach($root->collect($condition) as $item){
+							$item->assign($data,null,null,true);
+						}
+						return $affected;
 					}
-					return $affected;
-				}
-			}elseif($level === self::SYNC_FULL){
-				if($fullSyncIgnoreDirty){
-					foreach($this->getRoot()->collect($condition) as $item){
-						$item->assign($data,null,null,false,false, true);
+				}elseif($level === self::SYNC_FULL){
+					$condition = $this->getExtendedContainCondition($condition);
+					if($full_sync_actual){
+						foreach($root->collect($condition) as $item){
+							$item->assign($data,null,null,true);
+						}
+					}else{
+						foreach($root->collect($condition) as $item){
+							$item->assign($data);
+						}
 					}
-				}else{
-					foreach($this->getRoot()->collect($condition) as $item){
-						$item->assign($data);
-					}
-				}
 
-			}else{
-				$ad = $this->auto_deploy;
-				if($ad){
-					$this->auto_deploy = false;
+				}else{
+					try{
+						$ad = $this->auto_deploy;
+						if($ad){
+							$this->auto_deploy = false;
+						}
+						foreach($this->collect($condition) as $item){
+							$item->assign($data);
+						}
+					}finally{
+						$this->auto_deploy = $ad;
+					}
 				}
-				foreach($this->collect($condition) as $item){
-					$item->assign($data);
+			}finally{
+				if($root->last_sync){
+					$root->sync_level = $root->last_sync;
+					$root->last_sync = null;
 				}
-				$this->auto_deploy = $ad;
 			}
+
 			return $this;
 		}
 
@@ -883,20 +993,29 @@ namespace Jungle\Data\Record {
 		 */
 		public function remove($condition = null){
 			if(!is_array($condition) && $condition!==null){
-				$condition = [$this->schema->getPrimaryFieldName() => $condition];
+				$condition = [$this->schema->getPk() => $condition];
 			}
-			$level = $this->getSyncLevel();
-			if($level === self::SYNC_STORE){
-				$extended = $this->getExtendedContainCondition($condition);
-				$affected = $this->schema->storageRemove($extended->toStorageCondition());
-				if($affected){
-					$this->getRoot()->_remove($extended);
-					return $affected;
+			try{
+				$root = $this->getRoot();
+				$level = $root->sync_level;
+				if($level === self::SYNC_STORE){
+					$condition = $this->getExtendedContainCondition($condition);
+					$affected = $this->schema->storageRemove($condition->toStorageCondition());
+					if($affected){
+						$root->_remove($condition);
+						return $affected;
+					}
+				}elseif($level === self::SYNC_FULL){
+					$condition = $this->getExtendedContainCondition($condition);
+					$root->_remove($condition);
+				}else{
+					$this->getCheckpoint()->_remove($condition);
 				}
-			}elseif($level === self::SYNC_FULL){
-				$this->getRoot()->_remove($this->getExtendedContainCondition($condition));
-			}else{
-				$this->getCheckpoint()->_remove($condition);
+			}finally{
+				if($root->last_sync){
+					$root->sync_level = $root->last_sync;
+					$root->last_sync = null;
+				}
 			}
 			return $this;
 		}
@@ -933,19 +1052,27 @@ namespace Jungle\Data\Record {
 		 * @return bool
 		 */
 		public function removeItem(Record $record){
-			$level = $this->getSyncLevel();
-			if($level === self::SYNC_STORE){
-				if(!$record->delete()){
-					return false;
+			try{
+				$root = $this->getRoot();
+				$level = $root->sync_level;
+				if($level === self::SYNC_STORE){
+					if(!$record->delete()){
+						return false;
+					}
+					if(!$root->_removeItem($record)){
+						return false;
+					}
+					return true;
+				}elseif($level === self::SYNC_FULL){
+					return $root->_removeItem($record);
+				}else{
+					return $this->getCheckpoint()->_removeItem($record);
 				}
-				if(!$this->getRoot()->_removeItem($record)){
-					return false;
+			}finally{
+				if($root->last_sync){
+					$root->sync_level = $root->last_sync;
+					$root->last_sync = null;
 				}
-				return true;
-			}elseif($level === self::SYNC_FULL){
-				return $this->getRoot()->_removeItem($record);
-			}else{
-				return $this->getCheckpoint()->_removeItem($record);
 			}
 		}
 
@@ -977,6 +1104,7 @@ namespace Jungle\Data\Record {
 		 * @param \Jungle\Data\Record $record
 		 */
 		protected function _afterItemRemove($record){
+			// удаляем этот объект из диртиаддед и добавляем в диртиремоув
 			if($this->dirty_capturing && $this->getSyncLevel() === self::SYNC_LOCAL){
 				$i = array_search($record,$this->dirty_added,true);
 				if($i !== false){
@@ -985,8 +1113,8 @@ namespace Jungle\Data\Record {
 					$this->dirty_removed[] = $record;
 				}
 			}
-			if(!$this->ancestor && $record->getOperationMade() !== Record::OP_CREATE){
-				unset($this->root_present_identifiers[$record->getIdentifierValue()]);
+			if(!$this->ancestor && $record->getRecordState() !== Record::STATE_NEW){
+				unset($this->persist_ids[$record->getPkValue()]);
 			}
 			/** @var Collection $descendant */
 			foreach($this->descendants as $descendant){
@@ -1000,8 +1128,8 @@ namespace Jungle\Data\Record {
 		 * Отчистка коллекции в памяти, До последующего использования
 		 */
 		public function clean(){
-			if(!$this->ancestor){
-				$this->root_present_identifiers = [];
+			if($this->level == self::LEVEL_ROOT){
+				$this->persist_ids = [];
 			}
 			$this->items = [];
 			$this->deployed = false;
@@ -1012,16 +1140,18 @@ namespace Jungle\Data\Record {
 		}
 
 		/**
-		 * SynchronizeException state
+		 * SynchronizeError state
+		 * @param $destruction
+		 * @throws \Jungle\Data\Record\Collection\SynchronizeError
+		 * @throws Exception
 		 */
-		public function synchronize(){
+		public function synchronize($destruction = false){
 			foreach($this->items as $item){
-				if($item->getOperationMade() === Record::OP_DELETE && !$this->in_destructing){
+				// Если скрипт завершает работу то чистить вручную не будем
+				if($item->getRecordState() === Record::STATE_DELETED && !$destruction){
 					$this->getRoot()->_removeItem($item);
-				}elseif($item->hasChangesProperty()){
-					if(!$item->save()){
-						throw new Collection\SynchronizeException('Error save');
-					}
+				}elseif(!$item->save()){
+					throw new Collection\SynchronizeError('Error save');
 				}
 			}
 		}
@@ -1073,18 +1203,22 @@ namespace Jungle\Data\Record {
 				return $record;
 			}
 			if(!$this->auto_deploy && !$this->deployed){
-				$this->saturate(self::SAT_DEPLOY,$this);
-				$shipment = $this->schema->storageLoad($this->_prepareDeployStorageCondition($condition), 1, $this->getOffset() + $offset,$orderBy);
+				$this->setSaturationMode(self::SAT_DEPLOY,$this);
+
+				$condition = $this->_prepareDeployStorageCondition($condition);
+				$offset = $this->getOffset() + $offset;
+
+				$shipment = $this->schema->storageLoad($condition, 1, $offset,$orderBy);
 				if($shipment->count()){
 					$item = $shipment->asAssoc()->fetch();
 					if($item){
-						$record = $this->schema->initializeRecord($item);
+						$record = $this->schema->makeRecord($item);
 						if(!$this->add($record)){
 							$record = null;
 						}
 					}
 				}
-				$this->saturate(false);
+				$this->setSaturationMode(false);
 			}
 			return $record;
 		}
@@ -1098,15 +1232,15 @@ namespace Jungle\Data\Record {
 		 * @return Collection
 		 */
 		public function deploy($condition = null, $limit = null, $offset = null, $orderBy = null){
-			$this->saturate(self::SAT_DEPLOY,$this);
+			$this->setSaturationMode(self::SAT_DEPLOY,$this);
 			if($this->auto_deploy){
-				$condition = null; $limit = null; $offset = null; $orderBy = null;
+				$condition = $limit = $offset = $orderBy = null;
 			}
 			if(!$this->deployed && !count($this->items)){
 				$this->sorted = true;
 			}
 			$this->_deploy($condition, $limit, $offset, $orderBy);
-			$this->saturate(false);
+			$this->setSaturationMode(false);
 			$this->deployed = true;
 			return $this;
 		}
@@ -1141,7 +1275,7 @@ namespace Jungle\Data\Record {
 			$condition = $this->getExtendedContainCondition($condition);
 			$condition = $condition?$condition->toStorageCondition():[];
 			if($existing = $this->getPresentIdentifiers()){
-				$condition[] = [ $this->schema->getPrimaryFieldName(), 'NOT IN', $existing ];
+				$condition[] = [ $this->schema->getPk(), 'NOT IN', array_keys($existing) ];
 			}
 			return $condition;
 		}
@@ -1158,9 +1292,14 @@ namespace Jungle\Data\Record {
 			if(!$orderBy && ($orderBy = $this->getSorter())){
 				$orderBy = $orderBy->toStorageSortFields($this->schema);
 			}
-			$shipment = $this->schema->storageLoad($this->_prepareDeployStorageCondition($condition),$limit?:$this->getLimit(), $this->getOffset() + $offset , $orderBy);
+
+			$condition = $this->_prepareDeployStorageCondition($condition);
+			$limit = $limit?:$this->getLimit();
+			$offset = $this->getOffset() + $offset;
+
+			$shipment = $this->schema->storageLoad($condition, $limit, $offset, $orderBy);
 			while(($item = $shipment->asAssoc()->fetch()) !== false){
-				$this->add($this->schema->initializeRecord($item));
+				$this->add($this->schema->makeRecord($item));
 			}
 		}
 
@@ -1180,7 +1319,9 @@ namespace Jungle\Data\Record {
 				if($ancestor && !$appliedInNew){
 					$ancestor->addDescendant($this, true);
 				}
-				$ancestor->_onDelivery($this);
+				if($ancestor){
+					$ancestor->_onDelivery($this);
+				}
 				$this->_onExtended();
 			}
 			$this->ancestor = $ancestor;
@@ -1234,39 +1375,26 @@ namespace Jungle\Data\Record {
 		public function getDescendants(){
 			return $this->descendants;
 		}
-		
-		/**
-		 * @return Collection
-		 */
-		public function getRoot(){
-			if(!$this->root){
-				if($this->ancestor){
-					$this->root = $this->ancestor->getRoot();
-				}else{
-					$this->root = $this;
-				}
-			}
-			return $this->root;
-		}
+
 
 		/**
 		 *
 		 */
 		public function rewind(){
-			parent::rewind();
 			if($this->auto_deploy && !$this->deployed){
 				$this->deploy();
 			}
 			if($this->auto_sort && !$this->sorted){
 				$this->sort();
 			}
+			reset($this->items);
 		}
 		
 		/**
 		 * @return bool
 		 */
 		public function isRoot(){
-			return !$this->ancestor;
+			return $this->level === self::LEVEL_ROOT;
 		}
 
 		/**
@@ -1279,12 +1407,11 @@ namespace Jungle\Data\Record {
 		public function extend($condition = null, $limit = null, $offset = null, $sorter = null){
 			/** @var Collection $descendant */
 			$descendant = clone $this;
-			$descendant->setAncestor($this);
 			$descendant->setLimit($limit);
 			$descendant->setOffset($offset);
 			$descendant->setContainCondition($condition);
 			$descendant->setSorter($sorter);
-			$descendant->refresh();
+			$descendant->setAncestor($this);
 			return $descendant;
 		}
 
@@ -1308,23 +1435,36 @@ namespace Jungle\Data\Record {
 		 *
 		 */
 		public function __clone(){
+
 			$this->items = [];
+
 			$this->ancestor = null;
 			$this->descendants = [];
-			$this->root_present_identifiers = [];
+
+			$this->face_access_property = null;
+
+			$this->persist_ids = null;
+
+			$this->level = self::LEVEL_NONE;
+
 			$this->saturation_mode = self::SAT_NONE;
 			$this->saturation_initiator;
+
 			$this->auto_deploy = true;
 			$this->auto_sort = true;
-			$this->contain_condition = null;
-			$this->extended_contain_condition = null;
-			$this->face_access_property = null;
-			$this->as_checkpoint = false;
+
+
 			$this->dirty_capturing = false;
 			$this->dirty_added = [];
 			$this->dirty_removed = [];
+
+
 			$this->limit = -1;
 			$this->offset = 0;
+
+			$this->contain_condition = null;
+			$this->extended_contain_condition = null;
+
 		}
 
 
@@ -1339,7 +1479,9 @@ namespace Jungle\Data\Record {
 		/**
 		 *
 		 */
-		protected function _onExtended(){}
+		protected function _onExtended(){
+			$this->refresh();
+		}
 		
 		protected function _onLimitChanged($old){}
 		
@@ -1348,59 +1490,19 @@ namespace Jungle\Data\Record {
 		/**
 		 * @return string
 		 */
-		public function getInformationIdentifier(){
+		public function __toString(){
 			return $this->getSchema()->getName() . '[COLLECTION]';
 		}
 
 		/**
-		 * @return string
-		 */
-		public function __toString(){
-			return $this->getInformationIdentifier();
-		}
-
-		/**
-		 * @throws \Jungle\Data\Record\Collection\SynchronizeException
+		 * @throws \Jungle\Data\Record\Collection\SynchronizeError
 		 */
 		public function __destruct(){
-			$this->in_destructing = true;
 			if($this->auto_sync){
-				$this->synchronize();
+				$this->synchronize(true);
 			}
 		}
 
-		/**
-		 * @param null $condition
-		 * @param null $offset
-		 * @param null $limit
-		 * @return int
-		 */
-		public function count($condition = null, $offset = null, $limit = null){
-			$syncLevel = $this->getSyncLevel();
-			if($syncLevel === self::SYNC_LOCAL){
-				return $this->getCheckpoint()->_count($condition, $offset, $limit);
-			}elseif($syncLevel === self::SYNC_FULL){
-				return $this->getRoot()->_count($condition, $offset, $limit);
-			}else{
-				$schema = $this->getSchema();
-				$condition = $this->getExtendedContainCondition($condition);
-				$condition = $condition?$condition->toStorageCondition():[];
-				return $schema->storageCount($condition,$this->getOffset() + $offset, $limit?:$this->getLimit());
-			}
-		}
-
-		/**
-		 * @param $condition
-		 * @param null $offset
-		 * @param $limit
-		 * @return int
-		 */
-		protected function _count($condition = null, $offset = null, $limit = null){
-			if($condition === null && $offset === null && $limit === null){
-				return count($this->items);
-			}
-			return count($this->collect($condition,$limit,$offset));
-		}
 
 		
 		

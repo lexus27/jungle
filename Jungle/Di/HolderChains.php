@@ -232,9 +232,11 @@ namespace Jungle\Di {
 				try{
 					$object = $di->get($name, $parameters);
 					return $object;
-				}catch(\Exception $lastError){}
+				}catch(NotFoundException $lastError){}
 			}
-			if($throwException && $lastError instanceof \Exception)throw $lastError;
+			if($throwException && $lastError instanceof NotFoundException){
+				throw $lastError;
+			}
 			return null;
 		}
 
