@@ -58,6 +58,9 @@ namespace Jungle\Http {
 		/** @var  mixed */
 		protected $content = false;
 
+		/** @var  UploadedFile[]|null */
+		protected $files;
+
 		/**
 		 * @return mixed
 		 */
@@ -527,15 +530,74 @@ namespace Jungle\Http {
 		 * @return bool
 		 */
 		public function hasFiles(){
-			return !empty($_FILES);
+			return !empty($this->files) || !empty($_FILES);
 		}
 
 		/**
 		 * @return array
 		 */
 		public function getFiles(){
-			return $_FILES;
+			if($this->files === null){
+				$this->files = [];
+				if(!empty($_FILES)){
+					foreach($_FILES as $param_name => $_file){
+
+						$this->files[$param_name] = [];
+						if(is_array($_file['error'])){
+							foreach($_file['error'] as $i => $error){
+								if(is_uploaded_file($_file['tmp_name'][$i])){
+									if($_file['error'][$i] !== UPLOAD_ERR_OK || $_file['size'][$i] || $_file['tmp_name'][$i]){
+										$uploaded_file = new UploadedFile();
+										$uploaded_file->status = $error;
+										$uploaded_file->name = $_file['name'][$i];
+										$uploaded_file->path = $_file['tmp_name'][$i];
+										$uploaded_file->mime_type = $_file['type'][$i];
+										$uploaded_file->size = $_file['size'][$i];
+										$this->files[$param_name][] = $uploaded_file;
+									}
+								}
+							}
+						}else{
+							if(is_uploaded_file($_file['tmp_name'])){
+								if($_file['error'] === UPLOAD_ERR_OK && !$_file['size'] && !$_file['tmp_name']){
+									$this->files[$param_name] = null;
+								}else{
+									$uploaded_file = new UploadedFile();
+									$uploaded_file->status = $_file['error'];
+									$uploaded_file->name = $_file['name'];
+									$uploaded_file->path = $_file['tmp_name'];
+									$uploaded_file->size = $_file['size'];
+									$uploaded_file->mime_type = $_file['type'];
+									$this->files[$param_name] = $uploaded_file;
+								}
+							}else{
+
+							}
+						}
+					}
+					$_FILES = [];
+				}
+			}
+			return $this->files;
 		}
+
+		/**
+		 * @param $param_name
+		 * @param bool|false $asCollection
+		 * @return UploadedFile[]|UploadedFile|null
+		 */
+		public function getFile($param_name, $asCollection = false){
+			$this->getFiles();
+			if(isset($this->files[$param_name])){
+				if($asCollection){
+					return is_array($this->files[$param_name])?$this->files[$param_name]:[$this->files[$param_name]];
+				}else{
+					return is_array($this->files[$param_name])?$this->files[$param_name][0]:$this->files[$param_name];
+				}
+			}
+			return $asCollection?[]:null;
+		}
+
 		/**
 		 * @param $value
 		 * @param null $filter
