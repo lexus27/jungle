@@ -592,7 +592,7 @@ namespace Jungle\Http {
 				if($asCollection){
 					return is_array($this->files[$param_name])?$this->files[$param_name]:[$this->files[$param_name]];
 				}else{
-					return is_array($this->files[$param_name])?$this->files[$param_name][0]:$this->files[$param_name];
+					return is_array($this->files[$param_name])?(isset($this->files[$param_name][0])?$this->files[$param_name][0]:null):$this->files[$param_name];
 				}
 			}
 			return $asCollection?[]:null;
