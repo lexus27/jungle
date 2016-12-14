@@ -997,6 +997,11 @@ namespace Jungle\Data {
 				}
 				$schema->beforeStorageCreate($this);
 
+				if($this->{$pk}){
+					// PK был выставлен
+					$pk_value = $this->{$pk};
+				}
+
 				$data = $this->data();
 				if(!$pk_value){
 					unset($data[$pk]);
