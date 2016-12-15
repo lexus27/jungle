@@ -575,7 +575,6 @@ namespace Jungle\Http {
 							}
 						}
 					}
-					$_FILES = [];
 				}
 			}
 			return $this->files;
