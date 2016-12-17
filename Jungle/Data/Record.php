@@ -737,7 +737,12 @@ namespace Jungle\Data {
 		public function export( $public = true ){
 			$values = [ ];
 			if($this->_initialized){
-				foreach(array_intersect_key($this->_schema->fields,array_flip($this->_schema->getEnumerableNames())) as $name => $field){
+
+				$fields = $public?
+					array_intersect_key($this->_schema->fields,array_flip($this->_schema->getEnumerableNames())):
+					$this->_schema->fields;
+
+				foreach($fields as $name => $field){
 					$values[$name] = $this->getProperty($name);
 				}
 				return $values;
