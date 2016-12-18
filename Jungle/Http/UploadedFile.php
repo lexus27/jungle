@@ -52,15 +52,24 @@ namespace Jungle\Http {
 		/**
 		 * @param $path
 		 * @param bool $use_as_dirname
+		 * @param bool $overwrite
 		 * @throws \Exception
 		 */
-		public function moveTo($path, $use_as_dirname = false){
+		public function moveTo($path, $use_as_dirname = false, $overwrite = false){
 			if($this->status !== UPLOAD_ERR_OK){
 				throw new \Exception('Move uploaded file error: "'.$this->getStatusText().'"');
 			}
 
 			if($use_as_dirname){
 				$path = FileSystem::normalizePath($path . '/' . $this->name);
+			}
+
+			if(!is_uploaded_file($this->path)){
+				throw new \Exception('UploadedFile can not be moved "'.$this->path.'" to "'.$path.'"');
+			}
+
+			if($overwrite && file_exists($path) && (!@chmod($path,0777) || !@unlink($path))){
+				throw new \Exception('UploadedFile can not be moved "'.$this->path.'" to "'.$path.'" because overwrite error');
 			}
 
 			if(!@move_uploaded_file($this->path, $path)){
