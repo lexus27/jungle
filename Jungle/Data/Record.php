@@ -443,6 +443,10 @@ namespace Jungle\Data {
 			return self::$instantiatedRecordsCount;
 		}
 
+		public function getTitleValue(){
+			
+		}
+
 		/**
 		 * @return mixed
 		 */
