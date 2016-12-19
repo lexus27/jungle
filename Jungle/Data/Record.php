@@ -16,6 +16,7 @@ namespace Jungle\Data {
 	use Jungle\Data\Record\ExportableInterface;
 	use Jungle\Data\Record\Relation\Relation;
 	use Jungle\Data\Record\Relation\RelationMany;
+	use Jungle\Data\Record\Relation\RelationSchema;
 	use Jungle\Data\Record\Relation\Relationship;
 	use Jungle\Data\Record\Repository;
 	use Jungle\Data\Record\Schema\Schema;
@@ -23,6 +24,7 @@ namespace Jungle\Data {
 	use Jungle\Data\Record\Validation\ValidationResult;
 	use Jungle\Data\Storage\Exception\DuplicateEntry;
 	use Jungle\Data\Storage\Exception\Operation;
+	use Jungle\Http\UploadedFile;
 	use Jungle\Util\Data\Record\PropertyRegistryInterface;
 	use Jungle\Util\Data\Record\PropertyRegistryTransientInterface;
 	use Jungle\Util\Data\Schema\OuterInteraction\SchemaAwareInterface;
@@ -352,14 +354,24 @@ namespace Jungle\Data {
 		 * @param $relation_key
 		 * @return bool
 		 */
-		public function hasChangesRelated($relation_key){
-			$data = $this->_related_snapshot->earliest()->data();
-			if(isset($data[$relation_key]) xor isset($this->_related[$relation_key])){
-				return true;
+		public function hasChangesRelated($relation_key = null){
+			if($relation_key === null || ($a = is_array($relation_key)) ){
+
+				if(isset($a)) $relations = array_intersect_key($this->_schema->relations, array_flip($relation_key));
+				else $relations = $this->_schema->relations;
+
+				$related_loaded = array_intersect_key($this->_related,$relations);
+				$data = $this->_related_snapshot->earliest()->data();
+				return !!array_diff_assoc($related_loaded, $data);
+			}else{
+				$data = $this->_related_snapshot->earliest()->data();
+				if(isset($data[$relation_key]) xor isset($this->_related[$relation_key])){
+					return true;
+				}
+				return isset($data[$relation_key])
+				       && isset($this->_related[$relation_key])
+				       && $data[$relation_key] !== $this->_related[$relation_key];
 			}
-			return isset($data[$relation_key])
-			       && isset($this->_related[$relation_key])
-			       && $data[$relation_key] !== $this->_related[$relation_key];
 		}
 
 		/**
@@ -443,8 +455,12 @@ namespace Jungle\Data {
 			return self::$instantiatedRecordsCount;
 		}
 
+		/**
+		 * @return Record|Record[]|Relationship|mixed
+		 * @throws \Exception
+		 */
 		public function getTitleValue(){
-			
+			return $this->getProperty($this->_schema->tk);
 		}
 
 		/**
@@ -539,8 +555,7 @@ namespace Jungle\Data {
 		/**
 		 * @param $key
 		 * @return Record|Record[]|Relationship|mixed
-		 * @throws Exception
-		 * @throws Exception\Field
+		 * @throws \Exception
 		 */
 		public function getProperty($key){
 
@@ -614,13 +629,17 @@ namespace Jungle\Data {
 
 		/**
 		 * @param $relation_key
-		 * @param Record|null $object
+		 * @param Record|UploadedFile|null $object
 		 * @return $this
 		 * @throws \Exception
 		 */
-		public function setRelated($relation_key, Record $object = null){
+		public function setRelated($relation_key, $object = null){
 			if(isset($this->_schema->relations[$relation_key])){
 				$r = $this->_schema->relations[$relation_key];
+				if($r instanceof RelationSchema && is_object($object) && !$object instanceof Record){
+					throw new \InvalidArgumentException('$object Must be a "'.Record::class.'" instance');
+				}
+
 				if($r instanceof RelationMany){
 					$this->addRelated($relation_key,$object);
 				}else{
@@ -806,6 +825,13 @@ namespace Jungle\Data {
 		}
 
 		/**
+		 * @return Snapshot|null
+		 */
+		public function getRelatedSnapshot(){
+			return $this->_related_snapshot;
+		}
+
+		/**
 		 * @param Operation $operation
 		 * @param bool $delete
 		 * @return bool
@@ -897,7 +923,7 @@ namespace Jungle\Data {
 					case self::STATE_LOADED:
 
 						// не вычисляет измененные связанные записи
-						if(!$this->hasChangesProperty()){
+						if(!$this->hasChangesProperty() && !$this->hasChangesRelated()){
 							return true;
 						}
 
