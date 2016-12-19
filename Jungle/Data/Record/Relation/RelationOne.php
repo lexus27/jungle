@@ -16,7 +16,7 @@ namespace Jungle\Data\Record\Relation {
 	 * Class RelationOne
 	 * @package Jungle\Data\Record\Relation
 	 */
-	class RelationOne extends RelationAbstractHost{
+	class RelationOne extends RelationSchemaHost{
 
 
 

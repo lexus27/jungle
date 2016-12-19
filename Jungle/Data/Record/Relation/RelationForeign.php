@@ -17,7 +17,7 @@ namespace Jungle\Data\Record\Relation {
 	 * Class RelationForeign
 	 * @package Jungle\Data\Record\Relation
 	 */
-	class RelationForeign extends Relation{
+	class RelationForeign extends RelationSchema{
 
 		const ACTION_RESTRICT   = 'restrict';
 		const ACTION_CASCADE    = 'cascade';
@@ -51,10 +51,6 @@ namespace Jungle\Data\Record\Relation {
 			if($on_update)$this->on_update = $on_update;
 			if($on_delete)$this->on_delete = $on_delete;
 			if(isset($virtual))$this->virtual = $virtual;
-		}
-
-		public function getLocalFields(){
-			return $this->fields;
 		}
 
 		/**
@@ -116,7 +112,7 @@ namespace Jungle\Data\Record\Relation {
 				$ownerships = [];
 				foreach($schema->getRelations() as $name => $relation){
 					if(
-						$relation instanceof RelationAbstractHost &&
+						$relation instanceof RelationSchemaHost &&
 						$this->referenced_fields === $relation->fields &&
 						$this->fields === $relation->referenced_fields
 					){

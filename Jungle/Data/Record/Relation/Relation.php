@@ -25,15 +25,6 @@ namespace Jungle\Data\Record\Relation {
 		/** @var  Schema */
 		public $schema;
 
-		/** @var array  */
-		public $fields = [];
-
-		/** @var  Schema */
-		public $referenced_schema;
-
-		/** @var array  */
-		public $referenced_fields = [];
-
 		/** @var  mixed */
 		public $signature;
 
@@ -125,7 +116,7 @@ namespace Jungle\Data\Record\Relation {
 
 		abstract public function initialize();
 
-
+		abstract public function getLocalFields();
 	}
 }
 

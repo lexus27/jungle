@@ -16,7 +16,7 @@ namespace Jungle\Data\Record\Relation {
 	 * Class RelationMany
 	 * @package Jungle\Data\Record\Relation
 	 */
-	class RelationMany extends RelationAbstractHost{
+	class RelationMany extends RelationSchemaHost{
 
 		/**
 		 * Как будет называться каждый объект коллекции в очередной итерации при использовании в контексте

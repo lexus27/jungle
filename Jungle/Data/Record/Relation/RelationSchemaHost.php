@@ -12,10 +12,10 @@ namespace Jungle\Data\Record\Relation {
 	use Jungle\Data\Record;
 
 	/**
-	 * Class RelationAbstractHost
+	 * Class RelationSchemaHost
 	 * @package Jungle\Data\Record\Relation
 	 */
-	abstract class RelationAbstractHost extends Relation{
+	abstract class RelationSchemaHost extends RelationSchema{
 
 		/**
 		 * Связь которая находится на противоположной схеме

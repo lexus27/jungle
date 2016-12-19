@@ -22,7 +22,7 @@ namespace Jungle\Data\Record\Relation {
 	 *
 	 * В текущей реализации объект-связь RelationMany автоматически работает и с Foreign и с ForeignDynamic
 	 * без установленной логики для их опознания и логики обработки спецефичной-каждому типу
-	 * на стороне RelationAbstractHost(RelationMany & RelationOne) не происходит никакой логики для обеспечения работы конкретно динамической связи)
+	 * на стороне RelationSchemaHost(RelationMany & RelationOne) не происходит никакой логики для обеспечения работы конкретно динамической связи)
 	 *
 	 *
 	 */
