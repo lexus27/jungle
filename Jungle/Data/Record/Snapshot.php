@@ -56,6 +56,12 @@ namespace Jungle\Data\Record {
 			return !$this->prev?$this:$this->prev;
 		}
 
+		public function get($key, $default = null){
+			return isset($this->data[$key])?$this->data[$key]:$default;
+		}
+
+
+
 	}
 }
 
