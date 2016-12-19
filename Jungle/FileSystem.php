@@ -58,7 +58,7 @@ namespace Jungle {
 					return ($m[1]?$directorySeparator.$directorySeparator:$directorySeparator);
 				}, $path);
 			}
-			return strtr($path,self::revertPathSeparator($directorySeparator), self::DS);
+			return strtr($path,self::revertPathSeparator($directorySeparator), $directorySeparator);
 		}
 
 		/**

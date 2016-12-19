@@ -7,10 +7,11 @@
  */
 namespace Jungle\FileSystem\Model {
 
+	use Jungle\FileSystem;
+	use Jungle\FileSystem\Adapter;
 	use Jungle\FileSystem\Model\Exception\ActionError;
 	use Jungle\FileSystem\Model\Exception\AlreadyExistsIn;
 	use Jungle\FileSystem\Model\Exception\ProcessLock;
-	use Jungle\FileSystem\Model\Manager\Adapter;
 
 	/**
 	 * Class Node
@@ -30,6 +31,8 @@ namespace Jungle\FileSystem\Model {
 	 * @property int $created_time
 	 */
 	abstract class Node{
+
+		const TAG_PUBLIC = 'public';
 
 		/** @var Manager */
 		protected $manager;
@@ -102,9 +105,8 @@ namespace Jungle\FileSystem\Model {
 				if(!$this->checkExistingNodeType($name)){
 					throw new Exception('Node type from absolute "'.$name.'" is not supported '.get_called_class());
 				}
-				$baseName           = basename($name);
-				$this->setBasename($baseName);
-				$this->real_path    = ltrim(dirname($name),'.\\/').$manager->getAdapter()->ds().$baseName;
+				$this->setBasename($baseName = basename($name));
+				$this->real_path    = ltrim(dirname($name),'.\/').$manager->getAdapter()->ds().$baseName;
 				$this->exists       = true;
 			}else{
 				$this->setBasename(basename($name));
@@ -145,7 +147,7 @@ namespace Jungle\FileSystem\Model {
 		 * @return bool
 		 */
 		public function isDeletable(){
-			return $this->isReadOnly() || !$this->isWritable();
+			return $this->isWritable() || !$this->isReadOnly();
 		}
 
 		/**
@@ -225,7 +227,7 @@ namespace Jungle\FileSystem\Model {
 		 * @return $this
 		 */
 		public function setOwner($owner){
-
+			//@TODO
 			return $this;
 		}
 
@@ -238,7 +240,7 @@ namespace Jungle\FileSystem\Model {
 		 * @return $this
 		 */
 		public function setGroup($group){
-
+			//@TODO
 			return $this;
 		}
 
@@ -320,28 +322,11 @@ namespace Jungle\FileSystem\Model {
 			return $this;
 		}
 
-		protected function _afterBasenameChange(){
-			if($this->real_path){
-				$this->real_path = dirname($this->real_path) . $this->getAdapter()->ds() . $this->basename;
-			}
-		}
-
 		/**
 		 * @return string
 		 */
 		public function getBasename(){
 			return $this->basename;
-		}
-
-		/**
-		 * @param $name
-		 * @throws Exception
-		 */
-		protected function _beforeRename($name){
-			$parent = $this->getParent();
-			if($parent && $parent->hasNode($name)){
-				throw new Exception("Node {$name} already exists in {$parent->basename}({$parent->getAbsolutePath()})");
-			}
 		}
 
 		/**
@@ -380,7 +365,7 @@ namespace Jungle\FileSystem\Model {
 		}
 
 		/**
-		 * @return Manager\Adapter
+		 * @return \Jungle\FileSystem\Adapter\Adapter
 		 * @throws Exception
 		 */
 		public function getAdapter(){
@@ -403,12 +388,21 @@ namespace Jungle\FileSystem\Model {
 
 		/**
 		 * @param null $realPath
+		 * @param null $suffix_path
 		 * @return null|string
 		 * @throws Exception
 		 */
-		public function getAbsolutePath($realPath = null){
+		public function getAbsolutePath($realPath = null, $suffix_path = null){
 			if(!$realPath)$realPath = $this->real_path;
-			return $realPath? $this->getAdapter()->absolute($realPath) : null;
+			$adapter = $this->getAdapter();
+			$ds = $this->getAdapter()->ds();
+			$path = $realPath? $realPath : null;
+			if($suffix_path && $path!==null){
+				$path = FileSystem::normalizePath($path . '/' . $suffix_path,true,$ds);
+			}else{
+				$path = FileSystem::normalizePath($suffix_path,true,$ds);
+			}
+			return $adapter->absolute($path, true);
 		}
 
 		/**
@@ -445,7 +439,7 @@ namespace Jungle\FileSystem\Model {
 		 * Вернет самый верхний загруженый элемент
 		 * иерархии в которой находиться текущий объект
 		 */
-		protected function getRoot(){
+		public function getRoot(){
 			if(!$this->parent){
 				return $this;
 			}elseif($this->parent){
@@ -459,7 +453,7 @@ namespace Jungle\FileSystem\Model {
 		 * @return bool
 		 * Проверяет является ли самый верхний загруженный по иерархии объект - фантомным
 		 */
-		protected function isRootPhantom(){
+		public function isRootPhantom(){
 			if(!$this->parent){
 				return $this->isPhantom();
 			}else{
@@ -472,7 +466,7 @@ namespace Jungle\FileSystem\Model {
 		 * @return Directory|File
 		 * Вернет самый верхний загруженый элемент иерархии Только если он является фантомным
 		 */
-		protected function getRootPhantom($directoryOnly = true){
+		public function getRootPhantom($directoryOnly = true){
 			if(!$this->parent && $this->isPhantom()){
 				if($directoryOnly && $this instanceof Directory){
 					return $this;
@@ -491,7 +485,7 @@ namespace Jungle\FileSystem\Model {
 		 *
 		 * Вернет верхний по иерархии , но самый близкий к текущему объекту - актуальный объект
 		 */
-		protected function getTopActual(){
+		public function getTopActual(){
 			if($this->isActual()){
 				return $this;
 			}elseif($this->parent){
@@ -504,13 +498,30 @@ namespace Jungle\FileSystem\Model {
 		/**
 		 * Обновление Ноды и вложеных в неё детей
 		 */
-		protected function update(){
+		public function update(){
 			if($this->parent && $this->isPhantom() && !$this->parent->isPhantom()){
 				if($this->getAdapter() !== $this->parent->getAdapter()){
 					$this->transfer($this->getAdapter(),$this->parent->getAdapter());
 				}else{
 					$this->actualize();
 				}
+			}
+		}
+
+		protected function _afterBasenameChange(){
+			if($this->real_path){
+				$this->real_path = dirname($this->real_path) . $this->getAdapter()->ds() . $this->basename;
+			}
+		}
+
+		/**
+		 * @param $name
+		 * @throws Exception
+		 */
+		protected function _beforeRename($name){
+			$parent = $this->getParent();
+			if($parent && $parent->hasNode($name)){
+				throw new Exception("Node {$name} already exists in {$parent->basename}({$parent->getAbsolutePath()})");
 			}
 		}
 
@@ -574,6 +585,89 @@ namespace Jungle\FileSystem\Model {
 		}
 
 		/**
+		 * @Copy
+		 */
+		public function __clone(){
+			$this->parent = null;
+			$this->cloning = true;
+			if($this->permissions instanceof Permissions){
+				$this->permissions = clone $this->permissions;
+				$applyFn = $this->permissions->getApplyFunc();
+				if($applyFn){
+					$this->permissions->setApplyFunc(\Closure::bind($applyFn,$this));
+				}
+			}
+			$this->getManager()->regNode($this);
+		}
+
+
+
+		/**
+		 * @return $this
+		 * @throws ActionError
+		 */
+		public function create(){
+			if($this->isNew()){
+				$path = (($dir = $this->getParent())?$dir->create(true)->real_path:'') . $this->getAdapter()->ds() . $this->basename;
+				$this->_create($path);
+				$permissions = $this->getPermissions();
+				$this->real_path    = $path;
+				$this->exists       = true;
+				$permissions->applyChanges();
+				//TODO Owner, Group - after create
+			}
+			return $this;
+		}
+
+		/**
+		 * @param bool $forceDelete Удаление проигнорировав запреты прав доступа.
+		 * Попробует снять с Ноды запреты на удаление и все-равно удалит файл или директорию
+		 * @param bool $ignoreError
+		 * @param Node $deletionRoot
+		 * @return $this
+		 * @throws ActionError
+		 * @throws Exception
+		 * @throws \Exception
+		 */
+		public function delete($forceDelete = false, $ignoreError = false,Node $deletionRoot = null){
+			if(!$deletionRoot)$deletionRoot = $this;
+			if($this->exists && ($this->_beforeDelete($forceDelete,$ignoreError,$deletionRoot)!==false)){
+				$toDelete = true;
+				if(!$this->cloning){
+					if($forceDelete){
+						$this->getPermissions()->setPermissions(0777);
+					}
+					try{
+						$this->_delete();
+					}catch(ActionError $e){
+						if($ignoreError && !$forceDelete){
+							$toDelete = false;
+						}elseif($forceDelete){
+							throw $e;
+						}else{
+							throw $e;
+						}
+					}
+
+				}
+				if($toDelete){
+					$this->exists       = false;
+					$this->real_path    = null;
+					$this->deleted      = true;
+					if($this->manager){
+						$this->manager->unregNode($this);
+						$this->manager = null;
+					}
+					if($this->parent){
+						$this->setParent(null);
+					}
+				}
+			}
+			return $this;
+		}
+
+
+		/**
 		 * @param Directory $expected
 		 * @throws AlreadyExistsIn
 		 */
@@ -603,18 +697,6 @@ namespace Jungle\FileSystem\Model {
 			}
 		}
 
-		/**
-		 * @param Directory $parent
-		 * Происходит присоединение текущей иерархии (Которая являлась висячей)
-		 *
-		 *      Если эта иерархия помечена CLONED, и @see $parent реально существующий
-		 *      - то произойдет CLONE PROCESS для текущей иерархии
-		 *
-		 *
-		 * */
-		protected function onAttached(Directory $parent){
-			$this->update();
-		}
 
 		/**
 		 * @param Directory $parent
@@ -638,22 +720,17 @@ namespace Jungle\FileSystem\Model {
 		}
 
 		/**
-		 * @Copy
-		 */
-		public function __clone(){
-			$this->parent = null;
-			$this->cloning = true;
-			if($this->permissions instanceof Permissions){
-				$this->permissions = clone $this->permissions;
-				$applyFn = $this->permissions->getApplyFunc();
-				if($applyFn){
-					$this->permissions->setApplyFunc(\Closure::bind($applyFn,$this));
-				}
-			}
-			$this->getManager()->regNode($this);
+		 * @param Directory $parent
+		 * Происходит присоединение текущей иерархии (Которая являлась висячей)
+		 *
+		 *      Если эта иерархия помечена CLONED, и @see $parent реально существующий
+		 *      - то произойдет CLONE PROCESS для текущей иерархии
+		 *
+		 *
+		 * */
+		protected function onAttached(Directory $parent){
+			$this->update();
 		}
-
-
 		/**
 		 * @param Directory $parent
 		 * @param bool $doCopy
@@ -718,76 +795,6 @@ namespace Jungle\FileSystem\Model {
 				$this->real_path    = $actual_path;
 			}
 		}
-
-
-		/**
-		 * @return $this
-		 * @throws ActionError
-		 */
-		public function create(){
-			if($this->isNew()){
-				if(!($dir = $this->getParent())){
-					throw new ActionError('Нельзя реализовать создание объекта у которого в цепочке родительских директорий не существует реальной директории (Ошибка: висячая иерархия)');
-				}
-
-				$path = $dir->create(true)->real_path . $this->getAdapter()->ds() . $this->basename;
-				$this->_create($path);
-				$permissions = $this->getPermissions();
-				$this->real_path    = $path;
-				$this->exists       = true;
-				$permissions->applyChanges();
-				//TODO Owner, Group - after create
-			}
-			return $this;
-		}
-
-		/**
-		 * @param bool $forceDelete Удаление проигнорировав запреты прав доступа.
-		 * Попробует снять с Ноды запреты на удаление и все-равно удалит файл или директорию
-		 * @param bool $ignoreError
-		 * @param Node $deletionRoot
-		 * @return $this
-		 * @throws ActionError
-		 * @throws Exception
-		 * @throws \Exception
-		 */
-		public function delete($forceDelete = false, $ignoreError = false,Node $deletionRoot = null){
-			if(!$deletionRoot)$deletionRoot = $this;
-			if($this->exists && ($this->_beforeDelete($forceDelete,$ignoreError,$deletionRoot)!==false)){
-				$toDelete = true;
-				if(!$this->cloning){
-					if($forceDelete){
-						$this->getPermissions()->setPermissions(0777);
-					}
-					try{
-						$this->_delete();
-					}catch(ActionError $e){
-						if($ignoreError && !$forceDelete){
-							$toDelete = false;
-						}elseif($forceDelete){
-							throw $e;
-						}else{
-							throw $e;
-						}
-					}
-
-				}
-				if($toDelete){
-					$this->exists       = false;
-					$this->real_path    = null;
-					$this->deleted      = true;
-					if($this->manager){
-						$this->manager->unregNode($this);
-						$this->manager = null;
-					}
-					if($this->parent){
-						$this->setParent(null);
-					}
-				}
-			}
-			return $this;
-		}
-
 		/**
 		 * @param bool $forceDelete
 		 * @param bool $ignoreError
@@ -979,6 +986,68 @@ namespace Jungle\FileSystem\Model {
 
 		public function __unset($key){}
 
+
+		/**
+		 * @param Directory|string|null $base
+		 * @param null $directory_separator
+		 * @return string
+		 */
+		public function getRelativePath($base, $directory_separator = null){
+			if(!$base instanceof Directory){
+				$base = $this->getTaggedParent($base);
+			}
+			// Почему-то в $parent_path RealPath слева имеет /, а в $path не имеет, хотя они относительно одной базы
+			$path = ltrim($this->getRealPath(),'\/');
+			$parent_path = ltrim($base->getRealPath(),'\/');
+			if(strpos($path, $parent_path) === 0){
+				$relative_path = substr($path,strlen($parent_path));
+				return FileSystem::normalizePath($relative_path,false,$directory_separator?:$this->getAdapter()->ds());
+			}else{
+				throw new \LogicException('Current node $this{"'.$path.'"} is not contains in $parent{"'.$parent_path.'"}');
+			}
+		}
+
+
+		/**
+		 * @param null $tag
+		 * @return $this|null
+		 */
+		public function getTaggedParent($tag = null){
+			if($this instanceof Directory && ($this->tag && ($tag===null || $tag === $this->tag))){
+				return $this;
+			}
+			return $this->parent?$this->parent->getTaggedParent($tag):null;
+		}
+
+		/**
+		 * @param Directory|string|null $public_parent_tag
+		 * @return string
+		 */
+		public function getPublicPath($public_parent_tag = null){
+			$public_parent_tag = $public_parent_tag?:self::TAG_PUBLIC;
+			return $this->getRelativePath($public_parent_tag, '/');
+		}
+
+
+		/**
+		 * @param $new_pathname
+		 * @param Directory|string $root
+		 * @return $this
+		 */
+		public function renameFrom($new_pathname, $root){
+			if(!$root instanceof Directory){
+				$root = $this->getTaggedParent($root);
+			}
+			$d_name = dirname($new_pathname);
+			$b_name = basename($new_pathname);
+			$directory = $root->dir($d_name);
+			if($b_name && $b_name !== $this->basename){
+				$this->setParent(null);
+				$this->setBasename($b_name);
+			}
+			$directory->addNode($this);
+			return $this;
+		}
 
 
 	}

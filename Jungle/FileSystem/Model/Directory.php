@@ -7,6 +7,7 @@
  */
 namespace Jungle\FileSystem\Model {
 
+	use Jungle\FileSystem;
 	use Jungle\FileSystem\Model\Exception\ActionError;
 	use Jungle\FileSystem\Model\Exception\AlreadyExistsIn;
 	use Jungle\FileSystem\Model\Exception\ProcessLock;
@@ -26,11 +27,14 @@ namespace Jungle\FileSystem\Model {
 		/** @var array */
 		protected $detached = [];
 
+		/** @var  string|null */
+		public $tag;
+
 		/**
 		 * @return bool
 		 */
 		public function isDir(){
-			return false;
+			return true;
 		}
 
 		/**
@@ -52,12 +56,100 @@ namespace Jungle\FileSystem\Model {
 		}
 
 		/**
-		 *
+		 * @return float|null
+		 * @throws Exception
 		 */
 		public function getDiskFreeSpace(){
-
+			return $this->real_path?$this->getAdapter()->disk_free_space($this->real_path):null;
 		}
 
+		/**
+		 * @param $path
+		 * @return Directory|File|Node|null
+		 * @throws AlreadyExistsIn
+		 * @throws Exception
+		 */
+		public function file($path){
+			$dirname = dirname($path);
+			$name = trim(basename($path),'\/');
+
+			if($dirname){
+				$dir = $this->dir($dirname);
+			}else{
+				$dir = $this;
+			}
+			$file = $dir->getNode($name);
+			if(!$file){
+				$file = $dir->newFile($name);
+			}
+			return $file;
+		}
+
+		/**
+		 * @param $path
+		 * @param bool $normalize
+		 * @return Directory|File|Node|null
+		 * @throws AlreadyExistsIn
+		 * @throws Exception
+		 */
+		public function dir($path, $normalize = true){
+			$path = trim($path,'\/');
+			if($normalize){
+				$path = FileSystem::normalizePath($path,true);
+			}
+			if(!$path || in_array($path,['.',DIRECTORY_SEPARATOR])){
+				return $this;
+			}
+			$pos = strpos($path,DIRECTORY_SEPARATOR);
+			if($pos!==false  || ($pos = strpos($path,FileSystem::revertPathSeparator(DIRECTORY_SEPARATOR))) !== false){
+				$start = substr($path,0,$pos);
+				$dir = $this->getNode($start);
+				if(!$dir){
+					$dir = $this->newDir($start);
+				}
+				return $dir->dir(substr($path,$pos));
+			}else{
+				if($this->hasNode($path) && !$this->isFileNode($path)){
+					return $this->getNode($path);
+				}
+				return $this->newDir($path)->create();
+			}
+		}
+
+		/**
+		 * @param $path
+		 * @param bool|true $normalize
+		 * @return $this|Directory|File|Node|null
+		 * @throws Exception
+		 */
+		public function get($path, $normalize = true){
+			$path = trim($path,'\/');
+			if($normalize){
+				$path = FileSystem::normalizePath($path,true);
+			}
+			if(!$path || in_array($path,['.',DIRECTORY_SEPARATOR])){
+				return $this;
+			}
+			$pos = strpos($path,DIRECTORY_SEPARATOR);
+			if($pos!==false){
+				$start = substr($path,0,$pos);
+				$dir = $this->getNode($start);
+				if($dir){
+					return $dir->get(substr($path,$pos));
+				}
+			}else{
+				if($this->hasNode($path)){
+					return $this->getNode($path);
+				}
+			}
+			return null;
+		}
+
+		/**
+		 * @param $key
+		 * @return int|Directory|Permissions|null|string
+		 * @throws Exception
+		 */
 		public function __get($key){
 			switch($key){
 
@@ -86,6 +178,7 @@ namespace Jungle\FileSystem\Model {
 					break;
 			}
 		}
+
 
 		/**
 		 * @throws Exception
@@ -132,7 +225,7 @@ namespace Jungle\FileSystem\Model {
 		/**
 		 * Обновление всех
 		 */
-		protected function update(){
+		public function update(){
 			$this->_clearAllDeleted();
 			gc_collect_cycles();
 			parent::update();
@@ -198,7 +291,7 @@ namespace Jungle\FileSystem\Model {
 		protected function _delete(){
 			if(!@$this->getAdapter()->rmdir($this->real_path)){
 				$e = error_get_last();
-				throw new Exception\ActionError(sprintf('Could not remove dir "%s", message: %s',$this->real_path , $e['message']));
+				throw new Exception\ActionError(sprintf('Could not remove newDir "%s", message: %s',$this->real_path , $e['message']));
 			}
 		}
 
@@ -573,10 +666,10 @@ namespace Jungle\FileSystem\Model {
 
 		/**
 		 * @param $name
-		 * @param bool $loadedNode
+		 * @param Node $loadedNode
 		 * @return bool
 		 */
-		public function hasNode($name, & $loadedNode = null){
+		public function hasNode($name, &$loadedNode = null){
 			if($name instanceof Node){
 				$name = $name->basename;
 			}
@@ -631,6 +724,7 @@ namespace Jungle\FileSystem\Model {
 		 * @throws Exception
 		 */
 		public function &getNode($name){
+			$n = null;
 			if($name instanceof Node){
 				if(!$name->parent || $name->parent !== $this){
 					throw new Exception('Passed Node to getNode is not child in that Directory');
@@ -656,7 +750,7 @@ namespace Jungle\FileSystem\Model {
 				return $this->children[$i];
 			}
 
-			return null;
+			return $n;
 		}
 
 		/**
@@ -692,7 +786,7 @@ namespace Jungle\FileSystem\Model {
 				}
 			}
 			if(!$node instanceof File){
-				$node = $this->getManager()->file($name);
+				$node = $this->getManager()->newFile($name);
 				$node->setParent($this,false,false,true);
 			}
 
@@ -722,7 +816,7 @@ namespace Jungle\FileSystem\Model {
 				}
 			}
 			if(!$node instanceof Directory){
-				$node = $this->getManager()->dir($name);
+				$node = $this->getManager()->newDir($name);
 				$node->setParent($this,false,false,true);
 			}
 			return $node;
@@ -776,17 +870,19 @@ namespace Jungle\FileSystem\Model {
 		 */
 		public function getFiles(callable $checker = null){
 			$names = $this->getNodeNames();
+			$a = [];
 			foreach($names as $name){
 				if($this->isFileNode($name) && ($node = & $this->getNode($name))){
 					if($checker){
 						if(call_user_func($checker,$node)){
-							yield $node;
+							$a[$name]= $node;
 						}
 					}else{
-						yield $node;
+						$a[$name]= $node;
 					}
 				}
 			}
+			return $a;
 		}
 
 		/**
@@ -797,7 +893,7 @@ namespace Jungle\FileSystem\Model {
 			$manager    = $this->getManager();
 			$path       = $this->real_path . DIRECTORY_SEPARATOR . $name;
 			try{
-				return $manager->get($path);
+				return $manager->findPath($path);
 			}catch(\LogicException $e){
 				return null;
 			}
@@ -832,7 +928,7 @@ namespace Jungle\FileSystem\Model {
 		 */
 		protected function _nodeNames(){
 			$nodeList = $this->getAdapter()->nodeList($this->real_path);
-			return array_diff(array_map(function($path){return basename($path);},$nodeList),$this->detached);
+			return array_diff(array_map('basename',$nodeList),$this->detached);
 		}
 
 		/**

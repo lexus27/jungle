@@ -51,7 +51,7 @@ namespace Jungle\FileSystem\Model {
 		 * @return int|null
 		 */
 		public function getSize(){
-			return $this->real_path?filesize($this->real_path):null;
+			return $this->real_path?$this->getAdapter()->filesize($this->real_path):null;
 		}
 
 		/**
@@ -219,6 +219,13 @@ namespace Jungle\FileSystem\Model {
 					return parent::__get($key);
 					break;
 			}
+		}
+
+		/**
+		 * @return string
+		 */
+		public function __toString(){
+			return $this->getPublicPath();
 		}
 
 	}

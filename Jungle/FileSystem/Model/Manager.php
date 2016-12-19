@@ -7,7 +7,8 @@
  */
 namespace Jungle\FileSystem\Model {
 
-	use Jungle\FileSystem\Model\Manager\Adapter;
+	use Jungle\FileSystem;
+	use Jungle\FileSystem\Adapter\Adapter;
 
 	/**
 	 * Class Manager
@@ -263,24 +264,105 @@ namespace Jungle\FileSystem\Model {
 
 		/**
 		 * @param $path
+		 * @param bool $normalize
 		 * @return Directory|File
 		 */
-		public function get($path){
+		public function get($path, $normalize = true){
+			$ds = $this->getAdapter()->ds();
+			if($normalize){
+				$path = trim(FileSystem::normalizePath($path,true,$ds),'\/');
+			}
+			$path = trim($path,'\/');
+
+			// check tagged query
+			if(substr($path,0,1) === '#'){
+				$pos = strpos($path,$ds);
+				if($pos!==false){
+					$tag = substr($path, 1, $pos);
+					$path = substr($path,$pos);
+				}else{
+					$tag = substr($path, 1);
+					$path = null;
+				}
+				$dir = $this->getTagged($tag);
+				if($dir && $path){
+					return $dir->get($path);
+				}
+				return $dir;
+			}
+
+			return $this->findPath($path);
+		}
+
+		public function findPath($path){
 			$node = $this->find($path);
 			if($node!==null){
 				return $node;
 			}elseif($this->getAdapter()->file_exists($path)){
 				return $this->load($path);
 			}else{
-				throw new \LogicException('Path"'.$path.'" is not valid');
+				return null;
 			}
+		}
+
+		/**
+		 * @param $tag
+		 * @return Directory|null
+		 */
+		public function getTagged($tag){
+			foreach($this->nodes as $node){
+				if($node instanceof Directory && $node->tag === $tag){
+					return $node;
+				}
+			}
+			return null;
+		}
+
+		/**
+		 * @param $path
+		 * @param bool|true $normalize
+		 * @return $this|Directory|File|Node|null
+		 */
+		public function dir($path, $normalize = true){
+			$ds = $this->getAdapter()->ds();
+			if($normalize){
+				$path = FileSystem::normalizePath($path, true, $ds);
+			}
+			$path = trim($path,'\/');
+			$pos = strpos($path,$ds);
+			if($pos!==false || ($pos = strpos($path,FileSystem::revertPathSeparator($ds))) !== false){
+				$chunk = substr($path,0,$pos);
+				$dir = $this->get($chunk, false);
+				if(!$dir){
+					$dir = $this->newDir($chunk);
+				}
+				return $dir->dir(substr($path,$pos), false);
+			}else{
+				$dir = $this->get($path, false);
+				if(!$dir){
+					$dir = $this->newDir($path)->create();
+				}
+				return $dir;
+			}
+		}
+
+		/**
+		 * @param $path
+		 * @return Directory|File|Node|null
+		 *
+		 */
+		public function file($path){
+			$basename = basename($path);
+			$dirname = dirname($path);
+			$dir = $this->dir($dirname);
+			return $dir->file($basename);
 		}
 
 		/**
 		 * @param $name
 		 * @return Directory
 		 */
-		public function dir($name){
+		public function newDir($name){
 			if(!$this->isValidName($name)){
 				throw new \LogicException();
 			}
@@ -292,7 +374,7 @@ namespace Jungle\FileSystem\Model {
 		 * @param null $type
 		 * @return File
 		 */
-		public function file($name, $type = null){
+		public function newFile($name, $type = null){
 			if(!$this->isValidName($name)){
 				throw new \LogicException();
 			}
@@ -305,7 +387,7 @@ namespace Jungle\FileSystem\Model {
 		 * @param $path
 		 * @return Directory|File
 		 */
-		protected function load($path){
+		public function load($path){
 			$adapter = $this->getAdapter();
 			if($adapter->is_dir($path)){
 				return $this->_instantiateDirectory($path , true);

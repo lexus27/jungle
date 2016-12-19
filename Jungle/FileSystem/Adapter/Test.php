@@ -5,9 +5,7 @@
  * Date: 04.02.2016
  * Time: 3:29
  */
-namespace Jungle\FileSystem\Model\Manager\Adapter {
-
-	use Jungle\FileSystem\Model\Manager\Adapter;
+namespace Jungle\FileSystem\Adapter {
 
 	class Test extends Adapter{
 

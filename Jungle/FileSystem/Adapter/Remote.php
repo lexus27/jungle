@@ -5,13 +5,11 @@
  * Date: 08.02.2016
  * Time: 2:49
  */
-namespace Jungle\FileSystem\Model\Manager\Adapter {
-
-	use Jungle\FileSystem\Model\Manager\Adapter;
+namespace Jungle\FileSystem\Adapter {
 
 	/**
 	 * Class Remote
-	 * @package Jungle\FileSystem\Model\Manager\Adapter
+	 * @package Jungle\FileSystem\Adapter
 	 */
 	abstract class Remote extends Adapter{
 

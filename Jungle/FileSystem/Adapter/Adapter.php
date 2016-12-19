@@ -5,11 +5,10 @@
  * Date: 03.02.2016
  * Time: 15:42
  */
-namespace Jungle\FileSystem\Model\Manager {
+namespace Jungle\FileSystem\Adapter {
 
+	use Jungle\FileSystem;
 	use Jungle\FileSystem\Model\Exception;
-	use Jungle\FileSystem\Model\File;
-	use Jungle\FileSystem\Model\Manager\Adapter\Remote;
 
 	/**
 	 * Class Adapter
@@ -20,6 +19,25 @@ namespace Jungle\FileSystem\Model\Manager {
 		/** @var string */
 		protected $root_path;
 
+		/** @var bool  */
+		protected $relative_enabled = true;
+
+
+		public $charset              = 'utf-8';
+
+		public $charset_file_system  = 'utf-8';
+
+
+		/**
+		 * @param null $enabled
+		 * @return bool
+		 */
+		public function relativeEnabled($enabled = null){
+			if(is_bool($enabled)){
+				$this->relative_enabled = $enabled;
+			}
+			return $this->relative_enabled;
+		}
 
 		public function transfer(
 			Adapter $origin,        $originPath,
@@ -31,22 +49,32 @@ namespace Jungle\FileSystem\Model\Manager {
 
 		/**
 		 * @param null $root
+		 * @param bool $auto_create
+		 * @param null $fs_charset
 		 * @throws Exception
 		 */
-		public function __construct($root = null){
-			$this->setRootPath($root);
+		public function __construct($root = null, $auto_create = false, $fs_charset = null){
+			if($fs_charset){
+				$this->charset_file_system = $fs_charset;
+			}
+			$this->setRootPath($root,$auto_create);
 		}
 
 		/**
 		 * @param $path
+		 * @param bool $auto_create
 		 * @throws Exception
 		 */
-		public function setRootPath($path){
+		public function setRootPath($path,$auto_create = false){
 			if($this->root_path!==null){
 				throw new Exception("Root absolute already isset");
 			}elseif($path){
 				if(!$this->is_dir($path)){
-					throw new Exception("Could not set root absolute to not exists directory");
+					if($auto_create){
+						$this->mkdir($path,0755,true);
+					}else{
+						throw new Exception("Could not set root absolute to not exists directory");
+					}
 				}
 				$this->root_path = ltrim(dirname($path),'.\\/').$this->ds().basename($path);
 			}else{
@@ -72,8 +100,34 @@ namespace Jungle\FileSystem\Model\Manager {
 		 * @param $path
 		 * @return string
 		 */
-		public function absolute($path){
-			return $this->root_path?($this->root_path . $this->ds() . ltrim($path,'\\/')):$path;
+		public function normalize($path){
+			return iconv($this->charset, $this->charset_file_system . '//TRANSLIT' ,$path);
+		}
+
+		/**
+		 * @param $path
+		 * @return string
+		 */
+		public function absolute($path, $for_fs = false){
+			$absolute_path = $this->relative_enabled && $this->root_path?($this->root_path . $this->ds() . ltrim($path,'\\/')):$path;
+			return $for_fs?$this->normalize($absolute_path):$absolute_path;
+		}
+
+
+		/**
+		 * @param $path
+		 * @return null|string
+		 */
+		public function relative($path){
+			if($this->root_path){
+				if(strpos($path,$this->root_path)===0){
+					return substr($path,0,strlen($this->root_path));
+				}else{
+					return null;
+				}
+			}else{
+				return $path;
+			}
 		}
 
 		/**
@@ -260,6 +314,9 @@ namespace Jungle\FileSystem\Model\Manager {
 		 * @return mixed
 		 */
 		abstract public function file_put_contents($filePath, $content);
+
+
+
 	}
 }
 

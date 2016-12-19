@@ -5,13 +5,11 @@
  * Date: 03.02.2016
  * Time: 15:43
  */
-namespace Jungle\FileSystem\Model\Manager\Adapter {
-
-	use Jungle\FileSystem\Model\Manager\Adapter;
+namespace Jungle\FileSystem\Adapter {
 
 	/**
 	 * Class Local
-	 * @package Jungle\FileSystem\Model\Manager\Adapter
+	 * @package Jungle\FileSystem\Adapter
 	 */
 	abstract class Local extends Adapter{
 
@@ -20,7 +18,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return int
 		 */
 		public function filesize($path){
-			return filesize($this->absolute($path));
+			return filesize($this->absolute($path, true));
 		}
 
 		/**
@@ -28,7 +26,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return float
 		 */
 		public function disk_total_space($path){
-			return disk_total_space($this->absolute($path));
+			return disk_total_space($this->absolute($path, true));
 		}
 
 		/**
@@ -36,7 +34,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return float
 		 */
 		public function disk_free_space($path){
-			return disk_free_space($this->absolute($path));
+			return disk_free_space($this->absolute($path, true));
 		}
 
 		/**
@@ -44,7 +42,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return bool
 		 */
 		public function is_link($path){
-			return is_link($this->absolute($path));
+			return is_link($this->absolute($path, true));
 		}
 
 		/**
@@ -52,7 +50,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return bool
 		 */
 		public function is_dir($path){
-			return is_dir($this->absolute($path));
+			return is_dir($this->absolute($path, true));
 		}
 
 		/**
@@ -60,7 +58,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return bool
 		 */
 		public function is_file($path){
-			return is_file($this->absolute($path));
+			return is_file($this->absolute($path, true));
 		}
 
 		/**
@@ -68,7 +66,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return bool
 		 */
 		public function is_readable($path){
-			return is_readable($this->absolute($path));
+			return is_readable($this->absolute($path, true));
 		}
 
 		/**
@@ -76,7 +74,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return bool
 		 */
 		public function is_writable($path){
-			return is_writable($this->absolute($path));
+			return is_writable($this->absolute($path, true));
 		}
 
 		/**
@@ -84,7 +82,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return bool
 		 */
 		public function is_executable($path){
-			return is_executable($this->absolute($path));
+			return is_executable($this->absolute($path, true));
 		}
 
 		/**
@@ -92,7 +90,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return int
 		 */
 		public function fileperms($path){
-			return fileperms($this->absolute($path));
+			return fileperms($this->absolute($path, true));
 		}
 
 		/**
@@ -100,7 +98,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return int
 		 */
 		public function fileowner($path){
-			return fileowner($this->absolute($path));
+			return fileowner($this->absolute($path, true));
 		}
 
 		/**
@@ -108,7 +106,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return bool
 		 */
 		public function file_exists($path){
-			return file_exists($this->absolute($path));
+			return file_exists($this->absolute($path, true));
 		}
 
 		/**
@@ -116,7 +114,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return bool
 		 */
 		public function mkfile($path){
-			if(($fp = fopen($this->absolute($path), 'w'))){
+			if(($fp = fopen($this->absolute($path, true), 'w'))){
 				fclose($fp);
 				return true;
 			}
@@ -128,7 +126,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return bool
 		 */
 		public function unlink($path){
-			return unlink($this->absolute($path));
+			return unlink($this->absolute($path, true));
 		}
 
 		/**
@@ -138,7 +136,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return bool
 		 */
 		public function mkdir($path, $mod = 0777, $recursive = false){
-			return mkdir($this->absolute($path),$mod,$recursive);
+			return mkdir($this->absolute($path, true),$mod,$recursive);
 		}
 
 		/**
@@ -146,7 +144,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return bool
 		 */
 		public function rmdir($path){
-			return rmdir($this->absolute($path));
+			return rmdir($this->absolute($path, true));
 		}
 
 		/**
@@ -155,7 +153,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return bool
 		 */
 		public function chown($path, $owner){
-			return chown($this->absolute($path),$owner);
+			return chown($this->absolute($path, true),$owner);
 		}
 
 		/**
@@ -164,7 +162,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return bool
 		 */
 		public function chmod($path, $mod){
-			return chmod($this->absolute($path),$mod);
+			return chmod($this->absolute($path, true),$mod);
 		}
 
 		/**
@@ -173,7 +171,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return mixed
 		 */
 		public function chgrp($path, $group){
-			return chgrp($this->absolute($path), $group);
+			return chgrp($this->absolute($path, true), $group);
 		}
 
 		/**
@@ -182,7 +180,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return bool
 		 */
 		public function rename($path, $newPath){
-			return rename($this->absolute($path), $this->absolute($newPath));
+			return rename($this->absolute($path, true), $this->absolute($newPath));
 		}
 
 		/**
@@ -191,7 +189,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return bool
 		 */
 		public function copy($path, $destination){
-			return copy($this->absolute($path), $this->absolute($destination));
+			return copy($this->absolute($path, true), $this->absolute($destination));
 		}
 
 		/**
@@ -200,7 +198,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 */
 		public function nodeList($path){
 			$a = [];
-			foreach(scandir($this->absolute($path)) as $path){
+			foreach(scandir($this->absolute($path, true)) as $path){
 				if(!in_array($path,['.','..'],true))$a[]= $path;
 			}
 			return $a;
@@ -211,7 +209,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return array
 		 */
 		public function nodeListMatch($pattern){
-			return (array)glob($this->absolute($pattern));
+			return (array)glob($this->absolute($pattern, true));
 		}
 
 		/**
@@ -221,7 +219,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return mixed
 		 */
 		public function touch($path, $modifyTime = null, $accessTime = null){
-			return touch($this->absolute($path),$modifyTime,$accessTime);
+			return touch($this->absolute($path, true),$modifyTime,$accessTime);
 		}
 
 		/**
@@ -229,7 +227,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return mixed
 		 */
 		public function fileatime($path){
-			return fileatime($this->absolute($path));
+			return fileatime($this->absolute($path, true));
 		}
 
 		/**
@@ -237,7 +235,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return mixed
 		 */
 		public function filemtime($path){
-			return filemtime($this->absolute($path));
+			return filemtime($this->absolute($path, true));
 		}
 
 		/**
@@ -245,7 +243,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return mixed
 		 */
 		public function filectime($path){
-			return filectime($this->absolute($path));
+			return filectime($this->absolute($path, true));
 		}
 
 		/**
@@ -253,7 +251,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return string
 		 */
 		public function file_get_contents($filePath){
-			return file_get_contents($this->absolute($filePath));
+			return file_get_contents($this->absolute($filePath, true));
 		}
 
 		/**
@@ -262,7 +260,7 @@ namespace Jungle\FileSystem\Model\Manager\Adapter {
 		 * @return mixed
 		 */
 		public function file_put_contents($filePath, $content){
-			return file_put_contents($this->absolute($filePath), $content);
+			return file_put_contents($this->absolute($filePath, true), $content);
 
 		}
 
