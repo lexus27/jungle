@@ -549,6 +549,7 @@ namespace Jungle\Http {
 									if($_file['error'][$i] !== UPLOAD_ERR_OK || $_file['size'][$i] || $_file['tmp_name'][$i]){
 										$uploaded_file = new UploadedFile();
 										$uploaded_file->status = $error;
+										$uploaded_file->param_name = $param_name.'['.$i.']';
 										$uploaded_file->name = $_file['name'][$i];
 										$uploaded_file->path = $_file['tmp_name'][$i];
 										$uploaded_file->mime_type = $_file['type'][$i];
@@ -564,6 +565,7 @@ namespace Jungle\Http {
 								}else{
 									$uploaded_file = new UploadedFile();
 									$uploaded_file->status = $_file['error'];
+									$uploaded_file->param_name = $param_name;
 									$uploaded_file->name = $_file['name'];
 									$uploaded_file->path = $_file['tmp_name'];
 									$uploaded_file->size = $_file['size'];

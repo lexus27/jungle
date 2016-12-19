@@ -20,6 +20,8 @@ namespace Jungle\Http {
 
 		public $path;
 
+		public $param_name;
+
 		public $name;
 
 		public $mime_type;
