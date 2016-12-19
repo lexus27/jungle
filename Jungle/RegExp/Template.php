@@ -56,11 +56,11 @@ namespace Jungle\RegExp {
 		 * @param array $placeholders_options
 		 * @param array $template_options
 		 */
-		public function __construct($definition,Manager $manager, array $placeholders_options = null, array $template_options = null){
+		public function __construct($definition,Manager $manager = null, array $placeholders_options = null, array $template_options = null){
 			$this->definition = $definition;
 			$this->placeholders_options = (array)$placeholders_options;
 			$this->options = $template_options;
-			$this->setManager($manager);
+			$this->setManager($manager?:Manager::getDefault());
 		}
 
 		/**
@@ -88,10 +88,7 @@ namespace Jungle\RegExp {
 		 */
 		public function getPlaceholderNames(){
 			if(null===$this->placeholder_names){
-				$this->placeholder_names = [];
-				foreach($this->getPlaceholders() as $ph){
-					$this->placeholder_names[] = $ph;
-				}
+				$this->placeholder_names = array_keys($this->getPlaceholders());
 			}
 			return $this->placeholder_names;
 		}
