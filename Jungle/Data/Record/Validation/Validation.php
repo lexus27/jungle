@@ -15,7 +15,7 @@ namespace Jungle\Data\Record\Validation {
 	 * Class Validation
 	 * @package Jungle\Data\Record\Validation
 	 */
-	abstract class Validation{
+	abstract class Validation extends ValidationRule{
 
 		public $type;
 
@@ -32,6 +32,10 @@ namespace Jungle\Data\Record\Validation {
 		}
 
 		abstract function validate(Record $record, ValidationCollector $collector);
+
+		public function getValidationType(){
+			return $this->type;
+		}
 
 	}
 }

@@ -31,17 +31,14 @@ namespace Jungle\Data\Record\Validation {
 		/**
 		 * @param Record $record
 		 * @param ValidationCollector $collector
-		 * @return array
 		 */
 		public function validate(Record $record, ValidationCollector $collector){
 			$data = $record->getProperties($this->fields);
-			$error_fields = [];
 			foreach($data as $k => $v){
 				if(!is_null($v) && !in_array($v, $this->value_list)){
-					$error_fields[$k] = $this;
+					$collector->error($k, $this);
 				}
 			}
-			return $error_fields;
 		}
 
 

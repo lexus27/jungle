@@ -27,7 +27,7 @@ namespace Jungle\Data\Record\Validation {
 		 * @param $field_name
 		 * @param $rule
 		 */
-		public function error($field_name, Validation $rule){
+		public function error($field_name, ValidationRule $rule){
 			$this->field_errors[$field_name][] = $rule;
 		}
 

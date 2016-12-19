@@ -23,10 +23,6 @@ namespace Jungle\Data\Record\Validation {
 			parent::__construct($pattern, $fields);
 		}
 
-
-		function validate(Record $record, ValidationCollector $collector){
-			// TODO: Implement validate() method.
-		}
 	}
 }
 
