@@ -54,6 +54,9 @@ namespace Jungle\Data\Record\Schema {
 		/** @var bool  */
 		public $pk_auto_generation = true;
 
+		/** @var  string */
+		public $tk;
+
 		/** @var  Field[] */
 		public $fields = [];
 
@@ -161,6 +164,29 @@ namespace Jungle\Data\Record\Schema {
 		 */
 		public function getPkOriginal(){
 			return $this->mapping[$this->pk];
+		}
+
+		/**
+		 * @param $tk
+		 * @return $this
+		 */
+		public function setTk($tk){
+			$this->tk = $tk;
+			return $this;
+		}
+
+		/**
+		 * @return string
+		 */
+		public function getTk(){
+			return $this->tk;
+		}
+
+		/**
+		 * @return Field|null
+		 */
+		public function getTkField(){
+			return isset($this->fields[$this->tk])?$this->fields[$this->tk]:null;
 		}
 
 		/**
@@ -1112,8 +1138,19 @@ namespace Jungle\Data\Record\Schema {
 			$this->reflection = new \ReflectionClass($this->record_classname);
 
 
-			// нормализуем PrimaryKey
+			// pk field (primary key)
 			$this->pk = $this->pk?: key($this->fields) ;
+
+			// tk field (title key)
+			if(!$this->tk){
+				foreach($this->fields as $name => $field){
+					if($field->getFieldType() === 'string'){
+						$this->tk = $name;
+						break;
+					}
+				}
+				if(!$this->tk) $this->tk = $this->pk;
+			}
 
 			// Нормализуем маппинг полей
 			$mapping = [];
