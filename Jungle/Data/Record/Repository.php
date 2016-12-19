@@ -13,6 +13,7 @@ namespace Jungle\Data\Record {
 	use Jungle\Data\Record\Collection;
 	use Jungle\Data\Record\Schema\Schema;
 	use Jungle\Di;
+	use Jungle\FileSystem\Model\Directory;
 	
 	/**
 	 * Class Repository
@@ -28,6 +29,9 @@ namespace Jungle\Data\Record {
 
 		/** @var  Repository */
 		protected static $default_schema_manager;
+
+		/** @var array  */
+		protected $directories = [];
 
 		/**
 		 * @return Repository
@@ -227,6 +231,28 @@ namespace Jungle\Data\Record {
 		public function getRecordsInMemory(){
 			return Record::getStatusInstantiatedRecordsCount();
 		}
+
+
+		/**
+		 * @param $key
+		 * @param $directory
+		 * @return $this
+		 */
+		public function setDirectory($key, Directory $directory){
+			$this->directories[$key] = $directory;
+			return $this;
+		}
+
+
+		/**
+		 * @param $key
+		 * @return Directory
+		 */
+		public function getDirectory($key){
+			return isset($this->directories[$key])?$this->directories[$key]:null;
+		}
+
+
 
 	}
 }
