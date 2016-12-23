@@ -23,6 +23,14 @@ namespace Jungle\Data\Storage\Db\Adapter\Pdo {
 		/** @var string */
 		protected $dialectType = 'MySQL';
 
+		public function __construct(array $options = [ ]){
+			parent::__construct(array_replace_recursive([
+				'attributes' => [
+					\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8'
+				]
+			],$options));
+		}
+
 
 		/**
 		 * @param null $type
