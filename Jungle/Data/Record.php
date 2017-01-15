@@ -361,7 +361,7 @@ namespace Jungle\Data {
 				else $relations = $this->_schema->relations;
 
 				$related_loaded = array_intersect_key($this->_related,$relations);
-				$data = $this->_related_snapshot->earliest()->data();
+				$data = $this->_related_snapshot?$this->_related_snapshot->earliest()->data():[];
 				return !!array_diff_assoc($related_loaded, $data);
 			}else{
 				$data = $this->_related_snapshot->earliest()->data();
