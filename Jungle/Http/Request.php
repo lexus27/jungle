@@ -622,6 +622,13 @@ namespace Jungle\Http {
 					$value = filter_var($value, $_filter['type'],$_filter['options']);
 				}elseif(isset($filter['type'])){
 					$value = filter_var($value, $filter['type']);
+				}elseif(isset($filter['converter'])){
+					// Конвертирование таких пришедших данных как JSON CommaSeparatedList
+					// Проверка
+					if($filter['converter'] === 'list'){
+
+					}
+
 				}
 
 				if(isset($filter['vartype'])){

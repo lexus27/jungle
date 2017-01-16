@@ -9,6 +9,7 @@
  */
 namespace Jungle\Data\Record\Relation {
 
+	use Jungle\Data\Record;
 	use Jungle\Data\Record\Schema\Schema;
 
 	/**
@@ -29,6 +30,10 @@ namespace Jungle\Data\Record\Relation {
 		public function getLocalFields(){
 			return $this->fields;
 		}
+
+		abstract public function changeBackward(Record $record,Record $related = null);
+
+		abstract public function getReferencedRelation();
 
 	}
 }

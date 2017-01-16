@@ -9,6 +9,8 @@
  */
 namespace Jungle\Data\Record\Field {
 
+	use Jungle\Data\Record\Schema\Schema;
+
 	/**
 	 * Class SimpleField
 	 * @package Jungle\Data\Record\Field
@@ -58,6 +60,13 @@ namespace Jungle\Data\Record\Field {
 			foreach($options as $k => $v){
 				if($k !== 'field_type')$this->{$k} = $v;
 			}
+		}
+
+		/**
+		 * @param Schema $schema
+		 */
+		public function attachToSchema(Schema $schema){
+
 		}
 
 		/**

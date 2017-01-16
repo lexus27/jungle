@@ -93,7 +93,7 @@ namespace Jungle\User\Session\Storage {
 				$lifetime = 86000 * 2;
 			}
 			$sessionClassName::deleteCollection([
-				new Clean('TIMESTAMP(`modify_time`) >= '.time() - $lifetime),
+				new Clean('TIMESTAMP(`modify_time`) >= '.(time() - $lifetime)),
 				['permanent','!=',true]
 			]);
 		}

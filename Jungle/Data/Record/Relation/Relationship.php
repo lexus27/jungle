@@ -60,7 +60,23 @@ namespace Jungle\Data\Record\Relation {
 
 
 		}
-
+		/**
+		 * Отчистка и последующее заполнение из родительской коллекции
+		 * Актуализация по Родителю, Сбрасывает Dirty состояние
+		 */
+		public function refresh(){
+			if($this->ancestor && $this->holder->getRecordState()===Record::STATE_LOADED){
+				$this->reset();
+				$this->items = [];
+				foreach($this->ancestor->items as $item){
+					$this->_add($item);
+				}
+				/** @var Collection $descendant */
+				foreach($this->descendants as $descendant){
+					$descendant->refresh();
+				}
+			}
+		}
 
 		public function applyCondition(){
 			if($this->holder->getRecordState() === Record::STATE_LOADED){

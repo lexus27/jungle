@@ -60,7 +60,10 @@ namespace Jungle\Data\Record {
 			return isset($this->data[$key])?$this->data[$key]:$default;
 		}
 
-
+		public function set($key, $value){
+			$this->data[$key] = $value;
+			return $this;
+		}
 
 	}
 }

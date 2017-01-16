@@ -51,6 +51,15 @@ namespace Jungle\Data\Record\Relation {
 			return $relationship;
 		}
 
+		public function inspectContextEventsBefore(Record $record, array $changes){
+			if($changes['modify']){
+				$this->schema->onRelatedCollectionModify($record, $this->name, $changes['modify']);
+			}
+			if($changes['change']){
+				$this->schema->onRelatedCollectionChange($record, $this->name, $changes['change']['+'],$changes['change']['-']);
+			}
+		}
+
 		/**
 		 * @param Record $record
 		 * @throws Record\Exception
@@ -70,8 +79,12 @@ namespace Jungle\Data\Record\Relation {
 				// выставляем значения ссылки в каждый связанный объект
 				foreach($relationship->getDirtyAddedItems() as $each){
 					$each->assign($data);
+					$each->setRelated($opposite->name, $record);
 					$each->save();// здесь сохранение пошло в схему с Foreign полем,
 					// в нем вызовется beforeRecordSave где будет сохраняться $record
+
+					$this->referenced_relation->changeBackward($each, $record);//
+
 				}
 				// изменения можно признать примененными
 				$relationship->resetDirty();
@@ -90,7 +103,7 @@ namespace Jungle\Data\Record\Relation {
 			/** @var Relationship $relationship */
 			$relationship = $record->getRelated($this->name);
 			$opposite = $this->getReferencedRelation();
-
+			// в host отношениях, мы не выставляем данные локальных полей....
 
 			// нужно правильно обеспечить отсоединение записей от текущего Record
 			foreach($relationship->getDirtyRemovedItems() as $each){
@@ -99,10 +112,15 @@ namespace Jungle\Data\Record\Relation {
 					if($this->master){
 						$each->delete();
 					}else{
+						$opposite->changeBackward($each, null);
 						$each->assign($opposite->dataEmpty());
 						$each->save();
 					}
 				}
+			}
+			foreach($relationship->getDirtyAddedItems() as $each){
+				$opposite->changeBackward($each, $record);
+				$each->save();
 			}
 			$relationship->resetDirty();
 
@@ -243,6 +261,12 @@ namespace Jungle\Data\Record\Relation {
 			}
 		}
 
+
+		public function changeBackward(Record $record, Record $related = null){
+			if($related){
+				$record->addRelated($this->name, $related);
+			}
+		}
 
 	}
 }

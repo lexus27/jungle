@@ -11,6 +11,7 @@ namespace Jungle\Data\Record\RelationFS {
 	
 	use Jungle\Data\Record;
 	use Jungle\Data\Record\Relation\Relationship;
+	use Jungle\Data\Record\Snapshot;
 	use Jungle\FileSystem\Model\File;
 	use Jungle\Http\UploadedFile;
 	use Jungle\RegExp\Template;
@@ -55,6 +56,22 @@ namespace Jungle\Data\Record\RelationFS {
 				return $source->getManager()->newFile('tmp_file');
 			}
 			return null;
+		}
+
+		/**
+		 * @param Record $record
+		 * @param UploadedFile $file
+		 */
+		public function receiveUploaded(Record $record, UploadedFile $file){
+
+		}
+
+		/**
+		 * @param Record $record
+		 * @param File $file
+		 */
+		public function selectFile(Record $record, File $file){
+
 		}
 
 		/**
@@ -134,7 +151,13 @@ namespace Jungle\Data\Record\RelationFS {
 		}
 
 
-		public function afterRecordSave(Record $record){
+		/**
+		 * @param Record $record
+		 * @param Snapshot $snapshot
+		 * @throws \Exception
+		 * @throws \Jungle\FileSystem\Model\Exception\ActionError
+		 */
+		public function afterRecordSave(Record $record, Snapshot $snapshot = null){
 
 			/**
 			 * Обработка принятого файла UploadedFile

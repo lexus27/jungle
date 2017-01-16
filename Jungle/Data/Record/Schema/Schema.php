@@ -15,6 +15,7 @@ namespace Jungle\Data\Record\Schema {
 	use Jungle\Data\Record\Field\Field;
 	use Jungle\Data\Record\Model;
 	use Jungle\Data\Record\Relation\Relation;
+	use Jungle\Data\Record\Relation\Relationship;
 	use Jungle\Data\Record\Repository;
 	use Jungle\Data\Record\Validation\Validation;
 	use Jungle\Data\Record\Validation\ValidationCollector;
@@ -63,6 +64,9 @@ namespace Jungle\Data\Record\Schema {
 		/** @var  Relation[]  */
 		public $relations = [];
 
+		/** @var array  */
+		public $foreign_dependency = [];
+
 		/** @var  UniqueKey[] */
 		protected $uniques = [];
 
@@ -85,12 +89,6 @@ namespace Jungle\Data\Record\Schema {
 
 		/** @var  Collection */
 		protected $collection;
-
-
-
-
-
-
 
 
 		/** @var  bool  */
@@ -120,7 +118,7 @@ namespace Jungle\Data\Record\Schema {
 		protected $derivative_schemas = [];
 
 		/** @var array  */
-		protected $ignore_enum = [];
+		protected $hidden_enumeration_fields = [];
 
 
 		/** @var  string */
@@ -128,11 +126,30 @@ namespace Jungle\Data\Record\Schema {
 
 		/** @var  StorageInterface */
 		protected $storage;
+		/**
+		 * Зависимые пути
+		 * Это те связи, которые зависят от перехода состояний объекта данной схемы
+		 * Связанным объектам, будет запущена обработка событий, в случае изменений в объекте
+		 * @var array
+		 */
+		public $dependent = [];
+
+		public $analyzed_paths = [];
+
+
+		/** @var array  */
+		public $lazy_related = [];
+
+
+
+		/** @var array ['event', handler($record, $data)] */
+		public $context_listeners = [];
 
 
 		/** @var array  */
 		public $mapping = [];
 
+		public $private_fields = [];
 
 		/**
 		 * @param $pk
@@ -174,6 +191,7 @@ namespace Jungle\Data\Record\Schema {
 			$this->tk = $tk;
 			return $this;
 		}
+
 
 		/**
 		 * @return string
@@ -360,16 +378,29 @@ namespace Jungle\Data\Record\Schema {
 		 * @return array|null
 		 */
 		public function getEnumerableNames(){
-			return array_diff(array_keys($this->fields), $this->ignore_enum);
+			return array_diff(array_keys($this->fields), $this->hidden_enumeration_fields);
+		}
+
+		public function getPublicNames(){
+			return array_diff(array_keys($this->fields), $this->private_fields);
 		}
 
 
 
+		public function privateFields($fields){
+			if($fields){
+				if(!is_array($fields)){
+					$fields = [$fields];
+				}
+				$this->private_fields = $fields;
+			}
+		}
+
 		/**
 		 * @param array $fields
 		 */
-		public function ignoreEnum(array $fields){
-			$this->ignore_enum = array_merge($this->ignore_enum, $fields);
+		public function hideFields(array $fields){
+			$this->hidden_enumeration_fields = array_merge($this->hidden_enumeration_fields, $fields);
 		}
 
 		/**
@@ -381,7 +412,6 @@ namespace Jungle\Data\Record\Schema {
 		public function stabilize(Record $record, $fieldKey, $value){
 			return $this->fields[$fieldKey]->stabilize($value);
 		}
-
 
 		/**
 		 * @param Validation $validator
@@ -530,7 +560,11 @@ namespace Jungle\Data\Record\Schema {
 			}
 		}
 
-
+		/**
+		 * Сигнализирует о том что применение к записям должно происходить только через подгрузку каждого Объекта
+		 * Обращения в БД по коллекции недопустимы, иначе может нарушиться целостность виртуальной составляющей
+		 */
+		public function isEachApply(){  }
 
 
 
@@ -589,6 +623,7 @@ namespace Jungle\Data\Record\Schema {
 				}
 			}
 
+
 			if($record->beforeStorageSave() === false){
 				return false;
 			}
@@ -639,8 +674,12 @@ namespace Jungle\Data\Record\Schema {
 			if($record->beforeCreate() === false){
 				return false;
 			}
+
+			///////
+
 			return true;
 		}
+
 
 		/**
 		 * @param Record $record
@@ -662,6 +701,10 @@ namespace Jungle\Data\Record\Schema {
 			if($record->beforeUpdate() === false){
 				return false;
 			}
+
+
+			////////
+
 			return true;
 		}
 
@@ -838,7 +881,6 @@ namespace Jungle\Data\Record\Schema {
 		public function getFieldNames(){
 			return array_keys($this->fields);
 		}
-
 
 		/**
 		 * @param Relation|Field|Validation $object
@@ -1169,6 +1211,20 @@ namespace Jungle\Data\Record\Schema {
 					}
 				}
 				$relation->initialize();
+			}
+
+
+			// зависимые отношения
+			foreach($this->relations as $name => $relation){
+				if($relation instanceof Record\Relation\RelationSchema && !$relation instanceof Record\Relation\RelationForeignDynamic){
+					if($data = $this->analyzePath($name)){
+						/** @var Schema $schema */
+						$schema = $data['schema'];
+						if(isset($schema->context_listeners[$data['path_reversed']])){
+							$this->dependent[] = $name;
+						}
+					}
+				}
 			}
 
 			if(!$this->isAbstract()){
@@ -2001,8 +2057,6 @@ namespace Jungle\Data\Record\Schema {
 			return $condition;
 		}
 
-		public $foreign_dependency = [];
-
 		/**
 		 * @param $name
 		 * @return array
@@ -2019,6 +2073,405 @@ namespace Jungle\Data\Record\Schema {
 			}
 			return $relation_names;
 		}
+
+
+
+
+
+
+		/**
+		 * @param $path
+		 * @param array $events
+		 * @param callable $handler
+		 */
+		public function attachContextListener($path, array $events, callable $handler){
+			if(!isset($this->context_listeners[$path])){
+				$this->context_listeners[$path] = [];
+			}
+			$this->context_listeners[$path][] = [$events, $handler];
+		}
+
+		/**
+		 * @param $path
+		 * @param $event
+		 * @param $observable
+		 * @param $observer_callback
+		 * @param $observer_path
+		 * @return bool
+		 */
+		public function invokeRelationEvent($path, $event, $observable, $observer_callback, $observer_path){
+			$modified = false;
+			foreach($this->context_listeners as $listening_path => $listeners){
+				foreach($listeners as list($listening_events, $handler)){
+					if($listening_path === $path && in_array($event, $listening_events, true)){
+						$m = call_user_func($handler, $observable, $observer_callback, $path, $event, $observer_path);
+						if($m) $modified = true;
+					}
+				}
+			}
+			return $modified;
+		}
+
+
+		public function invokeRelatedCollectionChange(Relationship $observable_relationship, array $attached, array $detached){}
+
+		public function invokeRelatedCollectionModify(Relationship $observable_relationship, array $modified){}
+
+		public function invokeRelatedCollectionEvent(Relationship $observable_relationship, $observable_path, array $modified){}
+
+		public function invokeRelatedSingleChange($observable_path, $observer_path, Record $old = null, Record $new = null){}
+
+		public function invokeRelatedSingleModify($observable_path, $observer_path, Record $modified){}
+
+
+
+
+		/** Есть присоединенные или отсоединенные объекты в связанной коллекции */
+		public function onRelatedCollectionChange(Record $record, $relation_name,array $attached,array $detached){
+			// событие делегируется себе
+			if(isset($this->context_listeners[$relation_name])){
+				foreach($this->context_listeners[$relation_name] as list($event, $handler)){
+					if(in_array('change', $event, true)){
+						call_user_func($handler,$record->getRelatedLoaded($relation_name),$record, 'change',$relation_name);
+					}
+				}
+			}
+		}
+		/** Есть модифицированные объекты в связанной коллекции */
+		public function onRelatedCollectionModify(Record $record, $relation_name,array $modified){
+			// событие делегируется себе
+			if(isset($this->context_listeners[$relation_name])){
+				foreach($this->context_listeners[$relation_name] as list($event, $handler)){
+					if(in_array('modify', $event, true)){
+						call_user_func($handler,$record->getRelatedLoaded($relation_name),$record, 'modify',$relation_name);
+					}
+				}
+			}
+		}
+		/** Заменен связанный объект */
+		public function onRelatedSingleChange(Record $record, $relation_name,Record $old = null,Record $new = null){
+			if(isset($this->context_listeners[$relation_name])){
+				foreach($this->context_listeners[$relation_name] as list($event, $handler)){
+					if(in_array('change', $event, true)){
+						call_user_func($handler,$new, $record, $old);
+					}
+				}
+			}
+
+//			/** @var Schema $schema */
+//			$schema = $this->analyzePath($relation_name);
+//			$schema = $schema['schema'];
+//			foreach($schema->dependent as $path){
+//				$data = $schema->analyzePath($path);
+//				/** @var Schema $observer_schema */
+//				$observer_schema = $data['schema'];
+//				$observer_schema->invokeRelatedSingleChange($data['path'], $data['path_reversed'], $old, $new);
+//			}
+		}
+		/** Модифицирован связанный объект */
+		public function onRelatedSingleModify(Record $record, $relation_name, Record $modified,array $changes = null){
+
+			if(isset($this->context_listeners[$relation_name])){
+				foreach($this->context_listeners[$relation_name] as list($event, $handler)){
+					if(in_array('modify', $event, true)){
+						call_user_func($handler,$record->getRelatedLoaded($relation_name),$record, 'modify',$relation_name);
+					}
+				}
+			}
+//			/** @var Schema $schema */
+//			$schema = $this->analyzePath($relation_name);
+//			$schema = $schema['schema'];
+//			foreach($schema->dependent as $path){
+//				$data = $schema->analyzePath($path);
+//				/** @var Schema $observer_schema */
+//				$observer_schema = $data['schema'];
+//				$observer_schema->invokeRelatedSingleModify($data['path'], $data['path_reversed'], $modified);
+//			}
+		}
+
+		/**
+		 * Инспекция для сохраняемого объекта
+		 * @param Record $record
+		 * @param $analyzed_changes
+		 */
+		public function inspectContextEventsBefore(Record $record, $analyzed_changes){
+			$op_made = $record->getOperationMade();
+			if($op_made === Record::OP_CREATE){
+				return;
+			}
+			$modified = array_intersect_key($analyzed_changes, $this->fields);
+			if($modified){
+
+				$event = 'modify';
+				$m = false;
+				/**
+				 * Делегирование Зависимым, от SINGLE отношения (пока что) (отношения такущей схемы: Collection, One)
+				 * от many отношения, это получается, сохраняется их элемент коллекции
+				 */
+				$op_control = $this->repository->currentOperationControl();
+				if($op_control->isRelationOperation()){
+					$initiator = $op_control->getInitiator();
+					$initiator_schema = $initiator->getSchema();
+					$initiator_relation = $op_control->getInitiativeAsRelation();
+					$initiator_relation = $initiator_schema->analyzePath($initiator_relation);
+					foreach($this->dependent as $path){
+						$data = $this->analyzePath($path);
+						// пути, проходящие через инициатора, мы не обрабатываем.
+						if($data['host']
+						   && strpos($data['path'], $initiator_relation['path_reversed']) !== 0
+						   && $this->delegatePropagationTo($data, $record, $event)
+						){
+							$m = true;
+						}
+					}
+				}else{
+					foreach($this->dependent as $path){
+						$data = $this->analyzePath($path);
+						if($data['host'] && $this->delegatePropagationTo($data, $record, $event)){
+							$m = true;
+						}
+					}
+				}
+				if($m){
+					$record->refreshAnalyzedChanges();
+				}
+			}
+
+
+
+//			$modified = array_intersect_key($analyzed_changes, $this->fields);
+//			$event = !in_array($record->getOperationMade(),[Record::OP_UPDATE],true)?'change':'modify';
+//			if($modified){
+//
+//				/**
+//				 * Мы можем сдесь вызывать локальное событие change parent / change hierarchical
+//				 * Так как все-го лишь в переменной $analyzed_changes будут актуальные данные что родитель изменился
+//				 */
+//				$modified = false;
+//				// событие делегируется FOREIGN отношениям, и только для множественных
+//				foreach($this->dependent as $path){
+//					$data = $this->analyzePath($path);
+//					if(!$data['host']){
+//						/** @var Schema $observer_schema */
+//						$observer_schema = $data['schema'];
+//						$observer_callable = function() use($record, $path){
+//							return $record->getRelated($path);
+//						};
+//						$observable = $record;
+//						// вызов, для множественных локальных полей
+//						if($data['aggregate'][0] && $observable && $observer_schema->invokeRelationEvent($data['path_reversed'],$event, $observable, $observer_callable, $data['path'])){
+//							$modified = true;
+//						}
+//					}else{
+//
+//
+//
+//					}
+//				}
+//				if($modified){
+//					$record->refreshAnalyzedChanges();
+//				}
+//			}
+		}
+
+		/**
+		 * Инспекция для сохраняемого объекта
+		 * @param Record $record
+		 * @param $analyzed_changes
+		 */
+		public function inspectContextEventsAfter(Record $record, $analyzed_changes){
+			$op_made = $record->getOperationMade();
+			if($op_made === Record::OP_UPDATE){
+				return;
+			}
+			$modified = array_intersect_key($analyzed_changes, $this->fields);
+			if($modified){
+				$event = 'modify';
+				$m = false;
+				/**
+				 * Делегирование Зависимым, от SINGLE отношения (пока что) (отношения такущей схемы: Collection, One)
+				 * от many отношения, это получается, сохраняется их элемент коллекции
+				 */
+				$op_control = $this->repository->currentOperationControl();
+				if($op_control->isRelationOperation()){
+					$initiator = $op_control->getInitiator();
+					$initiator_schema = $initiator->getSchema();
+					$initiator_relation = $op_control->getInitiativeAsRelation();
+					$initiator_relation = $initiator_schema->analyzePath($initiator_relation);
+					foreach($this->dependent as $path){
+						$data = $this->analyzePath($path);
+						// пути, проходящие через инициатора, мы не обрабатываем.
+						if($data['host']
+						   && strpos($data['path'], $initiator_relation['path_reversed']) !== 0
+						   && $this->delegatePropagationTo($data, $record, $event)
+						){
+							$m = true;
+						}
+					}
+				}else{
+					foreach($this->dependent as $path){
+						$data = $this->analyzePath($path);
+						if($data['host'] && $this->delegatePropagationTo($data, $record, $event)){
+							$m = true;
+						}
+					}
+				}
+				if($m){
+					$record->refreshAnalyzedChanges();
+				}
+			}
+
+		}
+
+		public function delegatePropagationTo($path_data,Record $record, $event){
+			/**
+			 * @observable - Слушаемый, то-есть "текущий" в данном случае, при том что текущий объект модифицирован
+			 * @observer - Этот тот[current::One] или те[current::Many] объекты, которые Зависят, от текущего
+			 */
+			/** @var Schema $observer_schema */
+			$observer_schema = $path_data['schema'];
+			$observer_callable = function() use($record, $path_data){
+				return $record->getRelated($path_data['path']);
+			};
+			$observable = $record;
+			$m = false;
+			if($path_data['aggregate'][0]){ //множественные отношения от "текущего"
+
+				if($path_data['aggregate'][1]){// в составе коллекции, со стороны Слушателя
+
+				}else{ // является одиночным, со стороны Слушателя
+					if($observer_schema->invokeRelationEvent(
+						$path_data['path_reversed'],
+						$event,
+						$observable,
+						$observer_callable,
+						$path_data['path']
+					))$m = true;
+				}
+			}else{ //одиночные отношения от "текущего"
+				if($path_data['aggregate'][1]){// в составе коллекции, со стороны Слушателя
+					// на той стороне, "текущий объект" может являться просто элементом коллекции
+				}else{ // является одиночным, со стороны Слушателя
+					if($observer_schema->invokeRelationEvent(
+						$path_data['path_reversed'],
+						$event,
+						$observable,
+						$observer_callable,
+						$path_data['path']
+					))$m = true;
+				}
+			}
+			return $m;
+		}
+
+
+
+		/**
+		 * @param $path
+		 * @return array|null
+		 *
+		 * $array['schema'] destination schema(or schema name)
+		 * $array['path']
+		 * $array['path_reversed'] reference to his, from destination (back reference)
+		 * $array['host'] is relation schema host
+		 * $array['many'] is many
+		 * $array['aggregate'] N-1, 1-N, 1-1, N-N  ; true - false, false - true, false - false, true - true
+		 * $array['field'] destination local field, a target
+		 * $array['circular'] reference is Will back to his
+		 * $array['recursive'] recursive deep relation parent-children, etc...
+		 *
+		 * @throws \Exception
+		 */
+		public function analyzePath($path){
+			$full_path = $path;
+			if(!isset($this->analyzed_paths[$full_path])){
+				$opposite = [];
+				$schema = $this;
+				$many = false;
+				$reversed_many = false;
+				$local_field = null;
+				$has_host = false;
+				$schema_path = [];
+				while($path = trim($path,'.')){
+					$pos = strpos($path,'.');
+					if($pos === false){
+						$property_name = $path;
+						$path = null;
+					}else{
+						$property_name = substr($path,0,$pos);
+						$path = substr($path,$pos);
+					}
+					if(isset($schema->relations[$property_name])){
+
+						$schema_path[] = $property_name;
+
+						$relation = $schema->relations[$property_name];
+						if($relation instanceof Record\Relation\RelationSchemaHost){
+							$referenced_relation = $relation->getReferencedRelation();
+							if(!$many){
+								$many = $relation instanceof Record\Relation\RelationMany;
+							}
+							if(!$has_host){
+								$has_host = true;
+							}
+							$opposite[] = $referenced_relation->name;
+							$schema = $referenced_relation->schema;
+						}elseif($relation instanceof Record\Relation\RelationForeign && !$relation instanceof Record\Relation\RelationForeignDynamic){
+							$referenced_schema = $relation->getSchemaGlobal($relation->referenced_schema);
+							foreach($referenced_schema->relations as $name => $referenced){
+								if($referenced instanceof Record\Relation\RelationSchemaHost){
+									if($referenced->getReferencedRelation() === $relation){
+										$opposite[] = $referenced->name;
+										if(!$reversed_many){
+											$reversed_many = $referenced instanceof Record\Relation\RelationMany;
+										}
+										$schema = $referenced_schema;
+										break;
+									}
+								}
+							}
+						}else{
+							throw new \Exception('Current Relation is not allowed reverse path');
+						}
+					}else{
+						if(!isset($schema->fields[$property_name])){
+							throw new \LogicException('Relative referenced local field by Path("'.$full_path.'") not exists');
+						}
+						if($path){
+							throw new \LogicException('not support access by dot Relative referenced local field "'.$property_name.'"');
+						}
+						$local_field = $property_name . $path;
+					}
+				}
+				if($opposite){
+					$schema_path    = implode('.',$schema_path);
+					$reversed_path  = implode('.',array_reverse($opposite));
+					$circular = $schema_path === $reversed_path;
+					$analyzed = [
+						'schema'        => $schema, // destination schema
+						'path'          => $schema_path,
+						'path_reversed' => $reversed_path, // reference to his, from destination (back reference)
+						'host'          => $has_host, // is relation schema host
+						'many'          => $many, // is many
+						'aggregate'     => [$many, $reversed_many], // N-1, 1-N, 1-1, N-N  ; true - false, false - true, false - false, true - true
+						'field'         => $local_field, // destination local field, a target
+						'circular'      => $schema_path === $reversed_path, // reference is Will back to his
+						'recursive'     => !$circular && $schema === $this // recursive deep relation parent-children, etc...
+					];
+					if($local_field){
+						return $analyzed;
+					}else{
+						return $this->analyzed_paths[$full_path] = $analyzed;
+					}
+				}else{
+					return null;
+				}
+
+			}
+			return $this->analyzed_paths[$full_path];
+		}
+
+
 
 	}
 

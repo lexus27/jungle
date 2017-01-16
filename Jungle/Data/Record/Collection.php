@@ -286,6 +286,13 @@ namespace Jungle\Data\Record {
 			return $this->schema;
 		}
 
+		/**
+		 * @return \Jungle\Data\Record[]
+		 */
+		public function getItemsLoaded(){
+			return $this->items;
+		}
+
 
 
 		
@@ -911,6 +918,8 @@ namespace Jungle\Data\Record {
 			return $a;
 		}
 
+
+
 		/**
 		 * @param ConditionInterface|null $condition
 		 * @param null $offset
@@ -932,6 +941,79 @@ namespace Jungle\Data\Record {
 				$a[] = $item->getProperty($property);
 			}
 			return $a;
+		}
+
+		const CHECK_MODIFY_ALL = 'all';
+		const CHECK_MODIFY_RELATIONS = 'relations';
+		const CHECK_MODIFY_FIELDS = 'local';
+
+		public function getModified($check_modify_type = self::CHECK_MODIFY_FIELDS){
+			$a = [];
+			/** @var Record $itm */
+			switch($check_modify_type){
+				case self::CHECK_MODIFY_ALL:
+					foreach(array_udiff($this->items,$this->dirty_removed, [$this,'_value_compare']) as $itm){
+						if($itm->analyzeChanges()){
+							$a[] = $itm;
+						}
+					}
+					break;
+				case self::CHECK_MODIFY_RELATIONS:
+					foreach(array_udiff($this->items,$this->dirty_removed, [$this,'_value_compare']) as $itm){
+						if($itm->hasChangesRelated()){
+							$a[] = $itm;
+						}
+					}
+					break;
+				case self::CHECK_MODIFY_FIELDS:
+					foreach(array_udiff($this->items,$this->dirty_removed, [$this,'_value_compare']) as $itm){
+						if($itm->hasChangesProperty()){
+							$a[] = $itm;
+						}
+					}
+					break;
+			}
+			return $a;
+		}
+
+		protected function _value_compare($a,$b){
+			return $a===$b;
+		}
+
+		public function listCollector($collector, $only_loaded = false){
+			$collected = [];
+			if($only_loaded){
+				if(is_string($collector)){
+					foreach($this->items as $item){
+						$collected[] = call_user_func([$item, $collector], $item);
+					}
+				}elseif(is_callable($collector)){
+					foreach($this->items as $item){
+						$collected[] = call_user_func($collector, $item);
+					}
+				}elseif(is_array($collector)){
+					$name = array_shift($collector);
+					foreach($this->items as $item){
+						$collected[] = call_user_func_array([$item, $name], $collector);
+					}
+				}
+			}else{
+				if(is_string($collector)){
+					foreach($this as $item){
+						$collected[] = call_user_func([$item, $collector], $item);
+					}
+				}elseif(is_callable($collector)){
+					foreach($this as $item){
+						$collected[] = call_user_func($collector, $item);
+					}
+				}elseif(is_array($collector)){
+					$name = array_shift($collector);
+					foreach($this as $item){
+						$collected[] = call_user_func_array([$item, $name], $collector);
+					}
+				}
+			}
+			return $collected;
 		}
 
 		/**

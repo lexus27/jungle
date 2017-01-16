@@ -15,6 +15,7 @@ namespace Jungle\Data {
 	use Jungle\Data\Record\Exception\Field\UnexpectedValue;
 	use Jungle\Data\Record\ExportableInterface;
 	use Jungle\Data\Record\Relation\Relation;
+	use Jungle\Data\Record\Relation\RelationForeign;
 	use Jungle\Data\Record\Relation\RelationMany;
 	use Jungle\Data\Record\Relation\RelationSchema;
 	use Jungle\Data\Record\Relation\Relationship;
@@ -25,6 +26,7 @@ namespace Jungle\Data {
 	use Jungle\Data\Storage\Exception\DuplicateEntry;
 	use Jungle\Data\Storage\Exception\Operation;
 	use Jungle\Http\UploadedFile;
+	use Jungle\Util\Data\Collection;
 	use Jungle\Util\Data\Record\PropertyRegistryInterface;
 	use Jungle\Util\Data\Record\PropertyRegistryTransientInterface;
 	use Jungle\Util\Data\Schema\OuterInteraction\SchemaAwareInterface;
@@ -33,6 +35,23 @@ namespace Jungle\Data {
 	use Jungle\Util\Value\String;
 	
 	/**
+	 *
+	 * aggregations_include = [
+	 *      'profile'
+	 *      'notes'
+	 * ]
+	 *
+	 *
+	 * query('profile.id',newValue);
+	 *
+	 * hasChangesProperty('profile.id');
+	 * getProperty('profile.id');
+	 * getRelated('profile');
+	 *
+	 * hasIn('notes',[
+	 *      ['id','=',2]
+	 * ])
+	 *
 	 * Class Record
 	 * @package modelX
 	 */
@@ -171,6 +190,13 @@ namespace Jungle\Data {
 			}finally{
 				$this->_property_safe = true;
 			}
+		}
+
+		/**
+		 * @return string
+		 */
+		public function getOperationMade(){
+			return $this->_operation_made;
 		}
 
 		/**
@@ -319,103 +345,69 @@ namespace Jungle\Data {
 			return $this->_initialized;
 		}
 
+		/**
+		 * @return int
+		 */
+		public static function getStatusInstantiatedRecordsCount(){
+			return self::$instantiatedRecordsCount;
+		}
 
 
 
 		/**
-		 * @param null|array|string $field
-		 * @return bool
+		 * @return Record|Record[]|Relationship|mixed
+		 * @throws \Exception
 		 */
-		public function hasChangesProperty($field = null){
-			// получаем исходный снимок и сверяем его напрямую с текущими значениями свойств объекта
-			$data = $this->_snapshot->earliest()->data();
-			if($field === null){
-				foreach($data as $k => $v){
-					if($this->{$k} !== $v){
-						return true;
-					}
-				}
-				return false;
-			}else{
-				if(is_array($field)){
-					foreach($field as $name){
-						if($data[$name] !== $this->{$name}){
-							return true;
-						}
-					}
-					return false;
-				}else{
-					return $data[$field] !== $this->{$field};
-				}
-			}
+		public function getTitleValue(){
+			return $this->getProperty($this->_schema->tk);
 		}
 
 		/**
-		 * @param $relation_key
-		 * @return bool
+		 * @return mixed
 		 */
-		public function hasChangesRelated($relation_key = null){
-			if($relation_key === null || ($a = is_array($relation_key)) ){
-
-				if(isset($a)) $relations = array_intersect_key($this->_schema->relations, array_flip($relation_key));
-				else $relations = $this->_schema->relations;
-
-				$related_loaded = array_intersect_key($this->_related,$relations);
-				$data = $this->_related_snapshot->earliest()->data();
-				return !!array_diff_assoc($related_loaded, $data);
-			}else{
-				$data = $this->_related_snapshot->earliest()->data();
-				if(isset($data[$relation_key]) xor isset($this->_related[$relation_key])){
-					return true;
-				}
-				return isset($data[$relation_key])
-				       && isset($this->_related[$relation_key])
-				       && $data[$relation_key] !== $this->_related[$relation_key];
-			}
+		public function getPkValue(){
+			return $this->getProperty($this->_schema->pk);
 		}
 
+
+
+		public function getBootField(){
+			return null;
+		}
+
+		public function getBootValue(){
+			return null;
+		}
+
+
 		/**
-		 * @param $relation_key
-		 * @return null
+		 * @return string
 		 */
-		public function getOldRelated($relation_key){
-			$data = $this->_related_snapshot->earliest()->data();
-			if(isset($data[$relation_key])){
-				return $data[$relation_key];
-			}
+		public function getSource(){
 			return null;
 		}
 
 		/**
-		 * @param null|array|string $field
-		 * @return array
+		 * @return string
 		 */
-		public function getChangedProperties($field = null){
-			// получаем исходный снимок и сверяя с ним выбераем измененые значения из свойств объекта
-			$a = [];
-			if($field && !is_array($field)){
-				$field = [$field];
-			}
-			if($this->_record_state === self::STATE_NEW){
-				$fields = array_keys($this->_schema->fields);
-				if($field){
-					$fields = array_intersect($fields, $field);
-				}
-				foreach($fields as $key){
-					$a[$key] = $this->{$key};
-				}
-			}else{
-				$data = $this->_snapshot->earliest()->data();
-				if($field){
-					$data = array_intersect_key($data, array_flip($field));
-				}
-				foreach($data as $k => $old){
-					$new = $this->{$k};
-					if($new !== $old) $a[$k] = $new;
-				}
-			}
-			return $a;
+		public function getWriteSource(){
+			return $this->getSource();
 		}
+
+		/**
+		 * @return string
+		 */
+		public function getStorageService(){
+			return 'database';
+		}
+
+		/**
+		 * @return Storage|string
+		 */
+		public function getWriteStorageService(){
+			return $this->getStorageService();
+		}
+
 
 
 
@@ -446,28 +438,6 @@ namespace Jungle\Data {
 				}
 				return $a;
 			}
-		}
-
-		/**
-		 * @return int
-		 */
-		public static function getStatusInstantiatedRecordsCount(){
-			return self::$instantiatedRecordsCount;
-		}
-
-		/**
-		 * @return Record|Record[]|Relationship|mixed
-		 * @throws \Exception
-		 */
-		public function getTitleValue(){
-			return $this->getProperty($this->_schema->tk);
-		}
-
-		/**
-		 * @return mixed
-		 */
-		public function getPkValue(){
-			return $this->getProperty($this->_schema->pk);
 		}
 
 
@@ -531,6 +501,20 @@ namespace Jungle\Data {
 		 * @throws UnexpectedValue
 		 */
 		public function setProperty($key, $value){
+
+			if(($pos = strpos($key,'.')) !==false){
+				$ct = $this;
+				do{
+					$chunk = trim(substr($key,0,$pos),'.');
+					$key = trim(substr($key,$pos+1),'.');
+					if($key){
+						$ct = $ct->getProperty($chunk);
+					}else{
+						return $ct->setProperty($chunk, $value);
+					}
+				}while(($pos = strpos($key,'.')) !==false);
+			}
+
 			if(array_key_exists($key, $this->_schema->fields)){
 				$this->{$key} = $value;
 			}
@@ -559,6 +543,19 @@ namespace Jungle\Data {
 		 */
 		public function getProperty($key){
 
+			if(($pos = strpos($key,'.')) !==false){
+				$ct = $this;
+				do{
+					$chunk = trim(substr($key,0,$pos),'.');
+					$key = trim(substr($key,$pos+1),'.');
+					if($key){
+						$ct = $ct->getProperty($chunk);
+					}else{
+						return $ct->getProperty($chunk);
+					}
+				}while(($pos = strpos($key,'.')) !==false);
+			}
+
 			if(isset($this->_schema->fields[$key])){
 				return $this->{$key};
 			}
@@ -569,6 +566,8 @@ namespace Jungle\Data {
 
 			throw new \Exception('Trying to getProperty "'.$key.'" not existing in schema "'.$this->_schema->getName().'"');
 		}
+
+
 
 
 		/**
@@ -584,7 +583,19 @@ namespace Jungle\Data {
 			if(array_key_exists($relation_key, $this->_related)){
 				return $this->_related[$relation_key];
 			}
-			return $this->_record_state===self::STATE_NEW?null:false;
+			if($this->_record_state===self::STATE_NEW){
+				return null;
+			}
+			if(isset($this->_schema->relations[$relation_key])){
+				$relation = $this->_schema->relations[$relation_key];
+				if($relation instanceof RelationForeign){
+					if(!array_diff_assoc($this->getProperties($f = $relation->getLocalFields()),array_fill_keys($f,null))){
+						return null;
+					}
+				}
+			}
+
+			return false;
 		}
 
 		/**
@@ -723,62 +734,336 @@ namespace Jungle\Data {
 		}
 
 
-
-		/**
-		 * @return string
-		 */
-		public function getSource(){
-			return null;
-		}
-
-		/**
-		 * @return string
-		 */
-		public function getWriteSource(){
-			return $this->getSource();
-		}
-
-		/**
-		 * @return string
-		 */
-		public function getStorageService(){
-			return 'database';
-		}
-
-		/**
-		 * @return Storage|string
-		 */
-		public function getWriteStorageService(){
-			return $this->getStorageService();
-		}
-
 		/**
 		 * @param bool $public
+		 * @param array $include_related
 		 * @return array
-		 * @throws Exception
+		 * @throws \Exception
+		 * @TODO control export fields & relations
 		 */
-		public function export( $public = true ){
+		public function export( $public = true ,array $include_related = null){
 			$values = [ ];
 			if($this->_initialized){
+				if($public){
+					foreach($this->_schema->getPublicNames() as $name){
+						$values[$name] = $this->getProperty($name);
+					}
+				}else{
+					foreach($this->_schema->fields as $name => $field){
+						$values[$name] = $this->getProperty($name);
+					}
+				}
 
-				$fields = $public?
-					array_intersect_key($this->_schema->fields,array_flip($this->_schema->getEnumerableNames())):
-					$this->_schema->fields;
-
-				foreach($fields as $name => $field){
-					$values[$name] = $this->getProperty($name);
+				if($include_related){
+					foreach($include_related as $relation_name => $sub_inc){
+						if(is_int($relation_name)){
+							$relation_name = $sub_inc;
+							$sub_inc = null;
+						}
+						if(isset($this->_schema->relations[$relation_name])){
+							$object = $this->getRelated($relation_name);
+							if($object instanceof Collection){
+								$values[$relation_name] = $object->listCollector(['export',$public, $sub_inc]);
+							}else{
+								$values[$relation_name] = $object->export($public,$sub_inc);
+							}
+						}
+					}
 				}
 				return $values;
 			}
 			return $values;
 		}
 
-		public function getBootField(){
-			return null;
+
+		/**
+		 * Более сплоченно стандартизирует экспорт, с точки зрения всех возможных полей, и опций связанных объектов
+		 * можно контролировать выборку относительных объектов, тем более это актуально для коллекций
+		 * @param array $map
+		 * @param bool $default_public
+		 * @return array
+		 * @throws \Exception
+		 */
+		public function exportMap( array $map = null, $default_public = true){
+			if(!$map){
+				return $this->export($default_public);
+			}
+			$values = [ ];
+			if($this->_initialized){
+				$public = boolval(isset($map['public'])?$map['public']:$default_public);
+				if($public){
+					$names = $this->_schema->getPublicNames();
+				}else{
+					$names = array_keys($this->_schema->fields);
+				}
+				if(isset($map['fields'])){
+					$names = array_intersect($names,$map['fields']);
+				}
+				if(isset($map['fields_black'])){
+					$names = array_diff($names,array_intersect($names,$map['fields_black']));
+				}
+				foreach($names as $name){
+					$values[$name] = $this->getProperty($name);
+				}
+				if(isset($map['relations'])){
+					foreach($map['relations'] as $relation_name => $sub_map){
+						if(is_int($relation_name)){
+							$relation_name = $sub_map;
+							$sub_map = null;
+						}
+						if(isset($this->_schema->relations[$relation_name])){
+							$object = $this->getRelated($relation_name,isset($sub_map['options'])?$sub_map['options']:null);
+							unset($sub_map['options']);
+							if($object instanceof Collection){
+								$values[$relation_name] = $object->listCollector(['exportMap',$sub_map, $default_public]);
+							}else{
+								$values[$relation_name] = $object->exportMap($sub_map,$default_public);
+							}
+						}
+					}
+				}
+				return $values;
+			}
+			return $values;
 		}
 
-		public function getBootValue(){
-			return null;
+
+		/**
+		 * @param null|array|string $field
+		 * @return bool
+		 */
+		public function hasChangesProperty($field = null){
+			if(is_string($field) && ($pos = strpos($field,'.')) !==false){
+				$ct = $this;
+				do{
+					$chunk = trim(substr($field,0,$pos),'.');
+					$field = trim(substr($field,$pos+1),'.');
+					if($field){
+						return $ct->hasChangesProperty($chunk);
+						//$ct = $ct->getProperty($chunk);
+					}else{
+						return $ct->hasChangesProperty($chunk);
+					}
+				}while(($pos = strpos($field,'.')) !==false);
+			}
+
+
+			// получаем исходный снимок и сверяем его напрямую с текущими значениями свойств объекта
+
+			if($field === null){
+				$data = $this->_snapshot->earliest()->data();
+				foreach($data as $k => $v){
+					if($this->{$k} !== $v){
+						return true;
+					}
+				}
+
+				return false;
+			}elseif(is_array($field)){
+				foreach($field as $name){
+					if($this->hasChangesProperty($name)){
+						return true;
+					}
+				}
+				return false;
+			}else{
+				if(isset($this->_schema->relations[$field])){
+					return $this->hasChangesRelated($field);
+				}else{
+					$data = $this->_snapshot->earliest()->data();
+					return $data[$field] !== $this->{$field};
+				}
+			}
+		}
+
+		/**
+		 * @param $relation_key
+		 * @return bool
+		 */
+		public function hasChangesRelated($relation_key = null){
+			$related_snapshot_data = $this->_related_snapshot?$this->_related_snapshot->earliest()->data():[];
+			if(is_string($relation_key)){
+				if(isset($related_snapshot_data[$relation_key]) xor isset($this->_related[$relation_key])){
+					return true;
+				}
+				return isset($related_snapshot_data[$relation_key])
+				       && isset($this->_related[$relation_key])
+				       && $related_snapshot_data[$relation_key] !== $this->_related[$relation_key];
+			}
+			$loaded_related = $this->_related;
+
+			if($relation_key === null){
+				$relations = array_intersect_key($this->_schema->relations, $loaded_related);
+			}else{
+				$relations = array_intersect_key($this->_schema->relations, $loaded_related, array_flip($relation_key));
+			}
+			foreach($relations as $name => $relation){
+				$loaded = $loaded_related[$name];
+				if($relation instanceof RelationMany){
+					/** @var Relationship $loaded */
+					if($loaded->isDirty()){
+						return true;
+					}
+				}elseif(!isset($related_snapshot_data[$name]) && $loaded || $loaded !== $related_snapshot_data[$name]){
+					return true;
+				}
+			}
+			return false;
+		}
+
+		/**
+		 * @param null|array|string $field
+		 * @return array
+		 */
+		public function getChangedProperties($field = null){
+			// получаем исходный снимок и сверяя с ним выбераем измененые значения из свойств объекта
+			$a = [];
+			if($field && !is_array($field)){
+				$field = [$field];
+			}
+			if($this->_record_state === self::STATE_NEW){
+				$fields = array_keys($this->_schema->fields);
+				if($field){
+					$fields = array_intersect($fields, $field);
+				}
+				foreach($fields as $key){
+					$a[$key] = $this->{$key};
+				}
+			}else{
+				$data = $this->_snapshot->earliest()->data();
+				if($field){
+					$data = array_intersect_key($data, array_flip($field));
+				}
+				foreach($data as $k => $old){
+					$new = $this->{$k};
+					if($new !== $old) $a[$k] = $new;
+				}
+			}
+			return $a;
+		}
+
+
+		protected $_analyzed_changes;
+
+		public function refreshAnalyzedChanges(){
+			$this->_analyzed_changes = $this->analyzeChanges();
+		}
+
+		public function getAnalyzedChanges(){
+			return $this->_analyzed_changes;
+		}
+
+		/**
+		 * @param null $field
+		 * @param bool|true|string $analyze_modified_in_collection
+		 * @return array
+		 */
+		public function analyzeChanges($field = null, $analyze_modified_in_collection = true){
+			$analyzed = [];
+			if($field && !is_array($field)){
+				$field = [$field];
+			}
+			if($this->_record_state === self::STATE_NEW){
+				$fields = array_keys($this->_schema->fields);
+				if($field){
+					$fields = array_intersect($fields, $field);
+				}
+				foreach($fields as $key){
+					if($this->{$key}!==null){
+						$analyzed[$key] = [
+							'-' => null,
+							'+' => $this->{$key}
+						];
+					}
+				}
+			}else{
+				$data = $this->_snapshot->earliest()->data();
+				if($field){
+					$data = array_intersect_key($data, array_flip($field));
+				}
+				foreach($data as $k => $old){
+					$new = $this->{$k};
+					if($new !== $old){
+						$analyzed[$k] = [
+							'-' => $old,
+							'+' => $new
+						];
+					}
+				}
+			}
+
+			$relations_snapshot = $this->_related_snapshot->earliest();
+
+			$relations = $this->_schema->relations;
+			$related_old = $relations_snapshot->data();
+
+			foreach($relations as $name => $relation){
+				$old    = array_key_exists($name, $related_old)?$related_old[$name]:false;
+				$loaded = array_key_exists($name, $this->_related)?$this->_related[$name]:false;
+				if($old === $loaded){
+					$related_changes[$name] = false;
+				}else{
+					if($relation instanceof RelationMany){
+						/** @var Relationship|false $loaded */
+						if($loaded){
+							$m = null;
+							$dirty_detached = $loaded->getDirtyRemovedItems();
+							$dirty_attached = $loaded->getDirtyAddedItems();
+							if($analyze_modified_in_collection){
+								if(is_bool($analyze_modified_in_collection)){
+									$analyze_modified_in_collection = Relationship::CHECK_MODIFY_FIELDS;
+								}
+								$m = $loaded->getModified($analyze_modified_in_collection);
+							}
+							$many_relation = [
+								'type' => 'many',
+								'modify' => null,
+								'change' => null
+							];
+							$many_relation['modify'] = $m?:null;
+							if($dirty_attached || $dirty_detached){
+								$many_relation['change'] = [
+									'-' => $dirty_detached,
+									'+' => $dirty_attached,
+								];
+							}
+							if($m || $dirty_attached || $dirty_detached){
+								$analyzed[$name] = $many_relation;
+							}
+						}
+					}else{
+						/** @var Record|null|false $loaded */
+						if($loaded!==false){
+							// объект не был загружен = не проверен
+							if($old === false){
+								$old = $relation->load($this);
+								$relations_snapshot->set($name,$old);
+							}
+
+							if($old !== $loaded){
+								$analyzed[$name] = [
+									'type'      => 'one',
+									'modify'    => null,
+									'change'    => [
+										'-' => $old,
+										'+' => $loaded,
+									],
+								];
+							}elseif($loaded && $loaded->hasChangesProperty()){
+								$analyzed[$name] = [
+									'type'      => 'one',
+									'modify'    => $loaded,
+									'change'    => null,
+								];
+							}
+						}
+					}
+
+
+				}
+
+			}
+			return $analyzed;
 		}
 
 		/**
@@ -817,6 +1102,45 @@ namespace Jungle\Data {
 			}
 		}
 
+
+		public function stabilize(){
+			// Values Stabilizing
+			foreach($this->_schema->fields as $name => $field){
+				$this->{$name} = $field->stabilize($this->{$name});
+			}
+		}
+
+
+
+		/**
+		 * @param bool $throw
+		 * @return bool|ValidationResult
+		 * @throws ValidationResult
+		 */
+		public function validate($throw = true){
+			// Values Stabilizing
+			foreach($this->_schema->fields as $name => $field){
+				$this->{$name} = $field->stabilize($this->{$name});
+			}
+			$this->_validation = $validation = new ValidationResult($this);
+			$this->_schema->validate($this,$validation);
+			if($throw){
+				if($validation->hasErrors()){
+					throw $validation;
+				}
+				return true;
+			}else{
+				return $validation;
+			}
+		}
+
+		/**
+		 * @return ValidationResult|null
+		 */
+		public function getRecordValidation(){
+			return $this->_validation;
+		}
+
 		/**
 		 * @return Snapshot
 		 */
@@ -851,41 +1175,7 @@ namespace Jungle\Data {
 		}
 
 
-		public function stabilize(){
-			// Values Stabilizing
-			foreach($this->_schema->fields as $name => $field){
-				$this->{$name} = $field->stabilize($this->{$name});
-			}
-		}
 
-		/**
-		 * @return ValidationResult|null
-		 */
-		public function getRecordValidation(){
-			return $this->_validation;
-		}
-
-		/**
-		 * @param bool $throw
-		 * @return bool|ValidationResult
-		 * @throws ValidationResult
-		 */
-		public function validate($throw = true){
-			// Values Stabilizing
-			foreach($this->_schema->fields as $name => $field){
-				$this->{$name} = $field->stabilize($this->{$name});
-			}
-			$this->_validation = $validation = new ValidationResult($this);
-			$this->_schema->validate($this,$validation);
-			if($throw){
-				if($validation->hasErrors()){
-					throw $validation;
-				}
-				return true;
-			}else{
-				return $validation;
-			}
-		}
 
 
 		/**
@@ -899,7 +1189,6 @@ namespace Jungle\Data {
 				}
 				return true;
 			}
-
 			$repository = $this->_schema->getRepository();
 			try{
 				$repository->startOperation($this);
@@ -922,11 +1211,9 @@ namespace Jungle\Data {
 
 					case self::STATE_LOADED:
 
-						// не вычисляет измененные связанные записи
-						if(!$this->hasChangesProperty() && !$this->hasChangesRelated()){
+						if(!$this->_analyzed_changes = $this->analyzeChanges()){
 							return true;
 						}
-
 						if($this->_schema->beforeUpdate($this)!==false){
 							$this->_operation_made = self::OP_UPDATE;
 							$this->_operation_options = [];
@@ -944,6 +1231,7 @@ namespace Jungle\Data {
 			}finally{
 				$repository->endOperation($this);
 				$this->_validation = null;
+				$this->_analyzed_changes = null;
 				$this->_operation_made = self::OP_NONE;
 			}
 		}
@@ -967,15 +1255,6 @@ namespace Jungle\Data {
 			$store = $schema->getWriteStorage($this);
 			$source = $schema->getWriteSource($this);
 
-
-			// Берем Отношения которые были затронуты в работе
-			/** @var Relation[]|null $relations */
-			$relations = null;
-			if($this->_related){
-				$relations = $this->_schema->getRelations();
-				$relations = array_intersect_key($relations, $this->_related);
-			}
-
 			// допустим объект сохраняется, чтобы обеспечить функциональность событий по отношениям
 			// нужно получить список Связей у которых стоит прослушка событий текущей схемы
 			// Виды прослушек следующие:
@@ -994,12 +1273,12 @@ namespace Jungle\Data {
 			// или рекурсивное реагирование
 			// Возможно в таком случае помогут SET CASE WHEN THEN ELSE END для связанной коллекции, но это уже методом обновления .
 
-			// Validation
-			$validation = $this->validate(false);
 
-			if($validation->hasErrors()){
-				throw $validation;
-			}
+			$this->refreshAnalyzedChanges();
+			$schema->inspectContextEventsBefore($this, $this->_analyzed_changes);
+			$validation = null;
+			/** @var Relation[] $relations */
+			$relations = array_intersect_key($this->_schema->relations,$this->_analyzed_changes);
 
 			try{
 
@@ -1015,20 +1294,34 @@ namespace Jungle\Data {
 				}
 
 				if($relations){
-					// вычисление работы отношений перед сохранением
-					// исходя из того что в схеме есть Отношения, нужно работать с Транзакциями
+					//      ForeignRelations Save
 					$store->begin();
+
 					foreach($relations as $relation_name => $relation){
 						try{
 							$operation->relationStart($relation_name);
 							$relation->beforeRecordCreate($this);
 							$relation->beforeRecordSave($this);
 						}catch(Record\Validation\ValidationResult $relatedValidation){
+							if(!$validation){
+								$validation = $this->validate(false);
+							}
 							$validation->addRelatedValidation($relation_name, $relatedValidation);
 						}finally{
 							$operation->relationEnd($relation_name);
 						}
+						$relation->inspectContextEventsBefore($this,$this->_analyzed_changes[$relation_name]);
 					}
+				}
+
+				if(!$validation){
+					// Validation
+					$validation = $this->validate(false);
+				}
+
+
+				if($validation->hasErrors()){
+					throw $validation;
 				}
 				$schema->beforeStorageCreate($this);
 
@@ -1067,10 +1360,16 @@ namespace Jungle\Data {
 					$this->_original = $schema->valueAccessSet($data, $pk, $pk_value);
 				}
 
+				$schema->inspectContextEventsAfter($this, $this->_analyzed_changes);
+
 				if($relations){
-					// вычисление работы отношений после сохранения
-					// исходя из того что в схеме есть Отношения, нужно работать с Транзакциями
+
+					//для RelationSchemaHost запуск событий будет здесь
+
 					foreach($relations as $relation_name => $relation){
+
+						$relation->inspectContextEventsAfter($this, $this->_analyzed_changes[$relation_name]);
+
 						try{
 							$operation->relationStart($relation_name);
 							$relation->afterRecordCreate($this);
@@ -1133,17 +1432,6 @@ namespace Jungle\Data {
 			$pk_value = $this->getPkValue();
 			$dynamic_update = $schema->isDynamicUpdate();
 
-			// Берем Отношения которые были изменены
-			/** @var Relation[]|null $relations */
-			$relations = null;
-			$related_earliest = null;
-			if($this->_related_snapshot){
-				$related_earliest = $this->_related_snapshot->earliest();
-				$relations = $this->_schema->getRelations();
-				$relations = array_intersect_key($relations, $this->_related);
-				// Здесь требуется получить потенциально измененнные связи в процессе работы с записью
-			}
-
 			$operation = $schema->getRepository()->currentOperationControl();
 
 			$store = $schema->getWriteStorage($this);
@@ -1154,6 +1442,16 @@ namespace Jungle\Data {
 
 			if($validation->hasErrors()){
 				throw $validation;
+			}
+
+
+			$schema->inspectContextEventsBefore($this, $this->_analyzed_changes);
+
+			/** @var Relation[] $relations */
+			$relations = array_intersect_key($this->_schema->relations, $this->_analyzed_changes);
+			$related_earliest = null;
+			if($relations){
+				$related_earliest = $this->_related_snapshot->earliest();
 			}
 
 			try{
@@ -1172,7 +1470,39 @@ namespace Jungle\Data {
 						}finally{
 							$operation->relationEnd($relation_name);
 						}
+						$relation->inspectContextEventsBefore($this, $this->_analyzed_changes[$relation_name]);
 					}
+
+
+					/*
+					 * Цель: Улучшить удобство координальных изменений, и систематизировать их в мутации
+					 * в автоматическом режиме (событийные модели, изменение иерархии, перенесение узла)
+					 *
+					 * По Множественным связям Учитывать факт:
+					 * при отсоединении (сквозной: удаление; привязанный: либо удалить либо сбросить FK)
+					 *
+					 * Дву-стороннее связывание OPPOSITE paths
+					 *      Это нужно для обратных контролей - но пока нужно глубже проанализировать этот факт.
+					 * Выставление действительного связанного объекта (как будто он уже применен)
+					 *      Это нужно будет в аггрегационных запросах, чтобы проставить все загруженные
+					 *      за раз связанные объекта, не спровоцировав состояние dirty
+					 *
+					 *
+					 * Нужно провести анализ изменения в Отношениях
+					 * Для коллекций и сквозных коллекций это проверка на добавление/удаление записей из стека
+					 * Так-же проверка каждого на наличие Модификаций
+					 *
+					 * Для одиночных это проверка на наличие модификаций или change(attach/detach)
+					 *
+					 *
+					 * Нужно задать общий стандарт работы со сквозными путями, чтобы любой метод уже поддерживал это.
+					 * В том числе setters, для присвоения данных связанным объектам например через assign.
+					 * Но тогда рождается многозначность, если объекта НЕТ и некому выставить значение.
+					 *      Возможно автоматически создать объект(нужен фантом и настройки).
+					 *      Возможно выдать ошибку отсутствия.
+					 *      Возможно просто проигнорировать.
+					 *      Задача: Настройки и фантомы можно указывать как по дефолту, так и из вне при конкретных операциях
+					 */
 
 				}
 
@@ -1202,12 +1532,18 @@ namespace Jungle\Data {
 					$this->_original = $to_original;
 				}
 
-
+				$schema->inspectContextEventsAfter($this, $this->_analyzed_changes);
+				$relations = array_intersect_key($this->_schema->relations, $this->_analyzed_changes);
+				$related_earliest = null;
+				if($relations){
+					$related_earliest = $this->_related_snapshot->earliest();
+				}
 
 				if($relations){
 					// вычисление работы отношений после сохранения
 					// исходя из того что в схеме есть Отношения, нужно работать с Транзакциями
 					foreach($relations as $relation_name => $relation){
+						$relation->inspectContextEventsAfter($this, $this->_analyzed_changes[$relation_name]);
 						try{
 							$operation->relationStart($relation_name);
 							$relation->afterRecordUpdate($this, $related_earliest);

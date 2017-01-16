@@ -17,10 +17,13 @@ namespace Jungle\Data\Record {
 	 */
 	class OperationControl{
 
+		/** @var Record[]  */
 		public $operation_records = [];
 
+		/** @var array  */
 		public $relations_levels = [];
 
+		/** @var array  */
 		public $parameters = [];
 
 		/**
@@ -64,10 +67,25 @@ namespace Jungle\Data\Record {
 		public function getCurrentRelationPath(){
 			return $this->relations_levels?implode('.',$this->relations_levels):null;
 		}
-
+		/**
+		 * @return Record
+		 */
 		public function getCurrentOperation(){
 			end($this->operation_records);
 			return current($this->operation_records);
+		}
+
+		/**
+		 * @return Record
+		 */
+		public function getInitiator(){
+			return array_slice($this->operation_records,-2,1)[0];
+		}
+		/**
+		 * @return string
+		 */
+		public function getInitiativeAsRelation(){
+			return array_slice($this->relations_levels,-1,1)[0];
 		}
 
 		public function isRelationOperation(){

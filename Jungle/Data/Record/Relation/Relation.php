@@ -103,6 +103,9 @@ namespace Jungle\Data\Record\Relation {
 		public function afterRecordDelete(Record $record){}
 
 
+		public function inspectContextEventsBefore(Record $record, array $changes){}
+
+		public function inspectContextEventsAfter(Record $record, array $changes){}
 
 
 		/**
@@ -111,6 +114,9 @@ namespace Jungle\Data\Record\Relation {
 		 * @throws \Exception
 		 */
 		public function getSchemaGlobal($name){
+			if($name instanceof Schema){
+				return $name;
+			}
 			return $this->schema->getRepository()->getSchema($name);
 		}
 

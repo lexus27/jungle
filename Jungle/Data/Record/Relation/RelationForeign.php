@@ -82,6 +82,12 @@ namespace Jungle\Data\Record\Relation {
 			return $schema->loadFirst($condition);
 		}
 
+		public function inspectContextEventsBefore(Record $record, array $changes){
+			if($changes['change']){
+				$this->schema->onRelatedSingleChange($record,$this->name,$changes['change']['-'],$changes['change']['+']);
+			}
+		}
+
 		/**
 		 * @param Record $record
 		 * @param Snapshot $snapshot
@@ -93,8 +99,17 @@ namespace Jungle\Data\Record\Relation {
 				/** @var Record $related */
 				if($related){
 					$related->save();
+
 					$data = $this->dataTo($related);
 					$record->assign($data);
+
+					$relations = $this->getOwnerships($record->getSchema());
+					foreach($relations as $name => $relation){
+						if($relation instanceof RelationSchema){
+							$relation->changeBackward($related, $record);
+						}
+					}
+
 				}else{
 					$record->assign($this->dataEmpty());
 				}
@@ -102,12 +117,17 @@ namespace Jungle\Data\Record\Relation {
 		}
 
 
+		public function changeBackward(Record $record, Record $related = null){
+			$record->setRelated($this->name, $related);
+		}
+
+
 		/**
 		 * Может потребоваться для обратного выставления свойств
 		 * @param Schema $schema
+		 * @return array
 		 */
 		public function getOwnerships(Schema $schema){
-
 			if($this->isAllowedSchema($schema)){
 				$ownerships = [];
 				foreach($schema->getRelations() as $name => $relation){
@@ -119,6 +139,7 @@ namespace Jungle\Data\Record\Relation {
 						$ownerships[$name] = $relation;
 					}
 				}
+				return $ownerships;
 			}
 		}
 
@@ -186,6 +207,21 @@ namespace Jungle\Data\Record\Relation {
 			return $schema->isDerivativeFrom($this->referenced_schema);
 		}
 
+		/**
+		 * @return RelationForeign
+		 */
+		public function getReferencedRelation(){
+			foreach($this->getSchemaGlobal($this->referenced_schema)->getRelations() as $name => $relation){
+				if(
+					$relation instanceof RelationSchemaHost &&
+					$this->referenced_fields === $relation->fields &&
+					$this->fields === $relation->referenced_fields
+				){
+					return $relation;
+				}
+			}
+			return null;
+		}
 
 		public function initialize(){
 			foreach($this->fields as $name){

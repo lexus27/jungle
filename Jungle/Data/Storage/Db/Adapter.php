@@ -579,7 +579,7 @@ namespace Jungle\Data\Storage\Db {
 		 * @return $this
 		 */
 		public function begin(){
-			if($this->transaction_level === 0){
+			if($this->transaction_level < 1){
 				$this->getInternalAdapter()->beginTransaction();
 			}else{
 				$this->createSavepoint('POINT_LEVEL_'.$this->transaction_level);
@@ -593,9 +593,14 @@ namespace Jungle\Data\Storage\Db {
 		 */
 		public function commit(){
 			$this->transaction_level--;
+
 			if($this->transaction_level === 0){
 				$this->getInternalAdapter()->commit();
 			}else{
+				if($this->transaction_level < 0){
+					$this->transaction_level = 0;
+					return $this;
+				}
 				$this->releaseSavepoint('POINT_LEVEL_'.$this->transaction_level);
 			}
 			return $this;
@@ -606,9 +611,14 @@ namespace Jungle\Data\Storage\Db {
 		 */
 		public function rollback(){
 			$this->transaction_level--;
+
 			if($this->transaction_level === 0){
 				$this->getInternalAdapter()->rollback();
 			}else{
+				if($this->transaction_level < 0){
+					$this->transaction_level = 0;
+					return $this;
+				}
 				$this->releaseSavepoint('POINT_LEVEL_'.$this->transaction_level);
 			}
 			return $this;

@@ -10,6 +10,7 @@
 namespace Jungle\Data\Record\RelationFS {
 
 	use Jungle\Data\Record;
+	use Jungle\Data\Record\Snapshot;
 	use Jungle\FileSystem\Model\Directory;
 	use Jungle\RegExp\Template;
 
@@ -80,8 +81,10 @@ namespace Jungle\Data\Record\RelationFS {
 
 		/**
 		 * @param Record $record
+		 * @param Snapshot $snapshot
+		 * @throws \Exception
 		 */
-		public function afterRecordSave(Record $record){
+		public function afterRecordSave(Record $record, Snapshot $snapshot = null){
 			/** @var Directory $related */
 			$involved_fields = $this->getInvolvedFields();
 			$related = $record->getRelated($this->name);

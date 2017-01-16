@@ -35,8 +35,25 @@ namespace Jungle\Util\Path {
 	 * ~ Method resolving
 	 *
 	 */
-	class PathResolver{
-		
+	abstract class PathResolver{
+
+		public $container;
+
+		/**
+		 * @param $container
+		 * @return $this
+		 */
+		public function setContainer($container){
+			$this->container = $container;
+			return $this;
+		}
+
+		/**
+		 * @param $path
+		 * @param null $container_prefix
+		 */
+		abstract public function resolve($path, $container_prefix = null);
+
 	}
 }
 

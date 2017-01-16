@@ -39,6 +39,15 @@ namespace Jungle\Data\Record\Relation {
 			return $relation->schema->loadFirst( $this->referencedCondition($record) );
 		}
 
+		public function inspectContextEventsAfter(Record $record, array $changes){
+			if($changes['modify']){
+				$this->schema->onRelatedSingleModify($record, $this->name, $changes['modify']);
+			}
+			if($changes['change']){
+				$this->schema->onRelatedSingleChange($record, $this->name, $changes['change']['-'],$changes['change']['+']);
+			}
+		}
+
 		/**
 		 * @param Record $record
 		 * @param Snapshot $snapshot
@@ -47,16 +56,16 @@ namespace Jungle\Data\Record\Relation {
 		 * @throws \Exception
 		 */
 		public function afterRecordSave(Record $record, Snapshot $snapshot = null){
-			if($record->hasChangesProperty($this->name)){
-				$this->_check();
-				/** @var Record $related */
-				$related = $record->getRelated($this->name);
-				$data = $this->referenced_relation->dataTo($record);
-				$related->assign($data);
-				$related->save();
-			}
+			$this->_check();
+			/** @var Record $related */
+			$related = $record->getRelated($this->name);
+			$this->referenced_relation->changeBackward($related, $record);
+			$related->save();
 		}
 
+		public function changeBackward(Record $record, Record $related = null){
+			$record->setRelated($this->name, $related);
+		}
 	}
 }
 
