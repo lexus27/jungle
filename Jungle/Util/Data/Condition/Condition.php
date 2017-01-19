@@ -88,7 +88,12 @@ namespace Jungle\Util\Data\Condition {
 				$delimiterOperator = null;
 				foreach($condition as $key => $c){
 					$s = is_string($key);
-					$count = count($c);
+					if(is_array($c)){
+						$count = count($c);
+					}else{
+						$count = 0;
+					}
+
 					$block = false;
 					if(!$s){
 						$block = true;
@@ -145,6 +150,8 @@ namespace Jungle\Util\Data\Condition {
 						$delimiterOperator = null;
 					}elseif($count === 1){
 						$delimiterOperator = $c[0];
+					}else{
+						$delimiterOperator = $c;
 					}
 				}
 				return $complex;

@@ -94,6 +94,11 @@ namespace Jungle\User\Session\SignatureInspector {
 			$this->cookie_name = $string;
 			return $this;
 		}
+
+		public function setParam($key, $value){
+			$this->{$key} = $value;
+			return $this;
+		}
 	}
 }
 

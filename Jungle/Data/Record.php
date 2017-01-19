@@ -355,23 +355,34 @@ namespace Jungle\Data {
 		 * @return bool
 		 */
 		public function hasChangesRelated($relation_key = null){
-			if($relation_key === null || ($a = is_array($relation_key)) ){
-
-				if(isset($a)) $relations = array_intersect_key($this->_schema->relations, array_flip($relation_key));
-				else $relations = $this->_schema->relations;
-
-				$related_loaded = array_intersect_key($this->_related,$relations);
-				$data = $this->_related_snapshot->earliest()->data();
-				return !!array_diff_assoc($related_loaded, $data);
-			}else{
-				$data = $this->_related_snapshot->earliest()->data();
-				if(isset($data[$relation_key]) xor isset($this->_related[$relation_key])){
+			$related_snapshot_data = $this->_related_snapshot?$this->_related_snapshot->earliest()->data():[];
+			if(is_string($relation_key)){
+				if(isset($related_snapshot_data[$relation_key]) xor isset($this->_related[$relation_key])){
 					return true;
 				}
-				return isset($data[$relation_key])
+				return isset($related_snapshot_data[$relation_key])
 				       && isset($this->_related[$relation_key])
-				       && $data[$relation_key] !== $this->_related[$relation_key];
+				       && $related_snapshot_data[$relation_key] !== $this->_related[$relation_key];
 			}
+			$loaded_related = $this->_related;
+
+			if($relation_key === null){
+				$relations = array_intersect_key($this->_schema->relations, $loaded_related);
+			}else{
+				$relations = array_intersect_key($this->_schema->relations, $loaded_related, array_flip($relation_key));
+			}
+			foreach($relations as $name => $relation){
+				$loaded = $loaded_related[$name];
+				if($relation instanceof RelationMany){
+					/** @var Relationship $loaded */
+					if($loaded->isDirty()){
+						return true;
+					}
+				}elseif(!isset($related_snapshot_data[$name]) && $loaded || $loaded !== $related_snapshot_data[$name]){
+					return true;
+				}
+			}
+			return false;
 		}
 
 		/**

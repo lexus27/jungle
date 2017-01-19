@@ -51,7 +51,7 @@ namespace Jungle\Application\Reporter {
 			}while(filesize($logFile) > $this->max_file_size);
 
 			$content = null;
-			if(file_exists($logFile) && ($content = file_get_contents($logFile))){
+			if(file_exists($logFile) && ($content = trim(file_get_contents($logFile)))){
 				$content = @json_decode($content,true);
 			}
 			if(!$content) $content = [];
@@ -61,19 +61,35 @@ namespace Jungle\Application\Reporter {
 			$line       = $exception->getLine();
 			$type       = $exception instanceof \ErrorException?$exception->getSeverity():1;
 
-			if($exception instanceof \ErrorException){
-				$trace = null;
-			}else{
-				$trace = $exception->getTrace();
-			}
+
 
 			$hash = md5(serialize([$type,$message,$filename,$line]));
 			if(isset($content[$hash])){
-				$content[$hash]['stack']++;
-				$content[$hash]['trace'] = $trace;
+				$c = $content[$hash];
+				unset($content[$hash]);
+				$time = time();
+				$date = date('Y-m-d (H:i:s)',$time);
+				$c['stack']++;
+				if($c['trace'] !== false){
+					if($exception instanceof \ErrorException){
+						$trace = null;
+					}else{
+						$trace = $exception->getTrace();
+					}
+					$c['trace'] = $trace;
+				}
+				$c['date'] = $date;
+				$c['time'] = $time;
+				$content[$hash] = $c;
 			}else{
+				if($exception instanceof \ErrorException){
+					$trace = null;
+				}else{
+					$trace = $exception->getTrace();
+				}
 				$stack = 1;
-				$date = date('Y-m-d (H:i:s)');
+				$time = time();
+				$date = date('Y-m-d (H:i:s)',$time);
 				$content[$hash] = [
 					'type'      => $type,
 					'message'   => $message,
@@ -81,16 +97,25 @@ namespace Jungle\Application\Reporter {
 					'line'      => $line,
 					'trace'     => $trace,
 					'stack'     => $stack,
-					'date'      => $date,
-					'time'      => time(),
+					'date' => $date,
+					'time' => $time,
+					'first_date' => $date,
+					'first_time' => $time,
 				];
 			}
-			$content = json_encode($content,JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT | JSON_BIGINT_AS_STRING);
+			$string = json_encode($content,JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT | JSON_BIGINT_AS_STRING);
+
+			if($string===false){
+				if(json_last_error() === 6){
+					$content[$hash]['trace'] = false;
+					$string = json_encode($content,JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT | JSON_BIGINT_AS_STRING);
+				}
+			}
 
 			if(!is_dir($dirname = dirname($logFile))){
 				mkdir($dirname,0555,true);
 			}
-			file_put_contents($logFile, $content);
+			file_put_contents($logFile, $string);
 
 			if($this->logger){
 				$data = [
