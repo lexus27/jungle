@@ -47,7 +47,7 @@ namespace Jungle\Data\Record\Relation {
 		 * @throws \Exception
 		 */
 		public function afterRecordSave(Record $record, Snapshot $snapshot = null){
-			if($record->hasChangesProperty($this->name)){
+			if($record->hasChangesRelated($this->name)){
 				$this->_check();
 				/** @var Record $related */
 				$related = $record->getRelated($this->name);
