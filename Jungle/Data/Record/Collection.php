@@ -1159,8 +1159,6 @@ namespace Jungle\Data\Record {
 			}
 		}
 
-
-
 		/**
 		 * @param Record $record
 		 * @return bool

@@ -10,6 +10,7 @@
 namespace Jungle\Data\Record\Formula {
 	
 	use Jungle\Data\Record;
+	use Jungle\Data\Record\Schema\Schema;
 
 	/**
 	 * Class Formula
@@ -19,7 +20,7 @@ namespace Jungle\Data\Record\Formula {
 
 		protected $field;
 
-		protected $empty_check = false;
+		protected $empty_collate = false;
 
 		/**
 		 * Formula constructor.
@@ -28,8 +29,10 @@ namespace Jungle\Data\Record\Formula {
 		 */
 		public function __construct($field,$empty_check = false){
 			$this->field = $field;
-			$this->empty_check = $empty_check;
+			$this->empty_collate = $empty_check;
 		}
+
+
 
 		/**
 		 * @return mixed
@@ -45,7 +48,7 @@ namespace Jungle\Data\Record\Formula {
 		 */
 		public function check(Record $record, $op_made){
 			$value = $record->getProperty($this->field);
-			if($this->empty_check){
+			if($this->empty_collate){
 				return empty($value);
 			}else{
 				return isset($value);
@@ -76,6 +79,10 @@ namespace Jungle\Data\Record\Formula {
 		 */
 		abstract public function getInvolvedFields();
 
+		/**
+		 * @param Schema $schema
+		 */
+		abstract public function attachToSchema(Schema $schema);
 
 	}
 }

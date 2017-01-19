@@ -1210,7 +1210,7 @@ namespace Jungle\Data\Record\Schema {
 						$this->foreign_dependency[$f] = $name;
 					}
 				}
-				$relation->initialize();
+				$relation->initialize($this);
 			}
 
 
@@ -2058,16 +2058,14 @@ namespace Jungle\Data\Record\Schema {
 		}
 
 		/**
-		 * @param $name
+		 * @param $local_field
 		 * @return array
 		 */
-		public function getForeignFromField($name){
-
-
+		public function getForeignFromField($local_field){
 			$relation_names = [];
 			foreach($this->relations as $name => $relation){
 				if($relation instanceof Record\Relation\RelationForeign
-				   && in_array($name,$relation->fields, true)){
+				   && in_array($local_field,$relation->fields, true)){
 					$relation_names[] = $name;
 				}
 			}
@@ -2178,15 +2176,6 @@ namespace Jungle\Data\Record\Schema {
 					}
 				}
 			}
-//			/** @var Schema $schema */
-//			$schema = $this->analyzePath($relation_name);
-//			$schema = $schema['schema'];
-//			foreach($schema->dependent as $path){
-//				$data = $schema->analyzePath($path);
-//				/** @var Schema $observer_schema */
-//				$observer_schema = $data['schema'];
-//				$observer_schema->invokeRelatedSingleModify($data['path'], $data['path_reversed'], $modified);
-//			}
 		}
 
 		/**
@@ -2236,42 +2225,6 @@ namespace Jungle\Data\Record\Schema {
 					$record->refreshAnalyzedChanges();
 				}
 			}
-
-
-
-//			$modified = array_intersect_key($analyzed_changes, $this->fields);
-//			$event = !in_array($record->getOperationMade(),[Record::OP_UPDATE],true)?'change':'modify';
-//			if($modified){
-//
-//				/**
-//				 * Мы можем сдесь вызывать локальное событие change parent / change hierarchical
-//				 * Так как все-го лишь в переменной $analyzed_changes будут актуальные данные что родитель изменился
-//				 */
-//				$modified = false;
-//				// событие делегируется FOREIGN отношениям, и только для множественных
-//				foreach($this->dependent as $path){
-//					$data = $this->analyzePath($path);
-//					if(!$data['host']){
-//						/** @var Schema $observer_schema */
-//						$observer_schema = $data['schema'];
-//						$observer_callable = function() use($record, $path){
-//							return $record->getRelated($path);
-//						};
-//						$observable = $record;
-//						// вызов, для множественных локальных полей
-//						if($data['aggregate'][0] && $observable && $observer_schema->invokeRelationEvent($data['path_reversed'],$event, $observable, $observer_callable, $data['path'])){
-//							$modified = true;
-//						}
-//					}else{
-//
-//
-//
-//					}
-//				}
-//				if($modified){
-//					$record->refreshAnalyzedChanges();
-//				}
-//			}
 		}
 
 		/**
@@ -2387,6 +2340,7 @@ namespace Jungle\Data\Record\Schema {
 			if(!isset($this->analyzed_paths[$full_path])){
 				$opposite = [];
 				$schema = $this;
+				$elapsed_path = '';
 				$many = false;
 				$reversed_many = false;
 				$local_field = null;
@@ -2401,6 +2355,7 @@ namespace Jungle\Data\Record\Schema {
 						$property_name = substr($path,0,$pos);
 						$path = substr($path,$pos);
 					}
+					$elapsed_path.= ($elapsed_path?$elapsed_path.'.':'').$property_name;
 					if(isset($schema->relations[$property_name])){
 
 						$schema_path[] = $property_name;
@@ -2455,20 +2410,151 @@ namespace Jungle\Data\Record\Schema {
 						'many'          => $many, // is many
 						'aggregate'     => [$many, $reversed_many], // N-1, 1-N, 1-1, N-N  ; true - false, false - true, false - false, true - true
 						'field'         => $local_field, // destination local field, a target
-						'circular'      => $schema_path === $reversed_path, // reference is Will back to his
-						'recursive'     => !$circular && $schema === $this // recursive deep relation parent-children, etc...
+						'circular'      => $circular, // reference is Will back to his
+						'recursive'     => !$circular && $schema === $this, // recursive deep relation parent-children, etc...
 					];
 					if($local_field){
 						return $analyzed;
 					}else{
 						return $this->analyzed_paths[$full_path] = $analyzed;
 					}
+				}elseif($local_field){
+					return [
+						'schema'        => $schema, // destination schema
+						'path'          => $schema_path,
+						'field'         => $local_field, // destination local field, a target
+						'path_reversed' => null,
+						'host'          => null,
+						'many'          => null,
+						'aggregate'     => null,
+						'circular'      => null,
+						'recursive'     => null,
+					];
+
 				}else{
 					return null;
 				}
-
 			}
 			return $this->analyzed_paths[$full_path];
+		}
+
+		public function analyzePathPoints($path){
+			$full_path = $path;
+			$opposite = [];
+			$points = [];
+			$schema = $this;
+			$elapsed_path = '';
+			$many = false;
+			$reversed_many = false;
+			$local_field = null;
+			$has_host = false;
+			$schema_path = [];
+			while($path = trim($path,'.')){
+				$pos = strpos($path,'.');
+				if($pos === false){
+					$property_name = $path;
+					$path = null;
+				}else{
+					$property_name = substr($path,0,$pos);
+					$path = substr($path,$pos);
+				}
+				$elapsed_path.= ($elapsed_path?$elapsed_path.'.':'').$property_name;
+				if(isset($schema->relations[$property_name])){
+
+					$schema_path[] = $property_name;
+
+					$relation = $schema->relations[$property_name];
+					if($relation instanceof Record\Relation\RelationSchemaHost){
+						$referenced_relation = $relation->getReferencedRelation();
+						if(!$many){
+							$many = $relation instanceof Record\Relation\RelationMany;
+						}
+						if(!$has_host){
+							$has_host = true;
+						}
+						$points[] = [
+							'name' => $relation->name,
+							'name_reverse' => $referenced_relation->name,
+							'elapsed'   => $elapsed_path,
+							'many'      => $relation instanceof Record\Relation\RelationMany,
+							'foreign'   => false,
+							'schema'    => $referenced_relation->schema,
+							'relation'  => $relation,
+							'field'     => null,
+						];
+						$opposite[] = $referenced_relation->name;
+						$schema = $referenced_relation->schema;
+					}elseif($relation instanceof Record\Relation\RelationForeign && !$relation instanceof Record\Relation\RelationForeignDynamic){
+						$referenced_schema = $relation->getSchemaGlobal($relation->referenced_schema);
+						$r_name = null;
+						foreach($referenced_schema->relations as $name => $referenced){
+							if($referenced instanceof Record\Relation\RelationSchemaHost){
+								if($referenced->getReferencedRelation() === $relation){
+									$opposite[] = $r_name = $referenced->name;
+									if(!$reversed_many){
+										$reversed_many = $referenced instanceof Record\Relation\RelationMany;
+									}
+									$schema = $referenced_schema;
+									break;
+								}
+							}
+						}
+						$points[] = [
+							'name'      => $relation->name,
+							'name_reverse' => $r_name,
+							'elapsed'   => $elapsed_path,
+							'many'      => false,
+							'foreign'   => true,
+							'schema'    => $referenced_schema,
+							'relation'  => $relation,
+							'field'     => null,
+						];
+					}else{
+						throw new \Exception('Current Relation is not allowed reverse path');
+					}
+				}else{
+					if(!isset($schema->fields[$property_name])){
+						throw new \LogicException('Relative referenced local field by Path("'.$full_path.'") not exists');
+					}
+					if($path){
+						throw new \LogicException('not support access by dot Relative referenced local field "'.$property_name.'"');
+					}
+					$local_field = $property_name . $path;
+				}
+			}
+			if($opposite){
+				$schema_path    = implode('.',$schema_path);
+				$reversed_path  = implode('.',array_reverse($opposite));
+				$circular = $schema_path === $reversed_path;
+				$analyzed = [
+					'schema'        => $schema, // destination schema
+					'path'          => $schema_path,
+					'path_reversed' => $reversed_path, // reference to his, from destination (back reference)
+					'host'          => $has_host, // is relation schema host
+					'many'          => $many, // is many
+					'aggregate'     => [$many, $reversed_many], // N-1, 1-N, 1-1, N-N  ; true - false, false - true, false - false, true - true
+					'field'         => $local_field, // destination local field, a target
+					'circular'      => $circular, // reference is Will back to his
+					'recursive'     => !$circular && $schema === $this, // recursive deep relation parent-children, etc...
+					'points'        => $points,
+				];
+				return $analyzed;
+			}elseif($local_field){
+				return [
+					'schema'        => $schema, // destination schema
+					'path'          => $schema_path,
+					'field'         => $local_field, // destination local field, a target
+					'path_reversed' => null,
+					'host'          => null,
+					'many'          => null,
+					'aggregate'     => null,
+					'circular'      => null,
+					'recursive'     => null,
+					'points'        => $points,
+				];
+			}else{
+				return null;
+			}
 		}
 
 

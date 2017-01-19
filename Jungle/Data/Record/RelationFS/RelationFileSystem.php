@@ -11,6 +11,7 @@ namespace Jungle\Data\Record\RelationFS {
 
 	use Jungle\Data\Record;
 	use Jungle\Data\Record\Relation\Relation;
+	use Jungle\Data\Record\Schema\Schema;
 	use Jungle\FileSystem\Model\Directory;
 	use Jungle\FileSystem\Model\File;
 	use Jungle\RegExp\Template;
@@ -102,7 +103,7 @@ namespace Jungle\Data\Record\RelationFS {
 			return $source;
 		}
 
-		public function initialize(){
+		public function initialize(Schema $schema){
 			if(!$this->source){
 				throw new \LogicException(__CLASS__ . ': must be set referenced_schema to system base directory as {source}');
 			}

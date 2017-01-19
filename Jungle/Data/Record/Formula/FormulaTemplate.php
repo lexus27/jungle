@@ -10,6 +10,7 @@
 namespace Jungle\Data\Record\Formula {
 	
 	use Jungle\Data\Record;
+	use Jungle\Data\Record\Schema\Schema;
 	use Jungle\RegExp\Template;
 
 	/**
@@ -21,27 +22,23 @@ namespace Jungle\Data\Record\Formula {
 		/** @var  string */
 		protected $template;
 
-		/** @var  Template */
-		protected $template_compiled;
-
 		/** @var  bool */
 		protected $track_involved_change;
 
 		/**
 		 * FormulaTemplate constructor.
 		 * @param $field
-		 * @param bool|false $template
+		 * @param Template|string $template
 		 * @param bool|false $empty_check
-		 * @param bool $track_involved_change
+		 * @param array $track_involved_change
 		 */
-		public function __construct($field, $template, $empty_check = false, $track_involved_change = false){
+		public function __construct($field, $template, $empty_check = false,array $track_involved_change = []){
 			$this->field        = $field;
-			$this->empty_check  = $empty_check;
-			$this->template     = $template;
-
-			if($template instanceof Template){
-				$this->template_compiled = $template;
-				$this->template          = $template->getDefinition();
+			$this->empty_collate  = $empty_check;
+			if(!$template instanceof Template){
+				$this->template = new Template($this->template);
+			}else{
+				$this->template = $template;
 			}
 
 			$this->track_involved_change = $track_involved_change;
@@ -49,7 +46,7 @@ namespace Jungle\Data\Record\Formula {
 
 		public function check(Record $record, $op_made){
 			$_ = parent::check($record, $op_made);
-			return $_ || ($this->track_involved_change && $record->hasChangesProperty($this->getInvolvedFields()));
+			return $_ || ($this->track_involved_change && $record->hasChangesProperty($this->getTrackInvolvedPaths()));
 		}
 
 
@@ -58,7 +55,7 @@ namespace Jungle\Data\Record\Formula {
 		 * @return mixed
 		 */
 		public function fetch(Record $record){
-			$tpl = $this->_compile();
+			$tpl = $this->template;
 			$data = [];
 			foreach( $tpl->getPlaceholderNames() as $name){
 				$data[$name] = $record->getProperty($name);
@@ -70,17 +67,32 @@ namespace Jungle\Data\Record\Formula {
 		 * @return array
 		 */
 		public function getInvolvedFields(){
-			return $this->_compile()->getPlaceholderNames();
+			return $this->template->getPlaceholderNames();
+		}
+
+		public function getTrackInvolvedPaths(){
+			return array_intersect($this->track_involved_change, $this->getInvolvedFields());
 		}
 
 		/**
-		 * @return Template
+		 * @param Schema $schema
 		 */
-		protected function _compile(){
-			if(!$this->template_compiled){
-				$this->template_compiled = new Template($this->template,Template\Manager::getDefault());
+		public function attachToSchema(Schema $schema){
+			foreach($this->getTrackInvolvedPaths() as $path){
+
+				if($pos = strpos($path,'::')!==false){
+
+					$extra_query = substr($path, 0, $pos+1);
+
+				}
+
+				$data = $schema->analyzePath($path);
+
+				if(!$data['field']){
+
+				}
+
 			}
-			return $this->template_compiled;
 		}
 
 	}

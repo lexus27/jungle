@@ -10,6 +10,7 @@
 namespace Jungle\Data\Record\Formula {
 
 	use Jungle\Data\Record;
+	use Jungle\Data\Record\Schema\Schema;
 
 	/**
 	 * Class FormulaCopy
@@ -17,8 +18,10 @@ namespace Jungle\Data\Record\Formula {
 	 */
 	class FormulaCopy extends Formula{
 
+		/** @var bool|false  */
 		protected $source;
 
+		/** @var bool|false  */
 		protected $track_involved_change = false;
 
 		/**
@@ -31,7 +34,7 @@ namespace Jungle\Data\Record\Formula {
 		public function __construct($field, $source, $empty_check, $track_involved_change = false){
 			$this->field = $field;
 			$this->source = $source;
-			$this->empty_check = $empty_check;
+			$this->empty_collate = $empty_check;
 			$this->track_involved_change = $track_involved_change;
 		}
 
@@ -51,7 +54,7 @@ namespace Jungle\Data\Record\Formula {
 		 */
 		public function check(Record $record, $op_made){
 			$_ = parent::check($record, $op_made);
-			return $_ || ($this->track_involved_change && $record->hasChangesProperty($this->source));
+			return $_ || ($this->track_involved_change && $record->hasChangesProperty($this->getInvolvedFields()));
 		}
 
 		/**
@@ -59,6 +62,13 @@ namespace Jungle\Data\Record\Formula {
 		 */
 		public function getInvolvedFields(){
 			return [$this->source];
+		}
+
+		/**
+		 * @param Schema $schema
+		 */
+		public function attachToSchema(Schema $schema){
+			// TODO: Implement attachToSchema() method.
 		}
 	}
 }

@@ -120,7 +120,7 @@ namespace Jungle\Data\Record\Relation {
 			return $this->schema->getRepository()->getSchema($name);
 		}
 
-		abstract public function initialize();
+		abstract public function initialize(Schema $schema);
 
 		abstract public function getLocalFields();
 	}

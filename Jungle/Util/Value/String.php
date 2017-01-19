@@ -312,7 +312,7 @@ namespace Jungle\Util\Value {
 		}
 
 		/**
-		 * @param string $endWith
+		 * @param string $endWith [1,2,3,4] first endWith === true
 		 * @param string[]|string $comparable
 		 * @param bool $caseLess
 		 * @param bool $regExp
