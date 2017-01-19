@@ -898,14 +898,16 @@ namespace Jungle\Data {
 				$relations = array_intersect_key($this->_schema->relations, $loaded_related, array_flip($relation_key));
 			}
 			foreach($relations as $name => $relation){
-				$loaded = $loaded_related[$name];
-				if($relation instanceof RelationMany){
-					/** @var Relationship $loaded */
-					if($loaded->isDirty()){
+				if(isset($loaded_related[$name])){
+					$loaded = $loaded_related[$name];
+					if($relation instanceof RelationMany){
+						/** @var Relationship $loaded */
+						if($loaded->isDirty()){
+							return true;
+						}
+					}elseif((!isset($related_snapshot_data[$name]) && $loaded) || ($loaded !== $related_snapshot_data[$name])){
 						return true;
 					}
-				}elseif(!isset($related_snapshot_data[$name]) && $loaded || $loaded !== $related_snapshot_data[$name]){
-					return true;
 				}
 			}
 			return false;

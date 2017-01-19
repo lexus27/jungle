@@ -9,6 +9,8 @@
  */
 namespace Jungle\User {
 
+	use Jungle\Application\Dispatcher;
+	use Jungle\Di\DiInterface;
 	use Jungle\Di\Injectable;
 	use Jungle\User\Session\Exception;
 	use Jungle\User\Session\ProviderInterface;
@@ -336,17 +338,44 @@ namespace Jungle\User {
 			}
 		}
 
+		public function setDi(DiInterface $di){
+			if($di !== $this->_dependency_injection){
+				$e = $di->getRoot()->getShared('event_manager');
+				$e->attachListener('dispatcher:afterDispatch',function($is_dispatch_error, Dispatcher $dispatcher){
+					try{
+						if($this->current_session){
+							$this->storage->save($this->current_session);
+						}
+					}catch(\Exception $e){
+						$dispatcher->handleException($e,false);
+					}
+				});
+			}
+			parent::setDi($di);
+		}
+
+
 		/**
 		 *
 		 */
 		public function __destruct(){
-			try{
-				if($this->current_session){
-					$this->storage->save($this->current_session);
-				}
-			}catch(\Exception $e){
-				$this->getDi()->getShared('dispatcher')->handleException($e,false);
-			}
+			/*
+			 * @FIXME
+			 * Сохранение сессии в детрукторе, нецелесообразно по следующим причинам:
+			 *      Во время деструкции менеджера, диспетчера уже нет
+			 *
+			 * Лучше сохранять сессию, при каждом завершении работы диспетчеризации
+			 * Это полезно в том числе при разделении работы нескольких приложений в 1 рунтайме.
+			 *
+			 *
+			 */
+//			try{
+//				if($this->current_session){
+//					$this->storage->save($this->current_session);
+//				}
+//			}catch(\Exception $e){
+//				$this->getDi()->getShared('dispatcher')->handleException($e,false);
+//			}
 		}
 
 	}

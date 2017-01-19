@@ -19,7 +19,7 @@ namespace Jungle\Data\Record\Validation {
 		 * @param null $pattern
 		 */
 		public function __construct($fields,$pattern = null){
-			$pattern = $pattern?: '@[[:alpha:]][\w\-\_]*@[[:alpha:]]\w*\.[[:alpha:]]\w*@';
+			$pattern = $pattern?: '@[[:alpha:]][\w\-\_]*\@[[:alpha:]]\w*\.[[:alpha:]]\w*@';
 			parent::__construct($pattern, $fields);
 		}
 

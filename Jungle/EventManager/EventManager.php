@@ -127,14 +127,16 @@ namespace Jungle\EventManager {
 			if(isset($this->listeners[$component])){
 				foreach($this->listeners[$component] as $i => $l){
 					list($eventName, $alias, $listener, $deferred, $call_count) = $l;
-					$call_count = & $l[4];
-					$this->_call($component, $eventName, $invokedEventName, $listener, $arguments);
-					$call_count++;
-					if($deferred === true){
-						$deferred = 1;
-					}
-					if($call_count >= $deferred){
-						unset($this->listeners[$component][$i]);
+					if($eventName === $invokedEventName){
+						$call_count = & $l[4];
+						$this->_call($component, $eventName, $invokedEventName, $listener, $arguments);
+						$call_count++;
+						if($deferred === true){
+							$deferred = 1;
+						}
+						if($call_count >= $deferred){
+							unset($this->listeners[$component][$i]);
+						}
 					}
 				}
 			}
@@ -230,7 +232,9 @@ namespace Jungle\EventManager {
 		}
 
 		protected function _call($ctName, $eName, $invokedEName, $listener, array $arguments){
-			if(is_object($listener)){
+			if(is_callable($listener)){
+				return call_user_func_array($listener, $arguments);
+			}elseif(is_object($listener)){
 				if(!$eName || $eName === $invokedEName){
 					if(method_exists($listener, ($full_method = $ctName.'__'.$eName))){
 						return call_user_func_array([$listener,$full_method],$arguments);
@@ -238,10 +242,8 @@ namespace Jungle\EventManager {
 						return call_user_func_array([$listener,$invokedEName],$arguments);
 					}
 				}
-				return null;
-			}else{
-				return call_user_func_array($listener, $arguments);
 			}
+			return null;
 		}
 
 	}
