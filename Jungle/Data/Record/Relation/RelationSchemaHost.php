@@ -10,6 +10,7 @@
 namespace Jungle\Data\Record\Relation {
 
 	use Jungle\Data\Record;
+	use Jungle\Data\Record\Schema\Schema;
 
 	/**
 	 * Class RelationSchemaHost
@@ -81,7 +82,7 @@ namespace Jungle\Data\Record\Relation {
 		}
 
 
-		public function initialize(){}
+		public function initialize(Schema $schema){}
 
 
 		/**

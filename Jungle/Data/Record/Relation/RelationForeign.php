@@ -223,7 +223,7 @@ namespace Jungle\Data\Record\Relation {
 			return null;
 		}
 
-		public function initialize(){
+		public function initialize(Schema $schema){
 			foreach($this->fields as $name){
 				if(!$this->schema->fields[$name]->nullable){
 					$this->nullable = false;

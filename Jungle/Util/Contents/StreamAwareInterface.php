@@ -15,6 +15,9 @@ namespace Jungle\Util\Contents {
 	 */
 	interface StreamAwareInterface{
 
+		/**
+		 * @return mixed
+		 */
 		public function getStream();
 
 	}
