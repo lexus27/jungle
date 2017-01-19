@@ -378,7 +378,7 @@ namespace Jungle\Data {
 					if($loaded->isDirty()){
 						return true;
 					}
-				}elseif(!isset($related_snapshot_data[$name]) && $loaded || $loaded !== $related_snapshot_data[$name]){
+				}elseif(!isset($related_snapshot_data[$name]) && ($loaded || $loaded !== $related_snapshot_data[$name])){
 					return true;
 				}
 			}
