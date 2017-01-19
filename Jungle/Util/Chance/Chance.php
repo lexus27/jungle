@@ -49,8 +49,9 @@ namespace Jungle\Util\Chance {
 		}
 
 		/**
-		 * @param null $chance
-		 * @param null $max
+		 * Да или Нет
+		 * @param null $chance - Шанс в процентах
+		 * @param null $max - Максимальное число, эквивалентное 100%
 		 * @return bool
 		 */
 		public function pull($chance = null, $max = null){
@@ -59,7 +60,7 @@ namespace Jungle\Util\Chance {
 			if($result <= $chance){
 				return true;
 			}
-			return true;
+			return false;
 		}
 
 
