@@ -499,7 +499,7 @@ namespace Jungle\Application {
 				}
 				throw new NotCertainBehaviour('Defined router, no have "not_found" route');
 			}catch(\Exception $e){
-				return $this->_handleException($e);
+				return $this->handleException($e);
 			}finally{
 				$this->_continueDispatch();
 			}
@@ -861,7 +861,7 @@ namespace Jungle\Application {
 		 * @return ResponseInterface
 		 * @throws \Jungle\Application\Exception
 		 */
-		protected function _handleException(\Exception $e, $return = true){
+		public function handleException(\Exception $e, $return = true){
 			if(ob_get_level()){
 				ob_end_clean();
 			}
@@ -894,6 +894,8 @@ namespace Jungle\Application {
 				}
 				echo '500 Internal Server Error, sorry please';
 				exit();
+			}finally{
+				$this->event_manager->invokeEvent('dispatcher:afterDispatch',true,$this, $process->getRouting()->getRequest(), $process->getRouting(), $process);
 			}
 		}
 
@@ -935,6 +937,7 @@ namespace Jungle\Application {
 				}
 				echo '500 Internal Server Error, sorry please';
 			}
+			$this->event_manager->invokeEvent('dispatcher:afterDispatch',true,$this, $process->getRouting()->getRequest(), $process->getRouting(), $process);
 			exit();
 		}
 
@@ -1003,6 +1006,17 @@ namespace Jungle\Application {
 			$default = $diChains->getInjection('default');
 			$default->removeService('request');
 			$default->removeService('response');
+
+			$current_process = $this->currentProcess();
+			if($current_process){
+				$routing = $current_process->getRouting();
+				$request = $routing->getRequest();
+
+				$this->event_manager->invokeEvent('dispatcher:continueDispatch',false,$this, $request, $routing, $current_process);
+			}else{
+				$this->event_manager->invokeEvent('dispatcher:continueDispatch',false,$this);
+			}
+
 
 
 			$this->dispatching              = false;
