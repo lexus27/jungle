@@ -226,7 +226,7 @@ namespace Jungle\Data\Record\RelationFS {
 			}
 		}
 
-		public function initialize(Schema $schema){
+		public function initialize(){
 
 			if($this->type === self::TYPE_UPLOAD || $this->type === self::TYPE_SELECTED){
 				if(!$this->field){
@@ -238,7 +238,7 @@ namespace Jungle\Data\Record\RelationFS {
 				}
 			}
 
-			parent::initialize($schema);
+			parent::initialize();
 		}
 
 		/**
