@@ -11,9 +11,12 @@ namespace Jungle\Data\Record\RelationFS {
 	
 	use Jungle\Data\Record;
 	use Jungle\Data\Record\Relation\Relationship;
+	use Jungle\Data\Record\Schema\Schema;
+	use Jungle\Data\Record\Snapshot;
 	use Jungle\FileSystem\Model\File;
 	use Jungle\Http\UploadedFile;
 	use Jungle\RegExp\Template;
+	use Jungle\Util\Replacer\Replacer;
 	use Jungle\Util\Value\Massive;
 
 	/**
@@ -97,26 +100,33 @@ namespace Jungle\Data\Record\RelationFS {
 		 * @return null
 		 */
 		public function generateNewPath(Record $record, UploadedFile $file){
-			$tpl = $this->template;
+			//$tpl = $this->template;
+			$replacer = new Replacer('{','}','\w+(?:\.+\w+)*(?::\w+(?:\.+\w+)*)*');
+			return $replacer->replace($this->template->getDefinition(),function($placeholder) use($record, $file){
+				$result = '';
+				$modifiers = explode(':',ltrim(strstr($placeholder,':'),':') );
+				$placeholder = strstr($placeholder,':',true);
+				if(strpos($placeholder,'@')===0){
+					$placeholder = ltrim($placeholder,'@');
+					switch($placeholder){
+						case 'basename': $result = $file->getBasename();break;
+						case 'name':$result =  pathinfo($file->getBasename(),PATHINFO_FILENAME);break;
+						case 'name.ext':$result =  pathinfo($file->getBasename(),PATHINFO_EXTENSION);break;
+						case 'param': $result =  $file->param_name; break;
+						case 'media_type':$result = $file->getMediaType(); break;
+						case 'ext':$result = trim(strstr($file->getMediaType(),'/',false),'/');break;
+						case 'type':$result = trim(strstr($file->getMediaType(),'/',true),'/');break;
+						case 'size':$result = $file->getSize(); break;
+					}
+				}else{
+					$result = $record->getProperty($placeholder);
+				}
+				foreach($modifiers as $modifier){
+					$result = call_user_func($modifier, $result);
+				}
+				return $result;
 
-			$uploaded_data['basename'] = $file->getBasename();
-			$uploaded_data['name'] = pathinfo($uploaded_data['basename'],PATHINFO_FILENAME);
-			$uploaded_data['name_ext'] = pathinfo($uploaded_data['basename'],PATHINFO_EXTENSION);
-			$uploaded_data['param'] = $file->param_name;
-
-			$uploaded_data['media_type'] = $file->getMediaType();
-			$uploaded_data['type'] = trim(strstr($uploaded_data['media_type'],'/',true),'/');
-			$uploaded_data['ext']  = trim(strstr($uploaded_data['media_type'],'/',false),'/');
-			$uploaded_data['size'] = $file->getSize();
-
-			// prefixed
-			$uploaded_data = Massive::cover($uploaded_data,self::PLACEHOLDER_UPLOADED_PREFIX);
-
-			$record_data = $record->getProperties($tpl->getPlaceholderNames());
-
-			$data = array_replace($record_data,$uploaded_data);
-
-			return $tpl->render($data)?:null;
+			});
 		}
 
 
@@ -134,7 +144,13 @@ namespace Jungle\Data\Record\RelationFS {
 		}
 
 
-		public function afterRecordSave(Record $record){
+		/**
+		 * @param Record $record
+		 * @param Snapshot $snapshot
+		 * @throws \Exception
+		 * @throws \Jungle\FileSystem\Model\Exception\ActionError
+		 */
+		public function afterRecordSave(Record $record, Snapshot $snapshot = null){
 
 			/**
 			 * Обработка принятого файла UploadedFile
@@ -145,7 +161,7 @@ namespace Jungle\Data\Record\RelationFS {
 			if(!$this->field && $this->type === self::TYPE_UPLOAD_AUTOGEN
 			   && ($involved_fields = $this->getInvolvedFields())
 			   && $record->hasChangesProperty($involved_fields)
-			){
+			){ // автогенерация-имени файла из полей объекта
 				/** @var File|null $related */
 				$related = $record->getRelatedLoaded($this->name);
 				$source = $this->getSourceIn($record);
@@ -159,13 +175,20 @@ namespace Jungle\Data\Record\RelationFS {
 					$related->renameFrom($new_path, $source);
 				}
 			}elseif($record->hasChangesRelated($this->name)){
+				// контроль пути к файлу по какому-то полю объекта
 				$related = $record->getRelated($this->name);
 				$source = $this->getSourceIn($record);
 				if(in_array($this->type,[self::TYPE_UPLOAD, self::TYPE_UPLOAD_AUTOGEN], true)){
+					// тип: Поле для Загрузки файла, подключение файла из вне
 					if($related instanceof UploadedFile){
 						// TODO папка назначения для файла может задаваться с клиента.
-						// здесь путь назначения до фалйа указывается объектом ORM через шаблон
-						$new_path = $this->fetchPathForUploaded($record,$related);
+
+
+						$new_path = $this->_call_event_accepted($record, $related);
+						if($new_path === null){
+							// здесь путь назначения до фалйа указывается объектом ORM через шаблон
+							$new_path = $this->fetchPathForUploaded($record,$related);
+						}
 						$b_name = basename($new_path);
 						$directory = $source->dir(dirname($new_path));
 						if($file = $directory->get($b_name)){
@@ -173,8 +196,9 @@ namespace Jungle\Data\Record\RelationFS {
 						}
 						// переместить UploadedFile на новый путь, при этом используя абсолютный путь в системе
 						$related->moveTo($source->getAbsolutePath(null,$new_path));
+						$related_file = $directory->get($b_name);
 						// Выставить новый объект
-						$record->setRelated($this->name,$directory->get($b_name));
+						$record->setRelated($this->name,$related_file);
 						if($this->field){
 							$record->setProperty($this->field, $new_path);
 						}
@@ -186,6 +210,7 @@ namespace Jungle\Data\Record\RelationFS {
 						}
 					}
 				}elseif($this->type === self::TYPE_SELECTED){
+					// тип: Выбираемый файл относительно SOURCE
 					if($related instanceof File){
 						if(!$source->isContain($related)){
 							throw new \LogicException('Related selected File is not exists in Source('.$source->getRealPath().')');
@@ -201,7 +226,7 @@ namespace Jungle\Data\Record\RelationFS {
 			}
 		}
 
-		public function initialize(){
+		public function initialize(Schema $schema){
 
 			if($this->type === self::TYPE_UPLOAD || $this->type === self::TYPE_SELECTED){
 				if(!$this->field){
@@ -213,7 +238,7 @@ namespace Jungle\Data\Record\RelationFS {
 				}
 			}
 
-			parent::initialize();
+			parent::initialize($schema);
 		}
 
 		/**
@@ -231,6 +256,36 @@ namespace Jungle\Data\Record\RelationFS {
 			}
 		}
 
+		protected $_on_accepted;
+
+		/**
+		 * @param Record $record
+		 * @param UploadedFile $file
+		 * @return mixed|null
+		 */
+		protected function _call_event_accepted(Record $record, UploadedFile $file){
+			if($this->_on_accepted){
+				if(is_callable($this->_on_accepted)){
+					return call_user_func($this->_on_accepted, $record, $file, $this);
+				}elseif(is_array($this->_on_accepted)){
+					$handler = $this->_on_accepted;
+					$method_name = $handler[0];
+					array_shift($handler);
+					array_unshift($handler, $this);
+					array_unshift($handler, $file);
+					return call_user_func_array([$record, $method_name],$handler);
+				}else{
+					return call_user_func([$record, $this->_on_accepted],$file, $this);
+				}
+
+			}
+			return null;
+		}
+
+		public function onAccepted($handler){
+			$this->_on_accepted = $handler;
+			return $this;
+		}
 	}
 }
 
