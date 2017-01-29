@@ -150,7 +150,7 @@ namespace Jungle\Data\Record\RelationFS {
 		 * @throws \Exception
 		 * @throws \Jungle\FileSystem\Model\Exception\ActionError
 		 */
-		public function afterRecordSave(Record $record, Snapshot $snapshot = null){
+		public function beforeRecordSave(Record $record, Snapshot $snapshot = null){
 
 			/**
 			 * Обработка принятого файла UploadedFile
@@ -224,21 +224,6 @@ namespace Jungle\Data\Record\RelationFS {
 				}
 
 			}
-		}
-
-		public function initialize(){
-
-			if($this->type === self::TYPE_UPLOAD || $this->type === self::TYPE_SELECTED){
-				if(!$this->field){
-					throw new \LogicException('RelationFile(TYPE_UPLOAD | TYPE_SELECTABLE) bad definition!: local field not be specified');
-				}
-			}elseif($this->type === self::TYPE_UPLOAD_AUTOGEN){
-				if(!$this->template){
-					throw new \LogicException('RelationFile(TYPE_UPLOAD_AUTOGEN) bad definition!: Template not be specified');
-				}
-			}
-
-			parent::initialize();
 		}
 
 		/**
