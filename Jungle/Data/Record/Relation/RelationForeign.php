@@ -133,8 +133,7 @@ namespace Jungle\Data\Record\Relation {
 				foreach($schema->getRelations() as $name => $relation){
 					if(
 						$relation instanceof RelationSchemaHost &&
-						$this->referenced_fields === $relation->fields &&
-						$this->fields === $relation->referenced_fields
+						$relation->getReferencedRelation() === $this
 					){
 						$ownerships[$name] = $relation;
 					}

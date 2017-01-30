@@ -994,10 +994,15 @@ namespace Jungle\Data {
 				}
 			}
 
+			if(!$this->_related_snapshot){
+				$this->_related_snapshot = new Snapshot([]);
+			}
+
 			$relations_snapshot = $this->_related_snapshot->earliest();
+			$related_old = $relations_snapshot->data();
 
 			$relations = $this->_schema->relations;
-			$related_old = $relations_snapshot->data();
+
 
 			foreach($relations as $name => $relation){
 				$old    = array_key_exists($name, $related_old)?$related_old[$name]:false;
