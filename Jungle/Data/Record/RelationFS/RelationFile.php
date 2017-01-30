@@ -101,32 +101,36 @@ namespace Jungle\Data\Record\RelationFS {
 		 */
 		public function generateNewPath(Record $record, UploadedFile $file){
 			//$tpl = $this->template;
-			$replacer = new Replacer('{','}','\w+(?:\.+\w+)*(?::\w+(?:\.+\w+)*)*');
-			return $replacer->replace($this->template->getDefinition(),function($placeholder) use($record, $file){
-				$result = '';
-				$modifiers = explode(':',ltrim(strstr($placeholder,':'),':') );
-				$placeholder = strstr($placeholder,':',true);
-				if(strpos($placeholder,'@')===0){
-					$placeholder = ltrim($placeholder,'@');
-					switch($placeholder){
-						case 'basename': $result = $file->getBasename();break;
-						case 'name':$result =  pathinfo($file->getBasename(),PATHINFO_FILENAME);break;
-						case 'name.ext':$result =  pathinfo($file->getBasename(),PATHINFO_EXTENSION);break;
-						case 'param': $result =  $file->param_name; break;
-						case 'media_type':$result = $file->getMediaType(); break;
-						case 'ext':$result = trim(strstr($file->getMediaType(),'/',false),'/');break;
-						case 'type':$result = trim(strstr($file->getMediaType(),'/',true),'/');break;
-						case 'size':$result = $file->getSize(); break;
+			if($this->template){
+				$replacer = new Replacer('{','}','\w+(?:\.+\w+)*(?::\w+(?:\.+\w+)*)*');
+				return $replacer->replace($this->template->getDefinition(),function($placeholder) use($record, $file){
+					$result = '';
+					$modifiers = explode(':',ltrim(strstr($placeholder,':'),':') );
+					$placeholder = strstr($placeholder,':',true);
+					if(strpos($placeholder,'@')===0){
+						$placeholder = ltrim($placeholder,'@');
+						switch($placeholder){
+							case 'basename': $result = $file->getBasename();break;
+							case 'name':$result =  pathinfo($file->getBasename(),PATHINFO_FILENAME);break;
+							case 'name.ext':$result =  pathinfo($file->getBasename(),PATHINFO_EXTENSION);break;
+							case 'param': $result =  $file->param_name; break;
+							case 'media_type':$result = $file->getMediaType(); break;
+							case 'ext':$result = trim(strstr($file->getMediaType(),'/',false),'/');break;
+							case 'type':$result = trim(strstr($file->getMediaType(),'/',true),'/');break;
+							case 'size':$result = $file->getSize(); break;
+						}
+					}else{
+						$result = $record->getProperty($placeholder);
 					}
-				}else{
-					$result = $record->getProperty($placeholder);
-				}
-				foreach($modifiers as $modifier){
-					$result = call_user_func($modifier, $result);
-				}
-				return $result;
+					foreach($modifiers as $modifier){
+						$result = call_user_func($modifier, $result);
+					}
+					return $result;
 
-			});
+				});
+			}else{
+
+			}
 		}
 
 
@@ -233,7 +237,7 @@ namespace Jungle\Data\Record\RelationFS {
 					throw new \LogicException('RelationFile(TYPE_UPLOAD | TYPE_SELECTABLE) bad definition!: local field not be specified');
 				}
 			}elseif($this->type === self::TYPE_UPLOAD_AUTOGEN){
-				if(!$this->template){
+				if(!$this->_on_accepted && !$this->template){
 					throw new \LogicException('RelationFile(TYPE_UPLOAD_AUTOGEN) bad definition!: Template not be specified');
 				}
 			}
