@@ -76,7 +76,7 @@ namespace Jungle\FileSystem\Adapter {
 						throw new Exception("Could not set root absolute to not exists directory");
 					}
 				}
-				$this->root_path = dirname($path).$this->ds().basename($path);
+				$this->root_path = ltrim(dirname($path),'.\\/').$this->ds().basename($path);
 			}else{
 				$this->root_path = false;
 			}

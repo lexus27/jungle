@@ -11,6 +11,10 @@ namespace Jungle\Data\Record\Validation {
 	
 	use Jungle\Data\Record;
 
+	/**
+	 * Class CheckEmail
+	 * @package Jungle\Data\Record\Validation
+	 */
 	class CheckEmail extends CheckPattern{
 
 		/**

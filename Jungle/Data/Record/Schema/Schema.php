@@ -13,10 +13,13 @@ namespace Jungle\Data\Record\Schema {
 	use Jungle\Data\Record\Collection;
 	use Jungle\Data\Record\DataMap;
 	use Jungle\Data\Record\Field\Field;
+	use Jungle\Data\Record\Locator\Path;
+	use Jungle\Data\Record\Locator\Point;
 	use Jungle\Data\Record\Model;
 	use Jungle\Data\Record\Relation\Relation;
+	use Jungle\Data\Record\Relation\RelationSchema;
 	use Jungle\Data\Record\Relation\Relationship;
-	use Jungle\Data\Record\Repository;
+	use Jungle\Data\Record\SchemaManager;
 	use Jungle\Data\Record\Validation\Validation;
 	use Jungle\Data\Record\Validation\ValidationCollector;
 	use Jungle\Data\Storage\Exception;
@@ -42,7 +45,7 @@ namespace Jungle\Data\Record\Schema {
 		/** @var  \ReflectionClass */
 		protected $reflection;
 
-		/** @var  Repository */
+		/** @var  SchemaManager */
 		protected $repository;
 
 		/** @var  Schema */
@@ -134,7 +137,8 @@ namespace Jungle\Data\Record\Schema {
 		 */
 		public $dependent = [];
 
-		public $analyzed_paths = [];
+		/** @var array  */
+		public $locators = [];
 
 
 		/** @var array  */
@@ -472,7 +476,7 @@ namespace Jungle\Data\Record\Schema {
 
 
 		/**
-		 * @param Repository $schemaManager
+		 * @param SchemaManager $schemaManager
 		 * @return $this
 		 */
 		public function setRepository($schemaManager){
@@ -481,7 +485,7 @@ namespace Jungle\Data\Record\Schema {
 		}
 
 		/**
-		 * @return Repository
+		 * @return SchemaManager
 		 */
 		public function getRepository(){
 			return $this->repository;
@@ -674,9 +678,6 @@ namespace Jungle\Data\Record\Schema {
 			if($record->beforeCreate() === false){
 				return false;
 			}
-
-			///////
-
 			return true;
 		}
 
@@ -701,10 +702,6 @@ namespace Jungle\Data\Record\Schema {
 			if($record->beforeUpdate() === false){
 				return false;
 			}
-
-
-			////////
-
 			return true;
 		}
 
@@ -1095,7 +1092,7 @@ namespace Jungle\Data\Record\Schema {
 		}
 
 		/**
-		 * @param $storage
+		 * @param string|object $storage
 		 * @return $this
 		 */
 		public function setStorage($storage){
@@ -1105,7 +1102,7 @@ namespace Jungle\Data\Record\Schema {
 
 
 		/**
-		 * @return StorageInterface
+		 * @return object|null
 		 */
 		public function getDefaultStorage(){
 			return $this->storage instanceof StorageInterface? $this->storage:$this->_checkout_storage($this->storage);
@@ -1113,7 +1110,7 @@ namespace Jungle\Data\Record\Schema {
 
 		/**
 		 * @param Record $record
-		 * @return StorageInterface
+		 * @return object|null
 		 * @throws \Exception
 		 */
 		public function getStorage(Record $record){
@@ -1130,7 +1127,7 @@ namespace Jungle\Data\Record\Schema {
 
 		/**
 		 * @param Record|null $record
-		 * @return StorageInterface
+		 * @return object|null
 		 */
 		public function getWriteStorage(Record $record){
 			$storage = $record->getWriteStorageService();
@@ -1214,13 +1211,25 @@ namespace Jungle\Data\Record\Schema {
 			}
 
 
-			// зависимые отношения
+			// зависимые локальные отношения
 			foreach($this->relations as $name => $relation){
 				if($relation instanceof Record\Relation\RelationSchema && !$relation instanceof Record\Relation\RelationForeignDynamic){
-					if($data = $this->analyzePath($name)){
-						/** @var Schema $schema */
-						$schema = $data['schema'];
-						if(isset($schema->context_listeners[$data['path_reversed']])){
+					if($relation instanceof Record\Relation\RelationForeign){
+						$referenced_schema = $relation->getSchemaGlobal($relation->referenced_schema);
+						foreach($referenced_schema->relations as $n => $referenced){
+							if($referenced instanceof Record\Relation\RelationSchemaHost){
+								if($referenced->getReferencedRelation() === $relation){
+									if(isset($referenced_schema->context_listeners[$n])){
+										$this->dependent[] = $name;
+									}
+									break;
+								}
+							}
+						}
+					}else{
+						$referenced = $relation->getReferencedRelation();
+						$reversed_name = $referenced->name;
+						if(isset($referenced->schema->context_listeners[$reversed_name])){
 							$this->dependent[] = $name;
 						}
 					}
@@ -1476,7 +1485,14 @@ namespace Jungle\Data\Record\Schema {
 		 * @throws Exception\Operation
 		 * @throws \Exception
 		 */
-		public function storageCount($condition = null, $offset = null, $limit = null, array $options = null, $_source = null, StorageInterface $_store = null){
+		public function storageCount(
+			$condition = null,
+			$offset = null,
+			$limit = null,
+			array $options = null,
+			$_source = null,
+			StorageInterface $_store = null
+		){
 			if(!$_source) $_source = $this->getDefaultSource();
 			if(!$_store) $_store = $this->getDefaultStorage();
 			if(!$_source) throw new \Exception('Source is not defined');
@@ -1497,7 +1513,11 @@ namespace Jungle\Data\Record\Schema {
 		 * @throws Exception\Operation
 		 * @throws \Exception
 		 */
-		public function storageCreate($data, $_source = null, StorageInterface $_store = null){
+		public function storageCreate(
+			$data,
+			$_source = null,
+			StorageInterface $_store = null
+		){
 			if(!$_source) $_source = $this->getDefaultSource();
 			if(!$_store) $_store = $this->getDefaultStorage();
 			if(!$_source) throw new \Exception('Source is not defined');
@@ -1521,11 +1541,15 @@ namespace Jungle\Data\Record\Schema {
 		 * @throws Exception\FieldValueException
 		 * @throws Exception\Operation
 		 * @throws \Exception
-		 * @internal param StorageInterface $storage
 		 */
 		public function storageLoad(
-			$condition, $limit = null, $offset = null, $orderBy = null,array $options = null,
-			$_source = null, StorageInterface $_store = null
+			$condition,
+			$limit = null,
+			$offset = null,
+			$orderBy = null,
+			array $options = null,
+			$_source = null,
+			StorageInterface $_store = null
 		){
 
 			if(!$_source) $_source = $this->getDefaultSource();
@@ -1558,7 +1582,12 @@ namespace Jungle\Data\Record\Schema {
 		 * @throws Exception\Operation
 		 * @throws \Exception
 		 */
-		public function storageUpdate($data, $condition, $_source = null, StorageInterface $_store = null){
+		public function storageUpdate(
+			$data,
+			$condition,
+			$_source = null,
+			StorageInterface $_store = null
+		){
 			if($condition){
 				$condition = $this->normalizeCondition($condition);
 			}
@@ -1583,7 +1612,12 @@ namespace Jungle\Data\Record\Schema {
 		 * @throws Exception\Operation
 		 * @throws \Exception
 		 */
-		public function storageRemove($condition, $_source = null, StorageInterface $_store = null){
+		public function storageRemove(
+			$condition,
+			$_source = null,
+			StorageInterface $_store = null
+		){
+
 			if($condition){
 				if(!is_array($condition)){
 					$condition = [$this->mapping[$this->pk],'=',$condition];
@@ -1600,230 +1634,6 @@ namespace Jungle\Data\Record\Schema {
 				$this->handleStorageOperationException($e);
 				return false;
 			}
-		}
-
-		/**
-		 * @param $condition - self schema field name used
-		 * @param $intermediateSchema
-		 * @param $intermediateCondition - intermediate schema field name user
-		 * @param $intermediateCollation - [INTERMEDIATE_FIELD_NAME => SELF_FIELD_NAME]
-		 * @param null $limit
-		 * @param null $offset
-		 * @param null $orderBy - self schema field name used
-		 * @param bool $result_intermediate
-		 * @param null|string $result_intermediate_prefix - if $result_intermediate - required
-		 * @return ShipmentInterface
-		 * @throws Exception\FieldValueException
-		 * @throws Exception\Operation
-		 * @throws \Exception
-		 */
-		public function storageLoadThrough(
-			$condition, $intermediateSchema, $intermediateCondition, $intermediateCollation, $limit = null, $offset = null, $orderBy = null,
-			$result_intermediate = false, $result_intermediate_prefix = null
-		){
-
-			$store = $this->getDefaultStorage();
-			$source = $this->getDefaultSource();
-			if(!$source) throw new \Exception('Source is not defined');
-
-			$schemaManager = $this->getRepository();
-			$intermediateSchema = $schemaManager->getSchema($intermediateSchema);
-
-			if(!$result_intermediate_prefix){
-				$result_intermediate_prefix = 'intermediate_';
-			}
-
-			//prepare intermediate collation
-			$intermediateOn = [];
-			foreach($intermediateCollation as $intermediateField => $selfField){
-				$intermediateOn[] = [
-					[ 'intermediate', $intermediateField], '=', [ 'identifier' =>[ 'self', $selfField]]
-				];
-			}
-
-			// prepare intermediate condition
-			if($intermediateCondition){
-				$intermediateOn = array_merge($intermediateOn,(array)$this->normalizeConditionFieldsBy(
-					function($container, $key, $stringReturn = false) use($schemaManager){
-						$container = 'intermediate';
-						return $stringReturn?($container.'.'.$key):[$container,$key];
-					},
-					$intermediateCondition
-				));
-			}
-
-
-			/**
-			 * Prepare columns
-			 */
-			$columns = [];
-			foreach($this->mapping as $k => $o){
-				$columns[$o] = ['self',$o];
-			}
-			if($result_intermediate){
-				foreach($intermediateSchema->mapping as $k => $o){
-					$columns[$result_intermediate_prefix . $o] = [ 'intermediate', $o];
-				}
-			}
-			$condition = $this->normalizeConditionFieldsBy(function($container, $key, $stringReturn = false){
-				if(!$container){
-					$container = 'self';
-				}
-				return $stringReturn?($container.'.'.$key):[$container,$key];
-			},$condition);
-			$intermediateOn = $this->normalizeCondition($intermediateOn,[
-				'self' => $this,
-				'intermediate' => $intermediateSchema
-			]);
-
-			if($orderBy){
-				$o = [];
-				foreach($this->normalizeOrder($orderBy) as $n => $d){
-					$o['self.'.$n] = $d;
-				}
-				$orderBy = $o;
-			}
-
-
-			try{
-				$shipment = $store->select($columns,$source,$condition,Collection::isInfinityLimit($limit)?null:$limit,$offset,$orderBy,[
-					'alias' => 'self',
-					'joins' => [[
-						'table' => $intermediateSchema->getDefaultSource(),
-						'alias' => 'intermediate',
-						'on'    => $intermediateOn
-					]],
-				]);
-				return $shipment;
-			}catch(Exception\Operation $e){
-				$this->handleStorageOperationException($e);
-				return false;
-			}
-
-
-		}
-
-		/**
-		 * @param $data
-		 * @param $condition
-		 * @param $intermediateSchema
-		 * @param $intermediateCondition
-		 * @param $intermediateCollation
-		 * @return int
-		 */
-		public function storageUpdateThrough($data, $condition, $intermediateSchema, $intermediateCondition, $intermediateCollation){
-
-
-			$store = $this->getDefaultStorage();
-			$source = $this->getDefaultSource();
-
-			$schemaManager = $this->getRepository();
-			$intermediateSchema = $schemaManager->getSchema($intermediateSchema);
-
-
-			//prepare intermediate collation
-			$intermediateOn = [];
-			foreach($intermediateCollation as $intermediateField => $selfField){
-				$intermediateOn[] = [
-					[ 'intermediate', $intermediateField], '=', [ 'identifier' => $selfField ]
-				];
-			}
-
-			// prepare intermediate condition
-			if($intermediateCondition){
-				$intermediateOn = array_merge($intermediateOn,(array)$this->normalizeConditionFieldsBy(
-					function($container, $key, $stringReturn = false) use($schemaManager){
-						return $stringReturn?('intermediate.'.$key):['intermediate',$key];
-					},
-					$intermediateCondition
-				));
-			}
-
-			$condition = $this->normalizeConditionFieldsBy(function($container, $key, $stringReturn = false){
-				return $stringReturn?($key):[null,$key];
-			},$condition);
-
-			$intermediateOn = $this->normalizeCondition($intermediateOn,[
-				'intermediate' => $intermediateSchema
-			]);
-
-
-			$normalizedData = [];
-			foreach($this->fields as $field){
-				if(array_key_exists($field->name,$data)){
-					$normalizedData[$this->mapping[$field->name]] = $data[$field->name];
-				}
-			}
-
-			try{
-				return $store->update($data,$condition,$source,[
-					'joins' => [[
-						'table' => $intermediateSchema->getDefaultSource(),
-						'alias' => 'intermediate',
-						'on'    => $intermediateOn
-					]],
-				]);
-			}catch(Exception\Operation $e){
-				$this->handleStorageOperationException($e);
-				return false;
-			}
-
-		}
-
-
-		/**
-		 * @param $condition
-		 * @param $intermediateSchema
-		 * @param $intermediateCondition
-		 * @param $intermediateCollation
-		 * @return int
-		 */
-		public function storageRemoveThrough($condition, $intermediateSchema, $intermediateCondition, $intermediateCollation){
-			$store = $this->getDefaultStorage();
-			$source = $this->getDefaultSource();
-			$schemaManager = $this->getRepository();
-			$intermediateSchema = $schemaManager->getSchema($intermediateSchema);
-
-
-			//prepare intermediate collation
-			$intermediateOn = [];
-			foreach($intermediateCollation as $intermediateField => $selfField){
-				$intermediateOn[] = [ [ 'intermediate',$intermediateField ] , '=' , [ 'identifier' => $selfField ] ];
-			}
-
-			// prepare intermediate condition
-			if($intermediateCondition){
-				$intermediateOn = array_merge($intermediateOn,(array)$this->normalizeConditionFieldsBy(
-					function($container, $key, $stringReturn = false) use($schemaManager){
-						return $stringReturn?('intermediate.'.$key):['intermediate',$key];
-					},
-					$intermediateCondition
-				));
-			}
-
-			$condition = $this->normalizeConditionFieldsBy(function($container, $key, $stringReturn = false){
-				return $stringReturn?($key):[null,$key];
-			},$condition);
-
-			$intermediateOn = $this->normalizeCondition($intermediateOn,[
-				'intermediate' => $intermediateSchema
-			]);
-
-
-			try{
-				return $store->delete($condition,$source,[
-					'joins' => [[
-						'table' => $intermediateSchema->getDefaultSource(),
-						'alias' => 'intermediate',
-						'on'    => $intermediateOn
-					]],
-				]);
-			}catch(Exception\Operation $e){
-				$this->handleStorageOperationException($e);
-				return false;
-			}
-
-
 		}
 
 		/**
@@ -1873,7 +1683,7 @@ namespace Jungle\Data\Record\Schema {
 					$exception->setFieldName($field->name);
 					throw $exception;
 				}else{
-					throw new \Exception('Bad Exception for handle',0,$exception);
+					throw new \Exception('Bad ORMException for handle',0,$exception);
 				}
 			}
 			throw $exception;
@@ -1895,99 +1705,6 @@ namespace Jungle\Data\Record\Schema {
 				}
 			}
 			return $a;
-		}
-
-
-		public function _condition_types(){
-
-			$type_predicate = [
-				'user_id' => 2,
-				'is_main' => true
-			];
-
-			$type_predicate_extended = [
-				'user_id:=' => 2,
-				'AND:is_main' => true,
-			];
-
-			$type_blocked = [
-
-				['user_id', '=', 2],
-				'AND',
-				['is_main', '=', true],
-				'AND',
-				[
-
-					['LOWER(user_name)','=','LOWER(\'user_alex\')']
-
-				]
-
-			];
-
-			$type_simple = ['user_id','=',2];
-
-
-		}
-
-		/**
-		 * @param callable $handler
-		 * @param $condition
-		 * @return array
-		 */
-		public function normalizeConditionFieldsBy(callable $handler, $condition){
-			if($condition){
-				foreach($condition as $key => & $c){
-					$s = is_string($key);
-					$count = count($c);
-					$block = false;
-					if(!$s){
-						$block = true;
-						foreach($c as $i){
-							if(!is_array($i)){
-								$block = false;
-							}
-						}
-					}
-					if($block){
-						$c = $this->normalizeConditionFieldsBy($handler, $c);
-					}elseif($s){
-						$operator = null;
-						if(strpos($key,':')!==false){
-							list($key, $operator) = explode(':',$key,2);
-							if(!$operator)$operator = '=';
-						}$right = $c;
-						if(is_array($right) && isset($right['identifier'])){
-							if(is_array($right['identifier'])){
-								$right['identifier'] = call_user_func($handler,$right['identifier'][0], $right['identifier'][1]);
-							}
-						}
-						unset($condition[$key]);
-						$condition[] = [call_user_func($handler,null, $key, true),$operator, $right];
-					}elseif($count === 3 || $count === 2){
-						$left = isset($c[0])?$c[0]:$c['left'];
-						$operator = isset($c[1])?$c[1]:$c['operator'];
-						$right = isset($c[2])?$c[2]:$c['right'];
-
-						if(is_array($left)){
-							$left = call_user_func($handler,$left[0], $left[1]);
-						}else{
-							$left = call_user_func($handler,null, $left);
-						}
-
-						if(is_array($right) && isset($right['identifier'])){
-							if(is_array($right['identifier'])){
-								if(is_array($right['identifier'])){
-									$right['identifier'] = call_user_func($handler, $right['identifier'][0] ,$right['identifier'][1]);
-								}else{
-									$right['identifier'] = call_user_func($handler, null ,$right['identifier']);
-								}
-							}
-						}
-						$c = [$left, $operator, $right];
-					}
-				}
-			}
-			return $condition;
 		}
 
 		/**
@@ -2025,16 +1742,7 @@ namespace Jungle\Data\Record\Schema {
 					unset($condition[$key]);
 					$condition[$this->getOriginal($key)] = $right;
 				}elseif($count === 3 || $count === 2){
-
-
-					//$left = isset($c[0])?$c[0]:$c['left'];
-					//$operator = isset($c[1])?$c[1]:$c['operator'];
-					//$right = isset($c[2])?$c[2]:$c['right'];
-					// сдесь была раньше проблема если значения является NULL , при проверке на isset()
-
 					list($left, $operator, $right) = Condition::toList($c,[0,'left'],[1,'operator'],[2,'right']);
-
-
 					if(is_array($left)){
 						$left[1] = $sManager->getSchema($schemas[$left[0]])->getOriginal($left[1]);
 					}else{
@@ -2122,9 +1830,13 @@ namespace Jungle\Data\Record\Schema {
 		public function invokeRelatedSingleModify($observable_path, $observer_path, Record $modified){}
 
 
-
-
-		/** Есть присоединенные или отсоединенные объекты в связанной коллекции */
+		/**
+		 * Есть присоединенные или отсоединенные объекты в связанной коллекции
+		 * @param Record $record
+		 * @param $relation_name
+		 * @param array $attached
+		 * @param array $detached
+		 */
 		public function onRelatedCollectionChange(Record $record, $relation_name,array $attached,array $detached){
 			// событие делегируется себе
 			if(isset($this->context_listeners[$relation_name])){
@@ -2135,7 +1847,13 @@ namespace Jungle\Data\Record\Schema {
 				}
 			}
 		}
-		/** Есть модифицированные объекты в связанной коллекции */
+
+		/**
+		 * Есть модифицированные объекты в связанной коллекции
+		 * @param Record $record
+		 * @param $relation_name
+		 * @param array $modified
+		 */
 		public function onRelatedCollectionModify(Record $record, $relation_name,array $modified){
 			// событие делегируется себе
 			if(isset($this->context_listeners[$relation_name])){
@@ -2146,7 +1864,14 @@ namespace Jungle\Data\Record\Schema {
 				}
 			}
 		}
-		/** Заменен связанный объект */
+
+		/**
+		 * Заменен связанный объект
+		 * @param Record $record
+		 * @param $relation_name
+		 * @param Record $old
+		 * @param Record $new
+		 */
 		public function onRelatedSingleChange(Record $record, $relation_name,Record $old = null,Record $new = null){
 			if(isset($this->context_listeners[$relation_name])){
 				foreach($this->context_listeners[$relation_name] as list($event, $handler)){
@@ -2166,7 +1891,14 @@ namespace Jungle\Data\Record\Schema {
 //				$observer_schema->invokeRelatedSingleChange($data['path'], $data['path_reversed'], $old, $new);
 //			}
 		}
-		/** Модифицирован связанный объект */
+
+		/**
+		 * Модифицирован связанный объект
+		 * @param Record $record
+		 * @param $relation_name
+		 * @param Record $modified
+		 * @param array $changes
+		 */
 		public function onRelatedSingleModify(Record $record, $relation_name, Record $modified,array $changes = null){
 
 			if(isset($this->context_listeners[$relation_name])){
@@ -2198,25 +1930,25 @@ namespace Jungle\Data\Record\Schema {
 				 * от many отношения, это получается, сохраняется их элемент коллекции
 				 */
 				$op_control = $this->repository->currentOperationControl();
-				if($op_control->isRelationOperation()){
-					$initiator = $op_control->getInitiator();
+				if($op_control->inRelationPath()){
+					$initiator = $op_control->getRecord();
 					$initiator_schema = $initiator->getSchema();
-					$initiator_relation = $op_control->getInitiativeAsRelation();
-					$initiator_relation = $initiator_schema->analyzePath($initiator_relation);
+					$initiator_relation = $op_control->getInitRelationName();
+					$initiator_relation = $initiator_schema->getPoint($initiator_relation);
 					foreach($this->dependent as $path){
-						$data = $this->analyzePath($path);
+						$point = $this->getPoint($path);
 						// пути, проходящие через инициатора, мы не обрабатываем.
-						if($data['host']
-						   && strpos($data['path'], $initiator_relation['path_reversed']) !== 0
-						   && $this->delegatePropagationTo($data, $record, $event)
+						if($point->hasHost()
+						   && strpos($point->path, $initiator_relation->getReversedPath()) !== 0
+						   && $this->delegatePropagationTo($point, $record, $event)
 						){
 							$m = true;
 						}
 					}
 				}else{
 					foreach($this->dependent as $path){
-						$data = $this->analyzePath($path);
-						if($data['host'] && $this->delegatePropagationTo($data, $record, $event)){
+						$point = $this->getPoint($path);
+						if($point->hasHost() && $this->delegatePropagationTo($point, $record, $event)){
 							$m = true;
 						}
 					}
@@ -2245,17 +1977,17 @@ namespace Jungle\Data\Record\Schema {
 				 * Делегирование Зависимым, от SINGLE отношения (пока что) (отношения такущей схемы: Collection, One)
 				 * от many отношения, это получается, сохраняется их элемент коллекции
 				 */
-				$op_control = $this->repository->currentOperationControl();
-				if($op_control->isRelationOperation()){
-					$initiator = $op_control->getInitiator();
+				$operation = $this->repository->currentOperationControl();
+				if($operation->inRelationPath()){
+					$initiator = $operation->getRecord();
 					$initiator_schema = $initiator->getSchema();
-					$initiator_relation = $op_control->getInitiativeAsRelation();
-					$initiator_relation = $initiator_schema->analyzePath($initiator_relation);
+					$initiator_relation = $operation->getInitRelationName();
+					$initiator_relation = $initiator_schema->getPoint($initiator_relation);
 					foreach($this->dependent as $path){
-						$data = $this->analyzePath($path);
+						$data = $this->getPoint($path);
 						// пути, проходящие через инициатора, мы не обрабатываем.
-						if($data['host']
-						   && strpos($data['path'], $initiator_relation['path_reversed']) !== 0
+						if($data->hasHost()
+						   && strpos($data->path, $initiator_relation->getReversedPath()) !== 0
 						   && $this->delegatePropagationTo($data, $record, $event)
 						){
 							$m = true;
@@ -2263,8 +1995,8 @@ namespace Jungle\Data\Record\Schema {
 					}
 				}else{
 					foreach($this->dependent as $path){
-						$data = $this->analyzePath($path);
-						if($data['host'] && $this->delegatePropagationTo($data, $record, $event)){
+						$point = $this->getPoint($path);
+						if($point->hasHost() && $this->delegatePropagationTo($point, $record, $event)){
 							$m = true;
 						}
 					}
@@ -2276,41 +2008,47 @@ namespace Jungle\Data\Record\Schema {
 
 		}
 
-		public function delegatePropagationTo($path_data,Record $record, $event){
+		/**
+		 * @param Point $point
+		 * @param Record $record
+		 * @param $event
+		 * @return bool
+		 */
+		public function delegatePropagationTo(Point $point,Record $record, $event){
 			/**
 			 * @observable - Слушаемый, то-есть "текущий" в данном случае, при том что текущий объект модифицирован
 			 * @observer - Этот тот[current::One] или те[current::Many] объекты, которые Зависят, от текущего
 			 */
 			/** @var Schema $observer_schema */
-			$observer_schema = $path_data['schema'];
-			$observer_callable = function() use($record, $path_data){
-				return $record->getRelated($path_data['path']);
+			$observer_schema = $point->schema;
+			$observer_callable = function() use($record, $point){
+				return $record->getRelated($point->path);
 			};
 			$observable = $record;
 			$m = false;
-			if($path_data['aggregate'][0]){ //множественные отношения от "текущего"
+			if($point->hasMany()){ //множественные отношения от "текущего"
 
-				if($path_data['aggregate'][1]){// в составе коллекции, со стороны Слушателя
+				if($point->hasManyReversed()){// в составе коллекции, со стороны Слушателя
 
 				}else{ // является одиночным, со стороны Слушателя
 					if($observer_schema->invokeRelationEvent(
-						$path_data['path_reversed'],
+						$point->getReversedPath(),
 						$event,
 						$observable,
 						$observer_callable,
-						$path_data['path']
+						$point->path
 					))$m = true;
 				}
 			}else{ //одиночные отношения от "текущего"
-				if($path_data['aggregate'][1]){// в составе коллекции, со стороны Слушателя
+				if($point->hasManyReversed()){// в составе коллекции, со стороны Слушателя
 					// на той стороне, "текущий объект" может являться просто элементом коллекции
 				}else{ // является одиночным, со стороны Слушателя
 					if($observer_schema->invokeRelationEvent(
-						$path_data['path_reversed'],
+						$point->getReversedPath(),
 						$event,
 						$observable,
 						$observer_callable,
-						$path_data['path']
+						$point->path
 					))$m = true;
 				}
 			}
@@ -2318,244 +2056,98 @@ namespace Jungle\Data\Record\Schema {
 		}
 
 
-
 		/**
 		 * @param $path
-		 * @return array|null
-		 *
-		 * $array['schema'] destination schema(or schema name)
-		 * $array['path']
-		 * $array['path_reversed'] reference to his, from destination (back reference)
-		 * $array['host'] is relation schema host
-		 * $array['many'] is many
-		 * $array['aggregate'] N-1, 1-N, 1-1, N-N  ; true - false, false - true, false - false, true - true
-		 * $array['field'] destination local field, a target
-		 * $array['circular'] reference is Will back to his
-		 * $array['recursive'] recursive deep relation parent-children, etc...
-		 *
+		 * @return Point|Path
 		 * @throws \Exception
 		 */
-		public function analyzePath($path){
-			$full_path = $path;
-			if(!isset($this->analyzed_paths[$full_path])){
-				$opposite = [];
-				$schema = $this;
-				$elapsed_path = '';
-				$many = false;
-				$reversed_many = false;
-				$local_field = null;
-				$has_host = false;
-				$schema_path = [];
-				while($path = trim($path,'.')){
-					$pos = strpos($path,'.');
-					if($pos === false){
-						$property_name = $path;
-						$path = null;
-					}else{
-						$property_name = substr($path,0,$pos);
-						$path = substr($path,$pos);
-					}
-					$elapsed_path.= ($elapsed_path?$elapsed_path.'.':'').$property_name;
-					if(isset($schema->relations[$property_name])){
-
-						$schema_path[] = $property_name;
-
-						$relation = $schema->relations[$property_name];
-						if($relation instanceof Record\Relation\RelationSchemaHost){
-							$referenced_relation = $relation->getReferencedRelation();
-							if(!$many){
-								$many = $relation instanceof Record\Relation\RelationMany;
-							}
-							if(!$has_host){
-								$has_host = true;
-							}
-							$opposite[] = $referenced_relation->name;
-							$schema = $referenced_relation->schema;
-						}elseif($relation instanceof Record\Relation\RelationForeign && !$relation instanceof Record\Relation\RelationForeignDynamic){
-							$referenced_schema = $relation->getSchemaGlobal($relation->referenced_schema);
-							foreach($referenced_schema->relations as $name => $referenced){
-								if($referenced instanceof Record\Relation\RelationSchemaHost){
-									if($referenced->getReferencedRelation() === $relation){
-										$opposite[] = $referenced->name;
-										if(!$reversed_many){
-											$reversed_many = $referenced instanceof Record\Relation\RelationMany;
-										}
-										$schema = $referenced_schema;
-										break;
-									}
-								}
-							}
-						}else{
-							throw new \Exception('Current Relation is not allowed reverse path');
-						}
-					}else{
-						if(!isset($schema->fields[$property_name])){
-							throw new \LogicException('Relative referenced local field by Path("'.$full_path.'") not exists');
-						}
-						if($path){
-							throw new \LogicException('not support access by dot Relative referenced local field "'.$property_name.'"');
-						}
-						$local_field = $property_name . $path;
-					}
-				}
-				if($opposite){
-					$schema_path    = implode('.',$schema_path);
-					$reversed_path  = implode('.',array_reverse($opposite));
-					$circular = $schema_path === $reversed_path;
-					$analyzed = [
-						'schema'        => $schema, // destination schema
-						'path'          => $schema_path,
-						'path_reversed' => $reversed_path, // reference to his, from destination (back reference)
-						'host'          => $has_host, // is relation schema host
-						'many'          => $many, // is many
-						'aggregate'     => [$many, $reversed_many], // N-1, 1-N, 1-1, N-N  ; true - false, false - true, false - false, true - true
-						'field'         => $local_field, // destination local field, a target
-						'circular'      => $circular, // reference is Will back to his
-						'recursive'     => !$circular && $schema === $this, // recursive deep relation parent-children, etc...
-					];
-					if($local_field){
-						return $analyzed;
-					}else{
-						return $this->analyzed_paths[$full_path] = $analyzed;
-					}
-				}elseif($local_field){
-					return [
-						'schema'        => $schema, // destination schema
-						'path'          => $schema_path,
-						'field'         => $local_field, // destination local field, a target
-						'path_reversed' => null,
-						'host'          => null,
-						'many'          => null,
-						'aggregate'     => null,
-						'circular'      => null,
-						'recursive'     => null,
-					];
-
-				}else{
-					return null;
-				}
+		public function inspectPath($path){
+			if(isset($this->locators[$path])){
+				return $this->locators[$path];
 			}
-			return $this->analyzed_paths[$full_path];
-		}
-
-		public function analyzePathPoints($path){
-			$full_path = $path;
-			$opposite = [];
-			$points = [];
-			$schema = $this;
-			$elapsed_path = '';
-			$many = false;
-			$reversed_many = false;
-			$local_field = null;
-			$has_host = false;
-			$schema_path = [];
-			while($path = trim($path,'.')){
-				$pos = strpos($path,'.');
-				if($pos === false){
-					$property_name = $path;
-					$path = null;
+			if(($pos = strrpos($path,'.'))!==false){
+				$point = substr($path,0,$pos);
+				$unknown = substr($path,$pos+1);
+				$point = $this->getPoint($point); // get prev point for schema info
+				if(isset($point->schema->relations[$unknown])){
+					return $this->getPoint($path);
 				}else{
-					$property_name = substr($path,0,$pos);
-					$path = substr($path,$pos);
+					// is a field
+					return new Path($this,$path,$unknown,null, $point);
 				}
-				$elapsed_path.= ($elapsed_path?$elapsed_path.'.':'').$property_name;
-				if(isset($schema->relations[$property_name])){
-
-					$schema_path[] = $property_name;
-
-					$relation = $schema->relations[$property_name];
-					if($relation instanceof Record\Relation\RelationSchemaHost){
-						$referenced_relation = $relation->getReferencedRelation();
-						if(!$many){
-							$many = $relation instanceof Record\Relation\RelationMany;
-						}
-						if(!$has_host){
-							$has_host = true;
-						}
-						$points[] = [
-							'name' => $relation->name,
-							'name_reverse' => $referenced_relation->name,
-							'elapsed'   => $elapsed_path,
-							'many'      => $relation instanceof Record\Relation\RelationMany,
-							'foreign'   => false,
-							'schema'    => $referenced_relation->schema,
-							'relation'  => $relation,
-							'field'     => null,
-						];
-						$opposite[] = $referenced_relation->name;
-						$schema = $referenced_relation->schema;
-					}elseif($relation instanceof Record\Relation\RelationForeign && !$relation instanceof Record\Relation\RelationForeignDynamic){
-						$referenced_schema = $relation->getSchemaGlobal($relation->referenced_schema);
-						$r_name = null;
-						foreach($referenced_schema->relations as $name => $referenced){
-							if($referenced instanceof Record\Relation\RelationSchemaHost){
-								if($referenced->getReferencedRelation() === $relation){
-									$opposite[] = $r_name = $referenced->name;
-									if(!$reversed_many){
-										$reversed_many = $referenced instanceof Record\Relation\RelationMany;
-									}
-									$schema = $referenced_schema;
-									break;
-								}
-							}
-						}
-						$points[] = [
-							'name'      => $relation->name,
-							'name_reverse' => $r_name,
-							'elapsed'   => $elapsed_path,
-							'many'      => false,
-							'foreign'   => true,
-							'schema'    => $referenced_schema,
-							'relation'  => $relation,
-							'field'     => null,
-						];
-					}else{
-						throw new \Exception('Current Relation is not allowed reverse path');
-					}
-				}else{
-					if(!isset($schema->fields[$property_name])){
-						throw new \LogicException('Relative referenced local field by Path("'.$full_path.'") not exists');
-					}
-					if($path){
-						throw new \LogicException('not support access by dot Relative referenced local field "'.$property_name.'"');
-					}
-					$local_field = $property_name . $path;
-				}
-			}
-			if($opposite){
-				$schema_path    = implode('.',$schema_path);
-				$reversed_path  = implode('.',array_reverse($opposite));
-				$circular = $schema_path === $reversed_path;
-				$analyzed = [
-					'schema'        => $schema, // destination schema
-					'path'          => $schema_path,
-					'path_reversed' => $reversed_path, // reference to his, from destination (back reference)
-					'host'          => $has_host, // is relation schema host
-					'many'          => $many, // is many
-					'aggregate'     => [$many, $reversed_many], // N-1, 1-N, 1-1, N-N  ; true - false, false - true, false - false, true - true
-					'field'         => $local_field, // destination local field, a target
-					'circular'      => $circular, // reference is Will back to his
-					'recursive'     => !$circular && $schema === $this, // recursive deep relation parent-children, etc...
-					'points'        => $points,
-				];
-				return $analyzed;
-			}elseif($local_field){
-				return [
-					'schema'        => $schema, // destination schema
-					'path'          => $schema_path,
-					'field'         => $local_field, // destination local field, a target
-					'path_reversed' => null,
-					'host'          => null,
-					'many'          => null,
-					'aggregate'     => null,
-					'circular'      => null,
-					'recursive'     => null,
-					'points'        => $points,
-				];
+			}elseif(isset($this->relations[$path])){
+				return $this->getPoint($path);
 			}else{
-				return null;
+				// is a field
+				return new Path($this,$path,$path,null, null);
 			}
 		}
+		/**
+		 * @param $path
+		 * @return Point
+		 * @throws \Exception
+		 */
+		public function getPoint($path){
+			if(isset($this->locators[$path])){
+				return $this->locators[$path];
+			}else{
+
+				$prev_path = null;
+				$current_name = $path;
+				if(($pos = strrpos($path,'.'))!==false){
+					$prev_path = substr($path,0,$pos);
+					$current_name = substr($path,$pos+1);
+				}
+				$prev = $prev_path?$this->getPoint($prev_path):null;
+				if(!$prev && isset($this->fields[$path])){
+					throw new \Exception('Local Field is can not be Point');
+				}
+				$point = new Point();
+				$point->path = $path;
+				$point->prev = $prev;
+
+				if($point->prev){
+					if($point->prev->isMany()){
+						//throw new \Exception('Error: Passing through multiple relationships');
+					}
+					$origin_schema = $point->prev->schema;
+				}else{
+					$origin_schema = $this;
+				}
+				/** @var RelationSchema $relation */
+				$relation = $origin_schema->relations[$current_name];
+				if($relation instanceof Record\Relation\RelationSchemaHost){
+					$referenced_relation = $relation->getReferencedRelation();
+					$point->to_many = $relation instanceof Record\Relation\RelationMany;
+					$point->in_host = true;
+					$point->reversed_path = $referenced_relation->name.($prev&&$prev->reversed_path?'.'.$prev->reversed_path:'');
+					$point->schema = $referenced_relation->schema;
+					$point->circular = $point->reversed_path === $point->path;
+					$point->recursive = !$point->circular && $origin_schema === $point->schema;
+				}elseif($relation instanceof Record\Relation\RelationForeign && !$relation instanceof Record\Relation\RelationForeignDynamic){
+					$referenced_schema = $relation->getSchemaGlobal($relation->referenced_schema);
+					$point->schema = $referenced_schema;
+					foreach($referenced_schema->relations as $name => $referenced){
+						if($referenced instanceof Record\Relation\RelationSchemaHost){
+							if($referenced->getReferencedRelation() === $relation){
+								$point->reversed_path = $referenced->name.($prev&&$prev->reversed_path?'.'.$prev->reversed_path:'');
+								$point->reversed_to_many = $referenced instanceof Record\Relation\RelationMany;
+								$point->circular = $point->reversed_path === $point->path;
+								$point->recursive = !$point->circular && $origin_schema === $point->schema;
+								break;
+							}
+						}
+					}
+
+				}else{
+					throw new \Exception('Current Relation is not allowed reverse path');
+				}
+				$point->relation = $relation;
+				$this->locators[$path] = $point;
+			}
+			return $this->locators[$path];
+		}
+
 
 
 

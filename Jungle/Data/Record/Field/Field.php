@@ -31,12 +31,28 @@ namespace Jungle\Data\Record\Field {
 	 */
 	class Field{
 
+		/**
+		 * Native field type identifier
+		 * @var string
+		 */
 		protected $field_type = 'string';
 
+		/**
+		 * Field name
+		 * @var string
+		 */
 		public $name;
 
+		/**
+		 * Value can be NULL by default
+		 * @var bool
+		 */
 		public $nullable = true;
 
+		/**
+		 * Default field value, if nullable === false, field must be required
+		 * @var null
+		 */
 		public $default = null;
 
 		/**
@@ -62,14 +78,28 @@ namespace Jungle\Data\Record\Field {
 			}
 		}
 
-		/**
-		 * @param Schema $schema
-		 */
-		public function attachToSchema(Schema $schema){
 
+
+		/**
+		 * Конвертация значения пришедшего из хранилища
+		 * @param $value
+		 * @return mixed
+		 */
+		public function decode($value){
+			return $value;
 		}
 
 		/**
+		 * Конвертация значения в значение хранимое в базе данных
+		 * @param $value
+		 * @return mixed
+		 */
+		public function encode($value){
+			return $value;
+		}
+		
+		/**
+		 * Стабилизация значения перед валидацией
 		 * @param $value
 		 * @return mixed
 		 */
@@ -81,27 +111,28 @@ namespace Jungle\Data\Record\Field {
 		}
 
 		/**
+		 * Родной для поля валидатор, в отличие от полноценных, не передает сообщения, кроме типа поля
 		 * @param $value
-		 * @return mixed
+		 * @return bool
 		 */
-		public function decode($value){
-			return $value;
-		}
-
-		/**
-		 * @param $value
-		 * @return mixed
-		 */
-		public function encode($value){
-			return $value;
-		}
-
 		public function validate($value){
 			return true;
 		}
 
+		/**
+		 * Системный Тип поля
+		 * @return string
+		 */
 		public function getFieldType(){
 			return $this->field_type;
+		}
+
+		/**
+		 * Инициализация данного поля в схеме
+		 * @param Schema $schema
+		 */
+		public function initialize(Schema $schema){
+
 		}
 
 	}

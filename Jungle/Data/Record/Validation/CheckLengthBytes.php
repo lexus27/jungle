@@ -17,8 +17,13 @@ namespace Jungle\Data\Record\Validation {
 	 */
 	class CheckLengthBytes extends CheckLength{
 
+		/** @var string  */
 		public $type = 'CheckLengthBytes';
 
+		/**
+		 * @param Record $record
+		 * @param ValidationCollector $collector
+		 */
 		function validate(Record $record, ValidationCollector $collector){
 			$data = $record->getProperties($this->fields);
 			foreach($data as $key => $value){

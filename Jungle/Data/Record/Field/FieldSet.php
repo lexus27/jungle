@@ -5,39 +5,43 @@
  * Project: jungle
  * IDE: PhpStorm
  * Date: 19.11.2016
- * Time: 22:15
+ * Time: 22:34
  */
 namespace Jungle\Data\Record\Field {
 
 	/**
-	 * Class DateTime
+	 * Class FieldSet
 	 * @package Jungle\Data\Record\Field
 	 */
-	class DateTime extends Field{
+	class FieldSet extends Field{
 
-		protected $field_type = 'date_time';
+		protected $field_type = 'set';
+
+		/** @var array  */
+		public $expected = [];
 
 		/**
 		 * @param $value
-		 * @return int|null
+		 * @return mixed
 		 */
 		public function decode($value){
-			return $this->nullable && $value===null?$value:strtotime($value);
+			return $this->expected[$value];
 		}
 
 		/**
 		 * @param $value
-		 * @return bool|null|string
+		 * @return mixed
 		 */
 		public function encode($value){
-			return $value!==null?date('Y-m-d H:i:s', $value):null;
+			return array_search($value, $this->expected, true);
 		}
 
 
 		public function validate($value){
-			return true;
+			return in_array($value, $this->expected, true);
 		}
-		
+
+
 	}
 }
 

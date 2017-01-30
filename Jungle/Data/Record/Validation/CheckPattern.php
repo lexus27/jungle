@@ -17,11 +17,17 @@ namespace Jungle\Data\Record\Validation {
 	 */
 	class CheckPattern extends Validation{
 
+		/** @var string  */
 		public $type = 'CheckPattern';
 
 		/** @var  string */
 		public $pattern;
 
+		/**
+		 * CheckPattern constructor.
+		 * @param $pattern
+		 * @param $fields
+		 */
 		public function __construct($pattern, $fields){
 			$this->pattern = $pattern;
 			parent::__construct($fields);

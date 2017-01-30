@@ -10,10 +10,10 @@
 namespace Jungle\Data\Record\Field {
 
 	/**
-	 * Class Integer
+	 * Class FieldInteger
 	 * @package Jungle\Data\Record\Field
 	 */
-	class Integer extends Field{
+	class FieldInteger extends Field{
 
 		protected $field_type = 'integer';
 

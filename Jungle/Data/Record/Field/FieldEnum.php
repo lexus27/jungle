@@ -10,10 +10,10 @@
 namespace Jungle\Data\Record\Field {
 
 	/**
-	 * Class Enum
+	 * Class FieldEnum
 	 * @package Jungle\Data\Record\Field
 	 */
-	class Enum extends Field{
+	class FieldEnum extends Field{
 
 		protected $field_type = 'enum';
 

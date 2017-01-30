@@ -5,17 +5,17 @@
  * Project: jungle
  * IDE: PhpStorm
  * Date: 25.07.2016
- * Time: 1:50
+ * Time: 1:47
  */
-namespace Jungle\Data\Record\Exception\Field {
+namespace Jungle\Data\Record\Exception {
 
-	use Jungle\Data\Record\Exception\Field;
+	use Jungle\Data\Exception;
 
 	/**
-	 * Class UnexpectedValue
-	 * @package Jungle\Data\Record\Exception\Field
+	 * Class Field
+	 * @package Jungle\Data\Record\Exception
 	 */
-	class UnexpectedValue extends Field{
+	class FieldException extends Exception{
 		
 	}
 }

@@ -4,19 +4,21 @@
  * Author: Kutuzov Alexey Konstantinovich <lexus.1995@mail.ru>
  * Project: jungle
  * IDE: PhpStorm
- * Date: 26.07.2016
- * Time: 5:10
+ * Date: 10.06.2016
+ * Time: 22:47
  */
 namespace Jungle\Data\Record {
-	
-	use Jungle\Data\Record\Exception;
 
 	/**
-	 * Class RepositoryException
-	 * @package Jungle\Data\Record\Schema
+	 * Class Exception
+	 * @package Jungle\Data\Record
 	 */
-	class RepositoryException extends Exception{
-		
+	class ORMException extends \Exception{
+
+
+
+
 	}
+
 }
 

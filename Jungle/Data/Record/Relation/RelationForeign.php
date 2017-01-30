@@ -92,7 +92,7 @@ namespace Jungle\Data\Record\Relation {
 		 * @param Record $record
 		 * @param Snapshot $snapshot
 		 * @return mixed|void
-		 * @throws Record\Exception
+		 * @throws Record\ORMException
 		 */
 		public function beforeRecordSave(Record $record, Snapshot $snapshot = null){
 			if(($related = $record->getRelatedLoaded($this->name))!==false){

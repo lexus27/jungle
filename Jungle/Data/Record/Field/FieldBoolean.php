@@ -10,10 +10,10 @@
 namespace Jungle\Data\Record\Field {
 
 	/**
-	 * Class Boolean
+	 * Class FieldBoolean
 	 * @package Jungle\Data\Record\Field
 	 */
-	class Boolean extends Field{
+	class FieldBoolean extends Field{
 
 
 		public function stabilize($value){

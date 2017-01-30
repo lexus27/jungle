@@ -35,5 +35,6 @@ namespace Jungle\Data\Record {
 		public function getFieldNames();
 
 	}
+
 }
 

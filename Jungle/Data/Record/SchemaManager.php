@@ -11,15 +11,19 @@ namespace Jungle\Data\Record {
 
 	use Jungle\Data\Record;
 	use Jungle\Data\Record\Collection;
+	use Jungle\Data\Record\Exception\SchemaManagerException;
 	use Jungle\Data\Record\Schema\Schema;
 	use Jungle\Di;
 	use Jungle\FileSystem\Model\Directory;
 	
 	/**
-	 * Class Repository
+	 * Class SchemaManager
 	 * @package modelX
 	 */
-	class Repository{
+	class SchemaManager{
+
+		/** @var  SchemaManager */
+		protected static $default_schema_manager;
 
 		/** @var  Schema[] */
 		protected $schemas = [];
@@ -27,14 +31,14 @@ namespace Jungle\Data\Record {
 		/** @var  Schema */
 		protected $initializing_schema;
 
-		/** @var  Repository */
-		protected static $default_schema_manager;
+		/** @var  Operation */
+		protected $current_operation;
 
 		/** @var array  */
 		protected $directories = [];
 
 		/**
-		 * @return Repository
+		 * @return SchemaManager
 		 */
 		public static function getDefault(){
 			if(!self::$default_schema_manager){
@@ -44,9 +48,9 @@ namespace Jungle\Data\Record {
 		}
 
 		/**
-		 * @param Repository $manager
+		 * @param SchemaManager $manager
 		 */
-		public static function setDefault(Repository $manager){
+		public static function setDefault(SchemaManager $manager){
 			self::$default_schema_manager = $manager;
 		}
 
@@ -62,7 +66,7 @@ namespace Jungle\Data\Record {
 		/**
 		 * @param $schemaName
 		 * @return Schema
-		 * @throws RepositoryException
+		 * @throws SchemaManagerException
 		 * @throws \Exception
 		 */
 		public function getSchema($schemaName){
@@ -93,14 +97,11 @@ namespace Jungle\Data\Record {
 
 
 		protected function _throwSchemaInitError($schemaName){
-			throw new RepositoryException('Required schema "' . $schemaName . '" not found!');
+			throw new SchemaManagerException('Required schema "' . $schemaName . '" not found!');
 		}
 
-		/** @var  OperationControl */
-		protected $current_operation;
-
 		/**
-		 * @return OperationControl
+		 * @return Operation
 		 */
 		public function currentOperationControl(){
 			return $this->current_operation;
@@ -109,13 +110,13 @@ namespace Jungle\Data\Record {
 
 		/**
 		 * @param Record $record
-		 * @return OperationControl
+		 * @return Operation
 		 */
 		public function startOperation(Record $record){
 			if(!$this->current_operation){
-				$this->current_operation = new OperationControl();
+				$this->current_operation = new Operation();
 			}
-			$this->current_operation->start($record);
+			$this->current_operation->startRecordCapture($record);
 			return $this->current_operation;
 		}
 
@@ -123,7 +124,7 @@ namespace Jungle\Data\Record {
 		 * @param Record $record
 		 */
 		public function endOperation(Record $record){
-			$this->current_operation->end($record);
+			$this->current_operation->endRecordCapture($record);
 			if($this->current_operation->isEmpty()){
 				$this->current_operation = null;
 			}
@@ -161,6 +162,12 @@ namespace Jungle\Data\Record {
 			return Di::getDefault()->get($storage);
 		}
 
+		public function getStorageAdapter(){
+			if(!$this){
+
+			}
+		}
+
 
 
 
@@ -174,7 +181,7 @@ namespace Jungle\Data\Record {
 		 */
 		protected function _loadSchema($schemaName){
 			if(!class_exists($schemaName)){
-				throw new RepositoryException('Schema class "' . $schemaName . '" not found!');
+				throw new SchemaManagerException('Schema class "' . $schemaName . '" not found!');
 			}
 			$schema = $this->factorySchema($schemaName);
 			$this->initializeSchema($schema);

@@ -9,18 +9,19 @@
  */
 namespace Jungle\Data {
 
-	use Jungle\Data\Record\Exception;
-	use Jungle\Data\Record\Exception\Field\AccessViolation;
-	use Jungle\Data\Record\Exception\Field\ReadonlyViolation;
-	use Jungle\Data\Record\Exception\Field\UnexpectedValue;
-	use Jungle\Data\Record\ExportableInterface;
+	use Jungle\Data\Record\Exception\FieldAccessViolation;
+	use Jungle\Data\Record\Exception\FieldException;
+	use Jungle\Data\Record\Exception\FieldReadonlyViolation;
+	use Jungle\Data\Record\Exception\FieldUnexpectedValue;
+	use Jungle\Data\Record\Exportable;
+	use Jungle\Data\Record\ORMException;
 	use Jungle\Data\Record\Relation\Relation;
 	use Jungle\Data\Record\Relation\RelationForeign;
 	use Jungle\Data\Record\Relation\RelationMany;
 	use Jungle\Data\Record\Relation\RelationSchema;
 	use Jungle\Data\Record\Relation\Relationship;
-	use Jungle\Data\Record\Repository;
 	use Jungle\Data\Record\Schema\Schema;
+	use Jungle\Data\Record\SchemaManager;
 	use Jungle\Data\Record\Snapshot;
 	use Jungle\Data\Record\Validation\ValidationResult;
 	use Jungle\Data\Storage\Exception\DuplicateEntry;
@@ -58,7 +59,7 @@ namespace Jungle\Data {
 	abstract class Record
 		implements PropertyRegistryInterface,
 		PropertyRegistryTransientInterface,
-		ExportableInterface,
+		Exportable,
 		\Iterator,
 		\ArrayAccess,
 		\Serializable,
@@ -204,7 +205,7 @@ namespace Jungle\Data {
 		 */
 		protected function _check_schema(){
 
-			$schema_manager = Repository::getDefault();
+			$schema_manager = SchemaManager::getDefault();
 			$schema = $schema_manager->getLoadedSchema($this->_class);
 			if(!$schema){
 				$schema = $schema_manager->factorySchema($this->_class);
@@ -494,11 +495,11 @@ namespace Jungle\Data {
 		 * @param $key
 		 * @param $value
 		 * @return $this
-		 * @throws AccessViolation
-		 * @throws Exception
-		 * @throws Exception\Field
-		 * @throws ReadonlyViolation
-		 * @throws UnexpectedValue
+		 * @throws FieldAccessViolation
+		 * @throws ORMException
+		 * @throws FieldException
+		 * @throws FieldReadonlyViolation
+		 * @throws FieldUnexpectedValue
 		 */
 		public function setProperty($key, $value){
 
@@ -796,11 +797,11 @@ namespace Jungle\Data {
 				}else{
 					$names = array_keys($this->_schema->fields);
 				}
-				if(isset($map['fields'])){
-					$names = array_intersect($names,$map['fields']);
+				if(isset($map['white'])){
+					$names = array_intersect($names,(array)$map['white']);
 				}
-				if(isset($map['fields_black'])){
-					$names = array_diff($names,array_intersect($names,$map['fields_black']));
+				if(isset($map['black'])){
+					$names = array_diff($names,array_intersect($names,(array)$map['black']));
 				}
 				foreach($names as $name){
 					$values[$name] = $this->getProperty($name);
@@ -840,7 +841,6 @@ namespace Jungle\Data {
 					$field = trim(substr($field,$pos+1),'.');
 					if($field){
 						return $ct->hasChangesProperty($chunk);
-						//$ct = $ct->getProperty($chunk);
 					}else{
 						return $ct->hasChangesProperty($chunk);
 					}
@@ -1182,12 +1182,12 @@ namespace Jungle\Data {
 
 		/**
 		 * @return bool
-		 * @throws Exception
+		 * @throws ORMException
 		 */
 		public function save(){
 			if($this->_operation_made !== self::OP_NONE){
 				if($this->_operation_made === self::OP_DELETE){
-					throw new Exception('Current operation execute is not allow saving record!');
+					throw new ORMException('Current operation execute is not allow saving record!');
 				}
 				return true;
 			}
@@ -1301,7 +1301,7 @@ namespace Jungle\Data {
 
 					foreach($relations as $relation_name => $relation){
 						try{
-							$operation->relationStart($relation_name);
+							$operation->startRelationCapture($relation_name);
 							$relation->beforeRecordCreate($this);
 							$relation->beforeRecordSave($this);
 						}catch(Record\Validation\ValidationResult $relatedValidation){
@@ -1310,7 +1310,7 @@ namespace Jungle\Data {
 							}
 							$validation->addRelatedValidation($relation_name, $relatedValidation);
 						}finally{
-							$operation->relationEnd($relation_name);
+							$operation->endRelationCapture($relation_name);
 						}
 						$relation->inspectContextEventsBefore($this,$this->_analyzed_changes[$relation_name]);
 					}
@@ -1373,13 +1373,13 @@ namespace Jungle\Data {
 						$relation->inspectContextEventsAfter($this, $this->_analyzed_changes[$relation_name]);
 
 						try{
-							$operation->relationStart($relation_name);
+							$operation->startRelationCapture($relation_name);
 							$relation->afterRecordCreate($this);
 							$relation->afterRecordSave($this);
 						}catch(Record\Validation\ValidationResult $relatedValidation){
 							$validation->addRelatedValidation($relation_name, $relatedValidation);
 						}finally{
-							$operation->relationEnd($relation_name);
+							$operation->endRelationCapture($relation_name);
 						}
 					}
 
@@ -1464,13 +1464,13 @@ namespace Jungle\Data {
 					$store->begin();
 					foreach($relations as $relation_name => $relation){
 						try{
-							$operation->relationStart($relation_name);
+							$operation->startRelationCapture($relation_name);
 							$relation->beforeRecordUpdate($this, $related_earliest);
 							$relation->beforeRecordSave($this, $related_earliest);
 						}catch(Record\Validation\ValidationResult $relatedValidation){
 							$validation->addRelatedValidation($relation_name, $relatedValidation);
 						}finally{
-							$operation->relationEnd($relation_name);
+							$operation->endRelationCapture($relation_name);
 						}
 						$relation->inspectContextEventsBefore($this, $this->_analyzed_changes[$relation_name]);
 					}
@@ -1547,13 +1547,13 @@ namespace Jungle\Data {
 					foreach($relations as $relation_name => $relation){
 						$relation->inspectContextEventsAfter($this, $this->_analyzed_changes[$relation_name]);
 						try{
-							$operation->relationStart($relation_name);
+							$operation->startRelationCapture($relation_name);
 							$relation->afterRecordUpdate($this, $related_earliest);
 							$relation->afterRecordSave($this, $related_earliest);
 						}catch(Record\Validation\ValidationResult $relatedValidation){
 							$validation->addRelatedValidation($relation_name, $relatedValidation);
 						}finally{
-							$operation->relationEnd($relation_name);
+							$operation->endRelationCapture($relation_name);
 						}
 					}
 
@@ -1591,13 +1591,13 @@ namespace Jungle\Data {
 
 		/**
 		 * @return bool
-		 * @throws Exception
+		 * @throws ORMException
 		 * @throws \Exception
 		 */
 		public function delete(){
 			if($this->_operation_made !== self::OP_NONE){
 				if($this->_operation_made !== self::OP_DELETE){
-					throw new Exception('Already run, op:save');
+					throw new ORMException('Already run, op:save');
 				}
 				return true;
 			}

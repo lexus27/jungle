@@ -17,6 +17,7 @@ namespace Jungle\Data\Record\Validation {
 	 */
 	class CheckPresenceOf extends Validation{
 
+		/** @var string  */
 		public $type = 'PresenceOf';
 
 		/**

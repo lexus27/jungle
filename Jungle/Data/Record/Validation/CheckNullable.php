@@ -17,6 +17,7 @@ namespace Jungle\Data\Record\Validation {
 	 */
 	class CheckNullable extends Validation{
 
+		/** @var string  */
 		public $type = 'PresenceOf';
 
 		final public function __construct(){}

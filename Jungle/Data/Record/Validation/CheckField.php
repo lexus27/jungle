@@ -17,6 +17,7 @@ namespace Jungle\Data\Record\Validation {
 	 */
 	class CheckField extends Validation{
 
+		/** @var string  */
 		public $type = 'CheckField';
 
 		final public function __construct(){}

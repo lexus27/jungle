@@ -14,10 +14,11 @@ namespace Jungle\Data\Record\ValidationValue {
 
 	/**
 	 * Class CheckPattern
-	 * @package Jungle\Data\Record\Validation
+	 * @package Jungle\Data\Record\Validator
 	 */
-	class CheckPattern extends Validation{
+	class CheckPattern extends Validator{
 
+		/** @var string  */
 		public $type = 'CheckPattern';
 
 		/** @var  string */

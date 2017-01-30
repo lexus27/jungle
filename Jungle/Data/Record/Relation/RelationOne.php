@@ -18,8 +18,6 @@ namespace Jungle\Data\Record\Relation {
 	 */
 	class RelationOne extends RelationSchemaHost{
 
-
-
 		/**
 		 * RelationMany constructor.
 		 * @param $name
@@ -39,6 +37,20 @@ namespace Jungle\Data\Record\Relation {
 			return $relation->schema->loadFirst( $this->referencedCondition($record) );
 		}
 
+		public function getFields(){
+			$this->_check();
+			return $this->fields;
+		}
+
+		public function getReferencedFields(){
+			$this->_check();
+			return $this->referenced_fields;
+		}
+
+		/**
+		 * @param Record $record
+		 * @param array $changes
+		 */
 		public function inspectContextEventsAfter(Record $record, array $changes){
 			if($changes['modify']){
 				$this->schema->onRelatedSingleModify($record, $this->name, $changes['modify']);
@@ -52,7 +64,7 @@ namespace Jungle\Data\Record\Relation {
 		 * @param Record $record
 		 * @param Snapshot $snapshot
 		 * @return mixed|void
-		 * @throws Record\Exception
+		 * @throws Record\ORMException
 		 * @throws \Exception
 		 */
 		public function afterRecordSave(Record $record, Snapshot $snapshot = null){
@@ -63,6 +75,12 @@ namespace Jungle\Data\Record\Relation {
 			$related->save();
 		}
 
+		/**
+		 * @param Record $record
+		 * @param Record|null $related
+		 * @return mixed|void
+		 * @throws \Exception
+		 */
 		public function changeBackward(Record $record, Record $related = null){
 			$record->setRelated($this->name, $related);
 		}

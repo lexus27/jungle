@@ -17,10 +17,13 @@ namespace Jungle\Data\Record\Validation {
 	 */
 	class CheckLength extends Validation{
 
+		/** @var string  */
 		public $type = 'CheckLength';
 
+		/** @var  int */
 		public $min;
 
+		/** @var  int */
 		public $max;
 
 		function __construct($min, $max, $fields){

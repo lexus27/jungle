@@ -14,12 +14,18 @@ namespace Jungle\Data\Record\ValidationValue {
 
 	/**
 	 * Class CheckLengthBytes
-	 * @package Jungle\Data\Record\Validation
+	 * @package Jungle\Data\Record\Validator
 	 */
 	class CheckLengthBytes extends CheckLength{
 
+		/** @var string */
 		public $type = 'CheckLengthBytes';
 
+		/**
+		 * @param $field_name
+		 * @param $value
+		 * @param ValidationCollector $collector
+		 */
 		function validate($field_name, $value, ValidationCollector $collector){
 			$len = strlen($value); // Число байт
 			if(is_string($value) && $len > $this->max || $len < $this->min){

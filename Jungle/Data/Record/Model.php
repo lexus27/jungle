@@ -19,14 +19,13 @@ namespace Jungle\Data\Record {
 	 */
 	abstract class Model extends Record{
 
-
 		/**
 		 * @return Schema
 		 */
 		public static function getModelSchema(){
 			/** @var Model $name */
 			$name = get_called_class();
-			return Repository::getDefault()->getSchema($name);
+			return SchemaManager::getDefault()->getSchema($name);
 		}
 
 		/**
@@ -45,22 +44,6 @@ namespace Jungle\Data\Record {
 		 */
 		public static function count($condition = null, $offset = null){
 			return self::getModelSchema()->count($condition,$offset);
-		}
-
-		/**
-		 * @param $columns
-		 * @param null $condition
-		 * @param null $offset
-		 */
-		public static function countDistinct($columns,$condition = null, $offset = null){
-
-		}
-
-		/**
-		 *
-		 */
-		public static function query(){
-
 		}
 
 		/**

@@ -23,6 +23,7 @@ namespace Jungle\Data\Record {
 		/** @var  ShipmentOriginalInterface */
 		protected $original_shipment;
 
+		/** @var array  */
 		protected $original_names = [];
 
 		/** @var  Schema */

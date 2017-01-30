@@ -5,16 +5,16 @@
  * Project: jungle
  * IDE: PhpStorm
  * Date: 25.07.2016
- * Time: 0:19
+ * Time: 1:47
  */
 namespace Jungle\Data\Record\Exception {
-	
-	use Jungle\Data\Exception;
 
 	/**
-	 * Class Read
-	 * @package Jungle\Data\Record\Exception\Operation
+	 * Class FieldAccessViolation
+	 * @package Jungle\Data\Record\Exception
 	 */
-	class Read extends Exception{}
+	class FieldAccessViolation extends FieldException{
+		
+	}
 }
 

@@ -18,16 +18,18 @@ namespace Jungle\Data\Record\ValidationValue {
 	 */
 	class ValidationGroup{
 
+		/** @var Validator  */
 		public $validation;
 
+		/** @var   */
 		public $fields;
 
 		/**
 		 * ValidationGroup constructor.
 		 * @param $fields
-		 * @param Validation $validation
+		 * @param Validator $validation
 		 */
-		public function __construct($fields, Validation $validation){
+		public function __construct($fields, Validator $validation){
 			$this->fields = $fields;
 			$this->validation = $validation;
 		}

@@ -7,7 +7,7 @@
  * Date: 19.09.2016
  * Time: 15:35
  */
-namespace Jungle\Data\Record\Exception\Field {
+namespace Jungle\Data\Record\Exception {
 
 	use Jungle\Data\Record\Field\Field;
 	use Jungle\Util\Data\Validation\Message\ValidatorMessage;

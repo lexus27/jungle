@@ -27,13 +27,35 @@ namespace Jungle\Data\Record\Relation {
 		/** @var array  */
 		public $referenced_fields = [];
 
+		/**
+		 * @return array
+		 */
 		public function getLocalFields(){
 			return $this->fields;
 		}
 
+		/**
+		 * @param Record $record
+		 * @param Record|null $related
+		 * @return mixed
+		 */
 		abstract public function changeBackward(Record $record,Record $related = null);
 
+		/**
+		 * @return RelationSchema
+		 */
 		abstract public function getReferencedRelation();
+
+		public function getFields(){
+			return $this->fields;
+		}
+
+		/**
+		 * @return array
+		 */
+		public function getReferencedFields(){
+			return $this->referenced_fields;
+		}
 
 	}
 }

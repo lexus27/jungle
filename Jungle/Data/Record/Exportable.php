@@ -10,10 +10,10 @@
 namespace Jungle\Data\Record {
 
 	/**
-	 * Interface ExportableInterface
+	 * Interface Exportable
 	 * @package Jungle\Data\Record
 	 */
-	interface ExportableInterface{
+	interface Exportable{
 
 		/**
 		 * @return array

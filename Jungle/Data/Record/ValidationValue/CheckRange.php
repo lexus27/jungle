@@ -14,9 +14,9 @@ namespace Jungle\Data\Record\ValidationValue {
 
 	/**
 	 * Class CheckRange
-	 * @package Jungle\Data\Record\Validation
+	 * @package Jungle\Data\Record\Validator
 	 */
-	class CheckRange extends Validation{
+	class CheckRange extends Validator{
 
 		/** @var int */
 		public $min;
@@ -28,6 +28,11 @@ namespace Jungle\Data\Record\ValidationValue {
 		public $type = 'CheckRange';
 
 
+		/**
+		 * CheckRange constructor.
+		 * @param $min
+		 * @param $max
+		 */
 		public function __construct($min, $max){
 			$this->min = $min;
 			$this->max = $max;
@@ -37,6 +42,7 @@ namespace Jungle\Data\Record\ValidationValue {
 		 * @param $field_name
 		 * @param $value
 		 * @param ValidationCollector $collector
+		 * @return mixed|void
 		 */
 		public function validate($field_name, $value, ValidationCollector $collector){
 			if(!is_null($value) && $value > $this->max || $value < $this->min){

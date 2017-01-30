@@ -13,7 +13,7 @@ namespace Jungle\Data\Record\ValidationValue {
 
 	/**
 	 * Class CheckPhoneNumber
-	 * @package Jungle\Data\Record\Validation
+	 * @package Jungle\Data\Record\Validator
 	 */
 	class CheckPhoneNumber extends CheckPattern{
 

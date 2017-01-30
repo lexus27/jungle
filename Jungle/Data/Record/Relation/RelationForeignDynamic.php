@@ -82,7 +82,7 @@ namespace Jungle\Data\Record\Relation {
 		 * @param Record $record
 		 * @param Snapshot $snapshot
 		 * @return mixed|void
-		 * @throws Record\Exception
+		 * @throws Record\ORMException
 		 * @throws \Exception
 		 */
 		public function beforeRecordSave(Record $record, Snapshot $snapshot = null){

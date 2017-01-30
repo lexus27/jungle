@@ -17,11 +17,18 @@ namespace Jungle\Data\Record\Validation {
 	 */
 	class ValidationCollector extends \Exception{
 
+		/** @var array  */
+		protected $field_errors = [];
+
+		/**
+		 * ValidationCollector constructor.
+		 * @param null $message
+		 */
 		public function __construct($message = null){
 			parent::__construct($message);
 		}
 
-		protected $field_errors = [];
+
 
 		/**
 		 * @param $field_name

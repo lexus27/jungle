@@ -5,40 +5,29 @@
  * Project: jungle
  * IDE: PhpStorm
  * Date: 19.11.2016
- * Time: 22:34
+ * Time: 21:58
  */
 namespace Jungle\Data\Record\Field {
 
 	/**
-	 * Class Set
+	 * Class FieldSerializable
 	 * @package Jungle\Data\Record\Field
 	 */
-	class Set extends Field{
+	class FieldSerializable extends Field{
 
-		protected $field_type = 'set';
+		protected $field_type = 'data';
 
-		/** @var array  */
-		public $expected = [];
-
-		/**
-		 * @param $value
-		 * @return mixed
-		 */
 		public function decode($value){
-			return $this->expected[$value];
+			return unserialize($value);
 		}
 
-		/**
-		 * @param $value
-		 * @return mixed
-		 */
 		public function encode($value){
-			return array_search($value, $this->expected, true);
+			return serialize($value);
 		}
 
 
 		public function validate($value){
-			return in_array($value, $this->expected, true);
+			return true;
 		}
 
 

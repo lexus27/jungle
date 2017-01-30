@@ -17,22 +17,37 @@ namespace Jungle\Data\Record\Validation {
 	 */
 	abstract class Validation extends ValidationRule{
 
+		/** @var   */
 		public $type;
 
 		/** @var array  */
 		protected $fields = [];
 
-
-		public function fields(){
-			return $this->fields;
-		}
-
+		/**
+		 * Validation constructor.
+		 * @param $fields
+		 */
 		public function __construct($fields){
 			$this->fields = is_array($fields)?$fields:[$fields];
 		}
 
+		/**
+		 * @return array
+		 */
+		public function fields(){
+			return $this->fields;
+		}
+
+		/**
+		 * @param Record $record
+		 * @param ValidationCollector $collector
+		 * @return mixed
+		 */
 		abstract function validate(Record $record, ValidationCollector $collector);
 
+		/**
+		 * @return mixed
+		 */
 		public function getValidationType(){
 			return $this->type;
 		}

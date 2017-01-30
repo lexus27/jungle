@@ -1224,7 +1224,7 @@ namespace Jungle\Data\Record {
 		 * SynchronizeError state
 		 * @param $destruction
 		 * @throws \Jungle\Data\Record\Collection\SynchronizeError
-		 * @throws Exception
+		 * @throws ORMException
 		 */
 		public function synchronize($destruction = false){
 			foreach($this->items as $item){

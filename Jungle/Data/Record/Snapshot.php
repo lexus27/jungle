@@ -56,10 +56,20 @@ namespace Jungle\Data\Record {
 			return !$this->prev?$this:$this->prev;
 		}
 
+		/**
+		 * @param $key
+		 * @param null $default
+		 * @return null
+		 */
 		public function get($key, $default = null){
 			return isset($this->data[$key])?$this->data[$key]:$default;
 		}
 
+		/**
+		 * @param $key
+		 * @param $value
+		 * @return $this
+		 */
 		public function set($key, $value){
 			$this->data[$key] = $value;
 			return $this;

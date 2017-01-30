@@ -33,6 +33,7 @@ namespace Jungle\Data\Record\Validation {
 		/** @var ValidationResult[]  */
 		protected $related_error_validations = [];
 
+		/** @var int  */
 		protected static $_level = 0;
 
 		/**
@@ -55,6 +56,9 @@ namespace Jungle\Data\Record\Validation {
 			$this->related_error_validations[$relation_key][] = $result;
 		}
 
+		/**
+		 * @return bool
+		 */
 		public function hasObjectErrors(){
 			return !empty($this->field_errors);
 		}
@@ -109,10 +113,9 @@ namespace Jungle\Data\Record\Validation {
 			return in_array(self::CONSTRAINT_UNKNOWN, $this->constraint_errors, true);
 		}
 
-
-
-
-
+		/**
+		 * @return string
+		 */
 		function __toString(){
 			self::$_level++;
 			$schema = $this->record->getSchema();

@@ -33,6 +33,8 @@ namespace Jungle\Data\Record\Relation {
 
 		public $master;
 
+		protected $_ready = false;
+
 
 		/**
 		 * RelationMany constructor.
@@ -46,38 +48,36 @@ namespace Jungle\Data\Record\Relation {
 		}
 
 		public function _check(){
+			if(!$this->_ready){
+				$this->_ready = true;
+				$initialized = (!$this->referenced_schema || !$this->referenced_fields || !$this->fields);
+				if(is_string($this->referenced_relation)){
+					list($schema_name, $relation_name) = array_replace([null,null],explode('.',$this->referenced_relation));
 
-			$initialized = (!$this->referenced_schema || !$this->referenced_fields || !$this->fields);
-
-
-			if(is_string($this->referenced_relation)){
-				list($schema_name, $relation_name) = array_replace([null,null],explode('.',$this->referenced_relation));
-
-				if($schema_name && !$relation_name){
-					$relation_name = $schema_name;
-					$schema_name = null;
-				}
-
-				if($schema_name){
-					$this->referenced_schema = $this->getSchemaGlobal($schema_name);
-					$this->referenced_relation = $this->referenced_schema->getRelation($relation_name);
-				}else{
-					if($this->referenced_schema){
-						$this->referenced_schema = $this->getSchemaGlobal($this->referenced_schema);
+					if($schema_name && !$relation_name){
+						$relation_name = $schema_name;
+						$schema_name = null;
 					}
-					$this->referenced_relation = $this->referenced_schema->getRelation($relation_name);
+
+					if($schema_name){
+						$this->referenced_schema = $this->getSchemaGlobal($schema_name);
+						$this->referenced_relation = $this->referenced_schema->getRelation($relation_name);
+					}else{
+						if($this->referenced_schema){
+							$this->referenced_schema = $this->getSchemaGlobal($this->referenced_schema);
+						}
+						$this->referenced_relation = $this->referenced_schema->getRelation($relation_name);
+					}
+
+					$this->fields = $this->referenced_relation->referenced_fields;
+					$this->referenced_fields = $this->referenced_relation->fields;
+
+					$initialized = true;
 				}
-
-				$this->fields = $this->referenced_relation->referenced_fields;
-				$this->referenced_fields = $this->referenced_relation->fields;
-
-				$initialized = true;
-			}
-
-
-			if(!$initialized && $this->referenced_relation instanceof RelationForeign){
-				$this->fields = $this->referenced_relation->referenced_fields;
-				$this->referenced_fields = $this->referenced_relation->fields;
+				if(!$initialized && $this->referenced_relation instanceof RelationForeign){
+					$this->fields = $this->referenced_relation->referenced_fields;
+					$this->referenced_fields = $this->referenced_relation->fields;
+				}
 			}
 		}
 

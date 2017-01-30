@@ -10,12 +10,12 @@
 namespace Jungle\Data\Record\Field {
 
 	/**
-	 * Class Double
+	 * Class FieldFloat
 	 * @package Jungle\Data\Record\Field
 	 */
-	class Double extends Field{
+	class FieldFloat extends Field{
 
-		protected $field_type = 'double';
+		protected $field_type = 'float';
 
 		public $precision = null;
 

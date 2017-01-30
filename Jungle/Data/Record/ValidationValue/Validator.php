@@ -13,11 +13,17 @@ namespace Jungle\Data\Record\ValidationValue {
 	use Jungle\Data\Record\Validation\ValidationCollector;
 
 	/**
-	 * Class Validation
-	 * @package Jungle\Data\Record\Validation
+	 * Class Validator
+	 * @package Jungle\Data\Record\Validator
 	 */
-	abstract class Validation extends Record\Validation\ValidationRule{
+	abstract class Validator extends Record\Validation\ValidationRule{
 
+		/**
+		 * @param $field_name
+		 * @param $value
+		 * @param ValidationCollector $collector
+		 * @return mixed
+		 */
 		abstract function validate($field_name, $value, ValidationCollector $collector);
 
 	}

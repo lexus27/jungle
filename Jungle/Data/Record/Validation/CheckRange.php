@@ -27,6 +27,12 @@ namespace Jungle\Data\Record\Validation {
 		public $type = 'CheckRange';
 
 
+		/**
+		 * CheckRange constructor.
+		 * @param $min
+		 * @param $max
+		 * @param $fields
+		 */
 		public function __construct($min, $max, $fields){
 			parent::__construct($fields);
 			$this->min = $min;

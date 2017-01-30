@@ -20,9 +20,15 @@ namespace Jungle\Data\Record\Validation {
 		/** @var array  */
 		public $value_list = [];
 
+		/** @var string  */
 		public $type = 'CheckExpected';
 
 
+		/**
+		 * CheckExpected constructor.
+		 * @param $value_list
+		 * @param $fields
+		 */
 		public function __construct($value_list, $fields){
 			$this->value_list = $value_list;
 			parent::__construct($fields);

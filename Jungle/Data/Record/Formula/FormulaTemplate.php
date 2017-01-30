@@ -86,12 +86,6 @@ namespace Jungle\Data\Record\Formula {
 
 				}
 
-				$data = $schema->analyzePath($path);
-
-				if(!$data['field']){
-
-				}
-
 			}
 		}
 

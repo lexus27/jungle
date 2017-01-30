@@ -4,16 +4,24 @@
  * Author: Kutuzov Alexey Konstantinovich <lexus.1995@mail.ru>
  * Project: jungle
  * IDE: PhpStorm
- * Date: 10.06.2016
- * Time: 22:47
+ * Date: 25.07.2016
+ * Time: 0:13
  */
 namespace Jungle\Data\Record {
+	
+	use Jungle\Data\Record;
 
 	/**
-	 * Class Exception
-	 * @package Jungle\Data\Record
+	 * Class RecordAware
+	 * @package Jungle\Data\Record\Exception
 	 */
-	class Exception extends \Jungle\Data\Exception{}
+	interface RecordAware{
 
+		/**
+		 * @return Record
+		 */
+		public function getRecord();
+
+	}
 }
 

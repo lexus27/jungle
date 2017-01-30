@@ -14,21 +14,33 @@ namespace Jungle\Data\Record\ValidationValue {
 
 	/**
 	 * Class CheckLength
-	 * @package Jungle\Data\Record\Validation
+	 * @package Jungle\Data\Record\Validator
 	 */
-	class CheckLength extends Validation{
+	class CheckLength extends Validator{
 
 		public $type = 'CheckLength';
 
+		/** @var  int */
 		public $min;
 
+		/** @var  int */
 		public $max;
 
+		/**
+		 * CheckLength constructor.
+		 * @param $min
+		 * @param $max
+		 */
 		function __construct($min, $max){
 			$this->min = $min;
 			$this->max = $max;
 		}
-		
+
+		/**
+		 * @param $field_name
+		 * @param $value
+		 * @param ValidationCollector $collector
+		 */
 		function validate($field_name, $value, ValidationCollector $collector){
 			$len = mb_strlen($value); // число символов UNICODE
 			if(is_string($value) && $len > $this->max || $len < $this->min){

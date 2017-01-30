@@ -13,7 +13,7 @@ namespace Jungle\Data\Record\Collection {
 	 * Class Exception
 	 * @package Jungle\Data\Record\Collection
 	 */
-	class Exception extends \Jungle\Data\Record\Exception{
+	class ORMException extends \Jungle\Data\Record\ORMException{
 		
 	}
 }

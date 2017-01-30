@@ -14,16 +14,20 @@ namespace Jungle\Data\Record\ValidationValue {
 
 	/**
 	 * Class CheckExpected
-	 * @package Jungle\Data\Record\Validation
+	 * @package Jungle\Data\Record\Validator
 	 */
-	class CheckExpected extends Validation{
+	class CheckExpected extends Validator{
 
 		/** @var array  */
 		public $value_list = [];
 
+		/** @var string  */
 		public $type = 'CheckExpected';
 
-
+		/**
+		 * CheckExpected constructor.
+		 * @param $value_list
+		 */
 		public function __construct($value_list){
 			$this->value_list = $value_list;
 		}
@@ -32,6 +36,7 @@ namespace Jungle\Data\Record\ValidationValue {
 		 * @param $field_name
 		 * @param $value
 		 * @param ValidationCollector $collector
+		 * @return mixed|void
 		 */
 		public function validate($field_name, $value, ValidationCollector $collector){
 			if(!is_null($value) && !in_array($value, $this->value_list)){

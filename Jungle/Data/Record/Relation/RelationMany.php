@@ -62,7 +62,7 @@ namespace Jungle\Data\Record\Relation {
 
 		/**
 		 * @param Record $record
-		 * @throws Record\Exception
+		 * @throws Record\ORMException
 		 */
 		public function afterRecordCreate(Record $record){
 

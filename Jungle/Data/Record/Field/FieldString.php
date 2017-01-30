@@ -4,15 +4,18 @@
  * Author: Kutuzov Alexey Konstantinovich <lexus.1995@mail.ru>
  * Project: jungle
  * IDE: PhpStorm
- * Date: 15.01.2017
- * Time: 17:08
+ * Date: 29.01.2017
+ * Time: 20:24
  */
 namespace Jungle\Data\Record\Field {
-	
-	class Custom extends Field{
 
-		protected $field_type;
+	/**
+	 * Class FieldString
+	 * @package Jungle\Data\Record\Field
+	 */
+	class FieldString extends Field{
 
+		protected $field_type = 'string';
 
 	}
 }

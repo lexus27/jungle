@@ -8,7 +8,11 @@
  * Time: 23:58
  */
 namespace Jungle\Data\Record\Validation {
-	
+
+	/**
+	 * Class ValidationRule
+	 * @package Jungle\Data\Record\Validation
+	 */
 	abstract class ValidationRule{
 
 		public $type;
