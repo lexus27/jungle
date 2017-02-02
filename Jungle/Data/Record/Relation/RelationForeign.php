@@ -103,7 +103,7 @@ namespace Jungle\Data\Record\Relation {
 					$data = $this->dataTo($related);
 					$record->assign($data);
 
-					$relations = $this->getOwnerships($record->getSchema());
+					$relations = $this->getOwnerships($related->getSchema());
 					foreach($relations as $name => $relation){
 						if($relation instanceof RelationSchema){
 							$relation->changeBackward($related, $record);
@@ -133,8 +133,7 @@ namespace Jungle\Data\Record\Relation {
 				foreach($schema->getRelations() as $name => $relation){
 					if(
 						$relation instanceof RelationSchemaHost &&
-						$this->referenced_fields === $relation->fields &&
-						$this->fields === $relation->referenced_fields
+						$relation->getReferencedRelation() === $this
 					){
 						$ownerships[$name] = $relation;
 					}
