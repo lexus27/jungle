@@ -91,7 +91,7 @@ namespace Jungle\Data\Record {
 		 * @return Record|null
 		 */
 		public function getPrevRecord(){
-			return $this->operation_records ? array_slice($this->operation_records, -1, 1)[0] : null;
+			return count($this->operation_records)>1 ? array_slice($this->operation_records, -2, 1)[0] : null;
 		}
 
 		/**
