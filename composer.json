@@ -7,8 +7,6 @@
   "authors": [{
 	  "name": "Alexey Kutuzov",
 	  "email": "lexus27.khv@gmail.com",
-	  "homepage": "",
-	  "role": "Developer"
   }],
   "type": "library",
   "autoload": {
