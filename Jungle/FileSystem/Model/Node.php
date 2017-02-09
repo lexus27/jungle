@@ -608,13 +608,24 @@ namespace Jungle\FileSystem\Model {
 		 */
 		public function create(){
 			if($this->isNew()){
-				$path = (($dir = $this->getParent())?$dir->create(true)->real_path:'') . $this->getAdapter()->ds() . $this->basename;
-				$this->_create($path);
-				$permissions = $this->getPermissions();
-				$this->real_path    = $path;
-				$this->exists       = true;
-				$permissions->applyChanges();
-				//TODO Owner, Group - after create
+				$dir = $this->getParent();
+				if($dir){
+					$dirname = $dir->create(true)->real_path;
+				}else{
+					$dirname = $this->manager->getAdapter()->getRootPath();
+				}
+				$path = ($dir?$dir->create(true)->real_path:'') . $this->getAdapter()->ds() . $this->basename;
+				try{
+					$old_permissions = fileperms($dirname);
+					chmod($dirname, 0777);
+					$this->_create($path);
+					$permissions = $this->getPermissions();
+					$this->real_path    = $path;
+					$this->exists       = true;
+					$permissions->applyChanges();
+				}finally{
+					chmod($dirname, $old_permissions);
+				}
 			}
 			return $this;
 		}
