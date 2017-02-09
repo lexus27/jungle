@@ -74,7 +74,7 @@ namespace Jungle\Http {
 				throw new \Exception('UploadedFile can not be moved "'.$this->path.'" to "'.$path.'" because overwrite error');
 			}
 
-			$dir = dirname($this->path);
+			$dir = dirname($path);
 			$old = fileperms($dir);
 			try{
 				chmod($dir,0777);
