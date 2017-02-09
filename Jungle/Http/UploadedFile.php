@@ -75,7 +75,8 @@ namespace Jungle\Http {
 			}
 
 			if(!@move_uploaded_file($this->path, $path)){
-				throw new \Exception('UploadedFile can not be moved "'.$this->path.'" to "'.$path.'"');
+				$error= error_get_last();
+				throw new \Exception('UploadedFile can not be moved "'.$this->path.'" to "'.$path.'" Message: "'.$error['message'].'"');
 			}
 		}
 
