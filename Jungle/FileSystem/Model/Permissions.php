@@ -255,9 +255,7 @@ namespace Jungle\FileSystem\Model {
 		 * @return bool
 		 */
 		public function isEqual($permissions){
-			$permissions = $this->_convertPermissionsFrom($permissions,false);
-			$decimal = $this->_convertPermissionsFrom( $this->decimal,false);
-			return boolval( $decimal === $permissions);
+			return boolval( $this->decimal === $permissions);
 		}
 
 		/**
@@ -270,7 +268,7 @@ namespace Jungle\FileSystem\Model {
 		 */
 		public function setPermissions($permissions, $merge = false, $notApply = false){
 			if(!$this->isEqual($permissions)){
-				$this->decimal = $this->_getModWithoutPermissionsBits() | $this->_convertPermissionsFrom($permissions,true, $merge);
+				$this->decimal = $this->_convertPermissionsFrom($permissions,true, $merge);
 				if(!$notApply)$this->callApply();
 			}
 			return $this;
@@ -387,8 +385,9 @@ namespace Jungle\FileSystem\Model {
 
 			if(!is_int($permissions)){
 				$permissions = 0;
+			}else{
+				return $permissions;
 			}
-			$permissions = 0777 & $permissions;
 			$permissions = decoct($permissions);
 			$permissions = strlen($permissions) > 3 ? substr($permissions,-3) : $permissions;
 			return $decimal?octdec($permissions):$permissions;
