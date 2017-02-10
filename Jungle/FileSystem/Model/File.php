@@ -174,8 +174,11 @@ namespace Jungle\FileSystem\Model {
 
 			$adapter = $this->getAdapter();
 			if($force_delete){
+				$dir = dirname($this->real_path);
 				$old_permissions = $adapter->fileperms($this->real_path);
+				$old_dir_permissions = $adapter->fileperms($dir);
 				$adapter->chmod($this->real_path, 0777);
+				$adapter->chmod($dir, 0777);
 			}
 			try{
 				if(!@$adapter->unlink($this->real_path)){
@@ -187,6 +190,10 @@ namespace Jungle\FileSystem\Model {
 					$adapter->chmod($this->real_path, $old_permissions);
 				}
 				throw $e;
+			}finally{
+				if($force_delete && isset($dir, $old_dir_permissions)){
+					$adapter->chmod($dir, $old_dir_permissions);
+				}
 			}
 		}
 
