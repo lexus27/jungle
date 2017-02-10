@@ -164,14 +164,29 @@ namespace Jungle\FileSystem\Model {
 
 		/**
 		 * Based from @see real_path
+		 * @param bool $force_delete
 		 * @return mixed
 		 * @throws ActionError
 		 * @throws Exception
+		 * @throws \Exception
 		 */
-		protected function _delete(){
-			if(!@$this->getAdapter()->unlink($this->real_path)){
-				$e = error_get_last();
-				throw new ActionError(sprintf('Could not remove file "%s", message: %s',$this->real_path , $e['message']));
+		protected function _delete($force_delete = false){
+
+			$adapter = $this->getAdapter();
+			if($force_delete){
+				$old_permissions = $adapter->fileperms($this->real_path);
+				$adapter->chmod($this->real_path, 0777);
+			}
+			try{
+				if(!@$adapter->unlink($this->real_path)){
+					$e = error_get_last();
+					throw new ActionError(sprintf('Could not remove file "%s", message: %s',$this->real_path , $e['message']));
+				}
+			}catch(\Exception $e){
+				if($force_delete && isset($old_permissions)){
+					$adapter->chmod($this->real_path, $old_permissions);
+				}
+				throw $e;
 			}
 		}
 
