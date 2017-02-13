@@ -770,21 +770,25 @@ namespace Jungle\Util\Smart\Value {
 
 			if($length < 5){
 				$rgb = [
-					hexdec(strlen(substr($hex,0,1)) === 1 ? $hex . $hex : $hex),
-					hexdec(strlen(substr($hex,1,1)) === 1 ? $hex . $hex : $hex),
-					hexdec(strlen(substr($hex,2,1)) === 1 ? $hex . $hex : $hex),
+					substr($hex, 0, 1),
+					substr($hex, 1, 1),
+					substr($hex, 2, 1)
 				];
-				$rgb[] = 1.0;
 			}else if($length > 5){
 				$rgb = [
-					hexdec(strlen(substr($hex, 0, 2)) === 1 ? $hex . $hex : $hex),
-					hexdec(strlen(substr($hex, 2, 2)) === 1 ? $hex . $hex : $hex),
-					hexdec(strlen(substr($hex, 4, 2)) === 1 ? $hex . $hex : $hex),
+					substr($hex, 0, 2),
+					substr($hex, 2, 2),
+					substr($hex, 4, 2)
 				];
-				$rgb[] = 1.0;
 			}else{
 				return [0,0,0,1.0];
 			}
+
+			foreach($rgb as &$code){
+				$code = hexdec(strlen($code)===1?$code.$code:$code);
+			}
+			$rgb[] = 1.0;
+
 			return $rgb;
 		}
 
