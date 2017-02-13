@@ -134,9 +134,17 @@ namespace Jungle\FileSystem\Model {
 		 * @throws Exception
 		 */
 		protected function _create($path){
-			if(!@$this->getAdapter()->mkfile($path)){
-				$e = error_get_last();
-				throw new ActionError(sprintf('Could not to create file %s , message %s',$path, $e['message']));
+			try{
+				$adapter = $this->getAdapter();
+				$dirname = dirname($path);
+				$old_permissions = $adapter->fileperms($dirname);
+				$adapter->chmod($dirname, 0777);
+				if(!@$this->getAdapter()->mkfile($path)){
+					$e = error_get_last();
+					throw new ActionError(sprintf('Could not to create file %s , message %s',$path, $e['message']));
+				}
+			}finally{
+				$adapter->chmod($dirname, $old_permissions);
 			}
 		}
 
@@ -156,14 +164,36 @@ namespace Jungle\FileSystem\Model {
 
 		/**
 		 * Based from @see real_path
+		 * @param bool $force_delete
 		 * @return mixed
 		 * @throws ActionError
 		 * @throws Exception
+		 * @throws \Exception
 		 */
-		protected function _delete(){
-			if(!@$this->getAdapter()->unlink($this->real_path)){
-				$e = error_get_last();
-				throw new ActionError(sprintf('Could not remove file "%s", message: %s',$this->real_path , $e['message']));
+		protected function _delete($force_delete = false){
+
+			$adapter = $this->getAdapter();
+			if($force_delete){
+				$dir = dirname($this->real_path);
+				$old_permissions = $adapter->fileperms($this->real_path);
+				$old_dir_permissions = $adapter->fileperms($dir);
+				$adapter->chmod($this->real_path, 0777);
+				$adapter->chmod($dir, 0777);
+			}
+			try{
+				if(!@$adapter->unlink($this->real_path)){
+					$e = error_get_last();
+					throw new ActionError(sprintf('Could not remove file "%s", message: %s',$this->real_path , $e['message']));
+				}
+			}catch(\Exception $e){
+				if($force_delete && isset($old_permissions)){
+					$adapter->chmod($this->real_path, $old_permissions);
+				}
+				throw $e;
+			}finally{
+				if($force_delete && isset($dir, $old_dir_permissions)){
+					$adapter->chmod($dir, $old_dir_permissions);
+				}
 			}
 		}
 

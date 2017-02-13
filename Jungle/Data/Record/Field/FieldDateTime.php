@@ -33,6 +33,17 @@ namespace Jungle\Data\Record\Field {
 			return $value!==null?date('Y-m-d H:i:s', $value):null;
 		}
 
+		/**
+		 * @param $value
+		 * @return int|null
+		 */
+		public function stabilize($value){
+			if($this->nullable && empty($value)){
+				return null;
+			}
+			return is_integer($value) ? $value : strtotime($value);
+		}
+
 
 		public function validate($value){
 			return true;

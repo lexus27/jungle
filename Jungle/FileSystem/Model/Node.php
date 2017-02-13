@@ -614,7 +614,6 @@ namespace Jungle\FileSystem\Model {
 				$this->real_path    = $path;
 				$this->exists       = true;
 				$permissions->applyChanges();
-				//TODO Owner, Group - after create
 			}
 			return $this;
 		}
@@ -638,7 +637,7 @@ namespace Jungle\FileSystem\Model {
 						$this->getPermissions()->setPermissions(0777);
 					}
 					try{
-						$this->_delete();
+						$this->_delete($forceDelete);
 					}catch(ActionError $e){
 						if($ignoreError && !$forceDelete){
 							$toDelete = false;
@@ -858,9 +857,10 @@ namespace Jungle\FileSystem\Model {
 
 		/**
 		 * Based from @see real_path
+		 * @param bool $force_delete
 		 * @return mixed
 		 */
-		abstract protected function _delete();
+		abstract protected function _delete($force_delete = false);
 
 		/**
 		 * @throws Exception
