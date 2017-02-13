@@ -1079,7 +1079,7 @@ namespace Jungle\Application {
 
 		public function __destruct(){
 			if($this->dispatching){
-				$this->event_manager->invokeEvent('dispatcher:afterDispatch',false,$this, $this->dispatching_request, $this->dispatching_routing, $this->mainProcess());
+				$this->event_manager->invokeEvent('dispatcher:afterDispatch',$this->dispatching_error,$this, $this->dispatching_request, $this->dispatching_routing, $this->mainProcess());
 			}
 		}
 
