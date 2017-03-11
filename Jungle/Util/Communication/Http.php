@@ -60,6 +60,13 @@ namespace Jungle\Util\Communication {
 
 
 		/**
+		 * parse queue list ... ; ... ; ...  ,  ... ; ... ; ...  ,  ...
+		 * delimiter [,]
+		 * element delimiter [;]
+		 *
+		 * delimiter parse  '@( [^,"'\\]+ | \\\\ | \\, | (?:(')|(")) (?(-1) (\\\\|\\"|[^"]+)* | (\\\\|\\\\\\'|[^']+)*) (?(-1)"|') )*@'
+		 * element parse    '@( [^;"'\\]+ | \\\\ | \\; | (?:(')|(")) (?(-1) (\\\\|\\"|[^"]+)* | (\\\\|\\\\\\'|[^']+)*) (?(-1)"|') )*@'
+		 *
 		 * @param $accept
 		 * @return array
 		 */
