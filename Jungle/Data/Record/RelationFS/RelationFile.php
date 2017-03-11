@@ -13,6 +13,7 @@ namespace Jungle\Data\Record\RelationFS {
 	use Jungle\Data\Record\Relation\Relationship;
 	use Jungle\Data\Record\Schema\Schema;
 	use Jungle\Data\Record\Snapshot;
+	use Jungle\FileSystem\Model\Directory;
 	use Jungle\FileSystem\Model\File;
 	use Jungle\Http\UploadedFile;
 	use Jungle\RegExp\Template;
@@ -146,6 +147,7 @@ namespace Jungle\Data\Record\RelationFS {
 				return false;
 			}
 		}
+		
 
 
 		/**
@@ -161,74 +163,120 @@ namespace Jungle\Data\Record\RelationFS {
 			 * Работа с файлом который уже загружен - File
 			 */
 
+			$this->_path_after = false;
+			try{
+				if(!$this->field && $this->type === self::TYPE_UPLOAD_AUTOGEN
+				   && ($involved_fields = $this->getInvolvedFields())
+				   && $record->hasChangesProperty($involved_fields)
+				){ // автогенерация-имени файла из полей объекта
+					/** @var File|null $related */
+					$related = $record->getRelatedLoaded($this->name);
+					$source = $this->getSourceIn($record);
+					$new_path = $this->fetchPathIn($record);
+					$b_name = basename($new_path);
+					$directory = $source->dir(dirname($new_path));
+					if($file = $directory->get($b_name)){
+						$file->delete(true);
+					}
+					if($related){
+						$related->renameFrom($new_path, $source);
+					}
+				}elseif($record->hasChangesRelated($this->name)){
+					// контроль пути к файлу по какому-то полю объекта
+					$related = $record->getRelated($this->name);
+					$source = $this->getSourceIn($record);
+					if(in_array($this->type,[self::TYPE_UPLOAD, self::TYPE_UPLOAD_AUTOGEN], true)){
+						// тип: Поле для Загрузки файла, подключение файла из вне
+						if($related instanceof UploadedFile){
+							// TODO папка назначения для файла может задаваться с клиента.
+							$this->_call_event_accepted($record, $related);
+							$new_path = $this->_call_event_accepted($record, $related);
+							if($new_path === null){
 
-			if(!$this->field && $this->type === self::TYPE_UPLOAD_AUTOGEN
-			   && ($involved_fields = $this->getInvolvedFields())
-			   && $record->hasChangesProperty($involved_fields)
-			){ // автогенерация-имени файла из полей объекта
-				/** @var File|null $related */
-				$related = $record->getRelatedLoaded($this->name);
-				$source = $this->getSourceIn($record);
-				$new_path = $this->fetchPathIn($record);
-				$b_name = basename($new_path);
-				$directory = $source->dir(dirname($new_path));
-				if($file = $directory->get($b_name)){
-					$file->delete(true);
-				}
-				if($related){
-					$related->renameFrom($new_path, $source);
-				}
-			}elseif($record->hasChangesRelated($this->name)){
-				// контроль пути к файлу по какому-то полю объекта
-				$related = $record->getRelated($this->name);
-				$source = $this->getSourceIn($record);
-				if(in_array($this->type,[self::TYPE_UPLOAD, self::TYPE_UPLOAD_AUTOGEN], true)){
-					// тип: Поле для Загрузки файла, подключение файла из вне
-					if($related instanceof UploadedFile){
-						// TODO папка назначения для файла может задаваться с клиента.
+								if($record->getOperationMade() === Record::OP_CREATE){
+									if($this->_on_path){
+										$this->_path_after = [
+											'source' => $source,
+											'file' => $related,
+										];
+									}else{
+										// здесь путь назначения до файла указывается объектом ORM через шаблон
+										$new_path = $this->fetchPathForUploaded($record, $related);
+										$this->_applyPath($record, $new_path, $related, $source);
+									}
+								}else{
+									$new_path = $this->_call_event_path($record, $related);
+									if($new_path === null){
+										// здесь путь назначения до файла указывается объектом ORM через шаблон
+										$new_path = $this->fetchPathForUploaded($record, $related);
+									}
+									$this->_applyPath($record, $new_path, $related, $source);
+								}
+							}else{
+								$this->_applyPath($record, $new_path, $related, $source);
+							}
 
-
-						$new_path = $this->_call_event_accepted($record, $related);
-						if($new_path === null){
-							// здесь путь назначения до фалйа указывается объектом ORM через шаблон
-							$new_path = $this->fetchPathForUploaded($record,$related);
+						}elseif($related === null){
+							$snapshot = $record->getRelatedSnapshot();
+							$old = $snapshot->get($this->name);
+							if($old instanceof File){
+								$old->delete(true);
+							}
 						}
-						$b_name = basename($new_path);
-						$directory = $source->dir(dirname($new_path));
-						if($file = $directory->get($b_name)){
-							$file->delete(true);
-						}
-						// переместить UploadedFile на новый путь, при этом используя абсолютный путь в системе
-						$related->moveTo($source->getAbsolutePath(null,$new_path));
-						$related_file = $directory->get($b_name);
-						// Выставить новый объект
-						$record->setRelated($this->name,$related_file);
-						if($this->field){
-							$record->setProperty($this->field, $new_path);
-						}
-					}elseif($related === null){
-						$snapshot = $record->getRelatedSnapshot();
-						$old = $snapshot->get($this->name);
-						if($old instanceof File){
-							$old->delete(true);
+					}elseif($this->type === self::TYPE_SELECTED){
+						// тип: Выбираемый файл относительно SOURCE
+						if($related instanceof File){
+							if(!$source->isContain($related)){
+								throw new \LogicException('Related selected File is not exists in Source('.$source->getRealPath().')');
+							}
+							$record->setProperty($this->field, $related->getRelativePath($source));
 						}
 					}
-				}elseif($this->type === self::TYPE_SELECTED){
-					// тип: Выбираемый файл относительно SOURCE
-					if($related instanceof File){
-						if(!$source->isContain($related)){
-							throw new \LogicException('Related selected File is not exists in Source('.$source->getRealPath().')');
-						}
-						$record->setProperty($this->field, $related->getRelativePath($source));
+
+					if($related === null && $this->field){
+						$record->setProperty($this->field,null);
 					}
-				}
 
-				if($related === null && $this->field){
-					$record->setProperty($this->field,null);
 				}
+			}catch(\Exception $e){
+				$this->_path_after = false;
+				throw $e;
+			}
 
+		}
+
+		protected function _applyPath(Record $record, $path, UploadedFile $file, Directory $source){
+			$b_name = basename($path);
+			$directory = $source->dir(dirname($path));
+			if($old_file = $directory->get($b_name)){
+				$old_file->delete(true);
+			}
+			// переместить UploadedFile на новый путь, при этом используя абсолютный путь в системе
+			$file->moveTo($source->getAbsolutePath(null,$path));
+			$related_file = $directory->get($b_name);
+			// Выставить новый объект
+			$record->setRelated($this->name,$related_file);
+			if($this->field){
+				$record->setProperty($this->field, $path);
 			}
 		}
+
+		public function afterRecordSave(Record $record, Snapshot $snapshot = null){
+			try{
+				if($this->_path_after && isset($this->_path_after['file'], $this->_path_after['source'])){
+					$file = $this->_path_after['file'];
+					$source = $this->_path_after['source'];
+					if($file instanceof UploadedFile && $source){
+						$path = $this->_call_event_path($record, $file);
+						$this->_applyPath($record, $path, $file, $source);
+						$record->saveAgain();
+					}
+				}
+			}finally{
+				$this->_path_after = false;
+			}
+		}
+
 
 		public function initialize(Schema $schema){
 
@@ -261,7 +309,9 @@ namespace Jungle\Data\Record\RelationFS {
 		}
 
 		protected $_on_accepted;
-
+		protected $_on_path;
+		protected $_path_after = false;
+		
 		/**
 		 * @param Record $record
 		 * @param UploadedFile $file
@@ -286,8 +336,37 @@ namespace Jungle\Data\Record\RelationFS {
 			return null;
 		}
 
-		public function onAccepted($handler){
+		/**
+		 * @param Record $record
+		 * @param UploadedFile $file
+		 * @return mixed|null
+		 */
+		protected function _call_event_path(Record $record, UploadedFile $file){
+			if($this->_on_path){
+				if(is_callable($this->_on_path)){
+					return call_user_func($this->_on_path, $record, $file, $this);
+				}elseif(is_array($this->_on_path)){
+					$handler = $this->_on_path;
+					$method_name = $handler[0];
+					array_shift($handler);
+					array_unshift($handler, $this);
+					array_unshift($handler, $file);
+					return call_user_func_array([$record, $method_name],$handler);
+				}else{
+					return call_user_func([$record, $this->_on_path],$file, $this);
+				}
+
+			}
+			return null;
+		}
+
+		public function setAccepted($handler){
 			$this->_on_accepted = $handler;
+			return $this;
+		}
+
+		public function setPath($handler){
+			$this->_on_path = $handler;
 			return $this;
 		}
 	}

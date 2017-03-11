@@ -1236,10 +1236,14 @@ namespace Jungle\Data {
 				}
 				return false;
 			}finally{
+				$old_op = $this->_operation_made;
 				$repository->endOperation($this);
 				$this->_validation = null;
 				$this->_analyzed_changes = null;
 				$this->_operation_made = self::OP_NONE;
+				if($this->_save_again){
+					$this->save();
+				}
 			}
 		}
 
@@ -1410,12 +1414,12 @@ namespace Jungle\Data {
 					throw $e;
 				}
 			}
+			// на after relations у нас могут быть изменения которые мы не отслеживаем, получится что в бд изменений нет, а в объекте зафиксированы
 			// Сбрасываем снапшот на текущее сохраненное состояние
 			$this->_apply_state(false, $data);
 
 			$this->_onCreate();
 			return true;
-
 		}
 
 		/**
@@ -1844,6 +1848,15 @@ namespace Jungle\Data {
 			return $this->export();
 		}
 
+		protected $_save_again = false;
+
+		/**
+		 * @return $this
+		 */
+		public function saveAgain(){
+			$this->_save_again = true;
+			return $this;
+		}
 
 
 	}
