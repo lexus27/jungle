@@ -154,7 +154,7 @@ namespace Jungle\Data\Record\RelationFS {
 		 * @throws \Exception
 		 * @throws \Jungle\FileSystem\Model\Exception\ActionError
 		 */
-		public function afterRecordSave(Record $record, Snapshot $snapshot = null){
+		public function beforeRecordSave(Record $record, Snapshot $snapshot = null){
 
 			/**
 			 * Обработка принятого файла UploadedFile
