@@ -1242,6 +1242,7 @@ namespace Jungle\Data {
 				$this->_analyzed_changes = null;
 				$this->_operation_made = self::OP_NONE;
 				if($this->_save_again){
+					$this->_save_again = false;
 					$this->save();
 				}
 			}
