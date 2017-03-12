@@ -189,7 +189,6 @@ namespace Jungle\Data\Record\RelationFS {
 						// тип: Поле для Загрузки файла, подключение файла из вне
 						if($related instanceof UploadedFile){
 							// TODO папка назначения для файла может задаваться с клиента.
-							$this->_call_event_accepted($record, $related);
 							$new_path = $this->_call_event_accepted($record, $related);
 							if($new_path === null){
 
@@ -200,8 +199,11 @@ namespace Jungle\Data\Record\RelationFS {
 											'file' => $related,
 										];
 									}else{
-										// здесь путь назначения до файла указывается объектом ORM через шаблон
-										$new_path = $this->fetchPathForUploaded($record, $related);
+										$new_path = $this->_call_event_path($record, $related);
+										if($new_path === null){
+											// здесь путь назначения до файла указывается объектом ORM через шаблон
+											$new_path = $this->fetchPathForUploaded($record, $related);
+										}
 										$this->_applyPath($record, $new_path, $related, $source);
 									}
 								}else{
