@@ -190,24 +190,13 @@ namespace Jungle\Data\Record\RelationFS {
 						if($related instanceof UploadedFile){
 							// TODO папка назначения для файла может задаваться с клиента.
 							$new_path = $this->_call_event_accepted($record, $related);
-							if($new_path === null){
-
-								if($record->getOperationMade() === Record::OP_CREATE){
-									if($this->_on_path){
-										$this->_path_after = [
-											'source' => $source,
-											'file' => $related,
-										];
-									}else{
-										$new_path = $this->_call_event_path($record, $related);
-										if($new_path === null){
-											// здесь путь назначения до файла указывается объектом ORM через шаблон
-											$new_path = $this->fetchPathForUploaded($record, $related);
-										}
-										$this->_applyPath($record, $new_path, $related, $source);
-									}
+							if($record->getOperationMade() === Record::OP_CREATE){
+								if($this->_on_path){
+									$this->_path_after = [
+										'source' => $source,
+										'file' => $related,
+									];
 								}else{
-									$new_path = $this->_call_event_path($record, $related);
 									if($new_path === null){
 										// здесь путь назначения до файла указывается объектом ORM через шаблон
 										$new_path = $this->fetchPathForUploaded($record, $related);
@@ -215,9 +204,19 @@ namespace Jungle\Data\Record\RelationFS {
 									$this->_applyPath($record, $new_path, $related, $source);
 								}
 							}else{
+								if($this->_on_path){
+									$p = $this->_call_event_path($record, $related);
+									if($p === null){
+										if($new_path === null){
+											// здесь путь назначения до файла указывается объектом ORM через шаблон
+											$new_path = $this->fetchPathForUploaded($record, $related);
+										}
+									}else{
+										$new_path = $p;
+									}
+								}
 								$this->_applyPath($record, $new_path, $related, $source);
 							}
-
 						}elseif($related === null){
 							$snapshot = $record->getRelatedSnapshot();
 							$old = $snapshot->get($this->name);
