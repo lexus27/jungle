@@ -1236,7 +1236,6 @@ namespace Jungle\Data {
 				}
 				return false;
 			}finally{
-				$old_op = $this->_operation_made;
 				$repository->endOperation($this);
 				$this->_validation = null;
 				$this->_analyzed_changes = null;
