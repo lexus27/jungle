@@ -285,7 +285,7 @@ namespace Jungle\Data\Record\RelationFS {
 					throw new \LogicException('RelationFile(TYPE_UPLOAD | TYPE_SELECTABLE) bad definition!: local field not be specified');
 				}
 			}elseif($this->type === self::TYPE_UPLOAD_AUTOGEN){
-				if(!$this->_on_accepted && !$this->template){
+				if(!$this->_on_path && !$this->_on_accepted && !$this->template){
 					throw new \LogicException('RelationFile(TYPE_UPLOAD_AUTOGEN) bad definition!: Template not be specified');
 				}
 			}
