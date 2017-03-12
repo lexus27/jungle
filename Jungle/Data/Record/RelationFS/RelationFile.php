@@ -196,6 +196,12 @@ namespace Jungle\Data\Record\RelationFS {
 										'source' => $source,
 										'file' => $related,
 									];
+									if($new_path){
+										// Фикс для валидации перед сохранением
+										if($this->field){
+											$record->setProperty($this->field, $new_path);
+										}
+									}
 								}else{
 									if($new_path === null){
 										// здесь путь назначения до файла указывается объектом ORM через шаблон
