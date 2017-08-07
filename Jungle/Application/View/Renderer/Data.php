@@ -15,8 +15,9 @@ namespace Jungle\Application\View\Renderer {
 	use Jungle\Application\View\Renderer;
 	use Jungle\Application\ViewInterface;
 	use Jungle\Data\Record\Collection;
+	use Jungle\Data\Record\Validation\ValidationResult;
 	use Jungle\Http\Request;
-
+	
 	/**
 	 * Class Data
 	 * @package Jungle\Application\View
@@ -54,7 +55,9 @@ namespace Jungle\Application\View\Renderer {
 			if($process->hasTasks()){
 				foreach($process->getTasks() as $key => $task){
 					if(is_object($task)){
-						if($task instanceof \Exception){
+						if($task instanceof ValidationResult){
+							$o['tasks'][$key] = $task->export();
+						}elseif($task instanceof \Exception){
 							$o['tasks'][$key] = $task->getMessage();
 						}else{
 							$o['tasks'][$key] = true;

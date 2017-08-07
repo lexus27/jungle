@@ -10,7 +10,7 @@
 namespace Jungle\Data\Record\Validation {
 	
 	use Jungle\Data\Record;
-
+	
 	/**
 	 * Class ValidationResult
 	 * @package Jungle\Data\Record\Validation
@@ -169,6 +169,33 @@ namespace Jungle\Data\Record\Validation {
 			self::$_level--;
 			return implode(PHP_EOL, $string);
 
+		}
+		
+		/**
+		 * For other readers export for json and etc...
+		 * @return array
+		 */
+		public function export(){
+			$schema = $this->record->getSchema();
+			
+			$fields = [];
+			foreach($this->field_errors as $fieldKey => $validations){
+				/** @var Validation $validation */
+				foreach($validations as $validation){
+					$fields[$fieldKey][] = $validation->type;
+				}
+			}
+			$relations = [];
+			foreach($this->related_error_validations as $relationKey => $results){
+				$relations[] = $results->export();
+			}
+			
+			return [
+				'name'          => $schema->getName(),
+				'fields'        => $fields,
+				'relations'     => $relations,
+				'constrains'    => $this->constraint_errors
+			];
 		}
 
 	}
