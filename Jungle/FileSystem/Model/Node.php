@@ -6,13 +6,13 @@
  * Time: 21:33
  */
 namespace Jungle\FileSystem\Model {
-
+	
 	use Jungle\FileSystem;
-	use Jungle\FileSystem\Adapter;
+	use Jungle\FileSystem\Adapter\Adapter;
 	use Jungle\FileSystem\Model\Exception\ActionError;
 	use Jungle\FileSystem\Model\Exception\AlreadyExistsIn;
 	use Jungle\FileSystem\Model\Exception\ProcessLock;
-
+	
 	/**
 	 * Class Node
 	 * @package Jungle\FileSystem\Model
@@ -393,16 +393,16 @@ namespace Jungle\FileSystem\Model {
 		 * @throws Exception
 		 */
 		public function getAbsolutePath($realPath = null, $suffix_path = null){
-			if(!$realPath)$realPath = $this->real_path;
+			if(!$realPath)$realPath = $this->getRealPath();
 			$adapter = $this->getAdapter();
-			$ds = $this->getAdapter()->ds();
-			$path = $realPath? $realPath : null;
-			if($suffix_path && $path!==null){
-				$path = FileSystem::normalizePath($path . '/' . $suffix_path,true,$ds);
-			}else{
-				$path = FileSystem::normalizePath($suffix_path,true,$ds);
-			}
-			return $adapter->absolute($path, true);
+			$ds = $adapter->ds();
+			
+			$path = array_filter([$realPath, $suffix_path]);
+			$path = implode($ds, $path);
+			
+			$path = FileSystem::normalizePath($path,true,$adapter->ds());
+			$path = $adapter->absolute($path,true);
+			return $path;
 		}
 
 		/**
@@ -435,7 +435,7 @@ namespace Jungle\FileSystem\Model {
 
 
 		/**
-		 * @return Directory|File
+		 * @return Directory|File|Node
 		 * Вернет самый верхний загруженый элемент
 		 * иерархии в которой находиться текущий объект
 		 */
@@ -481,7 +481,7 @@ namespace Jungle\FileSystem\Model {
 		}
 
 		/**
-		 * @return Directory|File
+		 * @return Directory|File|Node
 		 *
 		 * Вернет верхний по иерархии , но самый близкий к текущему объекту - актуальный объект
 		 */
@@ -524,10 +524,14 @@ namespace Jungle\FileSystem\Model {
 				throw new Exception("Node {$name} already exists in {$parent->basename}({$parent->getAbsolutePath()})");
 			}
 		}
-
-
+		
+		
+		/**
+		 * @param Adapter $from
+		 * @param Adapter $to
+		 */
 		protected function transfer(Adapter $from, Adapter $to){
-
+			// @todo: implement cross protocol file transfer (Local to FTP, Local to HTTP REST)
 		}
 
 		/**
