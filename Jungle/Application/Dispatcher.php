@@ -8,8 +8,7 @@
  * Time: 21:42
  */
 namespace Jungle\Application {
-
-	use Jungle\Application;
+	
 	use Jungle\Application\Dispatcher\ControllerInterface;
 	use Jungle\Application\Dispatcher\Exception;
 	use Jungle\Application\Dispatcher\Exception\Control;
@@ -26,17 +25,14 @@ namespace Jungle\Application {
 	use Jungle\Application\Router;
 	use Jungle\Application\Router\Routing;
 	use Jungle\Application\Router\RoutingInterface;
-	use Jungle\Application\View;
 	use Jungle\Data\Record\Validation\ValidationResult;
-	use Jungle\Di\HolderChains;
 	use Jungle\Di\Injectable;
 	use Jungle\Di\InjectionAwareInterface;
-	use Jungle\FileSystem;
 	use Jungle\Http\Response;
 	use Jungle\User\AccessControl\Context\Substitute;
 	use Jungle\User\AccessControl\Manager;
 	use Jungle\User\Verification\Hint;
-
+	
 	/**
 	 * Class Dispatcher
 	 * @package Jungle\Application
@@ -988,6 +984,11 @@ namespace Jungle\Application {
 			$diChains = $this->getDi();
 			$diChains->insertInjection('strategy',$strategy, 5);
 
+			foreach($this->modules as $name => $module){
+				$module = $this->_getStaticModuleName($name);
+				$module::prepareDispatchToStrategy($name, $strategy, $this);
+			}
+			
 			$default = $diChains->getInjection('default');
 			$default->setShared('request',$request);
 			$default->setShared('response',$request->getResponse());
@@ -1051,8 +1052,67 @@ namespace Jungle\Application {
 				throw new Exception('Module load error: "'.$moduleName.'" module, not found module class "'.$className.'"');
 			}
 		}
-
-
+		
+		/**
+		 * @param $method
+		 * @param array $args
+		 * @param $moduleName
+		 * @return mixed|null
+		 * @throws Exception
+		 */
+		protected function _callStaticModule($method, array $args, $moduleName){
+			if(isset($this->modules[$moduleName])){
+				$module = $this->modules[$moduleName];
+				if($module instanceof ModuleInterface){
+					if(method_exists($module,$method)){
+						return call_user_func_array([$module,$method],$args);
+					}
+				}else{
+					$definition = array_replace([
+						'class' => Module\DynamicModule::class,
+					],$module);
+					/** @var ModuleInterface|string $className */
+					$className = $definition['class'];
+					if(class_exists($className)){
+						
+						if(method_exists($className,$method)){
+							return call_user_func_array([$className,$method],$args);
+						}
+						
+					}else{
+						throw new Exception('Module load error: "'.$moduleName.'" module, not found module class "'.$className.'"');
+					}
+				}
+			}
+			
+			return null;
+		}
+		
+		
+		/**
+		 * @param $moduleName
+		 * @return ModuleInterface|string
+		 * @throws Exception
+		 */
+		protected function _getStaticModuleName($moduleName){
+			if(isset($this->modules[$moduleName])){
+				$module = $this->modules[$moduleName];
+				if($module instanceof ModuleInterface){
+					return $module;
+				}else{
+					$definition = array_replace([ 'class' => Module\DynamicModule::class, ],$module);
+					/** @var ModuleInterface|string $className */
+					$className = $definition['class'];
+					if(class_exists($className)){
+						return $className;
+					}else{
+						throw new Exception('Module load error: "'.$moduleName.'" module, not found module class "'.$className.'"');
+					}
+				}
+			}
+			
+			return null;
+		}
 
 		/**
 		 * @param $alias

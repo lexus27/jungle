@@ -8,16 +8,17 @@
  * Time: 15:10
  */
 namespace Jungle\Application\Dispatcher {
-
+	
 	use Jungle\Application\Dispatcher;
 	use Jungle\Application\Dispatcher\Exception\Control;
 	use Jungle\Application\Notification\Responsible\AccessDenied;
+	use Jungle\Application\Strategy\Http\Router;
+	use Jungle\Application\StrategyInterface;
 	use Jungle\Di;
 	use Jungle\Di\InjectionAwareInterface;
 	use Jungle\Di\InjectionAwareTrait;
-	use Jungle\FileSystem;
 	use Jungle\Loader;
-
+	
 	/**
 	 * Class Module
 	 * @package Jungle\Application\Dispatcher
@@ -648,6 +649,45 @@ namespace Jungle\Application\Dispatcher {
 		 */
 		protected function prepareActionMethodName($actionName){
 			return $actionName . $this->getActionSuffix();
+		}
+		
+		protected static $prepared_strategies = [];
+		
+		/**
+		 * @param StrategyInterface $strategy
+		 * @return void
+		 */
+		final public static function prepareDispatchToStrategy($moduleName, StrategyInterface $strategy, Dispatcher $dispatcher){
+			$strategy->getName();
+			$k = serialize([$moduleName, $strategy->getName()]);
+			if(!in_array($k,self::$prepared_strategies,true)){
+				static::_prepareDispatchStrategy($moduleName, $strategy, $dispatcher);
+				self::$prepared_strategies[] = $k;
+			}
+		}
+		
+		/**
+		 * @param $moduleName
+		 * @param StrategyInterface $strategy
+		 * @param Dispatcher $dispatcher
+		 */
+		protected static function _prepareDispatchStrategy($moduleName, StrategyInterface $strategy, Dispatcher $dispatcher){}
+		
+		/**
+		 * self::httpAnyRoute($router, $moduleName, '/register', 'account:register',[]);
+		 * self::httpAnyRoute($router, $moduleName, '/login', 'account:login',[]);
+		 * self::httpAnyRoute($router, $moduleName, '/logout', 'account:logout',[]);
+		 *
+		 * @param Router $router
+		 * @param $moduleName
+		 * @param $pattern
+		 * @param $referenceInModule
+		 * @param array $options
+		 */
+		protected static function httpAnyRoute(Router $router, $moduleName, $pattern, $referenceInModule, array $options){
+			$router->any("/{$moduleName}{$pattern}",array_replace([
+				'reference' => "#{$moduleName}:{$referenceInModule}"
+			], $options));
 		}
 
 	}

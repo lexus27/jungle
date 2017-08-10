@@ -8,16 +8,25 @@
  * Time: 0:59
  */
 namespace Jungle\Application\Dispatcher {
-
+	
 	use Jungle\Application\Dispatcher;
+	use Jungle\Application\StrategyInterface;
 	use Jungle\Di\DiInterface;
-
+	
 	/**
 	 * Interface ModuleInterface
 	 * @package Jungle\Application\Dispatcher
 	 */
 	interface ModuleInterface extends DiInterface{
-
+		
+		/**
+		 * @param $moduleName
+		 * @param StrategyInterface $strategy
+		 * @param Dispatcher $dispatcher
+		 * @return void
+		 */
+		public static function prepareDispatchToStrategy($moduleName, StrategyInterface $strategy, Dispatcher $dispatcher);
+		
 		/**
 		 * @param $name
 		 * @return $this
