@@ -850,18 +850,17 @@ namespace Jungle\Application {
 		protected function postControl($output,ProcessInterface $process){
 			$this->event_manager->invokeEvent('dispatcher:postControl', $this, $process, $output);
 		}
-
+		
 		/**
 		 * @param \Exception $e
 		 * @param bool $return
 		 * @return ResponseInterface
-		 * @throws \Jungle\Application\Exception
+		 * @throws \Exception
 		 */
 		public function handleException(\Exception $e, $return = true){
 			if(ob_get_level()){
 				ob_end_clean();
 			}
-
 			$this->dispatching_error = true;
 			$reporter = $this->crash_reporter;
 			$reporter->report($e);
