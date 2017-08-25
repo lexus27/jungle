@@ -858,9 +858,6 @@ namespace Jungle\Application {
 		 * @throws \Exception
 		 */
 		public function handleException(\Exception $e, $return = true){
-			if(ob_get_level()){
-				ob_end_clean();
-			}
 			$this->dispatching_error = true;
 			$reporter = $this->crash_reporter;
 			$reporter->report($e);
@@ -889,20 +886,16 @@ namespace Jungle\Application {
 				$this->event_manager->invokeEvent('dispatcher:afterDispatch',true,$this, $process->getRouting()->getRequest(), $process->getRouting(), $process);
 			}
 		}
-
-
+		
+		
 		/**
 		 * @param $num
 		 * @param $message
 		 * @param $filename
 		 * @param $line
-		 * @throws \Jungle\Application\Exception
+		 * @throws \Exception
 		 */
 		protected function _handleFatalError($num, $message, $filename, $line){
-
-			if(ob_get_level()){
-				ob_end_clean();
-			}
 			$this->dispatching_error = true;
 			$reporter = $this->crash_reporter;
 			$e =  new \ErrorException($message,0,$num, $filename,$line);
@@ -923,10 +916,7 @@ namespace Jungle\Application {
 				}
 				$response->send();
 			}catch(\Exception $e){
-				if(ob_get_level()){
-					ob_end_clean();
-				}
-				echo '500 Internal Server Error, sorry please';
+				throw $e;
 			}
 			$this->event_manager->invokeEvent('dispatcher:afterDispatch',true,$this, $process->getRouting()->getRequest(), $process->getRouting(), $process);
 			exit();
