@@ -885,11 +885,7 @@ namespace Jungle\Application {
 				}
 				return $response;
 			}catch(\Exception $e){
-				if(ob_get_level()){
-					ob_end_clean();
-				}
-				echo '500 Internal Server Error, sorry please';
-				exit();
+				throw $e;
 			}finally{
 				$this->event_manager->invokeEvent('dispatcher:afterDispatch',true,$this, $process->getRouting()->getRequest(), $process->getRouting(), $process);
 			}
