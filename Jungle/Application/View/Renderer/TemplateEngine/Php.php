@@ -11,7 +11,7 @@ namespace Jungle\Application\View\Renderer\TemplateEngine {
 	
 	use Jungle\Application\View\Exception;
 	use Jungle\Application\View\Renderer\TemplateEngine;
-
+	
 	/**
 	 * Class Php
 	 * @package Jungle\Application\View\Renderer\TemplateEngine
@@ -62,7 +62,7 @@ namespace Jungle\Application\View\Renderer\TemplateEngine {
 				$_suppressErrors = $this->getOption('suppress_errors', true);
 				if($_suppressErrors){
 					$this->error_reporting = error_reporting();
-					error_reporting(E_ALL & ~(E_NOTICE | E_DEPRECATED | E_STRICT | E_WARNING));
+					error_reporting(E_ALL & ~E_NOTICE);
 				}
 				$process = $this->process;
 				extract($variables);
