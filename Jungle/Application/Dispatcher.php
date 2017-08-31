@@ -915,7 +915,7 @@ namespace Jungle\Application {
 					throw new \Jungle\Application\Exception('Initiator is not recognized!');
 				}
 				$response->send();
-			}catch(\Exception $e){
+			}catch(\Jungle\Application\Dispatcher\Exception\Control $controlException){
 				throw $e;
 			}
 			$this->event_manager->invokeEvent('dispatcher:afterDispatch',true,$this, $process->getRouting()->getRequest(), $process->getRouting(), $process);
