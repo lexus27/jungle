@@ -880,6 +880,8 @@ namespace Jungle\Application {
 					exit();
 				}
 				return $response;
+			}catch(\Jungle\Application\Dispatcher\Exception\Control $controlException){
+				throw $e;
 			}catch(\Exception $e){
 				throw $e;
 			}finally{
@@ -899,9 +901,6 @@ namespace Jungle\Application {
 			$this->dispatching_error = true;
 			$reporter = $this->crash_reporter;
 			$e =  new \ErrorException($message,0,$num, $filename,$line);
-			
-			echo $e;
-			
 			$reporter->report($e);
 			$process = $this->currentProcess()?: $this->restored_process;
 			try{
@@ -919,6 +918,8 @@ namespace Jungle\Application {
 				}
 				$response->send();
 			}catch(\Jungle\Application\Dispatcher\Exception\Control $controlException){
+				throw $e;
+			}catch(\Exception $e){
 				throw $e;
 			}
 			$this->event_manager->invokeEvent('dispatcher:afterDispatch',true,$this, $process->getRouting()->getRequest(), $process->getRouting(), $process);
