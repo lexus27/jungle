@@ -899,6 +899,9 @@ namespace Jungle\Application {
 			$this->dispatching_error = true;
 			$reporter = $this->crash_reporter;
 			$e =  new \ErrorException($message,0,$num, $filename,$line);
+			
+			echo $e;
+			
 			$reporter->report($e);
 			$process = $this->currentProcess()?: $this->restored_process;
 			try{
