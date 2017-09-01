@@ -6,7 +6,7 @@
  * Time: 23:40
  */
 namespace Jungle\Messenger\Mail\SMTP {
-
+	
 	use Jungle\Messenger;
 	use Jungle\Messenger\CombinationInterface;
 	use Jungle\Messenger\ContactInterface;
@@ -17,7 +17,7 @@ namespace Jungle\Messenger\Mail\SMTP {
 	use Jungle\Util\Communication\ApiInteractingStream\SmtpApi;
 	use Jungle\Util\Communication\Hypertext\Content\Multipart;
 	use Jungle\Util\Communication\Hypertext\Document;
-
+	
 	/**
 	 * Class SMTP
 	 * @package Jungle\Messenger\Mail\SMTP
@@ -71,7 +71,7 @@ namespace Jungle\Messenger\Mail\SMTP {
 				'sender_from_login' => true,
 				'sender'            => null,
 
-				'charset'           => ini_get('default_charset'),
+				'charset'           => ini_get('default_charset')?: 'utf-8',
 				'extra_headers'     => null,
 
 				'timezone'          => 3,
