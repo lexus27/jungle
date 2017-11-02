@@ -8,12 +8,12 @@
  * Time: 3:20
  */
 namespace Jungle\Event\Listener {
-
+	
 	use Jungle\Event;
 	use Jungle\Event\EventInterface;
 	use Jungle\Event\ListenerAggregateInterface;
 	use Jungle\Util\Value\String;
-
+	
 	/**
 	 * Class Observer
 	 * @package Jungle\Util
@@ -193,8 +193,8 @@ namespace Jungle\Event\Listener {
 		 * @return mixed
 		 */
 		public function __invoke(ListenerProcess $listener, Event\EventProcess $dispatching){
-			$event = $dispatching->getEvent();
-			$e_name = $event->getName();
+			$event = $listener->getEvent();//TODO $event = $dispatching->getEvent();
+			$e_name = $event->getName();//TODO listener.getName();
 			if(is_array($this->_events)){
 				if(array_key_exists($e_name,$this->_events)){
 					$handler = $this->_events[$e_name];
