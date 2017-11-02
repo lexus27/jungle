@@ -4,7 +4,7 @@
  * @Project: ceive.data-attribute-context
  */
 
-namespace App\Services\Router\Locator;
+namespace Jungle\Application\Router\Locator;
 
 
 class Exception extends \Exception{

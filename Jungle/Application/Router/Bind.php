@@ -5,11 +5,10 @@
  * @Project: c4l-rebuild.local
  */
 
-namespace App\Services\Router;
+namespace Jungle\Application\Router;
 
 
 use Jungle\Application\Dispatcher\Exception\ContinueRoute;
-use Jungle\Application\Router\BindingInterface;
 use Jungle\Data\Record\Model;
 
 /**

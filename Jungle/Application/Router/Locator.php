@@ -4,7 +4,7 @@
  * @Project: ceive.data-attribute-context
  */
 
-namespace App\Services\Router;
+namespace Jungle\Application\Router;
 
 use App\Services\Router\Locator\CatchableException;
 use App\Services\Router\Locator\MissingException;

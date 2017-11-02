@@ -5,7 +5,7 @@
  * @Project: c4l-rebuild.local
  */
 
-namespace App\Services\Router;
+namespace Jungle\Application\Router;
 
 
 use Jungle\Http\Request;
