@@ -5,9 +5,8 @@
  */
 
 namespace Jungle\Application\Router;
-
-use App\Services\Router\Locator\CatchableException;
-use App\Services\Router\Locator\MissingException;
+use Jungle\Application\Router\Locator\CatchableException;
+use Jungle\Application\Router\Locator\MissingException;
 
 /**
  * @Author: Alexey Kutuzov <lexus27.khv@gmail.com>
