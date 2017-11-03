@@ -8,19 +8,19 @@
  * Time: 20:40
  */
 namespace Jungle\User {
-
+	
 	use Jungle\Application\Dispatcher;
 	use Jungle\Di\DiInterface;
 	use Jungle\Di\Injectable;
 	use Jungle\User\Session\Exception;
 	use Jungle\User\Session\ProviderInterface;
 	use Jungle\User\Session\StorageInterface;
-
+	
 	/**
 	 * Class SessionManager
 	 * @package Jungle\User
 	 */
-	class SessionManager extends Injectable implements SessionManagerInterface{
+	class SessionManager extends Injectable implements SessionManagerInterface, SessionInterface{
 
 		/** @var  StorageInterface */
 		protected $storage;
@@ -377,7 +377,202 @@ namespace Jungle\User {
 //				$this->getDi()->getShared('dispatcher')->handleException($e,false);
 //			}
 		}
-
+		
+		/**
+		 * @param UserInterface $user
+		 * @return mixed
+		 */
+		public function setUser(UserInterface $user = null){
+			$this->requireSession()->setUser($user);
+			return $this;
+		}
+		
+		/**
+		 * @return UserInterface|null
+		 */
+		public function getUser(){
+			$sess = $this->readSession();
+			if($sess) return $sess->getUser();
+			return null;
+		}
+		
+		/**
+		 * @return mixed
+		 */
+		public function getUserId(){
+			$sess = $this->readSession();
+			if($sess) return $sess->getUserId();
+			return null;
+		}
+		
+		/**
+		 * @return bool
+		 */
+		public function hasUser(){
+			$sess = $this->readSession();
+			if($sess) return $sess->hasUser();
+			return false;
+		}
+		
+		/**
+		 * @param $id
+		 * @return mixed
+		 */
+		public function setSessionId($id){
+			$this->requireSession()->setSessionId($id);
+			return $this;
+		}
+		
+		/**
+		 * @return mixed
+		 */
+		public function getSessionId(){
+			$sess = $this->readSession();
+			if($sess) return $sess->getSessionId();
+			return null;
+		}
+		
+		/**
+		 * @param bool|true $token
+		 * @return mixed
+		 */
+		public function setToken($token = true){
+			$this->requireSession()->setToken($token);
+			return $this;
+		}
+		
+		/**
+		 * @return bool
+		 */
+		public function isToken(){
+			$sess = $this->readSession();
+			if($sess) return $sess->isToken();
+			return null;
+		}
+		
+		/**
+		 * @param bool|true $permanent
+		 * @return mixed
+		 */
+		public function setPermanent($permanent = true){
+			$this->requireSession()->setPermanent($permanent);
+			return $this;
+		}
+		
+		/**
+		 * @return bool
+		 */
+		public function isPermanent(){
+			$sess = $this->readSession();
+			if($sess) return $sess->isPermanent();
+			return null;
+		}
+		
+		/**
+		 * @param $permissions
+		 * @return mixed
+		 */
+		public function setPermissions($permissions){
+			$this->requireSession()->setPermissions($permissions);
+			return $this;
+		}
+		
+		/**
+		 * @return mixed
+		 */
+		public function getPermissions(){
+			$sess = $this->readSession();
+			if($sess) return $sess->getPermissions();
+			return null;
+		}
+		
+		/**
+		 * @param $ip
+		 * @return $this
+		 */
+		public function setRegisteredIp($ip){
+			$this->requireSession()->setRegisteredIp($ip);
+			return $this;
+		}
+		
+		/**
+		 * @return string
+		 */
+		public function getRegisteredIp(){
+			$sess = $this->readSession();
+			if($sess) return $sess->getRegisteredIp();
+			return null;
+		}
+		
+		/**
+		 * @param $user_agent
+		 * @return $this
+		 */
+		public function setRegisteredUserAgent($user_agent){
+			$this->requireSession()->setRegisteredUserAgent($user_agent);
+			return $this;
+		}
+		
+		/**
+		 * @return string
+		 */
+		public function getRegisteredUserAgent(){
+			$sess = $this->readSession();
+			if($sess) return $sess->getRegisteredUserAgent();
+			return null;
+		}
+		
+		/**
+		 * @param array $data
+		 * @return mixed
+		 */
+		public function setData(array $data){
+			$this->requireSession()->setData($data);
+			return $this;
+		}
+		
+		/**
+		 * @return mixed
+		 */
+		public function getData(){
+			$sess = $this->readSession();
+			if($sess) return $sess->getData();
+			return null;
+		}
+		
+		/**
+		 * @param $time
+		 * @return mixed
+		 */
+		public function setModifyTime($time){
+			$this->requireSession()->setModifyTime($time);
+		}
+		
+		/**
+		 * @return int
+		 */
+		public function getModifyTime(){
+			$sess = $this->readSession();
+			if($sess) return $sess->getModifyTime();
+			return null;
+		}
+		
+		/**
+		 * @param $time
+		 * @return mixed
+		 */
+		public function setCreateTime($time){
+			$this->requireSession()->setCreateTime($time);
+		}
+		
+		/**
+		 * @return int
+		 */
+		public function getCreateTime(){
+			$sess = $this->readSession();
+			if($sess) return $sess->getCreateTime();
+			return null;
+		}
 	}
 }
 
