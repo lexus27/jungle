@@ -73,12 +73,18 @@ namespace Jungle\Application\View\Renderer\TemplateEngine {
 				}
 
 				try{
+					$old = ob_get_level();
 					ob_start();
 					include $this->current_template_path;
 					$r = ob_get_clean();
 					$break = $break || $this->break;
 					return $r;
 				}finally{
+					
+					while($old && ($l = ob_get_level()) && $l >= $old){
+						ob_end_clean();
+					}
+					
 					$this->rendering = false;
 					if($_suppressErrors){
 						error_reporting($this->error_reporting);
