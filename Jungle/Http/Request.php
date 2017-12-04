@@ -16,8 +16,8 @@ namespace Jungle\Http {
 	use Jungle\Util\Communication\HttpFoundation\ServerInterface;
 	use Jungle\Util\Communication\Hypertext\HeaderRegistryTrait;
 	use Jungle\Util\Value;
-
-
+	
+	
 	/**
 	 * Class Request
 	 * @package Jungle\Http\Request
@@ -85,7 +85,7 @@ namespace Jungle\Http {
 		 * Request constructor.
 		 */
 		protected function __construct(){
-			$this->setHeaders(getallheaders(),false,false);
+			$this->setHeaders(self::getallheaders(),false,false);
 			if(isset($_SERVER['PHP_AUTH_USER']) && $_SERVER['PHP_AUTH_USER']){
 				$this->auth = Auth::getAccessAuth([$_SERVER['PHP_AUTH_USER'],$_SERVER['PHP_AUTH_PW']]);
 			}
@@ -94,6 +94,24 @@ namespace Jungle\Http {
 			$this->client   = new Client();
 			$this->response = new Response($this);
 			$this->content_type = isset($this->headers['Content-Type'])?$this->headers['Content-Type']:null;
+		}
+		
+		/**
+		 * @return array
+		 */
+		public static function getallheaders(){
+			
+			if(function_exists('getallheaders')){
+				return \getallheaders();
+			}
+			
+			$headers = [];
+			foreach($_SERVER as $key=>$value){
+				if(preg_match('HTTP_(.+)',$key,$result)){
+					$headers[$result[1]]=$value;
+				}
+			}
+			return $headers;
 		}
 
 		/**
