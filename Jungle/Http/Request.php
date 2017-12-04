@@ -107,7 +107,7 @@ namespace Jungle\Http {
 			
 			$headers = [];
 			foreach($_SERVER as $key=>$value){
-				if(preg_match('HTTP_(.+)',$key,$result)){
+				if(preg_match('@HTTP_(.+)@',$key,$result)){
 					$headers[$result[1]]=$value;
 				}
 			}
