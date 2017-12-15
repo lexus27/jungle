@@ -93,7 +93,7 @@ namespace Jungle\Http {
 			$this->server   = new Server();
 			$this->client   = new Client();
 			$this->response = new Response($this);
-			$this->content_type = isset($this->headers['Content-Type'])?$this->headers['Content-Type']:null;
+			$this->content_type = $this->getHeader('Content-Type', null);
 		}
 		
 		/**
