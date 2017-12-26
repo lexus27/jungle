@@ -8,11 +8,10 @@
  * Time: 20:50
  */
 namespace Jungle\Data\Record {
-
-	use App\Model\Usergroup;
+	
 	use Jungle\Data\Record;
 	use Jungle\Data\Record\Schema\Schema;
-
+	
 	/**
 	 * Class Model
 	 * @package Jungle\Data\Bridge
@@ -81,7 +80,7 @@ namespace Jungle\Data\Record {
 		public function beforeCreate(){
 			$field_name = $this->_schema->getBootField();
 			if($field_name){
-				$this->{$field_name} = $this->_class;
+				$this->{$field_name} = $this->_schema->getIdentity();
 			}
 		}
 
