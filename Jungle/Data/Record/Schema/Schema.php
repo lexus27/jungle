@@ -108,7 +108,11 @@ namespace Jungle\Data\Record\Schema {
 		 * @var null|string
 		 */
 		protected $boot_field;
-
+		
+		/** @var  array */
+		protected $boot_map = [];
+		
+		protected $boot_value;
 
 
 		/** @var string  */
@@ -117,8 +121,6 @@ namespace Jungle\Data\Record\Schema {
 		/** @var  string|null */
 		protected $identity;
 		
-		/** @var  array */
-		protected $boot_map = [];
 		
 		/** @var array  */
 		protected $derivative_schemas = [];
@@ -157,7 +159,7 @@ namespace Jungle\Data\Record\Schema {
 		public $mapping = [];
 
 		public $private_fields = [];
-
+		
 		/**
 		 * @param $pk
 		 * @param bool|true $auto_generate
@@ -1011,7 +1013,32 @@ namespace Jungle\Data\Record\Schema {
 		public function getBootField(){
 			return $this->boot_field;
 		}
-
+		/**
+		 * @param $value
+		 * @return $this
+		 */
+		public function setBootValue($value){
+			$this->boot_value = $value;
+			return $this;
+		}
+		
+		/**
+		 * @return null|string
+		 */
+		public function getBootValue(){
+			return $this->boot_value?:$this->getIdentity();
+		}
+		
+		public function getBootMap(){
+			return array_replace([
+				$this->record_classname => $this->getBootValue(),
+			], $this->boot_map);
+		}
+		
+		public function getBootValues(){
+			return array_values($this->getBootMap());
+		}
+		
 		/**
 		 * @param $id
 		 * @return $this
@@ -2156,19 +2183,6 @@ namespace Jungle\Data\Record\Schema {
 			return $this->locators[$path];
 		}
 		
-		public function getBootMap(){
-			return array_replace([
-				$this->record_classname => $this->getBootValue(),
-			], $this->boot_map);
-		}
-		
-		public function getBootValues(){
-			return array_values($this->getBootMap());
-		}
-		
-		public function getBootValue(){
-			return $this->getIdentity();
-		}
 		
 	}
 
