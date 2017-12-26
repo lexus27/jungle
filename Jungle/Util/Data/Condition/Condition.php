@@ -8,11 +8,11 @@
  * Time: 20:27
  */
 namespace Jungle\Util\Data\Condition {
-
+	
 	use Jungle\Util\Data\Record\PropertyRegistryInterface;
 	use Jungle\Util\Data\Schema\OuterInteraction\ValueAccessAwareInterface;
 	use Jungle\Util\Data\Schema\OuterInteraction\ValueAccessor;
-
+	
 	/**
 	 * Class Condition
 	 * @package Jungle\Util\Data\Condition
@@ -100,9 +100,11 @@ namespace Jungle\Util\Data\Condition {
 						if(!is_array($c)){
 							$block = false;
 						}else{
-							foreach($c as $i){
-								if(!is_array($i)){
-									$block = false;
+							if(in_array($count,[2,3])){
+								foreach($c as $i){
+									if(!is_array($i)){
+										$block = false;
+									}
 								}
 							}
 						}
