@@ -14,7 +14,17 @@ namespace Jungle\Data\Storage\Exception {
 	 * @package Jungle\Data\Storage\Exception
 	 */
 	class DuplicateEntry extends IndexViolation{
-
+		/**
+		 * IndexViolation constructor.
+		 * @param string $key
+		 * @param mixed $value
+		 * @param string $systemMessage
+		 * @param int $code
+		 * @param \Exception|null $previous
+		 */
+		public function __construct($key, $value, $systemMessage = '', $code = 0, \Exception $previous = null){
+			parent::__construct($key, $value, $systemMessage, $code, $previous);
+		}
 	}
 }
 
