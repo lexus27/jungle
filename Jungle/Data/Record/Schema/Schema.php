@@ -2157,9 +2157,9 @@ namespace Jungle\Data\Record\Schema {
 		}
 		
 		public function getBootMap(){
-			return array_replace($this->boot_map, [
+			return array_replace([
 				$this->record_classname => $this->getBootValue(),
-			]);
+			], $this->boot_map);
 		}
 		
 		public function getBootValues(){
