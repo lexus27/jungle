@@ -45,15 +45,15 @@ namespace Jungle\Data\Storage\Db\Adapter\Pdo {
 
 				// TODO Здесь требуется комплексный подход к определению большинства типичных ошибок операции
 
-				$code = $this->getLastErrorCode();
-				$message = $this->getLastErrorMessage();
-				
+				$code = intval($this->getLastErrorCode());
+				$message = (string)$this->getLastErrorMessage();
+				/*
 				if(!is_string($message)){
 					$message = serialize($message);
 				}
 				if(!is_int($code)){
 					$code = 99999999;
-				}
+				}*/
 				//$code = $e->getCode();
 				//$message = $e->getMessage();
 
@@ -67,7 +67,7 @@ namespace Jungle\Data\Storage\Db\Adapter\Pdo {
 						}
 						break;
 				}
-				throw new Operation($e->getMessage(),$e->getCode(),$e);
+				throw new Operation((string)$e->getMessage(),(integer)$e->getCode(),is_object($e)?$e:null);
 			}
 			throw $e;
 		}
