@@ -78,6 +78,7 @@ namespace Jungle\Data\Record {
 		 *
 		 */
 		public function beforeCreate(){
+			/**  @TODO: delete */
 			$field_name = $this->_schema->getBootField();
 			if($field_name){
 				$this->{$field_name} = $this->_schema->getIdentity();

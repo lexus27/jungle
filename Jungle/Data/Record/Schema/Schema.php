@@ -8,7 +8,7 @@
  * Time: 23:48
  */
 namespace Jungle\Data\Record\Schema {
-
+	
 	use Jungle\Data\Record;
 	use Jungle\Data\Record\Collection;
 	use Jungle\Data\Record\DataMap;
@@ -26,9 +26,8 @@ namespace Jungle\Data\Record\Schema {
 	use Jungle\Util\Data\Condition\Condition;
 	use Jungle\Util\Data\Schema\OuterInteraction\ValueAccessAwareInterface;
 	use Jungle\Util\Data\ShipmentInterface;
-	use Jungle\Util\Data\Storage;
 	use Jungle\Util\Data\Storage\StorageInterface;
-
+	
 	/**
 	 * Class Schema
 	 * @package modelX
@@ -36,6 +35,7 @@ namespace Jungle\Data\Record\Schema {
 	class Schema implements ValueAccessAwareInterface{
 
 		const IDENTITY_SOURCE = 'source';
+		const IDENTITY_MAP    = 'map';
 		const IDENTITY_SCHEMA = 'schema';
 		const IDENTITY_CRC32  = 'crc32';
 
@@ -116,7 +116,10 @@ namespace Jungle\Data\Record\Schema {
 
 		/** @var  string|null */
 		protected $identity;
-
+		
+		/** @var  array */
+		protected $boot_map = [];
+		
 		/** @var array  */
 		protected $derivative_schemas = [];
 
@@ -334,10 +337,10 @@ namespace Jungle\Data\Record\Schema {
 					if($this->boot_field){
 
 						$boot_field = $this->getBootField();
-						$boot_value = $this->getIdentity();
-
+						$boot_values = $this->getBootValues();
+						
 						$this->collection = $ancestor_collection->extend([
-							[ $boot_field , '=' , $boot_value ]
+							[ $boot_field , 'IN' , $boot_values ]
 						]);
 					}else{
 						// если нет загрузочного поля то и не зачем наследоваться
@@ -1021,7 +1024,11 @@ namespace Jungle\Data\Record\Schema {
 		public function setIdentityTake($take){
 			$this->identity_take = $take;
 		}
-
+		
+		public function setBootMap(array $map){
+			$this->boot_map = $map;
+		}
+		
 		/**
 		 * @return string
 		 */
@@ -1030,7 +1037,7 @@ namespace Jungle\Data\Record\Schema {
 				switch($this->identity_take){
 					case self::IDENTITY_SCHEMA: return $this->identity = $this->name;
 					case self::IDENTITY_SOURCE: return $this->identity = $this->source;
-					case self::IDENTITY_CRC32: return $this->identity = crc32($this->name);
+					case self::IDENTITY_CRC32:  return $this->identity = crc32($this->name);
 				}
 			}
 			return $this->identity;
@@ -1376,7 +1383,8 @@ namespace Jungle\Data\Record\Schema {
 			if($data && $this->boot_field){
 				$schemaName = $this->valueAccessGet($data,$this->boot_field);
 				if($schemaName !== null){
-					return $schemaName;
+					$map = $this->getBootMap();
+					return array_search($schemaName, $map)?:$schemaName;
 				}
 			}
 			return $this->record_classname;
@@ -2147,10 +2155,21 @@ namespace Jungle\Data\Record\Schema {
 			}
 			return $this->locators[$path];
 		}
-
-
-
-
+		
+		public function getBootMap(){
+			return array_replace($this->boot_map, [
+				$this->record_classname => $this->getBootValue(),
+			]);
+		}
+		
+		public function getBootValues(){
+			return array_values($this->getBootMap());
+		}
+		
+		public function getBootValue(){
+			return $this->getIdentity();
+		}
+		
 	}
 
 }
