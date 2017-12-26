@@ -556,6 +556,7 @@ namespace Jungle\Data\Record\Schema {
 		public function extend($name){
 			$schema = clone $this;
 			$schema->name   = $name;
+			$schema->flyweight_record = null;
 			$schema->setAncestor($this);
 			return $schema;
 		}
