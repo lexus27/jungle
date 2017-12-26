@@ -51,7 +51,9 @@ namespace Jungle\Data\Storage\Db\Adapter\Pdo {
 				if(!is_string($message)){
 					$message = serialize($message);
 				}
-				
+				if(!is_int($code)){
+					$code = 99999999;
+				}
 				//$code = $e->getCode();
 				//$message = $e->getMessage();
 
