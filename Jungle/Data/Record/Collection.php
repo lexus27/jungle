@@ -8,7 +8,7 @@
  * Time: 23:27
  */
 namespace Jungle\Data\Record {
-
+	
 	use Jungle\Data\Record;
 	use Jungle\Data\Record\Collection\Sorter;
 	use Jungle\Data\Record\Collection\SorterInterface;
@@ -802,8 +802,9 @@ namespace Jungle\Data\Record {
 		 */
 		protected function _afterItemAdd($record){
 			$satMode = $this->getRoot()->saturation_mode;
-
-			$this->schema->initializeRecord($record);
+			/** FIX: boot field dynamic schema */
+			$record->getSchema()->initializeRecord($record);
+			//$this->schema->initializeRecord($record);
 
 			// добавляем объект в диртиаддед и удаляем из диртиремоув
 			if($this->dirty_capturing && $satMode === self::SAT_NONE){
