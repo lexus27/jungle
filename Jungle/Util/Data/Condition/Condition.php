@@ -101,9 +101,11 @@ namespace Jungle\Util\Data\Condition {
 							$block = false;
 						}else{
 							if(in_array($count,[2,3])){
-								foreach($c as $i){
-									if(!is_array($i)){
+								$__i = 0;
+								foreach($c as $i){ $__i++;
+									if(!is_array($i) && ($__i % 2 !== 0)){
 										$block = false;
+										break;
 									}
 								}
 							}
