@@ -40,6 +40,11 @@ class MissingException extends Exception{
 		$this->container                = $container;
 		$this->container_path           = $containerPath;
 		$this->container_missing_key    = $containerMissingKey;
+		
+		$calledPath = is_array($calledPath)?implode('.',$calledPath):$calledPath;
+		$containerPath = is_array($containerPath)?implode('.',$containerPath):$containerPath;
+		$containerMissingKey = is_array($containerMissingKey)?implode('.',$containerMissingKey):$containerMissingKey;
+		
 		parent::__construct("Not found: {root}.{$calledPath}, missing in {$containerPath}.{$containerMissingKey}");
 	}
 	
