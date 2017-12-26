@@ -6,11 +6,11 @@
  * Time: 12:53
  */
 namespace Jungle\Data\Storage\Db\Adapter\Pdo {
-
+	
 	use Jungle\Data\Storage\Db\Adapter\Pdo;
 	use Jungle\Data\Storage\Exception\DuplicateEntry;
 	use Jungle\Data\Storage\Exception\Operation;
-
+	
 	/**
 	 * Class MySQL
 	 * @package Jungle\Data\Storage\Db\Adapter\Pdo
@@ -47,7 +47,11 @@ namespace Jungle\Data\Storage\Db\Adapter\Pdo {
 
 				$code = $this->getLastErrorCode();
 				$message = $this->getLastErrorMessage();
-
+				
+				if(!is_string($message)){
+					$message = serialize($message);
+				}
+				
 				//$code = $e->getCode();
 				//$message = $e->getMessage();
 
