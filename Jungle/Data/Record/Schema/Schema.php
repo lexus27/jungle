@@ -1194,7 +1194,7 @@ namespace Jungle\Data\Record\Schema {
 		 */
 		public function justConstruct(Record $record){
 			if($this->boot_field){
-				$record->{$this->boot_field} = $this->getIdentity();
+				$record->{$this->boot_field} = $this->getBootValue();
 			}
 			$record->onConstruct();
 		}
