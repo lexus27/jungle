@@ -81,7 +81,7 @@ namespace Jungle\Data\Record {
 			/**  @TODO: delete */
 			$field_name = $this->_schema->getBootField();
 			if($field_name){
-				$this->{$field_name} = $this->_schema->getIdentity();
+				$this->{$field_name} = $this->_schema->getBootValue();
 			}
 		}
 
