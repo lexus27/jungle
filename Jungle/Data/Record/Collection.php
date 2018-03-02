@@ -759,9 +759,10 @@ namespace Jungle\Data\Record {
 			 */
 			//$this->schema->isDerivativeFrom($schema)
 			if(!$schema->isDerivativeFrom($this->schema)){
-				throw new \Exception(
+				return false;
+				/*throw new \Exception(
 					'Passed record schema "'.$schema->getName().
-					'" is not support, collection use "'.$this->schema->getName().'" schema!');
+					'" is not support, collection use "'.$this->schema->getName().'" schema!');*/
 			}
 
 			// Проверка присутствия, если объект подготовительный то ищем его присутствие в нашей коллекции

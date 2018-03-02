@@ -564,6 +564,8 @@ namespace Jungle\Data\Record\Schema {
 
 		public function __clone(){
 			$this->identity = null;
+			$this->collection = null;
+			$this->flyweight_record = null;
 			foreach($this->relations as & $relation){
 				$relation = clone $relation;
 				$relation->schema = $this;
