@@ -23,44 +23,44 @@ namespace Jungle\Http {
 	 * @package Jungle\Http\Request
 	 */
 	class Request implements \Jungle\Util\Communication\HttpFoundation\RequestInterface, RequestInterface{
-
+		
 		use HeaderRegistryTrait;
-
+		
 		const AUTH_DIGEST   = 'digest';
 		const AUTH_BASE     = 'base';
-
+		
 		/** @var  Request */
 		protected static $instance;
-
+		
 		protected static $request_time;
-
+		
 		/** @var  Auth */
 		protected $auth;
-
+		
 		/** @var  Browser  */
 		protected $browser;
-
+		
 		/** @var  Server  */
 		protected $server;
-
+		
 		/** @var  Client  */
 		protected $client;
-
+		
 		/** @var  Response  */
 		protected $response;
-
+		
 		/** @var   */
 		protected $uri;
-
+		
 		/** @var null  */
 		protected $content_type = null;
-
+		
 		/** @var  mixed */
 		protected $content = false;
-
+		
 		/** @var  UploadedFile[]|null */
 		protected $files;
-
+		
 		/**
 		 * @return mixed
 		 */
@@ -70,7 +70,7 @@ namespace Jungle\Http {
 			}
 			return self::$request_time;
 		}
-
+		
 		/**
 		 * @return Request
 		 */
@@ -80,7 +80,7 @@ namespace Jungle\Http {
 			}
 			return self::$instance;
 		}
-
+		
 		/**
 		 * Request constructor.
 		 */
@@ -113,25 +113,25 @@ namespace Jungle\Http {
 			}
 			return $headers;
 		}
-
+		
 		/**
 		 * @return string
 		 */
 		public function getFullPath(){
 			return urldecode($_SERVER['REQUEST_URI']);
 		}
-
+		
 		protected function __clone(){}
-
-
-
+		
+		
+		
 		/**
 		 * @return ResponseInterface
 		 */
 		public function getResponse(){
 			return $this->response;
 		}
-
+		
 		/**
 		 * @param $specificity
 		 * @return bool
@@ -139,28 +139,28 @@ namespace Jungle\Http {
 		public function hasSpecificity($specificity){
 			return stripos($specificity,'http')!==false;
 		}
-
+		
 		/**
 		 * @return BrowserInterface
 		 */
 		public function getBrowser(){
 			return $this->browser;
 		}
-
+		
 		/**
 		 * @return ServerInterface
 		 */
 		public function getServer(){
 			return $this->server;
 		}
-
+		
 		/**
 		 * @return Client
 		 */
 		public function getClient(){
 			return $this->client;
 		}
-
+		
 		/**
 		 * @param $name
 		 * @return null
@@ -168,7 +168,7 @@ namespace Jungle\Http {
 		public function getCookie($name){
 			return isset($_COOKIE[$name])?$_COOKIE[$name]:null;
 		}
-
+		
 		/**
 		 * @param $name
 		 * @return bool
@@ -176,58 +176,58 @@ namespace Jungle\Http {
 		public function hasCookie($name){
 			return isset($_COOKIE[$name]);
 		}
-
+		
 		/**
 		 * @return mixed
 		 */
 		public function getUserAgent(){
 			return $_SERVER['HTTP_USER_AGENT'];
 		}
-
+		
 		/**
 		 * @return int
 		 */
 		public function getTime(){
 			return $_SERVER['REQUEST_TIME'];
 		}
-
+		
 		/**
 		 * @return string
 		 */
 		public function getUrl(){
 			return $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . urldecode($_SERVER['REQUEST_URI']);
 		}
-
+		
 		/**
 		 * @return string
 		 */
 		public function getMethod(){
 			return $_SERVER['REQUEST_METHOD'];
 		}
-
+		
 		/**
 		 * @return string
 		 */
 		public function getScheme(){
 			return $_SERVER['REQUEST_SCHEME'];
 		}
-
-
+		
+		
 		/**
 		 * @return string
 		 */
 		public function getAuthType(){
 			return isset($_SERVER['PHP_AUTH_DIGEST']) && $_SERVER['PHP_AUTH_DIGEST']?self::AUTH_DIGEST:self::AUTH_BASE;
 		}
-
-
+		
+		
 		/**
 		 * @return Auth|null
 		 */
 		public function getAuth(){
 			return $this->auth;
 		}
-
+		
 		/**
 		 * @return string
 		 */
@@ -238,7 +238,7 @@ namespace Jungle\Http {
 			}
 			return $this->uri;
 		}
-
+		
 		/**
 		 * @return string
 		 */
@@ -249,79 +249,79 @@ namespace Jungle\Http {
 			}
 			return $this->uri;
 		}
-
+		
 		/**
 		 * @return bool
 		 */
 		public function isDelete(){
 			return stripos($_SERVER['REQUEST_METHOD'],'delete')!==false;
 		}
-
+		
 		/**
 		 * @return bool
 		 */
 		public function isHead(){
 			return stripos($_SERVER['REQUEST_METHOD'],'head')!==false;
 		}
-
+		
 		/**
 		 * @return bool
 		 */
 		public function isPatch(){
 			return stripos($_SERVER['REQUEST_METHOD'],'patch')!==false;
 		}
-
+		
 		/**
 		 * @return bool
 		 */
 		public function isOptions(){
 			return stripos($_SERVER['REQUEST_METHOD'],'options')!==false;
 		}
-
+		
 		/**
 		 * @return bool
 		 */
 		public function isPost(){
 			return stripos($_SERVER['REQUEST_METHOD'],'post')!==false;
 		}
-
+		
 		/**
 		 * @return bool
 		 */
 		public function isGet(){
 			return stripos($_SERVER['REQUEST_METHOD'],'get')!==false;
 		}
-
+		
 		/**
 		 * @return bool
 		 */
 		public function isPut(){
 			return stripos($_SERVER['REQUEST_METHOD'],'put')!==false;
 		}
-
+		
 		/**
 		 * @return mixed
 		 */
 		public function isConnect(){
 			return stripos($_SERVER['REQUEST_METHOD'],'connect')!==false;
 		}
-
+		
 		/**
 		 * @return mixed
 		 */
 		public function isTrace(){
 			return stripos($_SERVER['REQUEST_METHOD'],'trace')!==false;
 		}
-
-
+		
+		
 		/**
 		 * @return bool
 		 */
 		public function isSecure(){
 			return (isset($_SERVER['HTTPS'])?true:false) && stripos($_SERVER['REQUEST_SCHEME'],'https')!==false;
 		}
-
-
+		
+		
 		/**
 		 * @param $key
 		 * @param null $filter
@@ -337,7 +337,7 @@ namespace Jungle\Http {
 			}
 			return $default;
 		}
-
+		
 		/**
 		 * @param $key
 		 * @return mixed
@@ -346,7 +346,7 @@ namespace Jungle\Http {
 			if($key === null)return !empty($_POST);
 			return isset($_POST[$key]);
 		}
-
+		
 		/**
 		 * @param $parameter
 		 * @param null $filter
@@ -362,7 +362,7 @@ namespace Jungle\Http {
 			}
 			return $this->getObjectParam($parameter,$filter,$default);
 		}
-
+		
 		/**
 		 * @param $parameter
 		 * @return bool
@@ -373,7 +373,7 @@ namespace Jungle\Http {
 			}
 			return isset($_REQUEST[$parameter]) || $this->hasObjectParam($parameter);
 		}
-
+		
 		/**
 		 * @param $key
 		 * @param null $filter
@@ -389,7 +389,7 @@ namespace Jungle\Http {
 			}
 			return $default;
 		}
-
+		
 		/**
 		 * @param $key
 		 * @return mixed
@@ -398,42 +398,42 @@ namespace Jungle\Http {
 			if($key === null)return !empty($_GET);
 			return isset($_GET[$key]);
 		}
-
+		
 		/**
 		 * @param $key
 		 * @return mixed
 		 */
 		public function getPut($key){}
-
+		
 		/**
 		 * @param $key
 		 * @return mixed
 		 */
 		public function hasPut($key){}
-
-
-
+		
+		
+		
 		/**
 		 * @return mixed
 		 */
 		public function getRequestedWith(){
 			return $this->getHeader('Requested-With');
 		}
-
+		
 		/**
 		 * @return bool
 		 */
 		public function isAjax(){
 			return stripos($this->getHeader('Requested-With'),'XmlHttpRequest')!==false;
 		}
-
+		
 		/**
 		 * @return string|null
 		 */
 		public function getReferrer(){
 			return isset($_SERVER['HTTP_REFERRER'])?$_SERVER['HTTP_REFERRER']:null;
 		}
-
+		
 		/**
 		 * @return mixed
 		 */
@@ -444,14 +444,14 @@ namespace Jungle\Http {
 			}
 			return $this->content;
 		}
-
+		
 		/**
 		 * @return bool
 		 */
 		public function hasObject(){
 			return is_array($this->content) || strpos($this->content_type,'json')!==false || strpos($this->content_type,'xml')!==false || strpos($this->content_type,'soap')!==false;
 		}
-
+		
 		/**
 		 * @return array|mixed|null
 		 */
@@ -466,7 +466,7 @@ namespace Jungle\Http {
 			}
 			return null;
 		}
-
+		
 		/**
 		 * @param $key
 		 * @param null $filter
@@ -486,7 +486,7 @@ namespace Jungle\Http {
 			}
 			return $default;
 		}
-
+		
 		/**
 		 * @param $key
 		 * @return bool
@@ -498,14 +498,14 @@ namespace Jungle\Http {
 				return is_array(($content = $this->getContent())) && isset($content[$key]);
 			}
 		}
-
+		
 		/**
 		 * @return string
 		 */
 		public function getContentType(){
 			return $this->content_type;
 		}
-
+		
 		/**
 		 * @param string $content
 		 * @return array|string|int|float|object|null
@@ -522,35 +522,35 @@ namespace Jungle\Http {
 			}
 			return null;
 		}
-
+		
 		/**
 		 * @return bool
 		 */
 		public function isSoap(){
 			return strpos($this->content_type,'soap')!==false;
 		}
-
+		
 		/**
 		 * @return bool
 		 */
 		public function isJson(){
 			return strpos($this->content_type,'json')!==false;
 		}
-
+		
 		/**
 		 * @return bool
 		 */
 		public function isXml(){
 			return strpos($this->content_type,'xml')!==false;
 		}
-
+		
 		/**
 		 * @return bool
 		 */
 		public function hasFiles(){
 			return !empty($this->files) || !empty($_FILES);
 		}
-
+		
 		/**
 		 * @return array
 		 */
@@ -559,7 +559,7 @@ namespace Jungle\Http {
 				$this->files = [];
 				if(!empty($_FILES)){
 					foreach($_FILES as $param_name => $_file){
-
+						
 						$this->files[$param_name] = [];
 						if(is_array($_file['error'])){
 							foreach($_file['error'] as $i => $error){
@@ -591,7 +591,7 @@ namespace Jungle\Http {
 									$this->files[$param_name] = $uploaded_file;
 								}
 							}else{
-
+								
 							}
 						}
 					}
@@ -599,7 +599,7 @@ namespace Jungle\Http {
 			}
 			return $this->files;
 		}
-
+		
 		/**
 		 * @param $param_name
 		 * @param bool|false $asCollection
@@ -616,7 +616,7 @@ namespace Jungle\Http {
 			}
 			return $asCollection?[]:null;
 		}
-
+		
 		/**
 		 * @param $value
 		 * @param null $filter
