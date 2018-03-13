@@ -16,25 +16,24 @@ namespace Jungle\Data\Record\RelationFS {
 	use Jungle\FileSystem\Model\Directory;
 	use Jungle\FileSystem\Model\File;
 	use Jungle\Http\UploadedFile;
-	use Jungle\RegExp\Template;
 	use Jungle\Util\Replacer\Replacer;
 	use Jungle\Util\Value\Massive;
-
+	
 	/**
 	 * Class RelationFile
 	 * @package Jungle\Data\Record\Relation
 	 */
 	class RelationFile extends RelationFileSystem{
-
+		
 		const PLACEHOLDER_UPLOADED_PREFIX = '~';
-
+		
 		const TYPE_UPLOAD         = 'upload';
 		const TYPE_UPLOAD_AUTOGEN = 'upload-autogen';
 		const TYPE_SELECTED       = 'selected';
-
+		
 		public $type = self::TYPE_UPLOAD;
-
-
+		
+		
 		/**
 		 * @param Record $record
 		 * @return File|null
@@ -60,7 +59,7 @@ namespace Jungle\Data\Record\RelationFS {
 			}
 			return null;
 		}
-
+		
 		/**
 		 * @param Record $record
 		 * @return Record|\Jungle\Data\Record[]|Relationship|mixed
@@ -79,7 +78,7 @@ namespace Jungle\Data\Record\RelationFS {
 			}
 			return null;
 		}
-
+		
 		/**
 		 * @param Record $record
 		 * @param UploadedFile $uploaded
@@ -94,7 +93,7 @@ namespace Jungle\Data\Record\RelationFS {
 				return $uploaded->getBasename();
 			}
 		}
-
+		
 		/**
 		 * @param Record $record
 		 * @param UploadedFile $file
@@ -127,18 +126,18 @@ namespace Jungle\Data\Record\RelationFS {
 						$result = call_user_func($modifier, $result);
 					}
 					return $result;
-
+					
 				});
 			}else{
-
+				
 			}
 		}
-
-
-
-
-
-
+		
+		
+		
+		
+		
+		
 		public function isVariableTemplate(){
 			if($this->template){
 				$ph = $this->template->getPlaceholderNames();
@@ -148,8 +147,8 @@ namespace Jungle\Data\Record\RelationFS {
 			}
 		}
 		
-
-
+		
+		
 		/**
 		 * @param Record $record
 		 * @param Snapshot $snapshot
@@ -157,12 +156,12 @@ namespace Jungle\Data\Record\RelationFS {
 		 * @throws \Jungle\FileSystem\Model\Exception\ActionError
 		 */
 		public function beforeRecordSave(Record $record, Snapshot $snapshot = null){
-
+			
 			/**
 			 * Обработка принятого файла UploadedFile
 			 * Работа с файлом который уже загружен - File
 			 */
-
+			
 			$this->_path_after = false;
 			try{
 				if(!$this->field && $this->type === self::TYPE_UPLOAD_AUTOGEN
@@ -221,7 +220,8 @@ namespace Jungle\Data\Record\RelationFS {
 										$new_path = $p;
 									}
 								}
-								$this->_applyPath($record, $new_path, $related, $source);
+								$oldPath = $record->getSnapshot()->get($this->field);
+								$this->_applyPath($record, $new_path, $related, $source, $oldPath?:null);
 							}
 						}elseif($related === null){
 							$snapshot = $record->getRelatedSnapshot();
@@ -239,23 +239,26 @@ namespace Jungle\Data\Record\RelationFS {
 							$record->setProperty($this->field, $related->getRelativePath($source));
 						}
 					}
-
+					
 					if($related === null && $this->field){
 						$record->setProperty($this->field,null);
 					}
-
+					
 				}
 			}catch(\Exception $e){
 				$this->_path_after = false;
 				throw $e;
 			}
-
+			
 		}
-
-		protected function _applyPath(Record $record, $path, UploadedFile $file, Directory $source){
+		
+		protected function _applyPath(Record $record, $path, UploadedFile $file, Directory $source, $oldPath = null){
 			$b_name = basename($path);
 			$directory = $source->dir(dirname($path));
 			if($old_file = $directory->get($b_name)){
+				$old_file->delete(true);
+			}
+			if($oldPath && ($dir = $source->dir(dirname($oldPath))) && ($old_file = $dir->get(basename($oldPath)))){
 				$old_file->delete(true);
 			}
 			// переместить UploadedFile на новый путь, при этом используя абсолютный путь в системе
@@ -267,7 +270,7 @@ namespace Jungle\Data\Record\RelationFS {
 				$record->setProperty($this->field, $path);
 			}
 		}
-
+		
 		public function afterRecordSave(Record $record, Snapshot $snapshot = null){
 			try{
 				if($this->_path_after && isset($this->_path_after['file'], $this->_path_after['source'])){
@@ -283,10 +286,10 @@ namespace Jungle\Data\Record\RelationFS {
 				$this->_path_after = false;
 			}
 		}
-
-
+		
+		
 		public function initialize(Schema $schema){
-
+			
 			if($this->type === self::TYPE_UPLOAD || $this->type === self::TYPE_SELECTED){
 				if(!$this->field){
 					throw new \LogicException('RelationFile(TYPE_UPLOAD | TYPE_SELECTABLE) bad definition!: local field not be specified');
@@ -296,10 +299,10 @@ namespace Jungle\Data\Record\RelationFS {
 					throw new \LogicException('RelationFile(TYPE_UPLOAD_AUTOGEN) bad definition!: Template not be specified');
 				}
 			}
-
+			
 			parent::initialize($schema);
 		}
-
+		
 		/**
 		 * @param Record $record
 		 * @throws \Exception
@@ -314,7 +317,7 @@ namespace Jungle\Data\Record\RelationFS {
 				}
 			}
 		}
-
+		
 		protected $_on_accepted;
 		protected $_on_path;
 		protected $_path_after = false;
@@ -338,11 +341,11 @@ namespace Jungle\Data\Record\RelationFS {
 				}else{
 					return call_user_func([$record, $this->_on_accepted],$file, $this);
 				}
-
+				
 			}
 			return null;
 		}
-
+		
 		/**
 		 * @param Record $record
 		 * @param UploadedFile $file
@@ -362,16 +365,16 @@ namespace Jungle\Data\Record\RelationFS {
 				}else{
 					return call_user_func([$record, $this->_on_path],$file, $this);
 				}
-
+				
 			}
 			return null;
 		}
-
+		
 		public function setAccepted($handler){
 			$this->_on_accepted = $handler;
 			return $this;
 		}
-
+		
 		public function setPath($handler){
 			$this->_on_path = $handler;
 			return $this;
