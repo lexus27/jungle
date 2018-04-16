@@ -8,10 +8,10 @@
  * Time: 11:41
  */
 namespace Jungle\User\Verification {
-
+	
 	use Jungle\Di\DiLocatorInterface;
 	use Jungle\Http\Request;
-
+	
 	/**
 	 * Class MyVerification
 	 * @package Jungle\User\Verification
@@ -97,17 +97,13 @@ namespace Jungle\User\Verification {
 		 * @param Verificator $verificator
 		 * @return bool
 		 */
-		protected function before($scope, Verificator $verificator){
-
-		}
+		protected function before($scope, Verificator $verificator){}
 
 		/**
 		 * @param $scope
 		 * @param Verificator $verificator
 		 */
-		protected function after($scope, Verificator $verificator){
-
-		}
+		protected function after($scope, Verificator $verificator){}
 
 
 	}

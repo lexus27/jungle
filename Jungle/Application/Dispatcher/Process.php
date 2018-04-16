@@ -12,7 +12,7 @@ namespace Jungle\Application\Dispatcher {
 	use Jungle\Application\Dispatcher;
 	use Jungle\Application\Notification\Responsible\NeedIntroduce;
 	use Jungle\Application\Router\RoutingInterface;
-
+	
 	/**
 	 * Class Process
 	 * @package Jungle\Application\Dispatcher\Controller
@@ -252,13 +252,19 @@ namespace Jungle\Application\Dispatcher {
 		public function getStage(){
 			return $this->stage;
 		}
-
+		
 		/**
 		 * @param $state
-		 * @return mixed
+		 * @return void
 		 */
 		public function setState($state){
-			$this->state = $state;
+			if(!$state){
+				return;
+			}
+			if($state !== self::STATE_PROCESSING || !$this->state){
+				$this->state = $state;
+			}
+			return;
 		}
 
 		/**
@@ -546,8 +552,8 @@ namespace Jungle\Application\Dispatcher {
 		 */
 		public function setResult($result, $stage = null, $state = null){
 			$this->result = $result;
-			if($stage) $this->stage = $stage;
-			if($state) $this->state = $state;
+			if($stage) $this->setStage($stage);
+			if($state) $this->setState($state);
 			return $this;
 		}
 
