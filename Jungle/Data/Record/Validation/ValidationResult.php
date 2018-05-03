@@ -187,7 +187,10 @@ namespace Jungle\Data\Record\Validation {
 			}
 			$relations = [];
 			foreach($this->related_error_validations as $relationKey => $results){
-				$relations[] = $results->export();
+				/** @var ValidationResult $result */
+				foreach($results as $result){
+					$relations[$relationKey][] = $result->export();
+				}
 			}
 			
 			return [
