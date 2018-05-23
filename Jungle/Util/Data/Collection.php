@@ -8,10 +8,10 @@
  * Time: 21:00
  */
 namespace Jungle\Util\Data {
-
+	
 	use Jungle\Util\Data\Collection\CollectionInterface;
 	use Jungle\Util\Data\Collection\Ordered;
-
+	
 	/**
 	 * Class Collection
 	 * @package Jungle\Util\Data\Collection
@@ -55,7 +55,7 @@ namespace Jungle\Util\Data {
 		 * @return mixed
 		 */
 		public function first(){
-			list($k, $v) = each(array_slice($this->items, 0, 1, false));
+			list($k, $v) = each($a = array_slice($this->items, 0, 1, false));
 			return $v;
 		}
 
@@ -63,7 +63,7 @@ namespace Jungle\Util\Data {
 		 * @return mixed
 		 */
 		public function last(){
-			list($k, $v) = each(array_slice($this->items, -1, 1, false));
+			list($k, $v) = each($a = array_slice($this->items, -1, 1, false));
 			return $v;
 		}
 
