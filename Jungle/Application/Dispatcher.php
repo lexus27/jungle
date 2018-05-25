@@ -38,73 +38,80 @@ namespace Jungle\Application {
 	 * @package Jungle\Application
 	 */
 	class Dispatcher extends Injectable implements DispatcherInterface{
-
-
+		
+		
 		/** @var  StrategyInterface */
 		protected $dispatching_strategy;
-
+		
 		/** @var  StrategyInterface[] */
 		protected $strategies = [];
-
+		
 		/** @var  array[]  */
 		protected $strategies_definitions = [];
-
+		
 		/** @var array|null  */
 		protected $strategies_order;
-
+		
 		/** @var  ModuleInterface[]|array[]  */
 		protected $modules = [];
-
-
+		
+		
 		/** @var array  */
 		protected $error_reference      = '#index:index:error';
-
+		
 		/** @var  string */
 		protected $default_module       = 'index';
-
+		
 		/** @var  string */
 		protected $default_controller   = 'index';
-
+		
 		/** @var  string */
 		protected $default_action       = 'index';
-
+		
 		/** @var  string */
 		protected $action_suffix        = 'Action';
-
+		
 		/** @var  string */
 		protected $controller_suffix    = 'Controller';
-
-
+		
+		
 		/** @var  bool  */
 		protected $dispatching = false;
-
+		
 		/** @var bool  */
 		protected $dispatching_error = false;
-
+		
 		/** @var  RequestInterface */
 		protected $dispatching_request;
-
+		
 		/** @var  RoutingInterface|ProcessInitiatorInterface */
 		protected $dispatching_routing;
-
+		
 		/** @var ProcessInterface[]  */
 		protected $dispatching_processes = [];
-
+		
 		/** @var  ProcessInterface */
 		protected $restored_process;
-
-
+		
+		public function isError(){
+			return !!$this->dispatching_error;
+		}
+		
+		public function getError(){
+			return $this->dispatching_error;
+		}
+		
 		/**
 		 * Dispatcher constructor.
 		 */
 		public function __construct(){
 			register_shutdown_function(function(){
-
+				
 				$this->_errorsOnShutdown();
-
+				
 			});
 		}
-
+		
 		/**
 		 * @param $name
 		 * @return $this
@@ -113,14 +120,14 @@ namespace Jungle\Application {
 			$this->default_module = $name;
 			return $this;
 		}
-
+		
 		/**
 		 * @return string
 		 */
 		public function getDefaultModule(){
 			return $this->default_module;
 		}
-
+		
 		/**
 		 * @param $name
 		 * @return $this
@@ -135,7 +142,7 @@ namespace Jungle\Application {
 		public function getDefaultController(){
 			return $this->default_controller;
 		}
-
+		
 		/**
 		 * @param $name
 		 * @return $this
@@ -144,15 +151,15 @@ namespace Jungle\Application {
 			$this->default_action = $name;
 			return $this;
 		}
-
+		
 		/**
 		 * @return string
 		 */
 		public function getDefaultAction(){
 			return $this->default_action;
 		}
-
-
+		
+		
 		/**
 		 * @param $suffix
 		 * @return $this
@@ -161,14 +168,14 @@ namespace Jungle\Application {
 			$this->action_suffix = $suffix;
 			return $this;
 		}
-
+		
 		/**
 		 * @return mixed
 		 */
 		public function getActionSuffix(){
 			return $this->action_suffix;
 		}
-
+		
 		/**
 		 * @param $suffix
 		 * @return $this
@@ -177,14 +184,14 @@ namespace Jungle\Application {
 			$this->controller_suffix = $suffix;
 			return $this;
 		}
-
+		
 		/**
 		 * @return mixed
 		 */
 		public function getControllerSuffix(){
 			return $this->controller_suffix;
 		}
-
+		
 		/**
 		 * @param ModuleInterface $module
 		 * @param bool $check
@@ -202,7 +209,7 @@ namespace Jungle\Application {
 			$this->modules[$module->getName()] = $module;
 			return $this;
 		}
-
+		
 		/**
 		 * @param $moduleName
 		 * @return null|ModuleInterface
@@ -220,7 +227,7 @@ namespace Jungle\Application {
 			}
 			return null;
 		}
-
+		
 		/**
 		 * @param array $modules key pairs assoc
 		 * @param bool|false $merge
@@ -239,7 +246,7 @@ namespace Jungle\Application {
 			$this->modules = $merge?array_replace($this->modules,$modules):$modules;
 			return $this;
 		}
-
+		
 		/**
 		 * @param $module
 		 * @return $this
@@ -250,7 +257,7 @@ namespace Jungle\Application {
 			}
 			return $this;
 		}
-
+		
 		/**
 		 * @param StrategyInterface|string $alias
 		 * @param StrategyInterface|string $strategy
@@ -275,7 +282,7 @@ namespace Jungle\Application {
 			}
 			return $this;
 		}
-
+		
 		/**
 		 * @param $alias
 		 * @param $priority
@@ -288,8 +295,8 @@ namespace Jungle\Application {
 			$this->strategies_definitions[$alias]['priority'] = floatval($priority);
 			return $this;
 		}
-
-
+		
+		
 		/**
 		 * @param array $strategies
 		 */
@@ -319,7 +326,7 @@ namespace Jungle\Application {
 				$i = $i + 5;
 			}
 		}
-
+		
 		/**
 		 * @param $alias
 		 * @return StrategyInterface
@@ -335,14 +342,14 @@ namespace Jungle\Application {
 			}
 			return $this->strategies[$alias];
 		}
-
+		
 		/**
 		 * @return StrategyInterface
 		 */
 		public function getDispatchingStrategy(){
 			return $this->dispatching_strategy;
 		}
-
+		
 		/**
 		 * @param RequestInterface $request
 		 * @return StrategyInterface|null
@@ -366,9 +373,9 @@ namespace Jungle\Application {
 			}
 			return null;
 		}
-
-
-
+		
+		
+		
 		/**
 		 * @param $a
 		 * @param $b
@@ -382,8 +389,8 @@ namespace Jungle\Application {
 			}
 			return $a > $b?1:-1;
 		}
-
-
+		
+		
 		/**
 		 * @param $reference
 		 * @return bool
@@ -402,8 +409,8 @@ namespace Jungle\Application {
 			}
 			return $module->hasControl($reference['controller'], $reference['action'] );
 		}
-
-
+		
+		
 		public function getDefaultMetadata(){
 			return [
 				'private'   => false,
@@ -411,7 +418,7 @@ namespace Jungle\Application {
 				'strategy'  => null,
 			];
 		}
-
+		
 		/**
 		 * @param $reference
 		 * @return array
@@ -430,9 +437,9 @@ namespace Jungle\Application {
 			}
 			return $module->getMetadata($reference['controller'], $reference['action']);
 		}
-
-
-
+		
+		
+		
 		/**
 		 * Диспетчеризация непосредственно изначального запроса.
 		 * Происходит старт обертки HMVC в которой Контроль может вызываться рекурсивно для разных действий
@@ -460,7 +467,7 @@ namespace Jungle\Application {
 				}
 				$this->_prepareDispatch($request, $strategy);
 				if($this->_beforeDispatch($request, $strategy) !== false){
-
+					
 					/**
 					 * @var Routing $routing
 					 * @var RouterInterface $router
@@ -500,14 +507,14 @@ namespace Jungle\Application {
 				$this->_continueDispatch();
 			}
 		}
-
+		
 		/**
 		 * @param ProcessInterface $process
 		 */
 		public function storeProcess(ProcessInterface $process){
 			$this->dispatching_processes[] = $process;
 		}
-
+		
 		/**
 		 * @param ProcessInterface $process
 		 * @return ProcessInterface|null
@@ -521,21 +528,21 @@ namespace Jungle\Application {
 			$this->restored_process = $r;
 			return $r;
 		}
-
+		
 		/**
 		 * @return ProcessInterface|null
 		 */
 		public function mainProcess(){
 			return $this->dispatching_processes?$this->dispatching_processes[0]:null;
 		}
-
+		
 		/**
 		 * @return ProcessInterface|null
 		 */
 		public function currentProcess(){
-			return $this->dispatching_processes?$this->dispatching_processes[count($this->dispatching_processes)-1]:null;;
+			return $this->dispatching_processes?$this->dispatching_processes[count($this->dispatching_processes)-1]:null;
 		}
-
+		
 		/**
 		 *
 		 * Подмена главного действия контроллера
@@ -562,14 +569,17 @@ namespace Jungle\Application {
 				throw new Exception\Forwarded($process);
 			}catch(Exception\Forwarded $forwarded){
 				if($this->dispatching_error){
+					$forwarded->process->setTask('error', $this->dispatching_error);
+					$forwarded->process->setState(Process::STATE_FAILURE);
+					
 					return $this->prepareResponse($forwarded->process);
 				}else{
 					throw $forwarded;
 				}
 			}
 		}
-
-
+		
+		
 		/**
 		 *
 		 * Метод производит "Контроль" - это непосредственный вызов модулем-контроллером-действием.
@@ -591,11 +601,11 @@ namespace Jungle\Application {
 		 */
 		public function control($reference, array $params, ProcessInitiatorInterface $initiator, $initiator_type,ProcessInitiatorInterface $forwarder = null, $options = null){
 			$reference = Reference::normalize($reference,[ 'module' => $this->default_module ]);
-
+			
 			if(!($module = $this->getModule( ($moduleName = $reference['module']) ))){
 				throw new Control('Module "'.$moduleName.'" not found!');
 			}
-
+			
 			$di = $this->getDi();
 			try{
 				$di->insertInjection('module', $module, 10);
@@ -608,8 +618,8 @@ namespace Jungle\Application {
 				$di->restoreInjection('module', $module);
 			}
 		}
-
-
+		
+		
 		/**
 		 * @param ProcessInterface $process
 		 * @return Response
@@ -625,7 +635,7 @@ namespace Jungle\Application {
 			$this->dispatching_strategy->complete($response, $view);
 			return $response;
 		}
-
+		
 		/**
 		 * @param ProcessInterface $process
 		 * @param array|null $options
@@ -652,7 +662,7 @@ namespace Jungle\Application {
 				$this->restored_process = $process;
 			}
 		}
-
+		
 		/**
 		 * @param ProcessInterface $process
 		 * @param array $options
@@ -680,7 +690,7 @@ namespace Jungle\Application {
 			}
 			return null;
 		}
-
+		
 		/**
 		 * @param array $params
 		 * @param array $reference
@@ -702,7 +712,7 @@ namespace Jungle\Application {
 		){
 			return new Process($this, $reference, $module, $controller, $params, $initiator, $initiator_type,$forwarder);
 		}
-
+		
 		/**
 		 * @param $controller
 		 */
@@ -711,7 +721,7 @@ namespace Jungle\Application {
 				$controller->setDi($this->getDi());
 			}
 		}
-
+		
 		/**
 		 * @param \Exception $e
 		 * @param ProcessInterface $process
@@ -736,7 +746,7 @@ namespace Jungle\Application {
 			}
 			return $process->hasTasks();
 		}
-
+		
 		/**
 		 * @param \Exception $e
 		 * @param ProcessInterface $process
@@ -744,31 +754,31 @@ namespace Jungle\Application {
 		public function interceptedException(\Exception $e, ProcessInterface $process){
 			$this->event_manager->invokeEvent('dispatcher:interceptedException', $this, $process, $e);
 		}
-
-
+		
+		
 		/**
 		 * @param ProcessInterface $process
 		 * @throws AccessDenied
 		 */
 		public function beforeControl(ProcessInterface $process){
 			$this->event_manager->invokeEvent('dispatcher:beforeControl', $this, $process);
-
+			
 			if($process->getInitiatorType() === Process::CALL_ROUTING){
 				/** @var Manager $access */
 				if($access = $this->getDi()->getShared('access',false)){
 					$substitute = new Substitute();
 					$substitute->setClass('MCA');
 					$substitute->setValue($process->getReference() + ['mca' => $process->getReferenceString()]);
-
+					
 					$allowed = $access->enforce('control', $substitute);
 					if(!$allowed){
 						throw new AccessDenied();
 					}
 				}
 			}
-
+			
 		}
-
+		
 		/**
 		 * @param ProcessInterface $process
 		 * @param $result
@@ -776,7 +786,7 @@ namespace Jungle\Application {
 		public function afterControl(ProcessInterface $process, $result){
 			$this->event_manager->invokeEvent('dispatcher:afterControl', $this, $process);
 		}
-
+		
 		/**
 		 *
 		 * Метод вызывается перед запуском инициализации Процесса,
@@ -795,7 +805,7 @@ namespace Jungle\Application {
 		 */
 		protected function preControl($reference, ModuleInterface $module, ProcessInitiatorInterface $initiator, $initiator_type,$forwarder = null){
 			$this->event_manager->invokeEvent('dispatcher:preControl', $this, $reference, $module, $initiator);
-
+			
 			/**
 			 * В данном методе происходит пре-контроль
 			 * : Проверка, может ли контроллер быть запущен из другого контроллера
@@ -803,11 +813,11 @@ namespace Jungle\Application {
 			 * : Проверка, поддерживает ли контроль текущую стратегию
 			 * : Проверка, если Маршрут имеет динамичные ссылки и в системе нету такого действия - то пропустить маршрут
 			 */
-
+			
 			$this->getMetadata($reference);
-
+			
 			$meta = $module->getMetadata($reference['controller'], $reference['action']);
-
+			
 			// check hmvc support
 			if($initiator instanceof ProcessInterface && (!isset($meta['hierarchy']) || !$meta['hierarchy'])){
 				throw new Control('mca "'.Reference::stringify($reference).'" is not supported Hierarchy call');
@@ -823,14 +833,14 @@ namespace Jungle\Application {
 					throw new Exception\ContinueRoute();
 				}
 			}
-
+			
 			// check support request strategy
 			if(isset($meta['strategy']) && $meta['strategy']){
 				$strategy = $meta['strategy'];
 				if(!is_array($strategy)) $strategy = [$strategy];
 				$current = $this->dispatching_strategy->getName();
 				if(!in_array($current, $strategy, true)){
-
+					
 					if($initiator instanceof RoutingInterface){
 						// if routed
 						throw new Exception\ContinueRoute();
@@ -840,9 +850,9 @@ namespace Jungle\Application {
 					}
 				}
 			}
-
+			
 		}
-
+		
 		/**
 		 * @param $output
 		 * @param ProcessInterface $process
@@ -858,7 +868,7 @@ namespace Jungle\Application {
 		 * @throws \Exception
 		 */
 		public function handleException(\Exception $e, $return = true){
-			$this->dispatching_error = true;
+			$this->dispatching_error = $e;
 			$reporter = $this->crash_reporter;
 			$reporter->report($e);
 			$process = $this->currentProcess()?: $this->restored_process;
@@ -898,9 +908,8 @@ namespace Jungle\Application {
 		 * @throws \Exception
 		 */
 		protected function _handleFatalError($num, $message, $filename, $line){
-			$this->dispatching_error = true;
 			$reporter = $this->crash_reporter;
-			$e =  new \ErrorException($message,0,$num, $filename,$line);
+			$this->dispatching_error = $e = new \ErrorException($message,0,$num, $filename,$line);
 			$reporter->report($e);
 			$process = $this->currentProcess()?: $this->restored_process;
 			try{
@@ -925,11 +934,11 @@ namespace Jungle\Application {
 			$this->event_manager->invokeEvent('dispatcher:afterDispatch',true,$this, $process->getRouting()->getRequest(), $process->getRouting(), $process);
 			exit();
 		}
-
+		
 		protected function _errorsOnShutdown(){
 			if($this->dispatching){
 				$error = error_get_last();
-
+				
 				$listen_error =
 					E_ERROR |
 					E_PARSE |
@@ -939,14 +948,14 @@ namespace Jungle\Application {
 					E_CORE_ERROR |
 					E_COMPILE_ERROR |
 					E_RECOVERABLE_ERROR;
-
+				
 				if(isset($error) && ($error['type'] & $listen_error)){
 					$this->_handleFatalError($error['type'], $error['message'], $error['file'], $error['line']);
 				}
 			}
 		}
-
-
+		
+		
 		/**
 		 * @param RequestInterface $request
 		 * @param StrategyInterface $strategy
@@ -954,7 +963,7 @@ namespace Jungle\Application {
 		protected function _beforeDispatch(RequestInterface $request, StrategyInterface $strategy){
 			$this->event_manager->invokeEvent('dispatcher:beforeDispatch',false,$this, $request, $strategy);
 		}
-
+		
 		/**
 		 * @param RequestInterface $request
 		 * @param RoutingInterface $routing
@@ -963,7 +972,7 @@ namespace Jungle\Application {
 		protected function _afterDispatch(RequestInterface $request, Router\RoutingInterface $routing, ProcessInterface $result){
 			$this->event_manager->invokeEvent('dispatcher:afterDispatch',false,$this, $request, $routing, $result);
 		}
-
+		
 		/**
 		 * @param RequestInterface $request
 		 * @param StrategyInterface $strategy
@@ -972,7 +981,7 @@ namespace Jungle\Application {
 		protected function _prepareDispatch(RequestInterface $request, StrategyInterface $strategy){
 			$diChains = $this->getDi();
 			$diChains->insertInjection('strategy',$strategy, 5);
-
+			
 			foreach($this->modules as $name => $module){
 				$module = $this->_getStaticModuleName($name);
 				$module::prepareDispatchToStrategy($name, $strategy, $this);
@@ -981,42 +990,42 @@ namespace Jungle\Application {
 			$default = $diChains->getInjection('default');
 			$default->setShared('request',$request);
 			$default->setShared('response',$request->getResponse());
-
+			
 			$this->dispatching              = true;
 			$this->dispatching_error        = false;
 			$this->dispatching_request      = $request;
 			$this->dispatching_strategy     = $strategy;
 			$strategy->registerServices();
 		}
-
+		
 		protected function _continueDispatch(){
 			$diChains = $this->getDi();
 			$diChains->restoreInjection('strategy');
-
+			
 			$default = $diChains->getInjection('default');
 			$default->removeService('request');
 			$default->removeService('response');
-
+			
 			$current_process = $this->currentProcess();
 			if($current_process){
 				$routing = $current_process->getRouting();
 				$request = $routing->getRequest();
-
+				
 				$this->event_manager->invokeEvent('dispatcher:continueDispatch',false,$this, $request, $routing, $current_process);
 			}else{
 				$this->event_manager->invokeEvent('dispatcher:continueDispatch',false,$this);
 			}
-
-
-
+			
+			
+			
 			$this->dispatching              = false;
 			$this->dispatching_strategy     = null;
 			$this->dispatching_request      = null;
 			$this->restored_process             = null;
 			$this->dispatching_processes    = [];
 		}
-
-
+		
+		
 		/**
 		 * @param $moduleName
 		 * @param array $definition
@@ -1102,7 +1111,7 @@ namespace Jungle\Application {
 			
 			return null;
 		}
-
+		
 		/**
 		 * @param $alias
 		 * @param array $definition
@@ -1125,13 +1134,13 @@ namespace Jungle\Application {
 				throw new Exception('Strategy load error: "' . $alias . '" not found strategy class "' . $className . '"');
 			}
 		}
-
+		
 		public function __destruct(){
 			if($this->dispatching){
 				$this->event_manager->invokeEvent('dispatcher:afterDispatch',$this->dispatching_error,$this, $this->dispatching_request, $this->dispatching_routing, $this->mainProcess());
 			}
 		}
-
+		
 	}
 }
 

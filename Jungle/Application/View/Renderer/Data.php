@@ -23,9 +23,9 @@ namespace Jungle\Application\View\Renderer {
 	 * @package Jungle\Application\View
 	 */
 	abstract class Data extends Renderer{
-
+		
 		protected function _doInitialize(){}
-
+		
 		/**
 		 * @param ProcessInterface $process
 		 * @param ViewInterface $view
@@ -36,7 +36,7 @@ namespace Jungle\Application\View\Renderer {
 		public function render(ProcessInterface $process, ViewInterface $view, array $variables = [], array $options = []){
 			return $this->convert($this->extractData($process,$variables));
 		}
-
+		
 		/**
 		 * @param \Jungle\Application\Dispatcher\ProcessInterface $process
 		 * @param array $variables
@@ -47,11 +47,13 @@ namespace Jungle\Application\View\Renderer {
 			if($result instanceof Collection){
 				$result = $this->decorateCollection($result);
 			}
+			
 			$o = [
 				'success'   => $process->getState()===$process::STATE_SUCCESS,
 				'tasks'     => [],
 				'result'    => $result,
 			];
+			
 			if($process->hasTasks()){
 				foreach($process->getTasks() as $key => $task){
 					if(is_object($task)){
@@ -65,24 +67,24 @@ namespace Jungle\Application\View\Renderer {
 					}else{
 						$o['tasks'][$key] = (string)$task;
 					}
-
+					
 				}
 			}
-
-
-
+			
+			
+			
 			if(isset($variables['global_data']) && is_array($variables['global_data'])){
 				return array_replace($variables['global_data'], $o);
 			}
 			return $o;
 		}
-
+		
 		/**
 		 * @param $data
 		 * @return string
 		 */
 		abstract public function convert($data);
-
+		
 		/**
 		 * @param Collection $collection
 		 * @return Distributor|Collection
@@ -93,7 +95,7 @@ namespace Jungle\Application\View\Renderer {
 			}
 			return $collection;
 		}
-
+		
 	}
 }
 
