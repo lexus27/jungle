@@ -163,7 +163,7 @@ namespace Jungle\Application\Dispatcher {
 		 */
 		public function requires(array $param_names, $return = false){
 			if($param_names !== null && $this->stage !== self::STAGE_RENDERING && $param_names !== array_intersect($param_names, array_keys($this->params))){
-				throw new NeedIntroduce("Params ".implode(', ',(array)$param_names)." required");
+				throw new NeedIntroduce("Params ".implode(', ',(array)array_diff($param_names, array_keys($this->params)))."(".implode(', ',array_keys($this->params)).") required");
 			}
 			if($return && $param_names){
 				return array_intersect_key(array_flip($param_names), $this->params);
@@ -179,7 +179,7 @@ namespace Jungle\Application\Dispatcher {
 		 */
 		public function getParams(array $required_names = null, $returnOnlyRequired = false){
 			if($required_names !== null && $this->stage !== self::STAGE_RENDERING && $required_names !== array_intersect($required_names, array_keys($this->params))){
-				throw new NeedIntroduce("Params ".implode(', ',(array)$required_names)." required");
+				throw new NeedIntroduce("Params ".implode(', ',(array)array_diff($required_names, array_keys($this->params)))."(".implode(', ',array_keys($this->params)).") required");
 			}
 			if($required_names !== null && $returnOnlyRequired){
 				return array_intersect_key($this->params,array_flip($required_names));

@@ -7,7 +7,6 @@
 
 namespace Jungle\Application\Router;
 
-
 use Jungle\Http\Request;
 
 class Converter{
@@ -30,19 +29,28 @@ class Converter{
 					strtolower($request->getMethod()) === strtolower($this->activateMethod)
 				)
 			) || (
-				is_array($this->activateMethod) && in_array(strtolower($request->getMethod()),$this->activateMethod)
-			)
+			   is_array($this->activateMethod) && in_array(strtolower($request->getMethod()),$this->activateMethod)
+		   )
 		){
 			foreach($this->map as $key => $value){
 				if(is_int($key)){
 					if($this->activateMethod){
-						$p[$value] = $this->_resolve($request, '{'.$this->activateMethod.'.'.$value.'}');
+						try{
+							$r = $this->_resolve($request, '{'.$this->activateMethod.'.'.$value.'}');
+							$p[$value] = $r;
+						}catch(\Jungle\Application\Router\Locator\MissingException $mE){}
 					}else{
-						$p[$value] = $this->_resolve($request, '{'.$value.'}');
+						try{
+							$r = $this->_resolve($request, '{'.$value.'}');
+							$p[$value] = $r;
+						}catch(\Jungle\Application\Router\Locator\MissingException $mE){}
 					}
 					
 				}else{
-					$p[$key] = $this->_resolve($request, $value);
+					try{
+						$r = $this->_resolve($request, $value);
+						$p[$key] = $r;
+					}catch(\Jungle\Application\Router\Locator\MissingException $mE){}
 				}
 			}
 		}
