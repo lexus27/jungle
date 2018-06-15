@@ -1377,8 +1377,8 @@ namespace Jungle\Data\Record {
 			}
 
 			$condition = $this->_prepareDeployStorageCondition($condition);
-			$limit = $limit?:$this->getLimit();
-			$offset = $this->getOffset() + $offset;
+			$limit     = $limit?:$this->getLimit();
+			$offset    = $this->getOffset() + $offset;
 
 			$shipment = $this->schema->storageLoad($condition, $limit, $offset, $orderBy);
 			while(($item = $shipment->asAssoc()->fetch()) !== false){

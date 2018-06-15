@@ -8,9 +8,9 @@
  * Time: 20:53
  */
 namespace Jungle\User {
-
+	
 	use Jungle\Di\Injectable;
-
+	
 	/**
 	 * Class Account
 	 * @package Jungle\User
@@ -34,7 +34,7 @@ namespace Jungle\User {
 				$sess = $this->session->readSession();
 				return $sess? $sess->getUserId(): null;
 			}
-			return $this->user->getId();
+			return $this->user? $this->user->getId() : null;
 		}
 
 
