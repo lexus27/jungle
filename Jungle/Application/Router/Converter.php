@@ -48,7 +48,7 @@ class Converter{
 					
 				}else{
 					try{
-						$r = $this->_resolve($request, $value);
+						$r = $this->_resolve($request, $value, $key);
 						$p[$key] = $r;
 					}catch(\Jungle\Application\Router\Locator\MissingException $mE){}
 				}
@@ -58,7 +58,7 @@ class Converter{
 	}
 	
 	
-	public function _resolve(Request $request, $value){
+	public function _resolve(Request $request, $value, $k = null){
 		
 		if($value instanceof Binding){
 			$a = $request->getParam();
@@ -72,7 +72,7 @@ class Converter{
 				return $locator->query($request, $key);
 			}
 		}elseif(is_callable($value)){
-			return call_user_func($value, $request);
+			return call_user_func($value, $request, $k);
 		}
 		return $value;
 	}
