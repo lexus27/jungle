@@ -911,28 +911,30 @@ namespace Jungle\Application {
 			$reporter = $this->crash_reporter;
 			$this->dispatching_error = $e = new \ErrorException($message,0,$num, $filename,$line);
 			$reporter->report($e);
-			$process = $this->currentProcess()?: $this->restored_process;
-			try{
-				if($process){
-					$process->setState($process::STATE_FAILURE);
-					$response = $this->forward($this->error_reference,[
-						'exception' => $e
-					], $process);
-				}elseif($this->dispatching_routing){
-					$response = $this->forward($this->error_reference,[
-						'exception' => $e
-					], $this->dispatching_routing);
-				}else{
-					throw new \Jungle\Application\Exception('Initiator is not recognized!');
-				}
-				$response->send();
-			}catch(\Jungle\Application\Dispatcher\Exception\Control $controlException){
-				throw $e;
-			}catch(\Exception $e){
-				throw $e;
-			}
+			
+			
+			//$process = $this->currentProcess()?: $this->restored_process;
+			//try{
+			//	if($process){
+			//		$process->setState($process::STATE_FAILURE);
+			//		$response = $this->forward($this->error_reference,[
+			//			'exception' => $e
+			//		], $process);
+			//	}elseif($this->dispatching_routing){
+			//		$response = $this->forward($this->error_reference,[
+			//			'exception' => $e
+			//		], $this->dispatching_routing);
+			//	}else{
+			//		throw new \Jungle\Application\Exception('Initiator is not recognized!');
+			//	}
+			//	$response->send();
+			//}catch(\Jungle\Application\Dispatcher\Exception\Control $controlException){
+			//	throw $e;
+			//}catch(\Exception $e){
+			//	throw $e;
+			//}
 			$this->event_manager->invokeEvent('dispatcher:afterDispatch',true,$this, $process->getRouting()->getRequest(), $process->getRouting(), $process);
-			exit();
+			throw $e;
 		}
 		
 		protected function _errorsOnShutdown(){
