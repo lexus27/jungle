@@ -36,6 +36,7 @@ class Converter{
 				if(is_int($key)){
 					if($this->activateMethod){
 						try{
+							$containerKey = $this->activateMethod==='get'?'query':$this->activateMethod;
 							$r = $this->_resolve($request, '{'.$this->activateMethod.'.'.$value.'}');
 							$p[$value] = $r;
 						}catch(\Jungle\Application\Router\Locator\MissingException $mE){}
