@@ -58,7 +58,7 @@ class Converter{
 	}
 	
 	
-	public function _resolve(Request $request, $value, $k = null){
+	public function _resolve(Request $request, $value, $_key = null){
 		
 		if($value instanceof Binding){
 			$a = $request->getParam();
@@ -72,7 +72,7 @@ class Converter{
 				return $locator->query($request, $key);
 			}
 		}elseif(is_callable($value)){
-			return call_user_func($value, $request, $k);
+			return call_user_func($value, $request, $_key);
 		}
 		return $value;
 	}

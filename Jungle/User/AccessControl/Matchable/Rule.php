@@ -6,10 +6,9 @@
  * Time: 18:54
  */
 namespace Jungle\User\AccessControl\Matchable {
-
+	
 	use Jungle\User\AccessControl\Context\ContextInterface;
-	use Jungle\User\AccessControl\Matchable\Aggregator;
-
+	
 	/**
 	 * Class Rule
 	 * @package Jungle\User\AccessControl
@@ -49,7 +48,7 @@ namespace Jungle\User\AccessControl\Matchable {
 				if($aggregator){
 					$effect = $effect===null?$aggregator->getEffect():$effect;
 				}
-				$effect = $effect!==null?$manager->getDefaultEffect():$effect;
+				$effect = $effect===null?$manager->getDefaultEffect():$effect;
 
 				$result->setMatchableEffect($effect);
 

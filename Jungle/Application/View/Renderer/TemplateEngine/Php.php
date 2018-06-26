@@ -17,24 +17,24 @@ namespace Jungle\Application\View\Renderer\TemplateEngine {
 	 * @package Jungle\Application\View\Renderer\TemplateEngine
 	 */
 	class Php extends TemplateEngine{
-		
+
 		/** @var string  */
 		protected $type = 'template-php';
-		
+
 		/** @var  string */
 		protected $default_extension = 'phtml';
-		
+
 		/** @var   */
 		protected $template_base_dirname;
-		
+
 		protected $current_template_path;
-		
+
 		protected $template_variables = [];
-		
+
 		protected $error_reporting;
-		
+
 		protected $rendering = false;
-		
+
 		/**
 		 * @param $name
 		 * @return boolean
@@ -43,7 +43,7 @@ namespace Jungle\Application\View\Renderer\TemplateEngine {
 			$full_template_name = $this->template_base_dirname . DIRECTORY_SEPARATOR . $name;
 			return file_exists($full_template_name) && is_readable($full_template_name);
 		}
-		
+
 		/**
 		 * @param $name
 		 * @param array $variables

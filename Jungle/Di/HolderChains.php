@@ -8,11 +8,11 @@
  * Time: 17:12
  */
 namespace Jungle\Di {
-
+	
 	use Jungle\Di;
 	use Jungle\Di\HolderChains\HolderManagerInterface;
 	use Jungle\Exception;
-
+	
 	/**
 	 * Class HolderChains
 	 * @package Jungle\Di
@@ -339,7 +339,11 @@ namespace Jungle\Di {
 				try{
 					$object = $di->offsetGet($serviceKey);
 					return $object;
-				}catch(\Exception $lastError){}
+				}catch(\Exception $lastError){
+					if(!$lastError instanceof NotFoundException){
+						throw  $lastError;
+					}
+				}
 			}
 			if($throwException && $lastError instanceof \Exception)throw $lastError;
 			return null;

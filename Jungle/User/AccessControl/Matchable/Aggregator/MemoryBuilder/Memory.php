@@ -6,14 +6,14 @@
  * Time: 2:29
  */
 namespace Jungle\User\AccessControl\Matchable\Aggregator\MemoryBuilder {
-
+	
 	use Jungle\User\AccessControl\Matchable\Aggregator;
 	use Jungle\User\AccessControl\Matchable\Aggregator\Policy;
 	use Jungle\User\AccessControl\Matchable\Aggregator\PolicyGroup;
 	use Jungle\User\AccessControl\Matchable\Matchable;
 	use Jungle\User\AccessControl\Matchable\Rule;
 	use Jungle\User\AccessControl\Matchable\Target;
-
+	
 	/**
 	 * Class Memory
 	 * @package Jungle\User\AccessControl\Adapter\PolicyAdater
@@ -34,7 +34,12 @@ namespace Jungle\User\AccessControl\Matchable\Aggregator\MemoryBuilder {
 				'targets'   => [],
 			];
 			if(isset($definition['rules'])){
-				foreach($definition['rules'] as $rule){
+				foreach($definition['rules'] as $name => $rule){
+					if(is_string($name)){
+						if(is_array($rule)){
+							$rule['name'] = $name;
+						}
+					}
 					$this->_requireRule($rule);
 				}
 			}
@@ -95,11 +100,25 @@ namespace Jungle\User\AccessControl\Matchable\Aggregator\MemoryBuilder {
 				if(isset($definition['condition'])){
 					$rule->setCondition($definition['condition']);
 				}
+				if(isset($definition['requirement'])){
+					$rule->setRequirement($definition['requirement']);
+				}
+				if(isset($definition['advice'])){
+					$rule->setAdvice($definition['advice']);
+				}
+				if(isset($definition['obligation'])){
+					$rule->setObligation($definition['obligation']);
+				}
 				if($name && !isset($this->_building_scope['rules'][$name])){
 					$this->_building_scope['rules'][$name] = $rule;
 				}
 				return $rule;
 			}else{
+				
+				if(!isset($this->_building_scope['rules'][$definition])){
+					throw new \Exception("No such registered rule '$definition'... [use a `rules` parameter in definition array]");
+				}
+				
 				return $this->_building_scope['rules'][$definition];
 			}
 		}

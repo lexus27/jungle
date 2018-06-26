@@ -34,7 +34,7 @@ namespace Jungle\User {
 				$sess = $this->session->readSession();
 				return $sess? $sess->getUserId(): null;
 			}
-			return $this->user? $this->user->getId() : null;
+			return $this->user->getId();
 		}
 
 

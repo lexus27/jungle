@@ -16,24 +16,24 @@ namespace Jungle\Data\Storage\Db {
 	 * @package Jungle\Data\Storage\Db\Structure
 	 */
 	abstract class Dialect{
-		
+
 		protected static $_sqlServantHelper;
-		
+
 		const JOIN_INNER    = 'INNER';
-		
+
 		const JOIN_LEFT     = "LEFT";
-		
+
 		const JOIN_CROSS    = 'CROSS';
-		
+
 		const JOIN_RIGHT    = 'RIGHT';
-		
+
 		/** @var string  */
 		protected $escape_char = '`';
-		
+
 		/** @var string  */
 		protected $table_schema_delimiter = '.';
-		
-		
+
+
 		/**
 		 * @return Sql
 		 */
@@ -43,27 +43,27 @@ namespace Jungle\Data\Storage\Db {
 			}
 			return self::$_sqlServantHelper;
 		}
-		
-		
+
+
 		/**
 		 * @param $databaseName
 		 * @return string
 		 */
 		abstract public function createDatabase($databaseName);
-		
+
 		/**
 		 * @param $databaseName
 		 * @return string
 		 */
 		abstract public function removeDatabase($databaseName);
-		
+
 		/**
 		 * @param $databaseName
 		 * @param $newName
 		 * @return string
 		 */
 		abstract public function renameDatabase($databaseName,$newName);
-		
+
 		/**
 		 * @param string|array $name
 		 * @param array $columns
@@ -82,27 +82,27 @@ namespace Jungle\Data\Storage\Db {
 			$engine             = null,
 			$comment            = null
 		);
-		
+
 		/**
 		 * @param string|array $table
 		 * @param $newName
 		 * @return string
 		 */
 		abstract public function renameTable($table,$newName);
-		
+
 		/**
 		 * @param string|array $table
 		 * @return string
 		 */
 		abstract public function removeTable($table);
-		
+
 		/**
 		 * @param string|array $table
 		 * @param $columnDefinition
 		 * @return string
 		 */
 		abstract public function addColumn($table,array $columnDefinition);
-		
+
 		/**
 		 * @param string|array $table
 		 * @param $columnName
@@ -110,7 +110,7 @@ namespace Jungle\Data\Storage\Db {
 		 * @return string
 		 */
 		abstract public function modifyColumn($table, $columnName,array $columnDefinition);
-		
+
 		/**
 		 * @param string|array $table
 		 * @param $columnName
@@ -118,14 +118,14 @@ namespace Jungle\Data\Storage\Db {
 		 * @return string
 		 */
 		abstract public function renameColumn($table, $columnName, $newName);
-		
+
 		/**
 		 * @param string|array $table
 		 * @param $columnName
 		 * @return string
 		 */
 		abstract public function removeColumn($table, $columnName);
-		
+
 		/**
 		 * @param string|array $table
 		 * @param $indexName
@@ -135,14 +135,14 @@ namespace Jungle\Data\Storage\Db {
 		 * @return string
 		 */
 		abstract public function addIndex($table, $indexName, array $columnNames, $type, $algo);
-		
+
 		/**
 		 * @param string|array $table
 		 * @param $indexName
 		 * @return string
 		 */
 		abstract public function removeIndex($table, $indexName);
-		
+
 		/**
 		 * @param string|array $table
 		 * @param $fkName
@@ -160,14 +160,14 @@ namespace Jungle\Data\Storage\Db {
 			$onDelete = ForeignKey::R_RESTRICT,
 			$onUpdate = ForeignKey::R_RESTRICT
 		);
-		
+
 		/**
 		 * @param string|array $table
 		 * @param $fkName
 		 * @return string
 		 */
 		abstract public function removeForeignKey($table, $fkName);
-		
+
 		/**
 		 * @param array|string $table
 		 * @param null $alias
@@ -178,7 +178,7 @@ namespace Jungle\Data\Storage\Db {
 			$s =($database?$this->escape($database).$this->table_schema_delimiter:'').$this->escape($table);
 			return $alias?$this->escapeAlias($s,$alias,true):$s;
 		}
-		
+
 		/**
 		 * @param $subject
 		 * @param $alias
@@ -186,9 +186,9 @@ namespace Jungle\Data\Storage\Db {
 		 * @return string
 		 */
 		public function escapeAlias($subject, $alias = null, $subjectEscaped = false){
-			return ($subjectEscaped?$subject:$this->escape($subject)) . ($alias?' AS '. $this->escape($alias):'');
+				return ($subjectEscaped?$subject:$this->escape($subject)) . ($alias?' AS '. $this->escape($alias):'');
 		}
-		
+
 		/**
 		 * @param string|array $identifier
 		 * @param null $escapeChar
@@ -212,7 +212,7 @@ namespace Jungle\Data\Storage\Db {
 				throw new \InvalidArgumentException();
 			}
 		}
-		
+
 		/**
 		 * @param string $identifier escaped
 		 * @param null $escapeChar
@@ -226,7 +226,7 @@ namespace Jungle\Data\Storage\Db {
 			}
 			return count($identifier)>1?$identifier:$identifier[0];
 		}
-		
+
 		/**
 		 * @param string $value
 		 * @return string
@@ -234,7 +234,7 @@ namespace Jungle\Data\Storage\Db {
 		public function escapeString($value){
 			return '\''.addcslashes($value,'\\\'').'\'';
 		}
-		
+
 		/**
 		 * @param $value
 		 * @return string
@@ -242,7 +242,7 @@ namespace Jungle\Data\Storage\Db {
 		public function unEscapeString($value){
 			return stripcslashes($value);
 		}
-		
+
 		/**
 		 * @param $columnNames - [
 		 *
@@ -273,7 +273,7 @@ namespace Jungle\Data\Storage\Db {
 				throw new \InvalidArgumentException('Wrong argument type');
 			}
 		}
-		
+
 		/**
 		 * @param array $columns -
 		 *  [Name] => null | [
@@ -309,7 +309,7 @@ namespace Jungle\Data\Storage\Db {
 				throw new \InvalidArgumentException('Wrong argument type');
 			}
 		}
-		
+
 		/**
 		 * @param null $database
 		 * @param null $like
@@ -318,7 +318,7 @@ namespace Jungle\Data\Storage\Db {
 		public function listTables($database = null, $like = null){
 			return 'SHOW TABLES'. ($database?' FROM '.$this->escape($database):'').($like?' LIKE '.$this->escapeString($like):'').';';
 		}
-		
+
 		/**
 		 * @param null $database
 		 * @param null $like
@@ -327,7 +327,7 @@ namespace Jungle\Data\Storage\Db {
 		public function listViews($database = null, $like = null){
 			return 'SHOW VIEWS'. ($database?' FROM '.$this->escape($database):'').($like?' LIKE '.$this->escapeString($like):'').';';
 		}
-		
+
 		/**
 		 * @param null $like
 		 * @return string
@@ -335,16 +335,16 @@ namespace Jungle\Data\Storage\Db {
 		public function listDatabases($like = null){
 			return 'SHOW TABLES'.($like?' LIKE '.$this->escapeString($like):'').';';
 		}
-		
+
 		public function describeColumns($table){
 			return 'SHOW COLUMNS FROM '.$this->escapeTableName($table).';';
 		}
-		
+
 		public function describeIndexes($table){
 			return 'SHOW INDEXES FROM '.$this->escapeTableName($table).';';
 		}
-		
-		
+
+
 		/**
 		 * @param string|array $table -
 		 * ['tableName','databaseName'] | 'tableName.DatabaseName' | 'tableName'
@@ -359,8 +359,8 @@ namespace Jungle\Data\Storage\Db {
 				return [$table,null];
 			}
 		}
-		
-		
+
+
 		/**
 		 * @param $table
 		 * @param array $fields
@@ -387,21 +387,21 @@ namespace Jungle\Data\Storage\Db {
 			$this->addWhere($servant,$whereCondition);
 			return $servant->complete();
 		}
-		
+
 		/**
 		 * @param Sql $servant
 		 */
 		public function addForUpdate(Sql $servant){
 			$servant->push('FOR UPDATE',"\r\n\t");
 		}
-		
+
 		/**
 		 * @param Sql $servant
 		 */
 		public function addLockInSharedMode(Sql $servant){
 			$servant->push('LOCK IN SHARE MODE ',"\r\n\t");
 		}
-		
+
 		/**
 		 * @param $table - tableDefinition
 		 * @param array|null $fields - columnList
@@ -426,18 +426,18 @@ namespace Jungle\Data\Storage\Db {
 			}
 			return $servant->complete();
 		}
-		
+
 		/**
 		 * @param Sql $servant
 		 * @param array|null $values
 		 */
 		public function addInlineInsertValues(Sql $servant, array $values = null){
 			$servant->push('('.implode(',',array_map(function($v){
-					return is_string($v)?$this->escapeString($v):$v;
-				},$values)).')');
+				return is_string($v)?$this->escapeString($v):$v;
+			},$values)).')');
 		}
-		
-		
+
+
 		/**
 		 * @param $table
 		 * @param $whereCondition
@@ -457,7 +457,7 @@ namespace Jungle\Data\Storage\Db {
 			}
 			return $servant->complete();
 		}
-		
+
 		/**
 		 * @param array $definition -
 		 *      array|string     [table]    - TableDefinition
@@ -490,7 +490,7 @@ namespace Jungle\Data\Storage\Db {
 				'for_update'        => false,
 				'lock_in_shared'    => false
 			],$definition);
-			
+
 			if(!$d['table']){
 				throw new \InvalidArgumentException('Definition must have table');
 			}
@@ -521,9 +521,9 @@ namespace Jungle\Data\Storage\Db {
 			if($d['lock_in_shared'])$this->addLockInSharedMode($servant);
 			return $servant->complete();
 		}
-		
-		
-		
+
+
+
 		/**
 		 * @param Sql $servant
 		 * @param array $definition -
@@ -543,7 +543,7 @@ namespace Jungle\Data\Storage\Db {
 				$this->prepareCondition($servant, $definition['on']);
 			}
 		}
-		
+
 		/**
 		 * @param Sql $servant
 		 * @param $condition - Condition definition
@@ -554,7 +554,7 @@ namespace Jungle\Data\Storage\Db {
 				$this->prepareCondition($servant, $condition);
 			}
 		}
-		
+
 		/**
 		 * @param Sql $servant
 		 * @param $condition - Condition definition
@@ -563,8 +563,8 @@ namespace Jungle\Data\Storage\Db {
 			$servant->push('HAVING');
 			$this->prepareCondition($servant, $condition);
 		}
-		
-		
+
+
 		/**
 		 * @param Sql $servant
 		 * @param null $condition
@@ -586,7 +586,7 @@ namespace Jungle\Data\Storage\Db {
 							}
 						}
 					}
-					
+
 					if(!$delimited){
 						$delimited = true;
 						if(!$block && $count === 1){
@@ -596,7 +596,7 @@ namespace Jungle\Data\Storage\Db {
 							$servant->push('AND',' ');
 						}
 					}
-					
+
 					if($specCondition){
 						/** @var ConditionTarget $c */
 						$c->mountIn($this,$servant);
@@ -619,10 +619,10 @@ namespace Jungle\Data\Storage\Db {
 						$this->prepareConditionTarget($servant, $left,$operator,$right);
 						$delimited = false;
 					}elseif($count === 3 || $count === 2){
-						
+
 						list($left, $operator, $right) = Condition::toList($c,[0,'left'],[1,'operator'],[2,'right']);
-						
-						
+
+
 						//$left = isset($c[0])?$c[0]:$c['left'];
 						//$operator = isset($c[1])?$c[1]:$c['operator'];
 						//$right = isset($c[2])?$c[2]:$c['right'];
@@ -632,7 +632,7 @@ namespace Jungle\Data\Storage\Db {
 				}
 			}
 		}
-		
+
 		/**
 		 * @param $servant
 		 * @param $identifier
@@ -673,7 +673,7 @@ namespace Jungle\Data\Storage\Db {
 				$servant->push($escaped.' '.$operator,' ');
 			}
 		}
-		
+
 		/**
 		 * @param int $limit
 		 * @return bool
@@ -681,8 +681,8 @@ namespace Jungle\Data\Storage\Db {
 		public static function isInfinityLimit($limit = -1){
 			return $limit === -1 || $limit === null || $limit === 0;
 		}
-		
-		
+
+
 		/**
 		 * @param Sql $servant
 		 * @param int[]|int $number - [{LIMIT}, {OFFSET}] | {LIMIT}
@@ -698,7 +698,7 @@ namespace Jungle\Data\Storage\Db {
 				$servant->push("LIMIT  " .($offset?intval($offset).', ':'') . intval($limit),"\r\n\t");
 			}
 		}
-		
+
 		/**
 		 * @param Sql $servant
 		 * @param string[]|string $columns
@@ -717,7 +717,7 @@ namespace Jungle\Data\Storage\Db {
 				throw new \InvalidArgumentException('addGroupBy: Wrong argument type $columns');
 			}
 		}
-		
+
 		/**
 		 * @param Sql $servant
 		 * @param $columns -
@@ -747,7 +747,7 @@ namespace Jungle\Data\Storage\Db {
 				throw new \InvalidArgumentException('Wrong argument type $columns');
 			}
 		}
-		
+
 		/**
 		 * @param $columns
 		 * @return string
@@ -755,7 +755,7 @@ namespace Jungle\Data\Storage\Db {
 		public function distinct($columns){
 			return 'DISTINCT ' . $this->escapeColumns($columns);
 		}
-		
+
 		/**
 		 * @param $table
 		 * @param $value
@@ -764,8 +764,8 @@ namespace Jungle\Data\Storage\Db {
 		public function setAutoIncrement($table, $value){
 			return 'ALTER TABLE '.$this->escapeTableName($table) . ' AUTO_INCREMENT = '.intval($value).';';
 		}
-		
-		
+
+
 		/**
 		 * @param $algo
 		 * @return string
@@ -778,7 +778,7 @@ namespace Jungle\Data\Storage\Db {
 				default: return 'BTREE';
 			}
 		}
-		
+
 		/**
 		 * @param $direction
 		 * @return string
@@ -790,7 +790,7 @@ namespace Jungle\Data\Storage\Db {
 				default: return 'ASC';
 			}
 		}
-		
+
 		/**
 		 * @param $type
 		 * @return string
@@ -805,7 +805,7 @@ namespace Jungle\Data\Storage\Db {
 				default: return 'KEY';
 			}
 		}
-		
+
 		/**
 		 * @param $reaction
 		 * @return string
@@ -819,7 +819,7 @@ namespace Jungle\Data\Storage\Db {
 				default:     return 'RESTRICT';
 			}
 		}
-		
+
 		/**
 		 * @param $type
 		 * @return string
@@ -840,8 +840,8 @@ namespace Jungle\Data\Storage\Db {
 			}
 			return 'INNER';
 		}
-		
-		
+
+
 	}
 }
 
